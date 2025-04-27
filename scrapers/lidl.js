@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
+import axios from 'axios';
 
 puppeteer.use(StealthPlugin());
 
@@ -68,20 +69,20 @@ puppeteer.use(StealthPlugin());
                 const image_url = block.querySelector('.odsc-image-gallery__image')?.src;
                 const card = block.querySelector('.seal .seal__badge') !== null;
 
-                let { startDateStr, endDateStr } = { startDateStr: '', endDateStr: '' };
-                let startDate = '';
-                let endDate = '';
+                let { start_atStr, end_atStr } = { start_atStr: '', end_atStr: '' };
+                let start_at = '';
+                let end_at = '';
 
                 if (valid && typeof valid === 'string' && valid.includes(' - ')) {
-                    [startDateStr, endDateStr] = valid.split(' - ');
-                    startDate = parseDate(startDateStr);
-                    endDate = parseDate(endDateStr);
+                    [start_atStr, end_atStr] = valid.split(' - ');
+                    start_at = parseDate(start_atStr);
+                    end_at = parseDate(end_atStr);
                 } else if (typeof valid === 'string' && valid.includes('Nuo ')) {
-                    startDateStr = valid.replace('Nuo ', '');
-                    startDate = parseDate(startDateStr);
+                    start_atStr = valid.replace('Nuo ', '');
+                    start_at = parseDate(start_atStr);
                 } else {
-                    startDate = valid;
-                    endDate = null;
+                    start_at = valid;
+                    end_at = null;
                 }
 
                 return {
@@ -90,8 +91,8 @@ puppeteer.use(StealthPlugin());
                     original_price,
                     info,
                     discount_percent,
-                    startDate,
-                    endDate,
+                    start_at,
+                    end_at,
                     valid,
                     card,
                     product_url,
@@ -104,7 +105,7 @@ puppeteer.use(StealthPlugin());
 
         // Store unique products based on "name + price + valid"
         for (const product of productBlocks) {
-            const uniqueKey = `${product.name}-${product.discounted_price}-${product.startDate}-${product.endDate}`;
+            const uniqueKey = `${product.name}-${product.discounted_price}-${product.start_at}-${product.end_at}`;
             if (!allProducts.has(uniqueKey)) {
                 allProducts.set(uniqueKey, product);
             }
@@ -112,6 +113,20 @@ puppeteer.use(StealthPlugin());
     }
 
     const uniqueProducts = Array.from(allProducts.values());
+
+    // Post to API
+    for (const product of uniqueProducts) {
+        try {
+            const response = await axios.post('http://http://127.0.0.1/api/scrapers', {
+                name: product.name,
+                start_at: product.start_at,
+                end_at: product.end_at
+            });
+            console.log(`Posted product: ${product.name}`);
+        } catch (error) {
+            console.error(`Error posting product ${product.name}:`, error.message);
+        }
+    }
 
     // Save to JSON file
     fs.writeFileSync('scrapers/lidl.json', JSON.stringify(uniqueProducts, null, 2));
