@@ -1,5 +1,9 @@
 {
-    "private": true,
+    "name": "nuolaidos",
+    "version": "1.0.0",
+    "description": "Discount scraper",
+    "main": "index.js",
+    "type": "module",
     "scripts": {
         "dev": "npm run development",
         "development": "mix",
@@ -7,12 +11,18 @@
         "watch-poll": "mix watch -- --watch-options-poll=1000",
         "hot": "mix watch --hot",
         "prod": "npm run production",
-        "production": "mix --production"
+        "production": "mix --production",
+        "start": "node index.js"
     },
     "devDependencies": {
         "axios": "^0.21",
         "laravel-mix": "^6.0.6",
         "lodash": "^4.17.19",
         "postcss": "^8.1.14"
+    },
+    "dependencies": {
+        "puppeteer": "^21.0.0",
+        "puppeteer-extra": "^3.3.6",
+        "puppeteer-extra-plugin-stealth": "^2.11.2"
     }
 }

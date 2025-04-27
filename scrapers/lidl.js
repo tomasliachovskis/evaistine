@@ -25,7 +25,6 @@ puppeteer.use(StealthPlugin());
         return [...new Set(texts)];
     });
 
-
     let allProducts = new Map();
 
     for (const offerLink of offers) {
@@ -52,36 +51,60 @@ puppeteer.use(StealthPlugin());
 
         // Extract product details
         const productBlocks = await page.$$eval('.odsc-tile--label-.product-grid-box', blocks => {
+            function parseDate(dateStr) {
+                const [month, day] = dateStr.split(' ').map(Number);
+                const year = new Date().getFullYear();
+                return new Date(year, month - 1, day).toLocaleDateString('en-CA');
+            }
+
             return blocks.map(block => {
-                const title = block.querySelector('.product-grid-box__title')?.textContent.trim();
-                const price = block.querySelector('.m-price__price')?.textContent.trim();
-                const price_before = block.querySelector('.m-price__top')?.textContent.trim();
+                const name = block.querySelector('.odsc-tile__link')?.textContent.trim();
+                const discounted_price = block.querySelector('.m-price__price')?.textContent.trim();
+                const original_price = block.querySelector('.m-price__top')?.textContent.trim();
                 const info = block.querySelector('.price-footer')?.textContent.trim();
                 const valid = block.querySelector('.product-grid-box__availabilities')?.textContent.trim();
-                const discount = block.querySelector('.m-price__label')?.textContent.trim() ?? '-';
-                const link = block.querySelector('a')?.href;
-                const imageSrc = block.querySelector('.odsc-image-gallery__image')?.src;
-                const card_required = block.querySelector('.seal .seal__badge') !== null;
+                const discount_percent = block.querySelector('.m-price__label')?.textContent.trim() ?? '-';
+                const product_url = block.querySelector('a')?.href;
+                const image_url = block.querySelector('.odsc-image-gallery__image')?.src;
+                const card = block.querySelector('.seal .seal__badge') !== null;
+
+                let { startDateStr, endDateStr } = { startDateStr: '', endDateStr: '' };
+                let startDate = '';
+                let endDate = '';
+
+                if (valid && typeof valid === 'string' && valid.includes(' - ')) {
+                    [startDateStr, endDateStr] = valid.split(' - ');
+                    startDate = parseDate(startDateStr);
+                    endDate = parseDate(endDateStr);
+                } else if (typeof valid === 'string' && valid.includes('Nuo ')) {
+                    startDateStr = valid.replace('Nuo ', '');
+                    startDate = parseDate(startDateStr);
+                } else {
+                    startDate = valid;
+                    endDate = null;
+                }
 
                 return {
-                    title,
-                    price,
-                    price_before,
+                    name,
+                    discounted_price,
+                    original_price,
                     info,
-                    discount,
+                    discount_percent,
+                    startDate,
+                    endDate,
                     valid,
-                    card_required,
-                    link,
-                    imageSrc
+                    card,
+                    product_url,
+                    image_url
                 };
             });
         });
 
         console.log(`Found ${productBlocks.length} products on ${offerLink}`);
 
-        // Store unique products based on "title + price + valid"
+        // Store unique products based on "name + price + valid"
         for (const product of productBlocks) {
-            const uniqueKey = `${product.title}-${product.price}-${product.valid}`;
+            const uniqueKey = `${product.name}-${product.discounted_price}-${product.startDate}-${product.endDate}`;
             if (!allProducts.has(uniqueKey)) {
                 allProducts.set(uniqueKey, product);
             }
@@ -91,7 +114,7 @@ puppeteer.use(StealthPlugin());
     const uniqueProducts = Array.from(allProducts.values());
 
     // Save to JSON file
-    fs.writeFileSync('lidl.json', JSON.stringify(uniqueProducts, null, 2));
+    fs.writeFileSync('scrapers/lidl.json', JSON.stringify(uniqueProducts, null, 2));
 
     await browser.close();
 })();

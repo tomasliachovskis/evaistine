@@ -24,5 +24,6 @@ class DiscountTemp extends Model
         'card',
         'start_at',
         'end_at',
+        'info',
     ];
 }
