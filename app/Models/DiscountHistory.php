@@ -9,14 +9,15 @@ class DiscountHistory extends Model
 {
     use HasFactory;
 
-    protected $table = 'discount_history';
-
     protected $fillable = [
         'product_id',
+        'product_url',
+        'store_id',
         'original_price',
         'discounted_price',
-        'product_url',
-        'coupon_code',
+        'discount_percent',
+        'condition',
+        'card',
         'start_at',
         'end_at',
     ];
@@ -29,5 +30,10 @@ class DiscountHistory extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }
