@@ -9,7 +9,7 @@ class DiscountTemp extends Model
 {
     use HasFactory;
 
-    protected $table = 'discount_history';
+    protected $table = 'discount_temp';
 
     protected $fillable = [
         'name',
@@ -25,5 +25,6 @@ class DiscountTemp extends Model
         'start_at',
         'end_at',
         'info',
+        'brand',
     ];
 }

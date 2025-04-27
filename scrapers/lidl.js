@@ -20,11 +20,13 @@ puppeteer.use(StealthPlugin());
     // Wait for a few seconds to see the result
     await sleep(5000);
 
-    const offers = await page.evaluate(() => {
-        const elements = document.querySelectorAll('nav a.ATheHeroStage__OfferAnchor');
-        const texts = Array.from(elements).map(offer => offer.href);
-        return [...new Set(texts)];
-    });
+    // const offers = await page.evaluate(() => {
+    //     const elements = document.querySelectorAll('nav a.ATheHeroStage__OfferAnchor');
+    //     const texts = Array.from(elements).map(offer => offer.href);
+    //     return [...new Set(texts)];
+    // });
+
+    const offers = ['https://www.lidl.lt/c/visos-sios-savaites-akcijos/a10023711?channel=store&tabCode=Current_Sales_Week'];
 
     let allProducts = new Map();
 
@@ -59,7 +61,8 @@ puppeteer.use(StealthPlugin());
             }
 
             return blocks.map(block => {
-                const name = block.querySelector('.odsc-tile__link')?.textContent.trim();
+                const brand = block.querySelector('.product-grid-box__brand')?.textContent.trim();
+                let name = block.querySelector('.odsc-tile__link')?.textContent.trim();
                 const discounted_price = block.querySelector('.m-price__price')?.textContent.trim();
                 const original_price = block.querySelector('.m-price__top')?.textContent.trim();
                 const info = block.querySelector('.price-footer')?.textContent.trim();
@@ -87,6 +90,7 @@ puppeteer.use(StealthPlugin());
 
                 return {
                     name,
+                    brand,
                     discounted_price,
                     original_price,
                     info,
@@ -117,14 +121,25 @@ puppeteer.use(StealthPlugin());
     // Post to API
     for (const product of uniqueProducts) {
         try {
-            const response = await axios.post('http://http://127.0.0.1/api/scrapers', {
+            const response = await axios.post('http://127.0.0.1/api/scrapers', {
                 name: product.name,
+                brand: product.brand,
+                discounted_price: product.discounted_price,
+                original_price: product.original_price,
+                info: product.info,
+                discount_percent: product.discount_percent,
                 start_at: product.start_at,
-                end_at: product.end_at
+                end_at: product.end_at,
+                valid: product.valid,
+                card: product.card,
+                product_url: product.product_url,
+                image_url: product.image_url
             });
             console.log(`Posted product: ${product.name}`);
+            await sleep(100);
         } catch (error) {
             console.error(`Error posting product ${product.name}:`, error.message);
+            await sleep(200);
         }
     }
 
