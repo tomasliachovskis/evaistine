@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
+import axios from "axios";
 
 puppeteer.use(StealthPlugin());
 
@@ -20,9 +21,15 @@ puppeteer.use(StealthPlugin());
 
     const productBlocks = await page.$$eval('.c-discount-item-list .c-product', async blocks => {
         return Promise.all(blocks.map(async block => {
-            const title = block.querySelector('.c-product__name')?.textContent.trim() ?? '';
-            const price = block.querySelector('.c-product__price')?.textContent.trim() ?? '';
-            const price_before = block.querySelector('.c-product__old-price')?.textContent.trim() ?? '';
+            function parseDate(dateStr) {
+                const [month, day] = dateStr.split(' ').map(Number);
+                const year = new Date().getFullYear();
+                return new Date(year, month - 1, day).toLocaleDateString('en-CA');
+            }
+
+            const name = block.querySelector('.c-product__name')?.textContent.trim() ?? '';
+            const discounted_price = block.querySelector('.c-product__price')?.textContent.trim() ?? '';
+            const original_price = block.querySelector('.c-product__old-price')?.textContent.trim() ?? '';
             let valid = block.querySelector('.c-more-info__content')?.textContent.trim() ?? '';
 
             if (valid.includes("\n")) {
@@ -30,32 +37,73 @@ puppeteer.use(StealthPlugin());
                 valid = parts[parts.length - 1].trim();
             }
 
-            const discount = block.querySelector('.c-product__discount')?.textContent.trim() ?? '-';
-            const link = block.querySelector('a')?.href ?? '';
-            const imageSrc = block.querySelector('div.c-product__media > img')?.src ?? '';
+            const discount_percent = block.querySelector('.c-product__discount')?.textContent.trim() ?? '-';
+            const product_url = block.querySelector('a')?.href ?? '';
+            const image_url = block.querySelector('div.c-product__media > img')?.src ?? '';
 
             // Check if the block contains the shop images (shop-h, shop-xxl, shop-xl)
             const shopH = block.querySelector('img[src*="/assets/Visos-svetaines-foto/Images/shop-h.svg"]') !== null;
             const shopXxl = block.querySelector('img[src*="/assets/Visos-svetaines-foto/Images/shop-xxl.svg"]') !== null;
             const shopXl = block.querySelector('img[src*="/assets/Visos-svetaines-foto/Images/shop-xl.svg"]') !== null;
 
-            const shop = {};
-            if (shopH) shop.shopH = 'shopH';
-            if (shopXxl) shop.shopXxl = 'shopXxl';
-            if (shopXl) shop.shopXl = 'shopXl';
+            const info = {};
+            if (shopH) info.shopH = 'shopH';
+            if (shopXxl) info.shopXxl = 'shopXxl';
+            if (shopXl) info.shopXl = 'shopXl';
+
+            let { start_atStr, end_atStr } = { start_atStr: '', end_atStr: '' };
+            let start_at = '';
+            let end_at = '';
+
+            if (valid && typeof valid === 'string' && valid.includes('-')) {
+                valid = valid.replace('Galioja ', '');
+                valid = valid.replace(' d.', '');
+
+                [start_atStr, end_atStr] = valid.split('-');
+                start_at = parseDate(start_atStr);
+                end_at = parseDate(end_atStr);
+            } else {
+                start_at = valid;
+                end_at = null;
+            }
 
             return {
-                title,
-                price,
-                price_before,
-                discount,
-                valid,
-                link,
-                imageSrc,
-                shop,
+                name,
+                discounted_price,
+                original_price,
+                discount_percent,
+                start_at,
+                end_at,
+                product_url,
+                image_url,
+                info,
             };
         }));
     });
+
+    for (const product of productBlocks) {
+        try {
+            const data = {
+                name: product.name,
+                brand: product.brand,
+                discounted_price: product.discounted_price,
+                original_price: product.original_price,
+                card: JSON.stringify(product.info),
+                discount_percent: product.discount_percent,
+                start_at: product.start_at,
+                end_at: product.end_at,
+                product_url: product.product_url,
+                image_url: product.image_url,
+                store: 'norfa'
+            };
+            const response = await axios.post('http://127.0.0.1/api/scrapers', data);
+            await sleep(100);
+        } catch (error) {
+            console.error(`Error posting product ${product.name}:`, error.message);
+            await sleep(200);
+        }
+    }
+
     // Save to JSON file
     fs.writeFileSync('norfa.json', JSON.stringify(productBlocks, null, 2));
 

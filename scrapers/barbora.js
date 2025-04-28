@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
+import axios from "axios";
 
 // Apply Stealth plugin
 puppeteer.use(StealthPlugin());
@@ -58,42 +59,73 @@ puppeteer.use(StealthPlugin());
 
                 const category = json ? json.category_name_full_path : null;
                 const valid = json ? json.ShowInOffersTo : null;
-                const price = json ? json.price : null;
-                const price_before = json ? json.promotion.oldPrice : null;
+                let start_at = valid.split('T')[0];
+                let end_at = start_at;
 
-                const title = block.querySelector('a > span.tw-block')?.textContent.trim();
+                const discounted_price = json ? json.price : null;
+                const original_price = json ? json.promotion.oldPrice : null;
+
+                const name = block.querySelector('a > span.tw-block')?.textContent.trim();
                 // const price = block.querySelector('.tw-align-top')?.textContent.trim();
                 // const price_before = block.querySelector('.tw-text-neutral-500 > .tw-relative.tw-flex.tw-align-top')?.textContent.trim() ?? '';
                 const info = block.querySelector('.card__price-per')?.textContent.trim() ?? '';
                 // const valid = block.querySelector('.ods-badge__label')?.textContent.trim();
-                const discount = block.querySelector('span.tw-text-white')?.textContent.trim() ?? '-';
-                const link = block.querySelector('.tw-justify-center a')?.href;
-                const imageSrc = block.querySelector('.tw-justify-center a img')?.src;
-                const card = false;
+                const discount_percent = block.querySelector('span.tw-text-white')?.textContent.trim() ?? '-';
+                const product_url = block.querySelector('.tw-justify-center a')?.href;
+                const image_url = block.querySelector('.tw-justify-center a img')?.src;
+                const card = block.querySelector('use[xlink\\:href="#promo-loyalty-desktop-lt"]');
+
+                if (card) {
+                    console.log('Card require ' + name);
+                }
 
                 return {
-                    title,
-                    price,
-                    price_before,
+                    name,
+                    discounted_price,
+                    original_price,
                     info,
-                    discount,
-                    valid,
+                    discount_percent,
+                    start_at,
+                    end_at,
                     category,
-                    link,
+                    product_url,
                     card,
-                    imageSrc
+                    image_url
                 };
             });
         });
 
         allProducts = allProducts.concat(productBlocks);
-        console.log(productBlocks);
         console.log(`Scraped ${productBlocks.length} products from page ${currentPage}`);
 
         currentPage++;
     }
 
     console.log(`Scraped total ${allProducts.length} products from ${currentPage} pages`);
+
+    for (const product of allProducts) {
+        try {
+            const data = {
+                name: product.name,
+                brand: product.brand,
+                discounted_price: product.discounted_price,
+                original_price: product.original_price,
+                card: product.card,
+                discount_percent: product.discount_percent,
+                start_at: product.start_at,
+                end_at: product.end_at,
+                product_url: product.product_url,
+                image_url: product.image_url,
+                category: product.category,
+                store: 'maxima'
+            };
+            const response = await axios.post('http://127.0.0.1/api/scrapers', data);
+            await sleep(100);
+        } catch (error) {
+            console.error(`Error posting product ${product.name}:`, error.message);
+            await sleep(200);
+        }
+    }
 
     fs.writeFileSync('barbora.json', JSON.stringify(allProducts, null, 2));
     console.log('Scraping completed. Data saved to barbora.json');

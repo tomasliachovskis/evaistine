@@ -3,6 +3,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import axios from "axios";
 
 // Apply Stealth plugin
 puppeteer.use(StealthPlugin());
@@ -63,6 +64,12 @@ const __dirname = path.dirname(__filename);
 
     const productBlocks = await page.$$eval('.akcija-loyalty', blocks => {
         return blocks.map(block => {
+            function parseDate(dateStr) {
+                const [month, day] = dateStr.split(' ').map(Number);
+                const year = new Date().getFullYear();
+                return new Date(year, month - 1, day).toLocaleDateString('en-CA');
+            }
+
             const cleanPrice = (str) => {
                 console.log(str);
                 if (typeof str !== 'string') {
@@ -72,51 +79,68 @@ const __dirname = path.dirname(__filename);
                 return str.replace(/\s+/g, '').replace(/(\d)(?=\d)/, '$1.');
             };
 
-            const title = block.querySelector('.akcija_title')?.textContent.trim();
+            const name = block.querySelector('.akcija_title')?.textContent.trim();
 
             let price1 = block.querySelector('.card_tag .price_int')?.textContent.trim() ?? '';
             let price2 = block.querySelector('.card_tag .sub')?.textContent.trim() ?? '';
 
-            let price = price1 + '.' + price2;
+            let discounted_price = price1 + '.' + price2;
 
-            if (price === '.') {
+            if (discounted_price === '.') {
                 // 2+1 pasiulymai
                 price1 = block.querySelector('.price_block_wrapper .price_int')?.textContent.trim() ?? '';
                 price2 = block.querySelector('.price_block_wrapper .price_cents')?.textContent.trim() ?? '';
 
-                price = price1 + '.' + price2;
+                discounted_price = price1 + '.' + price2;
             }
 
-            let price_before = block.querySelector('.price_old_block')?.textContent.trim() ?? '';
+            let original_price = block.querySelector('.price_old_block')?.textContent.trim() ?? '';
 
-            let discount = block.querySelector('.percentage_tag .main')?.textContent.trim() ?? '-';
+            let discount_percent = block.querySelector('.percentage_tag .main')?.textContent.trim() ?? '-';
 
-            if (discount === '-') {
-                discount = block.querySelector('.price_block_rounded_red_wrapper .main')?.textContent.trim() ?? '-';
+            if (discount_percent === '-') {
+                discount_percent = block.querySelector('.price_block_rounded_red_wrapper .main')?.textContent.trim() ?? '-';
             }
 
-            if (discount === '-') {
-                discount = block.querySelector('.price_block_red_wrapper .main')?.textContent.trim() ?? '-';
+            if (discount_percent === '-') {
+                discount_percent = block.querySelector('.price_block_red_wrapper .main')?.textContent.trim() ?? '-';
             }
 
-            price_before = cleanPrice(price_before);
+            original_price = cleanPrice(original_price);
 
             const info = block.querySelector('.akcija_description')?.textContent.trim();
-            const valid = block.querySelector('.m-0.w-100.akcija_description.text-center')?.textContent.trim();
-            const link = block.querySelector('a')?.href;
-            const imageSrc = block.querySelector('.card-img-top')?.src;
-            const card_required = block.querySelector('.card') !== null;
+            let valid = block.querySelector('.m-0.w-100.akcija_description.text-center')?.textContent.trim();
+            const product_url = block.querySelector('a')?.href;
+            const image_url = block.querySelector('.card-img-top')?.src;
+            const card = block.querySelector('.card') !== null;
+
+            let { start_atStr, end_atStr } = { start_atStr: '', end_atStr: '' };
+            let start_at = '';
+            let end_at = '';
+
+            if (valid && typeof valid === 'string' && valid.includes(' - ')) {
+                valid = valid.replace('Galioja: ', '');
+                valid = valid.replace('.', ' ');
+
+                [start_atStr, end_atStr] = valid.split('-');
+                start_at = parseDate(start_atStr);
+                end_at = parseDate(end_atStr);
+            } else {
+                start_at = valid;
+                end_at = null;
+            }
 
             return {
-                title,
-                price,
-                price_before,
+                name,
+                discounted_price,
+                original_price,
                 info,
-                discount,
-                valid,
-                card_required,
-                link,
-                imageSrc
+                discount_percent,
+                start_at,
+                end_at,
+                card,
+                product_url,
+                image_url
             };
         });
     });
@@ -124,7 +148,31 @@ const __dirname = path.dirname(__filename);
     allProducts = allProducts.concat(productBlocks);
     console.log(`Scraped ${productBlocks.length} products from`);
 
-    fs.writeFileSync('iki.json', JSON.stringify(allProducts, null, 2));
+    for (const product of allProducts) {
+        try {
+            const data = {
+                name: product.name,
+                brand: product.brand,
+                discounted_price: product.discounted_price,
+                original_price: product.original_price,
+                card: product.card,
+                info: JSON.stringify(product.info),
+                discount_percent: product.discount_percent,
+                start_at: product.start_at,
+                end_at: product.end_at,
+                product_url: product.product_url,
+                image_url: product.image_url,
+                store: 'iki'
+            };
+            const response = await axios.post('http://127.0.0.1/api/scrapers', data);
+            await sleep(100);
+        } catch (error) {
+            console.error(`Error posting product ${product.name}:`, error.message);
+            await sleep(200);
+        }
+    }
+
+    fs.writeFileSync('scrapers/iki.json', JSON.stringify(allProducts, null, 2));
     console.log('Scraping completed. Data saved to iki.json');
 
     await browser.close();

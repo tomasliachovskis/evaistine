@@ -16,7 +16,7 @@ class DiscountTemp extends Model
         'category',
         'image_url',
         'product_url',
-        'store_id',
+        'store',
         'original_price',
         'discounted_price',
         'discount_percent',

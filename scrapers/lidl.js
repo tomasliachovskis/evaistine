@@ -20,13 +20,11 @@ puppeteer.use(StealthPlugin());
     // Wait for a few seconds to see the result
     await sleep(5000);
 
-    // const offers = await page.evaluate(() => {
-    //     const elements = document.querySelectorAll('nav a.ATheHeroStage__OfferAnchor');
-    //     const texts = Array.from(elements).map(offer => offer.href);
-    //     return [...new Set(texts)];
-    // });
-
-    const offers = ['https://www.lidl.lt/c/visos-sios-savaites-akcijos/a10023711?channel=store&tabCode=Current_Sales_Week'];
+    const offers = await page.evaluate(() => {
+        const elements = document.querySelectorAll('nav a.ATheHeroStage__OfferAnchor');
+        const texts = Array.from(elements).map(offer => offer.href);
+        return [...new Set(texts)];
+    });
 
     let allProducts = new Map();
 
@@ -61,7 +59,7 @@ puppeteer.use(StealthPlugin());
             }
 
             return blocks.map(block => {
-                const brand = block.querySelector('.product-grid-box__brand')?.textContent.trim();
+                const brand = block.querySelector('.product-grid-box__brand')?.textContent.trim() ?? '';
                 let name = block.querySelector('.odsc-tile__link')?.textContent.trim();
                 const discounted_price = block.querySelector('.m-price__price')?.textContent.trim();
                 const original_price = block.querySelector('.m-price__top')?.textContent.trim();
@@ -97,7 +95,6 @@ puppeteer.use(StealthPlugin());
                     discount_percent,
                     start_at,
                     end_at,
-                    valid,
                     card,
                     product_url,
                     image_url
@@ -133,7 +130,8 @@ puppeteer.use(StealthPlugin());
                 valid: product.valid,
                 card: product.card,
                 product_url: product.product_url,
-                image_url: product.image_url
+                image_url: product.image_url,
+                store: 'lidl'
             });
             console.log(`Posted product: ${product.name}`);
             await sleep(100);
@@ -144,7 +142,7 @@ puppeteer.use(StealthPlugin());
     }
 
     // Save to JSON file
-    fs.writeFileSync('scrapers/lidl.json', JSON.stringify(uniqueProducts, null, 2));
+    // fs.writeFileSync('scrapers/lidl.json', JSON.stringify(uniqueProducts, null, 2));
 
     await browser.close();
 })();
