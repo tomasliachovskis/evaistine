@@ -81,27 +81,23 @@ puppeteer.use(StealthPlugin());
         }));
     });
 
-    for (const product of productBlocks) {
-        try {
-            const data = {
-                name: product.name,
-                brand: product.brand,
-                discounted_price: product.discounted_price,
-                original_price: product.original_price,
-                card: JSON.stringify(product.info),
-                discount_percent: product.discount_percent,
-                start_at: product.start_at,
-                end_at: product.end_at,
-                product_url: product.product_url,
-                image_url: product.image_url,
-                store: 'norfa'
-            };
-            const response = await axios.post('http://127.0.0.1/api/scrapers', data);
-            await sleep(100);
-        } catch (error) {
-            console.error(`Error posting product ${product.name}:`, error.message);
-            await sleep(200);
-        }
+    try {
+        const data = productBlocks.map(product => ({
+            name: product.name,
+            brand: product.brand,
+            discounted_price: product.discounted_price,
+            original_price: product.original_price,
+            card: JSON.stringify(product.info),
+            discount_percent: product.discount_percent,
+            start_at: product.start_at,
+            end_at: product.end_at,
+            product_url: product.product_url,
+            image_url: product.image_url,
+            store: 'norfa'
+        }));
+        await axios.post('http://127.0.0.1/api/scrapers', data);
+    } catch (error) {
+        console.error('Error posting products:', error.message);
     }
 
     // Save to JSON file

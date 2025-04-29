@@ -15,17 +15,19 @@ class ProductController extends Controller
     public function storeDiscountTemp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'nullable|string',
-            'start_at' => 'nullable|string',
-            'end_at' => 'nullable|string',
+            '*.name' => 'nullable|string',
+            '*.store' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $discountTemp = DiscountTemp::create($request->all());
+        $discountTemps = [];
+        foreach ($request->all() as $product) {
+            $discountTemps[] = DiscountTemp::create($product);
+        }
 
-        return response()->json($discountTemp, 201);
+        return response()->json($discountTemps, 201);
     }
 }

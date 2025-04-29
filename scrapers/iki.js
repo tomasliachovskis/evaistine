@@ -148,28 +148,24 @@ const __dirname = path.dirname(__filename);
     allProducts = allProducts.concat(productBlocks);
     console.log(`Scraped ${productBlocks.length} products from`);
 
-    for (const product of allProducts) {
-        try {
-            const data = {
-                name: product.name,
-                brand: product.brand,
-                discounted_price: product.discounted_price,
-                original_price: product.original_price,
-                card: product.card,
-                info: JSON.stringify(product.info),
-                discount_percent: product.discount_percent,
-                start_at: product.start_at,
-                end_at: product.end_at,
-                product_url: product.product_url,
-                image_url: product.image_url,
-                store: 'iki'
-            };
-            const response = await axios.post('http://127.0.0.1/api/scrapers', data);
-            await sleep(100);
-        } catch (error) {
-            console.error(`Error posting product ${product.name}:`, error.message);
-            await sleep(200);
-        }
+    try {
+        const data = allProducts.map(product => ({
+            name: product.name,
+            brand: product.brand,
+            discounted_price: product.discounted_price,
+            original_price: product.original_price,
+            card: product.card,
+            info: JSON.stringify(product.info),
+            discount_percent: product.discount_percent,
+            start_at: product.start_at,
+            end_at: product.end_at,
+            product_url: product.product_url,
+            image_url: product.image_url,
+            store: 'iki'
+        }));
+        await axios.post('http://127.0.0.1/api/scrapers', data);
+    } catch (error) {
+        console.error('Error posting products:', error.message);
     }
 
     fs.writeFileSync('scrapers/iki.json', JSON.stringify(allProducts, null, 2));
