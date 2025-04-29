@@ -3,6 +3,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
+import axios from 'axios';
 
 // Apply Stealth plugin
 puppeteer.use(StealthPlugin());
@@ -127,11 +128,31 @@ const __dirname = path.dirname(__filename);
         allProducts = allProducts.concat(productBlocks);
         console.log(`Scraped ${productBlocks.length} products from page ${currentPage}`);
 
+        try {
+            const data = productBlocks.map(product => ({
+                name: product.title,
+                category: product.category,
+                image_url: product.imageSrc,
+                product_url: product.link,
+                store: 'rimi',
+                original_price: product.price_before,
+                discounted_price: product.price,
+                discount_percent: product.discount,
+                start_at: product.start_at,
+                end_at: product.end_at,
+                info: product.info
+            }));
+            await axios.post('http://127.0.0.1/api/scrapers', data);
+            console.log(`Posted ${productBlocks.length} products to API from page ${currentPage}`);
+        } catch (error) {
+            console.error('Error posting products:', error.message);
+        }
+
         currentPage++;
     }
 
     fs.writeFileSync('rimi.json', JSON.stringify(allProducts, null, 2));
-    console.log('Scraping completed. Data saved to barbora.json');
+    console.log('Scraping completed. Data saved to rimi.json');
 
     await browser.close();
 })();
