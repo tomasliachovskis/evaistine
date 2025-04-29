@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import {fileURLToPath} from 'url';
 
 // Apply Stealth plugin
 puppeteer.use(StealthPlugin());
@@ -61,11 +61,13 @@ const __dirname = path.dirname(__filename);
                 const title = block.querySelector('.card__name')?.textContent.trim();
                 const price = block.querySelector('.card__price')?.textContent.trim();
                 const price_before = block.querySelector('.card__old-price')?.textContent.trim();
-                const info = block.querySelector('.card__price-per')?.textContent.trim();
                 const valid = block.querySelector('.ods-badge__label')?.textContent.trim();
                 const discount = block.querySelector('.m-price__label')?.textContent.trim() ?? '-';
                 const link = block.querySelector('.card__url')?.href;
                 const imageSrc = block.querySelector('.card__image-wrapper img')?.src;
+
+                let info = block.querySelector('.card__price-per')?.textContent.trim();
+                info = info.replace(/\s+/g, ' ').trim();
 
                 return { title, price, price_before, info, discount, valid, link, imageSrc };
             });
@@ -77,9 +79,10 @@ const __dirname = path.dirname(__filename);
 
                 await sleep();
 
-                // console.log(product.link);
-
                 const priceLabel = await page.$('.price-label__price') !== null;
+                const date = await page.$eval('.product__main-info > p.notice', el => el.textContent.trim());
+                const matches = date.match(/\d{4}\.\d{2}\.\d{2}/g);
+                const [start_at, end_at] = matches.map(date => date.replace(/\./g, '-'));
 
                 if (priceLabel) {
                     const price_before = await page.$eval('.price-wrapper .price', priceElem => {
@@ -88,15 +91,11 @@ const __dirname = path.dirname(__filename);
                         return `${mainPrice}.${decimal}`;
                     });
 
-                    const price = await page.$eval('.price-label__price', priceElem => {
+                    product.price = await page.$eval('.price-label__price', priceElem => {
                         const major = priceElem.querySelector('.major').textContent.trim();
                         const cents = priceElem.querySelector('.cents').textContent.trim();
                         return `${major}.${cents}`;
                     });
-
-                    // console.log(price, price_before);
-
-                    product.price = price;
                     product.price_before = price_before;
                 } else {
                     const price = await page.$eval('.price-wrapper .price', priceElem => {
@@ -109,8 +108,6 @@ const __dirname = path.dirname(__filename);
                         return  priceElem.textContent.trim();
                     });
 
-                    // console.log(price, price_before);
-
                     product.price = price;
                     product.price_before = price_before;
                 }
@@ -119,9 +116,9 @@ const __dirname = path.dirname(__filename);
                     return links.map(link => link.textContent.trim());
                 });
 
-                const categoryPath = categories.join('/');
-
-                // console.log(categoryPath); // Log the product data with the additional image
+                product.category = categories.join('/');
+                product.start_at = start_at;
+                product.end_at = end_at;
 
                 console.log(product);
             }
