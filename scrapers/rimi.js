@@ -126,42 +126,49 @@ const __dirname = path.dirname(__filename);
                 }
 
                 if (priceLabel) {
-                    const price_before = await page.$eval('.price-wrapper .price', priceElem => {
-                        const mainPrice = priceElem.querySelector('span').textContent.trim();
-                        const decimal = priceElem.querySelector('sup') ? priceElem.querySelector('sup').textContent.trim() : '';
-                        return `${mainPrice}.${decimal}`;
-                    });
+                    const priceWrapper = await page.$('.price-wrapper .price');
+                    if (priceWrapper) {
+                        const price_before = await page.$eval('.price-wrapper .price', priceElem => {
+                            const mainPrice = priceElem.querySelector('span')?.textContent.trim();
+                            const decimal = priceElem.querySelector('sup')?.textContent.trim() || '';
+                            return `${mainPrice}.${decimal}`;
+                        });
 
-                    product.price = await page.$eval('.price-label__price', priceElem => {
-                        const major = priceElem.querySelector('.major').textContent.trim();
-                        const cents = priceElem.querySelector('.cents').textContent.trim();
-                        return `${major}.${cents}`;
-                    });
-                    product.price_before = price_before;
-                } else {
-                    const price = await page.$eval('.price-wrapper .price', priceElem => {
-                        const mainPrice = priceElem.querySelector('span').textContent.trim();
-                        const decimal = priceElem.querySelector('sup') ? priceElem.querySelector('sup').textContent.trim() : '';
-                        return `${mainPrice}.${decimal}`;
-                    });
-
-                    const priceElem = await page.$('.price__old-price');
-
-                    let price_before = null;
-                    if (priceElem) {
-                        price_before = await page.evaluate(el => el.textContent.trim(), priceElem);
+                        const priceLabelElem = await page.$('.price-label__price');
+                        if (priceLabelElem) {
+                            product.price = await page.$eval('.price-label__price', priceElem => {
+                                const major = priceElem.querySelector('.major')?.textContent.trim();
+                                const cents = priceElem.querySelector('.cents')?.textContent.trim();
+                                return `${major}.${cents}`;
+                            });
+                            product.price_before = price_before;
+                        }
                     }
+                } else {
+                    const priceWrapper = await page.$('.price-wrapper .price');
+                    if (priceWrapper) {
+                        const price = await page.$eval('.price-wrapper .price', priceElem => {
+                            const mainPrice = priceElem.querySelector('span')?.textContent.trim();
+                            const decimal = priceElem.querySelector('sup')?.textContent.trim() || '';
+                            return `${mainPrice}.${decimal}`;
+                        });
 
-                    product.price = price;
-                    product.price_before = price_before;
+                        const priceElem = await page.$('.price__old-price');
+                        let price_before = null;
+                        if (priceElem) {
+                            price_before = await page.evaluate(el => el.textContent.trim(), priceElem);
+                        }
+
+                        product.price = price;
+                        product.price_before = price_before;
+                    }
                 }
 
                 const categories = await page.$$eval('.section-header__container a', links => {
                     return links.map(link => link.textContent.trim());
-                });
+                }).catch(() => []);
 
                 const card = await page.$('img[src*="rimi-card-slanted-right@2x"]') !== null;
-
 
                 product.category = categories.join('/');
                 product.start_at = start_at;
