@@ -28,25 +28,44 @@ const __dirname = path.dirname(__filename);
 
     const sleep = () => new Promise(res => setTimeout(res, Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000));
 
+    const retryNavigation = async (page, url, maxRetries = 3) => {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 });
+                return true;
+            } catch (error) {
+                console.log(`Navigation attempt ${attempt} failed for ${url}: ${error.message}`);
+                if (attempt === maxRetries) {
+                    console.log(`All ${maxRetries} navigation attempts failed for ${url}`);
+                    return false;
+                }
+                await new Promise(res => setTimeout(res, 5000));
+            }
+        }
+    };
+
     const baseUrl = 'https://www.rimi.lt/';
     let currentPage = 1;
     let allProducts = [];
 
     console.log(`Opening initial page to handle cookies.`);
-    await page.goto(`${baseUrl}e-parduotuve/lt/akcijos?currentPage=1&pageSize=80&currentPage=1`, { waitUntil: 'domcontentloaded' });
+    await retryNavigation(page, `${baseUrl}e-parduotuve/lt/akcijos?currentPage=1&pageSize=80&currentPage=1`);
 
     try {
         await page.waitForSelector('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll', { timeout: 5000 });
         await page.click('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll');
-        console.log('Accepted cookies.');
+        // console.log('Accepted cookies.');
     } catch (error) {
-        console.log('No cookie popup detected or already accepted.');
+        // console.log('No cookie popup detected or already accepted.');
     }
 
     while (true) {
         const pageUrl = `${baseUrl}e-parduotuve/lt/akcijos?pageSize=80&currentPage=${currentPage}`;
         console.log(`Scraping page: ${currentPage}`);
-        await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
+        if (!await retryNavigation(page, pageUrl, 10)) {
+            console.log(`Failed to load page ${currentPage} after retries, stopping scrape.`);
+            break;
+        }
 
         try {
             await page.waitForSelector('.js-product-container', { timeout: 5000 });
@@ -79,7 +98,7 @@ const __dirname = path.dirname(__filename);
                 // console.log('Opening product: ' + product.link);
 
                 try {
-                    await page.goto(product.link, { waitUntil: 'domcontentloaded', timeout: 10000 });
+                    await retryNavigation(page, product.link);
                     console.log('Opened product: ' + product.link);
                 } catch (error) {
                     console.error('Failed to open product:', product.link, error.message);
@@ -149,7 +168,7 @@ const __dirname = path.dirname(__filename);
                 product.end_at = end_at;
                 product.card = card;
 
-                console.log(product);
+                // console.log(product);
             }
         }
 
