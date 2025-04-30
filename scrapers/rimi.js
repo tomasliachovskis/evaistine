@@ -76,14 +76,35 @@ const __dirname = path.dirname(__filename);
 
         for (const product of productBlocks) {
             if (product.link) {
-                await page.goto(product.link, { waitUntil: 'domcontentloaded' });
+                // console.log('Opening product: ' + product.link);
+
+                try {
+                    await page.goto(product.link, { waitUntil: 'domcontentloaded', timeout: 10000 });
+                    console.log('Opened product: ' + product.link);
+                } catch (error) {
+                    console.error('Failed to open product:', product.link, error.message);
+                    continue; // continue to the next product
+                }
 
                 await sleep();
 
                 const priceLabel = await page.$('.price-label__price') !== null;
-                const date = await page.$eval('.product__main-info > p.notice', el => el.textContent.trim());
-                const matches = date.match(/\d{4}\.\d{2}\.\d{2}/g);
-                const [start_at, end_at] = matches.map(date => date.replace(/\./g, '-'));
+                const dateValid = await page.$('.product__main-info > p.notice');
+                let date = null;
+
+                if (dateValid) {
+                    date = await page.evaluate(el => el.textContent.trim(), dateValid);
+                }
+
+                let start_at = null;
+                let end_at = null;
+
+                if (date) {
+                    const matches = date.match(/\d{4}\.\d{2}\.\d{2}/g);
+                    if (matches && matches.length >= 2) {
+                        [start_at, end_at] = matches.map(date => date.replace(/\./g, '-'));
+                    }
+                }
 
                 if (priceLabel) {
                     const price_before = await page.$eval('.price-wrapper .price', priceElem => {
@@ -117,9 +138,13 @@ const __dirname = path.dirname(__filename);
                     return links.map(link => link.textContent.trim());
                 });
 
+                const card = await page.$('img[src*="rimi-card-slanted-right@2x"]') !== null;
+
+
                 product.category = categories.join('/');
                 product.start_at = start_at;
                 product.end_at = end_at;
+                product.card = card;
 
                 console.log(product);
             }
@@ -140,7 +165,8 @@ const __dirname = path.dirname(__filename);
                 discount_percent: product.discount,
                 start_at: product.start_at,
                 end_at: product.end_at,
-                info: product.info
+                info: product.info,
+                card: product.card
             }));
             await axios.post('http://127.0.0.1/api/scrapers', data);
             console.log(`Posted ${productBlocks.length} products to API from page ${currentPage}`);
@@ -154,5 +180,5 @@ const __dirname = path.dirname(__filename);
     fs.writeFileSync('rimi.json', JSON.stringify(allProducts, null, 2));
     console.log('Scraping completed. Data saved to rimi.json');
 
-    await browser.close();
+    // await browser.close();
 })();
