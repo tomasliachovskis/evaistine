@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 
 (async () => {
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -126,9 +126,12 @@ const __dirname = path.dirname(__filename);
                         return `${mainPrice}.${decimal}`;
                     });
 
-                    const price_before = await page.$eval('.price__old-price', priceElem => {
-                        return  priceElem.textContent.trim();
-                    });
+                    const priceElem = await page.$('.price__old-price');
+
+                    let price_before = null;
+                    if (priceElem) {
+                        price_before = await page.evaluate(el => el.textContent.trim(), priceElem);
+                    }
 
                     product.price = price;
                     product.price_before = price_before;
@@ -180,5 +183,5 @@ const __dirname = path.dirname(__filename);
     fs.writeFileSync('rimi.json', JSON.stringify(allProducts, null, 2));
     console.log('Scraping completed. Data saved to rimi.json');
 
-    // await browser.close();
+    await browser.close();
 })();
