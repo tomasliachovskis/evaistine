@@ -7,6 +7,9 @@ use App\Models\DiscountHistory;
 use App\Models\DiscountTemp;
 use App\Models\Product;
 use App\Models\Store;
+use App\Rules\StoreRules\LidlRules;
+use App\Rules\StoreRules\MaximaRules;
+use App\Rules\StoreRules\RimiRules;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -21,25 +24,21 @@ class ProcessDiscounts extends Command
 
         foreach ($tempDiscounts as $tempDiscount) {
             $store = Store::where('name', $tempDiscount->store)->first();
-
+            
             if (!$store) {
                 $this->error("Store not found: {$tempDiscount->store}");
                 continue;
             }
 
-            $normalizedOriginalPrice = preg_replace('/[^0-9.]/', '', str_replace(',', '.', $tempDiscount->original_price));
-            $normalizedDiscountedPrice = preg_replace('/[^0-9.]/', '', str_replace(',', '.', $tempDiscount->discounted_price));
-
-            $normalizedOriginalPrice = !empty($normalizedOriginalPrice) ? $normalizedOriginalPrice : null;
-            $normalizedDiscountedPrice = !empty($normalizedDiscountedPrice) ? $normalizedDiscountedPrice : null;
-
-            $discountPercent = !empty($tempDiscount->discount_percent) ? $tempDiscount->discount_percent : null;
-            if (empty($discountPercent) && $normalizedOriginalPrice > 0 && $normalizedDiscountedPrice > 0) {
-                $discountPercent = round((($normalizedOriginalPrice - $normalizedDiscountedPrice) / $normalizedOriginalPrice) * 100);
+            $rules = $this->getStoreRules($store->name, $tempDiscount);
+            
+            if (!$rules->validate()) {
+                $this->error("Invalid discount data for store: {$store->name}");
+                continue;
             }
 
-            $startAt = !empty($tempDiscount->start_at) ? $tempDiscount->start_at : now();
-            $endAt = !empty($tempDiscount->end_at) ? $tempDiscount->end_at : now();
+            $normalizedOriginalPrice = $rules->normalizePrice($tempDiscount->original_price);
+            $normalizedDiscountedPrice = $rules->normalizePrice($tempDiscount->discounted_price);
 
             $product = Product::firstOrCreate(
                 ['name' => $tempDiscount->name],
@@ -50,6 +49,14 @@ class ProcessDiscounts extends Command
                     'image_url' => $tempDiscount->image_url,
                 ]
             );
+
+            $discountPercent = $tempDiscount->discount_percent;
+            if (empty($discountPercent) && $normalizedOriginalPrice > 0 && $normalizedDiscountedPrice > 0) {
+                $discountPercent = round((($normalizedOriginalPrice - $normalizedDiscountedPrice) / $normalizedOriginalPrice) * 100);
+            }
+
+            $startAt = $tempDiscount->start_at ?? now();
+            $endAt = $tempDiscount->end_at ?? now();
 
             DiscountHistory::create([
                 'product_id' => $product->id,
@@ -68,5 +75,15 @@ class ProcessDiscounts extends Command
         }
 
         $this->info('Discounts processed successfully');
+    }
+
+    private function getStoreRules(string $storeName, DiscountTemp $tempDiscount)
+    {
+        return match ($storeName) {
+            'Lidl' => new LidlRules($tempDiscount),
+            'Maxima' => new MaximaRules($tempDiscount),
+            'Rimi' => new RimiRules($tempDiscount),
+            default => throw new \Exception("No rules found for store: {$storeName}"),
+        };
     }
 }
