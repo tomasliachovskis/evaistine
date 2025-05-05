@@ -33,10 +33,13 @@ class ProcessDiscounts extends Command
             $normalizedOriginalPrice = !empty($normalizedOriginalPrice) ? $normalizedOriginalPrice : null;
             $normalizedDiscountedPrice = !empty($normalizedDiscountedPrice) ? $normalizedDiscountedPrice : null;
 
-            $discountPercent = $tempDiscount->discount_percent;
-            if (empty($discountPercent) && $normalizedOriginalPrice > 0) {
+            $discountPercent = !empty($tempDiscount->discount_percent) ? $tempDiscount->discount_percent : null;
+            if (empty($discountPercent) && $normalizedOriginalPrice > 0 && $normalizedDiscountedPrice > 0) {
                 $discountPercent = round((($normalizedOriginalPrice - $normalizedDiscountedPrice) / $normalizedOriginalPrice) * 100);
             }
+
+            $startAt = !empty($tempDiscount->start_at) ? $tempDiscount->start_at : now();
+            $endAt = !empty($tempDiscount->end_at) ? $tempDiscount->end_at : now();
 
             $product = Product::firstOrCreate(
                 ['name' => $tempDiscount->name],
@@ -47,7 +50,7 @@ class ProcessDiscounts extends Command
                     'image_url' => $tempDiscount->image_url,
                 ]
             );
-            
+
             DiscountHistory::create([
                 'product_id' => $product->id,
                 'store_id' => $store->id,
@@ -57,8 +60,8 @@ class ProcessDiscounts extends Command
                 'discount_percent' => $discountPercent,
                 'condition' => $tempDiscount->condition,
                 'card' => $tempDiscount->card,
-                'start_at' => $tempDiscount->start_at,
-                'end_at' => $tempDiscount->end_at,
+                'start_at' => $startAt,
+                'end_at' => $endAt,
             ]);
 
             // $tempDiscount->delete();

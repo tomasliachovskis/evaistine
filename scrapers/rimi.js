@@ -189,8 +189,9 @@ const runScraper = async () => {
                 const link = block.querySelector('.card__url')?.href;
                 const imageSrc = block.querySelector('.card__image-wrapper img')?.src;
                 let info = block.querySelector('.card__price-per')?.textContent.trim();
+                let condition = block.querySelector('div.price-label__header.-red')?.textContent.trim();
                 info = info?.replace(/\s+/g, ' ').trim();
-                return { title, price, price_before, info, discount, valid, link, imageSrc };
+                return { title, price, price_before, info, discount, valid, link, imageSrc, condition};
             });
         });
 
@@ -213,6 +214,7 @@ const runScraper = async () => {
                 start_at: p.start_at,
                 end_at: p.end_at,
                 info: p.info,
+                condition: p.condition,
                 card: p.card
             }));
             await axios.post('http://127.0.0.1/api/scrapers', data);
