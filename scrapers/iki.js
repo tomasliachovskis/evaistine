@@ -20,6 +20,7 @@ const __dirname = path.dirname(__filename);
             '--disable-blink-features=AutomationControlled'
         ]
     });
+
     const page = await browser.newPage();
 
     await page.setUserAgent(
@@ -30,9 +31,10 @@ const __dirname = path.dirname(__filename);
 
     let allProducts = [];
 
-    console.log(`Opening initial page to handle cookies.`);
+    console.log(`Opening main category page.`);
     await page.goto('https://iki.lt/akcijos/savaites-akcijos/', { waitUntil: 'domcontentloaded' });
 
+    // Handle cookies
     try {
         await page.waitForSelector('#onetrust-accept-btn-handler', { timeout: 5000 });
         await page.click('#onetrust-accept-btn-handler');
@@ -41,29 +43,44 @@ const __dirname = path.dirname(__filename);
         console.log('No cookie popup detected or already accepted.');
     }
 
-    await page.evaluate(async () => {
-        const distance = 500; // Set the distance to scroll each time (in pixels)
-        const scrollDelay = 500; // Delay between scrolls (in milliseconds)
+    const categoryLinks = await page.$$eval('.row.m-n1.m-sm-n3 a.type.cursor-pointer', anchors =>
+        anchors.map(anchor => anchor.href)
+    );
 
-        let scrollPosition = 0;
+    console.log(categoryLinks);
+    console.log(`Found ${categoryLinks.length} category links.`);
 
-        while (scrollPosition < document.body.scrollHeight) {
-            window.scrollTo(0, scrollPosition);
-            scrollPosition += distance; // Increase the scroll position by the increment
-            await new Promise(resolve => setTimeout(resolve, scrollDelay)); // Wait before scrolling again
+    for (const link of categoryLinks) {
+        if (link === 'https://iki.lt/akcijos/savaites-akcijos/') {
+            continue;
         }
-    });
 
-    try {
-        await page.waitForSelector('.akcija-loyalty', { timeout: 5000 });
-    } catch (error) {
-        console.log(`Failed to load products, stopping scrape.`);
-    }
+        const fullUrl = link;
+        console.log(`Visiting category: ${fullUrl}`);
+        await page.goto(fullUrl, { waitUntil: 'domcontentloaded' });
 
-    await sleep();
+        await page.evaluate(async () => {
+            const distance = 500;
+            const scrollDelay = 500;
+            let scrollPosition = 0;
 
-    const productBlocks = await page.$$eval('.akcija-loyalty', blocks => {
-        return blocks.map(block => {
+            while (scrollPosition < document.body.scrollHeight) {
+                window.scrollTo(0, scrollPosition);
+                scrollPosition += distance;
+                await new Promise(resolve => setTimeout(resolve, scrollDelay));
+            }
+        });
+
+        try {
+            await page.waitForSelector('.akcija-loyalty', { timeout: 5000 });
+        } catch (error) {
+            console.log(`Failed to load products in ${fullUrl}, skipping.`);
+            continue;
+        }
+
+        await sleep();
+
+        const productBlocks = await page.$$eval('.akcija-loyalty', (blocks, link) => {
             function parseDate(dateStr) {
                 const [month, day] = dateStr.split(' ').map(Number);
                 const year = new Date().getFullYear();
@@ -71,87 +88,81 @@ const __dirname = path.dirname(__filename);
             }
 
             const cleanPrice = (str) => {
-                console.log(str);
-                if (typeof str !== 'string') {
-                    return str;
-                }
-
+                if (typeof str !== 'string') return str;
                 return str.replace(/\s+/g, '').replace(/(\d)(?=\d)/, '$1.');
             };
 
-            const name = block.querySelector('.akcija_title')?.textContent.trim();
+            return blocks.map(block => {
+                const name = block.querySelector('.akcija_title')?.textContent.trim();
 
-            let price1 = block.querySelector('.card_tag .price_int')?.textContent.trim() ?? '';
-            let price2 = block.querySelector('.card_tag .sub')?.textContent.trim() ?? '';
+                let price1 = block.querySelector('.card_tag .price_int')?.textContent.trim() ?? '';
+                let price2 = block.querySelector('.card_tag .sub')?.textContent.trim() ?? '';
+                let discounted_price = price1 + '.' + price2;
 
-            let discounted_price = price1 + '.' + price2;
+                if (discounted_price === '.') {
+                    price1 = block.querySelector('.price_block_wrapper .price_int')?.textContent.trim() ?? '';
+                    price2 = block.querySelector('.price_block_wrapper .price_cents')?.textContent.trim() ?? '';
+                    discounted_price = price1 + '.' + price2;
+                }
 
-            if (discounted_price === '.') {
-                // 2+1 pasiulymai
-                price1 = block.querySelector('.price_block_wrapper .price_int')?.textContent.trim() ?? '';
-                price2 = block.querySelector('.price_block_wrapper .price_cents')?.textContent.trim() ?? '';
+                let original_price = block.querySelector('.price_old_block')?.textContent.trim() ?? '';
+                let discount_percent = block.querySelector('.percentage_tag .main')?.textContent.trim() ?? '-';
 
-                discounted_price = price1 + '.' + price2;
-            }
+                if (discount_percent === '-') {
+                    discount_percent = block.querySelector('.price_block_rounded_red_wrapper .main')?.textContent.trim() ?? '-';
+                }
+                if (discount_percent === '-') {
+                    discount_percent = block.querySelector('.price_block_red_wrapper .main')?.textContent.trim() ?? '-';
+                }
 
-            let original_price = block.querySelector('.price_old_block')?.textContent.trim() ?? '';
+                original_price = cleanPrice(original_price);
 
-            let discount_percent = block.querySelector('.percentage_tag .main')?.textContent.trim() ?? '-';
+                const info = block.querySelector('.akcija_description')?.textContent.trim();
+                let valid = block.querySelector('.m-0.w-100.akcija_description.text-center')?.textContent.trim();
+                const product_url = block.querySelector('a')?.href;
+                const image_url = block.querySelector('.card-img-top')?.src;
+                const card = block.querySelector('.card') !== null;
 
-            if (discount_percent === '-') {
-                discount_percent = block.querySelector('.price_block_rounded_red_wrapper .main')?.textContent.trim() ?? '-';
-            }
+                let start_at = '';
+                let end_at = '';
 
-            if (discount_percent === '-') {
-                discount_percent = block.querySelector('.price_block_red_wrapper .main')?.textContent.trim() ?? '-';
-            }
+                if (valid && typeof valid === 'string' && valid.includes(' - ')) {
+                    valid = valid.replace('Galioja: ', '').replace('.', ' ');
+                    const [start_atStr, end_atStr] = valid.split('-');
+                    start_at = parseDate(start_atStr);
+                    end_at = parseDate(end_atStr);
+                } else {
+                    start_at = valid;
+                    end_at = null;
+                }
 
-            original_price = cleanPrice(original_price);
+                return {
+                    name,
+                    discounted_price,
+                    original_price,
+                    info,
+                    discount_percent,
+                    start_at,
+                    end_at,
+                    card,
+                    product_url,
+                    image_url,
+                    link, // <-- link is now included here
+                };
+            });
+        }, link); // <-- passing link as argument
 
-            const info = block.querySelector('.akcija_description')?.textContent.trim();
-            let valid = block.querySelector('.m-0.w-100.akcija_description.text-center')?.textContent.trim();
-            const product_url = block.querySelector('a')?.href;
-            const image_url = block.querySelector('.card-img-top')?.src;
-            const card = block.querySelector('.card') !== null;
+        console.log(`Scraped ${productBlocks.length} products from category.`);
 
-            let { start_atStr, end_atStr } = { start_atStr: '', end_atStr: '' };
-            let start_at = '';
-            let end_at = '';
+        allProducts = allProducts.concat(productBlocks);
+        await sleep();
+    }
 
-            if (valid && typeof valid === 'string' && valid.includes(' - ')) {
-                valid = valid.replace('Galioja: ', '');
-                valid = valid.replace('.', ' ');
-
-                [start_atStr, end_atStr] = valid.split('-');
-                start_at = parseDate(start_atStr);
-                end_at = parseDate(end_atStr);
-            } else {
-                start_at = valid;
-                end_at = null;
-            }
-
-            return {
-                name,
-                discounted_price,
-                original_price,
-                info,
-                discount_percent,
-                start_at,
-                end_at,
-                card,
-                product_url,
-                image_url
-            };
-        });
-    });
-
-    allProducts = allProducts.concat(productBlocks);
-    console.log(`Scraped ${productBlocks.length} products from`);
-
+    // Save and send
     try {
         const data = allProducts.map(product => ({
             name: product.name,
-            brand: product.brand,
+            brand: product.brand ?? '',
             discounted_price: product.discounted_price,
             original_price: product.original_price,
             card: product.card,
@@ -161,6 +172,7 @@ const __dirname = path.dirname(__filename);
             end_at: product.end_at,
             product_url: product.product_url,
             image_url: product.image_url,
+            category: product.link,
             store: 'iki'
         }));
         await axios.post('http://127.0.0.1/api/scrapers', data);

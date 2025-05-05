@@ -5,16 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Product extends Model
+class CategoryMapper extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'slug',
-        'description',
         'category_id',
-        'image_url',
+        'store_category',
+        'store',
     ];
 
     public function category()
@@ -22,13 +20,8 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
-    public function discount()
+    public function store()
     {
-        return $this->hasOne(Discount::class);
+        return $this->belongsTo(Store::class);
     }
-
-    public function discountHistories()
-    {
-        return $this->hasMany(DiscountHistory::class);
-    }
-}
+} 

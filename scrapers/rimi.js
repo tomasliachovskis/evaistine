@@ -185,7 +185,7 @@ const runScraper = async () => {
                 const price = block.querySelector('.card__price')?.textContent.trim();
                 const price_before = block.querySelector('.card__old-price')?.textContent.trim();
                 const valid = block.querySelector('.ods-badge__label')?.textContent.trim();
-                const discount = block.querySelector('.m-price__label')?.textContent.trim() ?? '-';
+                const discount = block.querySelector('.m-price__label')?.textContent.trim() ?? '';
                 const link = block.querySelector('.card__url')?.href;
                 const imageSrc = block.querySelector('.card__image-wrapper img')?.src;
                 let info = block.querySelector('.card__price-per')?.textContent.trim();
