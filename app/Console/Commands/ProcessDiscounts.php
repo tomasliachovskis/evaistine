@@ -30,6 +30,9 @@ class ProcessDiscounts extends Command
             $normalizedOriginalPrice = preg_replace('/[^0-9.]/', '', str_replace(',', '.', $tempDiscount->original_price));
             $normalizedDiscountedPrice = preg_replace('/[^0-9.]/', '', str_replace(',', '.', $tempDiscount->discounted_price));
 
+            $normalizedOriginalPrice = !empty($normalizedOriginalPrice) ? $normalizedOriginalPrice : null;
+            $normalizedDiscountedPrice = !empty($normalizedDiscountedPrice) ? $normalizedDiscountedPrice : null;
+
             $discountPercent = $tempDiscount->discount_percent;
             if (empty($discountPercent) && $normalizedOriginalPrice > 0) {
                 $discountPercent = round((($normalizedOriginalPrice - $normalizedDiscountedPrice) / $normalizedOriginalPrice) * 100);
