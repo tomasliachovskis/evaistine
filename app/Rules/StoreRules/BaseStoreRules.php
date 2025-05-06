@@ -13,6 +13,18 @@ abstract class BaseStoreRules
         $this->tempDiscount = $tempDiscount;
     }
 
-    abstract public function normalizePrice(string $price): ?float;
+    public function normalizePrice(?string $price): ?float
+    {
+        if (empty($price)) {
+            return null;
+        }
+
+        $price = str_replace(['€', ' '], '', $price);
+        $price = str_replace(',', '.', $price);
+        $price = preg_replace('/[^0-9.]/', '', $price);
+
+        return !empty($price) ? (float) $price : null;
+    }
+
     abstract public function validate(): bool;
-} 
+}

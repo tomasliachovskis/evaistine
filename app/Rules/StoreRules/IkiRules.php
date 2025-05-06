@@ -2,7 +2,7 @@
 
 namespace App\Rules\StoreRules;
 
-class MaximaRules extends BaseStoreRules
+class IkiRules extends BaseStoreRules
 {
     public function validate(): bool
     {
