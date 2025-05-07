@@ -14,6 +14,6 @@ class RimiRules extends BaseStoreRules
 
     public function normalizeProductName()
     {
-        
+
     }
 }

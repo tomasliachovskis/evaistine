@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Discount;
 use App\Models\DiscountHistory;
 use App\Models\DiscountTemp;
 use App\Models\Product;
@@ -22,6 +21,26 @@ class ProcessDiscounts extends Command
 
     public function handle()
     {
+        // Remove duplicates based on product_url
+        $duplicates = DiscountTemp::whereNotNull('product_url')
+            ->select('product_url')
+            ->groupBy('product_url')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('product_url');
+
+        foreach ($duplicates as $url) {
+            dump($url);
+            $records = DiscountTemp::where('product_url', $url)
+                ->orderBy('id', 'desc')
+                ->get();
+
+            // Keep the first record, delete the rest
+            $firstRecord = $records->shift();
+            foreach ($records as $record) {
+                $record->delete();
+            }
+        }
+
         $tempDiscounts = DiscountTemp::all();
 
         foreach ($tempDiscounts as $tempDiscount) {
