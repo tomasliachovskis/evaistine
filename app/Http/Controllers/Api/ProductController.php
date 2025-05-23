@@ -56,7 +56,7 @@ class ProductController extends Controller
             return response()->json(['error' => 'Store or category not found'], 404);
         }
 
-        $discounts = $query->with('product')->get();
+        $discounts = $query->with('product')->paginate(20);
 
         return response()->json($discounts);
     }
@@ -65,13 +65,13 @@ class ProductController extends Controller
     {
         $store = \App\Models\Store::where('slug', $store)->firstOrFail();
         $category = \App\Models\Category::where('slug', $category)->firstOrFail();
-
+        
         $discounts = Discount::where('store_id', $store->id)
             ->whereHas('product', function($q) use ($category) {
                 $q->where('category_id', $category->id);
             })
             ->with('product')
-            ->get();
+            ->paginate(20);
 
         return response()->json($discounts);
     }
