@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use App\Models\DiscountTemp;
+use App\Models\Discount;
 
 class ProductController extends Controller
 {
@@ -29,5 +30,49 @@ class ProductController extends Controller
         }
 
         return response()->json($discountTemps, 201);
+    }
+
+    public function getDiscounts($storeOrCategory, $category = null)
+    {
+        if ($category) {
+            return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category);
+        }
+
+        return $this->getDiscountsByStoreOrCategory($storeOrCategory);
+    }
+
+    private function getDiscountsByStoreOrCategory($storeOrCategory)
+    {
+        $store = \App\Models\Store::where('slug', $storeOrCategory)->first();
+        $category = \App\Models\Category::where('slug', $storeOrCategory)->first();
+
+        if ($store) {
+            $query = Discount::where('store_id', $store->id);
+        } elseif ($category) {
+            $query = Discount::whereHas('product', function($q) use ($category) {
+                $q->where('category_id', $category->id);
+            });
+        } else {
+            return response()->json(['error' => 'Store or category not found'], 404);
+        }
+
+        $discounts = $query->with('product')->get();
+
+        return response()->json($discounts);
+    }
+
+    private function getDiscountsByStoreAndCategory($store, $category)
+    {
+        $store = \App\Models\Store::where('slug', $store)->firstOrFail();
+        $category = \App\Models\Category::where('slug', $category)->firstOrFail();
+
+        $discounts = Discount::where('store_id', $store->id)
+            ->whereHas('product', function($q) use ($category) {
+                $q->where('category_id', $category->id);
+            })
+            ->with('product')
+            ->get();
+
+        return response()->json($discounts);
     }
 }

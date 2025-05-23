@@ -20,3 +20,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post('/scrapers', [ProductController::class, 'storeDiscountTemp']);
+Route::get('/akcijos/{storeOrCategory}', [ProductController::class, 'getDiscounts']);
+Route::get('/akcijos/{storeOrCategory}/{category}', [ProductController::class, 'getDiscounts']);
