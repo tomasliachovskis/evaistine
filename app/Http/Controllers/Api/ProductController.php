@@ -90,4 +90,13 @@ class ProductController extends Controller
 
         return response()->json($stores);
     }
+
+    public function search(Request $request, $query)
+    {
+        $discounts = Discount::searchByProductName($query)
+            ->with(['product', 'store'])
+            ->paginate(20);
+
+        return response()->json($discounts);
+    }
 }

@@ -24,3 +24,4 @@ Route::get('/akcijos/{storeOrCategory}', [ProductController::class, 'getDiscount
 Route::get('/akcijos/{storeOrCategory}/{category}', [ProductController::class, 'getDiscounts']);
 Route::get('/categories', [ProductController::class, 'getCategories']);
 Route::get('/stores', [ProductController::class, 'getStores']);
+Route::get('/search/{query}', [ProductController::class, 'search']);

@@ -39,4 +39,11 @@ class Discount extends Model
     {
         return $this->belongsTo(Store::class);
     }
+
+    public function scopeSearchByProductName($query, $name)
+    {
+        return $query->whereHas('product', function($q) use ($name) {
+            $q->where('name', 'like', '%' . $name . '%');
+        });
+    }
 }
