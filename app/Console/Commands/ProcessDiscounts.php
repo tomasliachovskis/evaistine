@@ -13,6 +13,7 @@ use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
+use App\Models\CategoryMapper;
 
 class ProcessDiscounts extends Command
 {
@@ -85,7 +86,7 @@ class ProcessDiscounts extends Command
                     'name' => $tempDiscount->name,
                     'slug' => Str::slug($tempDiscount->name),
                     'description' => '',
-                    'category_id' => null,
+                    'category_id' => $this->assignCategory($tempDiscount, $store),
                     'image_url' => $tempDiscount->image_url,
                 ]
             );
@@ -125,5 +126,64 @@ class ProcessDiscounts extends Command
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
         }
+    }
+
+    private function assignCategory(DiscountTemp $tempDiscount, Store $store)
+    {
+        if (empty($tempDiscount->category)) {
+            return null;
+        }
+
+        $storeCategory = $tempDiscount->category;
+        if ($store->name === 'Rimi' && str_contains($storeCategory, '/')) {
+            $firstPart = explode('/', $storeCategory)[0];
+            
+            // Try full category exact match
+            $mapper = CategoryMapper::where('store', $store->id)
+                ->where('store_category', $storeCategory)
+                ->first();
+
+            if ($mapper) {
+                return $mapper->category_id;
+            }
+
+            // Try exact match first
+            $mapper = CategoryMapper::where('store', $store->id)
+                ->where('store_category', $firstPart)
+                ->first();
+
+            if ($mapper) {
+                return $mapper->category_id;
+            }            
+
+            // Try LIKE match
+            $mapper = CategoryMapper::where('store', $store->id)
+                ->where('store_category', 'LIKE', $firstPart . '%')
+                ->first();
+
+            if ($mapper) {
+                return $mapper->category_id;
+            }
+        }
+
+        // For non-Rimi or non-matching Rimi, try exact match
+        $mapper = CategoryMapper::where('store', $store->id)
+            ->where('store_category', $storeCategory)
+            ->first();
+
+        if ($mapper) {
+            return $mapper->category_id;
+        }
+
+        // Try LIKE match as last resort
+        $mapper = CategoryMapper::where('store', $store->id)
+            ->where('store_category', 'LIKE', $storeCategory . '%')
+            ->first();
+
+        if ($mapper) {
+            return $mapper->category_id;
+        }
+
+        return null;
     }
 }

@@ -65,7 +65,7 @@ class ProductController extends Controller
     {
         $store = \App\Models\Store::where('slug', $store)->firstOrFail();
         $category = \App\Models\Category::where('slug', $category)->firstOrFail();
-        
+
         $discounts = Discount::where('store_id', $store->id)
             ->whereHas('product', function($q) use ($category) {
                 $q->where('category_id', $category->id);
