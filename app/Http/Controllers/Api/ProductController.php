@@ -99,4 +99,36 @@ class ProductController extends Controller
 
         return response()->json($discounts);
     }
+
+    public function getFavoriteProduct($id)
+    {
+        $discounts = Discount::where('product_id', $id)
+            ->with(['product', 'store'])
+            ->limit(4)
+            ->get();
+
+        return response()->json($discounts);
+    }
+
+    public function getFavoriteCategory($id)
+    {
+        $discounts = Discount::whereHas('product', function($q) use ($id) {
+            $q->where('category_id', $id);
+        })
+        ->with(['product', 'store'])
+            ->limit(4)
+            ->get();
+
+        return response()->json($discounts);
+    }
+
+    public function getFavoriteHome()
+    {
+        $discounts = Discount::with(['product', 'store'])
+            ->orderBy('created_at', 'desc')
+            ->limit(4)
+            ->get();
+
+        return response()->json($discounts);
+    }
 }

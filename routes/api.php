@@ -25,3 +25,6 @@ Route::get('/akcijos/{storeOrCategory}/{category}', [ProductController::class, '
 Route::get('/categories', [ProductController::class, 'getCategories']);
 Route::get('/stores', [ProductController::class, 'getStores']);
 Route::get('/search/{query}', [ProductController::class, 'search']);
+Route::get('/favorite/product/{id}', [ProductController::class, 'getFavoriteProduct']);
+Route::get('/favorite/category/{id}', [ProductController::class, 'getFavoriteCategory']);
+Route::get('/favorite/home', [ProductController::class, 'getFavoriteHome']);
