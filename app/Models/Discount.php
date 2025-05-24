@@ -25,6 +25,7 @@ class Discount extends Model
     protected $casts = [
         'start_at' => 'datetime',
         'end_at' => 'datetime',
+        'card' => 'integer',
     ];
 
     public function product()
