@@ -26,6 +26,8 @@ class Discount extends Model
         'start_at' => 'datetime',
         'end_at' => 'datetime',
         'card' => 'integer',
+        'original_price' => 'float',
+        'discounted_price' => 'float',
     ];
 
     public function product()

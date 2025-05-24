@@ -3,11 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Cache;
 use App\Models\DiscountTemp;
 use App\Models\Discount;
 
@@ -74,5 +71,23 @@ class ProductController extends Controller
             ->paginate(20);
 
         return response()->json($discounts);
+    }
+
+    public function getCategories()
+    {
+        $categories = \App\Models\Category::whereNull('parent_id')->withCount(['discounts' => function($query) {
+            $query->select(\DB::raw('count(distinct discounts.id)'));
+        }])->get();
+
+        return response()->json($categories);
+    }
+
+    public function getStores()
+    {
+        $stores = \App\Models\Store::withCount(['discounts' => function($query) {
+            $query->select(\DB::raw('count(distinct discounts.id)'));
+        }])->get();
+
+        return response()->json($stores);
     }
 }
