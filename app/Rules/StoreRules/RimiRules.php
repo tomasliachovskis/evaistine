@@ -2,6 +2,8 @@
 
 namespace App\Rules\StoreRules;
 
+use App\Models\DiscountTemp;
+
 class RimiRules extends BaseStoreRules
 {
     public function validate(): bool
@@ -15,5 +17,10 @@ class RimiRules extends BaseStoreRules
     public function normalizeProductName()
     {
 
+    }
+
+    public function clean(DiscountTemp $discountTemp): DiscountTemp
+    {
+        return  $discountTemp;
     }
 }

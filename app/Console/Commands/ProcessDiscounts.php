@@ -135,12 +135,13 @@ class ProcessDiscounts extends Command
         }
 
         $storeCategory = $tempDiscount->category;
-        if ($store->name === 'Rimi' && str_contains($storeCategory, '/')) {
+        if (str_contains($storeCategory, '/')) {
             $firstPart = explode('/', $storeCategory)[0];
-            
+
             // Try full category exact match
             $mapper = CategoryMapper::where('store', $store->id)
                 ->where('store_category', $storeCategory)
+                ->orderBy('id', 'asc')
                 ->first();
 
             if ($mapper) {
@@ -150,15 +151,17 @@ class ProcessDiscounts extends Command
             // Try exact match first
             $mapper = CategoryMapper::where('store', $store->id)
                 ->where('store_category', $firstPart)
+                ->orderBy('id', 'asc')
                 ->first();
 
             if ($mapper) {
                 return $mapper->category_id;
-            }            
+            }
 
             // Try LIKE match
             $mapper = CategoryMapper::where('store', $store->id)
                 ->where('store_category', 'LIKE', $firstPart . '%')
+                ->orderBy('id', 'asc')
                 ->first();
 
             if ($mapper) {
@@ -166,18 +169,18 @@ class ProcessDiscounts extends Command
             }
         }
 
-        // For non-Rimi or non-matching Rimi, try exact match
         $mapper = CategoryMapper::where('store', $store->id)
             ->where('store_category', $storeCategory)
+            ->orderBy('id', 'asc')
             ->first();
 
         if ($mapper) {
             return $mapper->category_id;
         }
 
-        // Try LIKE match as last resort
         $mapper = CategoryMapper::where('store', $store->id)
             ->where('store_category', 'LIKE', $storeCategory . '%')
+            ->orderBy('id', 'asc')
             ->first();
 
         if ($mapper) {

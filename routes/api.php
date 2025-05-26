@@ -20,11 +20,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post('/scrapers', [ProductController::class, 'storeDiscountTemp']);
-Route::get('/akcijos/{storeOrCategory}', [ProductController::class, 'getDiscounts']);
-Route::get('/akcijos/{storeOrCategory}/{category}', [ProductController::class, 'getDiscounts']);
+Route::get('/discount/{storeOrCategory}', [ProductController::class, 'getDiscounts']);
+Route::get('/discount/{storeOrCategory}/{category}', [ProductController::class, 'getDiscounts']);
 Route::get('/categories', [ProductController::class, 'getCategories']);
 Route::get('/stores', [ProductController::class, 'getStores']);
 Route::get('/search/{query}', [ProductController::class, 'search']);
 Route::get('/favorite/product/{id}', [ProductController::class, 'getFavoriteProduct']);
 Route::get('/favorite/category/{id}', [ProductController::class, 'getFavoriteCategory']);
 Route::get('/favorite/home', [ProductController::class, 'getFavoriteHome']);
+Route::get('/product/{slug}', [ProductController::class, 'getProductBySlug']);

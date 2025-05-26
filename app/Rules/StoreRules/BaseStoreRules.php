@@ -26,5 +26,10 @@ abstract class BaseStoreRules
         return !empty($price) ? (float) $price : null;
     }
 
+    public function clean(DiscountTemp $discountTemp): DiscountTemp
+    {
+        return $discountTemp;
+    }
+
     abstract public function validate(): bool;
 }

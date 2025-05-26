@@ -31,4 +31,9 @@ class Product extends Model
     {
         return $this->hasMany(DiscountHistory::class);
     }
+
+    public function discounts()
+    {
+        return $this->hasMany(Discount::class);
+    }
 }

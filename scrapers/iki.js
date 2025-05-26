@@ -105,6 +105,10 @@ const __dirname = path.dirname(__filename);
                     discounted_price = price1 + '.' + price2;
                 }
 
+                if (discounted_price === '.') {
+                    discounted_price = null;
+                }
+
                 let original_price = block.querySelector('.price_old_block')?.textContent.trim() ?? '';
                 let discount_percent = block.querySelector('.percentage_tag .main')?.textContent.trim() ?? '-';
 

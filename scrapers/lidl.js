@@ -48,7 +48,12 @@ puppeteer.use(StealthPlugin());
             }
         });
 
-        await page.waitForSelector('div.product-grid-box', { timeout: 5000 });
+        try {
+            await page.waitForSelector('div.product-grid-box', { timeout: 5000 });
+        } catch (error) {
+            console.log(`No products found on ${offerLink}, continuing...`);
+            continue;
+        }
 
         // Extract product details
         const productBlocks = await page.$$eval('.odsc-tile--label-.product-grid-box', blocks => {
@@ -61,11 +66,11 @@ puppeteer.use(StealthPlugin());
             return blocks.map(block => {
                 const brand = block.querySelector('.product-grid-box__brand')?.textContent.trim() ?? '';
                 let name = block.querySelector('.odsc-tile__link')?.textContent.trim();
-                const discounted_price = block.querySelector('.m-price__price')?.textContent.trim();
-                const original_price = block.querySelector('.m-price__top')?.textContent.trim();
-                const info = block.querySelector('.price-footer')?.textContent.trim();
+                const discounted_price = block.querySelector('.ods-price__value')?.textContent.trim();
+                const original_price = block.querySelector('.ods-price__stroke-price')?.textContent.trim();
+                const info = block.querySelector('.ods-price__footer')?.textContent.trim();
                 const valid = block.querySelector('.product-grid-box__availabilities')?.textContent.trim();
-                const discount_percent = block.querySelector('.m-price__label')?.textContent.trim() ?? '-';
+                const discount_percent = block.querySelector('.ods-price__box-content-text-el')?.textContent.trim() ?? '';
                 const product_url = block.querySelector('a')?.href;
                 const image_url = block.querySelector('.odsc-image-gallery__image')?.src;
                 const card = block.querySelector('.seal .seal__badge') !== null;
