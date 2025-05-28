@@ -1,0 +1,194 @@
+{
+	"info": {
+		"_postman_id": "XXXX",
+		"name": "SuperAkcijos.lt API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "XXXX"
+	},
+	"item": [
+		{
+			"name": "Stores",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.liachovskis.com/api/stores",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"path": [
+						"api",
+						"stores"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Product",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.liachovskis.com/api/product/lasisu-pjausniai-ar-gabalai",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"path": [
+						"api",
+						"product",
+						"lasisu-pjausniai-ar-gabalai"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Search",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.liachovskis.com/api/search/pienas",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"path": [
+						"api",
+						"search",
+						"pienas"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Favorite - Home",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.liachovskis.com/api/favorite/home",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"path": [
+						"api",
+						"favorite",
+						"home"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Favorite - Product",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.liachovskis.com/api/favorite/product/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"path": [
+						"api",
+						"favorite",
+						"product",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Categories",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.liachovskis.com/api/stores",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"path": [
+						"api",
+						"stores"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Discounts by store or category",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.liachovskis.com/api/discount/iki",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"path": [
+						"api",
+						"discount",
+						"iki"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Discounts by store and category",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.liachovskis.com/api/discount/iki/bakaleja",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"path": [
+						"api",
+						"discount",
+						"iki",
+						"bakaleja"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
