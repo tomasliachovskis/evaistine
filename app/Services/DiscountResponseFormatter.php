@@ -50,7 +50,7 @@ class DiscountResponseFormatter
                 ];
             }),
             'offer_count' => $offerCount,
-            'min_price' => $discount->product->discounts()->min('discounted_price'),
+            'min_price' => (float) $discount->product->discounts()->min('discounted_price'),
             'product' => [
                 'id' => $discount->product->id,
                 'name' => $discount->product->name,

@@ -25,7 +25,7 @@ class Discount extends Model
     protected $casts = [
         'start_at' => 'datetime',
         'end_at' => 'datetime',
-        'card' => 'integer',
+        'card' => 'boolean',
         'original_price' => 'float',
         'discounted_price' => 'float',
     ];
