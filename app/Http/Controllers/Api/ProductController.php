@@ -114,7 +114,7 @@ class ProductController extends Controller
     public function getFavoriteProduct($slug)
     {
         $discounts = Discount::whereHas('product', function ($query) use ($slug) {
-            $query->where('slug', $slug);
+            $query->where('slug', '!=', $slug);
         })
             ->with(['product', 'store'])
             ->limit(4)
@@ -158,4 +158,113 @@ class ProductController extends Controller
 
         return response()->json($this->formatter->format($product->discounts));
     }
+
+    public function getBreadcrumbs(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'url' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $breadcrumbs = [
+            [
+                'name' => 'Akcijos',
+                'slug' => '/',
+                'type' => 'home'
+            ]
+        ];
+        
+        $segments = explode('/', trim($request->url, '/'));
+        
+        if ($segments[0] !== 'akcijos') {
+            return response()->json(['error' => 'Invalid URL format'], 404);
+        }
+        
+        if (count($segments) === 3) {
+            $store = \App\Models\Store::where('slug', $segments[1])->first();
+            if ($store) {
+                $breadcrumbs[] = [
+                    'name' => $store->name,
+                    'slug' => 'akcijos/' . $segments[1],
+                    'type' => 'store'
+                ];
+                
+                $product = \App\Models\Product::where('slug', $segments[2])->first();
+                if ($product) {
+                    $breadcrumbs[] = [
+                        'name' => $product->name,
+                        'slug' => 'akcijos/' . $segments[1] . '/' . $segments[2],
+                        'type' => 'product'
+                    ];
+                    
+                    return response()->json($breadcrumbs);
+                }
+                
+                $category = \App\Models\Category::where('slug', $segments[2])->first();
+                if ($category) {
+                    $breadcrumbs[] = [
+                        'name' => $category->name,
+                        'slug' => 'akcijos/' . $segments[1] . '/' . $segments[2],
+                        'type' => 'category'
+                    ];
+                    
+                    return response()->json($breadcrumbs);
+                }
+            }
+            
+            $category = \App\Models\Category::where('slug', $segments[1])->first();
+            if ($category) {
+                $breadcrumbs[] = [
+                    'name' => $category->name,
+                    'slug' => 'akcijos/' . $segments[1],
+                    'type' => 'category'
+                ];
+                
+                $product = \App\Models\Product::where('slug', $segments[2])->first();
+                if ($product) {
+                    $breadcrumbs[] = [
+                        'name' => $product->name,
+                        'slug' => 'akcijos/' . $segments[1] . '/' . $segments[2],
+                        'type' => 'product'
+                    ];
+                }
+                
+                return response()->json($breadcrumbs);
+            }
+        }
+        
+        if (count($segments) === 2) {
+            if ($segments[1] === '') {
+                return response()->json($breadcrumbs);
+            }
+            
+            $category = \App\Models\Category::where('slug', $segments[1])->first();
+            if ($category) {
+                $breadcrumbs[] = [
+                    'name' => $category->name,
+                    'slug' => 'akcijos/' . $segments[1],
+                    'type' => 'category'
+                ];
+                
+                return response()->json($breadcrumbs);
+            }
+            
+            $store = \App\Models\Store::where('slug', $segments[1])->first();
+            if ($store) {
+                $breadcrumbs[] = [
+                    'name' => $store->name,
+                    'slug' => 'akcijos/' . $segments[1],
+                    'type' => 'store'
+                ];
+                
+                return response()->json($breadcrumbs);
+            }
+        }
+        
+        return response()->json(['error' => 'Entity not found'], 404);
+    }
 }
+
