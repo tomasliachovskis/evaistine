@@ -15,6 +15,9 @@ class Category extends Model
         'slug',
         'parent_id',
         'hide',
+        'seo_title',
+        'meta_title',
+        'meta_description',
     ];
 
     public function products()

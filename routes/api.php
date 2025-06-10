@@ -32,3 +32,5 @@ Route::get('/favorite/product/{slug}', [ProductController::class, 'getFavoritePr
 Route::get('/favorite/category/{id}', [ProductController::class, 'getFavoriteCategory']);
 Route::get('/favorite/home', [ProductController::class, 'getFavoriteHome']);
 Route::post('/breadcrumbs', [ProductController::class, 'getBreadcrumbs']);
+
+Route::post('/titles', [ProductController::class, 'getTitlesBySlug']);
