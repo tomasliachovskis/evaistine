@@ -84,18 +84,21 @@ class ProductController extends Controller
 
     public function getCategories()
     {
-        $categories = \App\Models\Category::whereNull('parent_id')->withCount([
-            'discounts' => function ($query) {
-                $query->select(\DB::raw('count(distinct discounts.id)'));
-            }
-        ])->get();
+        $categories = \App\Models\Category::whereNull('parent_id')
+            ->select('id', 'name', 'slug')
+            ->withCount([
+                'discounts' => function ($query) {
+                    $query->select(\DB::raw('count(distinct discounts.id)'));
+                }
+            ])->get();
 
         return response()->json($categories);
     }
 
     public function getStores()
     {
-        $stores = \App\Models\Store::withCount([
+        $stores = \App\Models\Store::select('id', 'name', 'slug')
+        ->withCount([
             'discounts' => function ($query) {
                 $query->select(\DB::raw('count(distinct discounts.id)'));
             }
