@@ -64,6 +64,7 @@ class ProductController extends Controller
         }
 
         $discounts = $query->with('product')->paginate(10);
+
         return response()->json($this->formatter->format($discounts));
     }
 
