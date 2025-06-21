@@ -57,17 +57,25 @@ class ProductController extends Controller
 
         if ($store) {
             $query = Discount::where('store_id', $store->id);
+            $entity = $store;
+            $entityType = 'store';
         } elseif ($category) {
             $query = Discount::whereHas('product', function ($q) use ($category) {
                 $q->where('category_id', $category->id);
             });
+            $entity = $category;
+            $entityType = 'category';
         } else {
             return response()->json(['error' => 'Store or category not found'], 404);
         }
 
         $discounts = $this->buildDiscountQuery($query, $filters)->paginate(10);
 
-        return response()->json($this->formatter->format($discounts));
+        return response()->json([
+            'data' => $this->formatter->format($discounts),
+            'breadcrumbs' => $this->generateBreadcrumbs($entityType, $entity),
+            'seo' => $this->generateSeoData($entityType, $entity)
+        ]);
     }
 
     private function getDiscountsByStoreAndCategory($store, $category, $filters)
@@ -82,7 +90,11 @@ class ProductController extends Controller
 
         $discounts = $this->buildDiscountQuery($query, $filters)->paginate(10);
 
-        return response()->json($this->formatter->format($discounts));
+        return response()->json([
+            'data' => $this->formatter->format($discounts),
+            'breadcrumbs' => $this->generateBreadcrumbs('store_category', $store, $category),
+            'seo' => $this->generateSeoData('store_category', $store, $category)
+        ]);
     }
 
     private function getFilters()
@@ -207,7 +219,95 @@ class ProductController extends Controller
             ])
             ->firstOrFail();
 
-        return response()->json($this->formatter->format($product->discounts));
+        return response()->json([
+            'data' => $this->formatter->format($product->discounts),
+            'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
+            'seo' => $this->generateSeoData('product', $product)
+        ]);
+    }
+
+    private function generateBreadcrumbs($type, $entity, $secondaryEntity = null)
+    {
+        $breadcrumbs = [
+            [
+                'name' => 'Akcijos',
+                'slug' => '/',
+                'type' => 'home'
+            ]
+        ];
+
+        switch ($type) {
+            case 'store':
+                $breadcrumbs[] = [
+                    'name' => $entity->name,
+                    'slug' => 'akcijos/' . $entity->slug,
+                    'type' => 'store'
+                ];
+                break;
+            case 'category':
+                $breadcrumbs[] = [
+                    'name' => $entity->name,
+                    'slug' => 'akcijos/' . $entity->slug,
+                    'type' => 'category'
+                ];
+                break;
+            case 'store_category':
+                $breadcrumbs[] = [
+                    'name' => $entity->name,
+                    'slug' => 'akcijos/' . $entity->slug,
+                    'type' => 'store'
+                ];
+                $breadcrumbs[] = [
+                    'name' => $secondaryEntity->name,
+                    'slug' => 'akcijos/' . $entity->slug . '/' . $secondaryEntity->slug,
+                    'type' => 'category'
+                ];
+                break;
+            case 'product':
+                $breadcrumbs[] = [
+                    'name' => $entity->name,
+                    'slug' => 'akcijos/' . $entity->slug,
+                    'type' => 'product'
+                ];
+                break;
+        }
+
+        return $breadcrumbs;
+    }
+
+    private function generateSeoData($type, $entity, $secondaryEntity = null)
+    {
+        switch ($type) {
+            case 'category':
+            case 'store':
+                return [
+                    'seo_title' => $entity->name,
+                    'seo_description' => $entity->description,
+                    'meta_title' => $entity->name,
+                    'meta_description' => $entity->description,
+                ];
+            case 'store_category':
+                return [
+                    'seo_title' => $entity->name . ' akcija ' . strtolower($secondaryEntity->name),
+                    'seo_description' => $secondaryEntity->description,
+                    'meta_title' => $entity->name . ' akcija ' . strtolower($secondaryEntity->name),
+                    'meta_description' => $secondaryEntity->description,
+                ];
+            case 'product':
+                return [
+                    'seo_title' => $entity->name,
+                    'seo_description' => $entity->description ?? '',
+                    'meta_title' => $entity->name,
+                    'meta_description' => $entity->description ?? '',
+                ];
+            default:
+                return [
+                    'seo_title' => '',
+                    'seo_description' => '',
+                    'meta_title' => '',
+                    'meta_description' => '',
+                ];
+        }
     }
 }
 
