@@ -41,14 +41,16 @@ class ProductController extends Controller
 
     public function getDiscounts($storeOrCategory, $category = null)
     {
+        $order = request()->get('order', 'popular');
+
         if ($category) {
-            return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category);
+            return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category, $order);
         }
 
-        return $this->getDiscountsByStoreOrCategory($storeOrCategory);
+        return $this->getDiscountsByStoreOrCategory($storeOrCategory, $order);
     }
 
-    private function getDiscountsByStoreOrCategory($storeOrCategory)
+    private function getDiscountsByStoreOrCategory($storeOrCategory, $order = 'popular')
     {
         $store = \App\Models\Store::where('slug', $storeOrCategory)->first();
         $category = \App\Models\Category::where('slug', $storeOrCategory)->first();
@@ -63,24 +65,41 @@ class ProductController extends Controller
             return response()->json(['error' => 'Store or category not found'], 404);
         }
 
-        $discounts = $query->with('product')->paginate(10);
+        $discounts = $this->applySorting($query, $order)->with('product')->paginate(10);
 
         return response()->json($this->formatter->format($discounts));
     }
 
-    private function getDiscountsByStoreAndCategory($store, $category)
+    private function getDiscountsByStoreAndCategory($store, $category, $order = 'popular')
     {
         $store = \App\Models\Store::where('slug', $store)->firstOrFail();
         $category = \App\Models\Category::where('slug', $category)->firstOrFail();
 
-        $discounts = Discount::where('store_id', $store->id)
+        $query = Discount::where('store_id', $store->id)
             ->whereHas('product', function ($q) use ($category) {
                 $q->where('category_id', $category->id);
-            })
-            ->with('product')
-            ->paginate(10);
+            });
+
+        $discounts = $this->applySorting($query, $order)->with('product')->paginate(10);
 
         return response()->json($this->formatter->format($discounts));
+    }
+
+    private function applySorting($query, $order)
+    {
+        switch ($order) {
+            case 'price_min':
+                return $query->orderBy('discounted_price', 'asc');
+            case 'price_max':
+                return $query->orderBy('discounted_price', 'desc');
+            case 'price_discount_max':
+                return $query->orderByRaw('(original_price - discounted_price) DESC');
+            case 'price_discount_proc_max':
+                return $query->orderByRaw('discount_percent DESC');
+            case 'popular':
+            default:
+                return $query->orderBy('created_at', 'desc');
+        }
     }
 
     public function getCategories()
