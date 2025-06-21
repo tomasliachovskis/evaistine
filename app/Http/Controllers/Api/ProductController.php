@@ -41,16 +41,16 @@ class ProductController extends Controller
 
     public function getDiscounts($storeOrCategory, $category = null)
     {
-        $order = request()->get('order', 'popular');
-
+        $filters = $this->getFilters();
+        
         if ($category) {
-            return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category, $order);
+            return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category, $filters);
         }
 
-        return $this->getDiscountsByStoreOrCategory($storeOrCategory, $order);
+        return $this->getDiscountsByStoreOrCategory($storeOrCategory, $filters);
     }
 
-    private function getDiscountsByStoreOrCategory($storeOrCategory, $order = 'popular')
+    private function getDiscountsByStoreOrCategory($storeOrCategory, $filters)
     {
         $store = \App\Models\Store::where('slug', $storeOrCategory)->first();
         $category = \App\Models\Category::where('slug', $storeOrCategory)->first();
@@ -65,12 +65,12 @@ class ProductController extends Controller
             return response()->json(['error' => 'Store or category not found'], 404);
         }
 
-        $discounts = $this->applySorting($query, $order)->with('product')->paginate(10);
+        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(10);
 
         return response()->json($this->formatter->format($discounts));
     }
 
-    private function getDiscountsByStoreAndCategory($store, $category, $order = 'popular')
+    private function getDiscountsByStoreAndCategory($store, $category, $filters)
     {
         $store = \App\Models\Store::where('slug', $store)->firstOrFail();
         $category = \App\Models\Category::where('slug', $category)->firstOrFail();
@@ -80,9 +80,32 @@ class ProductController extends Controller
                 $q->where('category_id', $category->id);
             });
 
-        $discounts = $this->applySorting($query, $order)->with('product')->paginate(10);
+        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(10);
 
         return response()->json($this->formatter->format($discounts));
+    }
+
+    private function getFilters()
+    {
+        return [
+            'order' => request()->get('order', 'popular'),
+            'card' => request()->get('card'),
+            'plus' => request()->get('plus'),
+        ];
+    }
+
+    private function buildDiscountQuery($query, $filters)
+    {
+        return $query->with('product')
+            ->when($filters['card'], function ($q) {
+                return $q->where('card_discount', true);
+            })
+            ->when($filters['plus'], function ($q) {
+                return $q->where('plus_offer', true);
+            })
+            ->when($filters['order'], function ($q, $order) {
+                return $this->applySorting($q, $order);
+            });
     }
 
     private function applySorting($query, $order)
