@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\DiscountTemp;
 use App\Models\Discount;
 use App\Services\DiscountResponseFormatter;
-use App\Models\Category;
-use App\Models\Store;
 
 class ProductController extends Controller
 {
@@ -215,7 +213,8 @@ class ProductController extends Controller
                 'discounts' => function ($query) {
                     $query->with('store')
                         ->orderBy('created_at', 'desc');
-                }
+                },
+                'category'
             ])
             ->firstOrFail();
 
@@ -264,9 +263,16 @@ class ProductController extends Controller
                 ];
                 break;
             case 'product':
+                if ($entity->category) {
+                    $breadcrumbs[] = [
+                        'name' => $entity->category->name,
+                        'slug' => 'akcijos/' . $entity->category->slug,
+                        'type' => 'category'
+                    ];
+                }
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/' . $entity->slug,
+                    'slug' => 'akcijos/' . ($entity->category ? $entity->category->slug . '/' : '') . $entity->slug,
                     'type' => 'product'
                 ];
                 break;
