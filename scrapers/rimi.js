@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const progressFile = path.join(__dirname, 'progress.json');
 
 const BATCH_SIZE = 50;
-const MAX_CONCURRENT_REQUESTS = 4;
+const MAX_CONCURRENT_REQUESTS = 10;
 const REQUEST_DELAY = 1000;
 const NAVIGATION_TIMEOUT = 20000;
 
@@ -252,13 +252,26 @@ const runScraper = async () => {
         const pageUrl = `${baseUrl}e-parduotuve/lt/akcijos?pageSize=80&currentPage=${currentPage}`;
         console.log(`Scraping page: ${currentPage}`);
 
-        try {
-            await mainPage.goto(pageUrl, {
-                waitUntil: 'domcontentloaded',
-                timeout: NAVIGATION_TIMEOUT
-            });
-        } catch (err) {
-            console.log(`Failed to load page ${currentPage}: ${err.message}`);
+        let pageLoaded = false;
+        for (let retry = 0; retry < 5; retry++) {
+            try {
+                await mainPage.goto(pageUrl, {
+                    waitUntil: 'domcontentloaded',
+                    timeout: NAVIGATION_TIMEOUT
+                });
+                pageLoaded = true;
+                break;
+            } catch (err) {
+                console.log(`Failed to load page ${currentPage} (attempt ${retry + 1}/5): ${err.message}`);
+                if (retry === 4) {
+                    console.log(`Failed to load page ${currentPage} after 5 attempts. Stopping.`);
+                    break;
+                }
+                await delay(3000 * (retry + 1));
+            }
+        }
+
+        if (!pageLoaded) {
             break;
         }
 
@@ -277,12 +290,18 @@ const runScraper = async () => {
                 const price = block.querySelector('.card__price')?.textContent.trim();
                 const price_before = block.querySelector('.card__old-price')?.textContent.trim();
                 const valid = block.querySelector('.ods-badge__label')?.textContent.trim();
-                const discount = block.querySelector('.m-price__label')?.textContent.trim() ?? '';
+                let discount = block.querySelector('.m-price__label')?.textContent.trim() ?? '';
                 const link = block.querySelector('.card__url')?.href;
                 const imageSrc = block.querySelector('.card__image-wrapper img')?.src;
                 let info = block.querySelector('.card__price-per')?.textContent.trim();
                 let condition = block.querySelector('div.price-label__header.-red')?.textContent.trim();
                 info = info?.replace(/\s+/g, ' ').trim();
+                
+                if (condition && condition.includes('%')) {
+                    discount = condition;
+                    condition = '';
+                }
+                
                 return { title, price, price_before, info, discount, valid, link, imageSrc, condition};
             });
         });
