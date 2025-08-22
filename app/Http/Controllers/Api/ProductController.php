@@ -166,7 +166,11 @@ class ProductController extends Controller
             ->with(['product', 'store'])
             ->paginate(10);
 
-        return response()->json($this->formatter->format($discounts));
+        return response()->json([
+            'data' => $this->formatter->format($discounts),
+            'breadcrumbs' => $this->generateBreadcrumbs('search', $query, '-'),
+            'seo' => $this->generateSeoData('search', $query, '-')
+        ]);
     }
 
     public function getFavoriteProduct($slug)
@@ -276,6 +280,12 @@ class ProductController extends Controller
                     'type' => 'product'
                 ];
                 break;
+            case 'search':
+                $breadcrumbs[] = [
+                    'name' => 'Paieška',
+                    'slug' => 'akcijos/paieska/' . $entity,
+                    'type' => 'search'
+                ];
         }
 
         return $breadcrumbs;
@@ -305,6 +315,13 @@ class ProductController extends Controller
                     'seo_description' => $entity->description ?? '',
                     'meta_title' => $entity->name,
                     'meta_description' => $entity->description ?? '',
+                ];
+            case 'search':
+                return [
+                    'seo_title' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
+                    'seo_description' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
+                    'meta_title' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
+                    'meta_description' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
                 ];
             default:
                 return [

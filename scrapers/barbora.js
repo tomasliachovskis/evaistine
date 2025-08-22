@@ -52,9 +52,9 @@ puppeteer.use(StealthPlugin());
 
         await sleep();
 
-        const productBlocks = await page.$$eval('.tw-flex-shrink-0.tw-list-none.tw-w-full', blocks => {
+        const productBlocks = await page.$$eval('li[data-testid^="product-card-"]', (blocks, baseUrl) => {
             return blocks.map(block => {
-                let json = block.querySelector('.tw-relative.tw-flex.tw-h-full.tw-w-full.tw-flex-col').getAttribute('data-b-for-cart');
+                let json = block.querySelector('.tw-h-full.tw-w-full').getAttribute('data-b-for-cart');
                 json = JSON.parse(json);
 
                 const category = json ? json.category_name_full_path : null;
@@ -65,15 +65,14 @@ puppeteer.use(StealthPlugin());
                 const discounted_price = json ? json.price : null;
                 const original_price = json ? json.promotion.oldPrice : null;
 
-                const name = block.querySelector('a > span.tw-block')?.textContent.trim();
-                // const price = block.querySelector('.tw-align-top')?.textContent.trim();
-                // const price_before = block.querySelector('.tw-text-neutral-500 > .tw-relative.tw-flex.tw-align-top')?.textContent.trim() ?? '';
-                const info = block.querySelector('.card__price-per')?.textContent.trim() ?? '';
-                // const valid = block.querySelector('.ods-badge__label')?.textContent.trim();
-                const discount_percent = block.querySelector('span.tw-text-white')?.textContent.trim() ?? '-';
-                const product_url = block.querySelector('.tw-justify-center a')?.href;
-                const image_url = block.querySelector('.tw-justify-center a img')?.src;
-                const card = block.querySelector('use[xlink\\:href="#promo-loyalty-desktop-lt"]');
+                const name = json ? json.title : null;
+                const brand = json ? json.brand_name : null;
+
+                const discount_percent = json && json.promotion ? `${json.promotion.percentage}%` : '';
+                const product_url = json ? `${baseUrl}/produktai/${json.Url}` : '';
+                const image_url = json ? json.image : '';
+                const card = json && json.extra && json.extra.is_with_card ? true : false;
+                const info = json ? `${json.comparative_unit_price}€/${json.comparative_unit}` : '';
 
                 if (card) {
                     console.log('Card require ' + name);
@@ -81,6 +80,7 @@ puppeteer.use(StealthPlugin());
 
                 return {
                     name,
+                    brand,
                     discounted_price,
                     original_price,
                     info,
@@ -93,10 +93,13 @@ puppeteer.use(StealthPlugin());
                     image_url
                 };
             });
-        });
+        }, baseUrl);
+
+        console.log(productBlocks);
 
         allProducts = allProducts.concat(productBlocks);
         console.log(`Scraped ${productBlocks.length} products from page ${currentPage}`);
+        console.log(`Total  ${allProducts.length}`);
 
         currentPage++;
     }
@@ -116,7 +119,7 @@ puppeteer.use(StealthPlugin());
             product_url: product.product_url,
             image_url: product.image_url,
             category: product.category,
-            store: 'maxima'
+            store: 'barbora'
         }));
         await axios.post('http://127.0.0.1/api/scrapers', data);
     } catch (error) {

@@ -11,6 +11,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const progressFile = path.join(__dirname, 'progress.json');
 
+const BATCH_SIZE = 50;
+const MAX_CONCURRENT_REQUESTS = 4;
+const REQUEST_DELAY = 1000;
+const NAVIGATION_TIMEOUT = 20000;
+
 const saveProgress = (pageNumber) => {
     fs.writeFileSync(progressFile, JSON.stringify({ currentPage: pageNumber }, null, 2));
 };
@@ -32,85 +37,166 @@ const clearProgress = () => {
 
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
-const scrapeProductDetails = async (page, product) => {
-    const retryNavigation = async (page, url, maxRetries = 3) => {
-        for (let i = 1; i <= maxRetries; i++) {
-            try {
-                console.log('Opening url: ' + url);
-                await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 5000 });
-                return true;
-            } catch (err) {
-                console.log(`Navigation attempt ${i} failed for ${url}: ${err.message}`);
-                if (i === maxRetries) return false;
-                await delay(5000);
+const axiosInstance = axios.create({
+    baseURL: 'http://127.0.0.1/api',
+    timeout: 30000,
+    maxRedirects: 5,
+    headers: {
+        'Content-Type': 'application/json',
+        'Connection': 'keep-alive'
+    }
+});
+
+const createPage = async (browser) => {
+    const page = await browser.newPage();
+
+    await page.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+    );
+
+    await page.setViewport({ width: 1280, height: 720 });
+
+    await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+    });
+
+    return page;
+};
+
+const scrapeProductDetails = async (browser, product, retries = 1) => {
+    if (!product.link) return product;
+
+    let page = null;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            page = await createPage(browser);
+
+            await page.goto(product.link, {
+                waitUntil: 'domcontentloaded',
+                timeout: NAVIGATION_TIMEOUT
+            });
+
+            await delay(REQUEST_DELAY);
+
+            const priceLabel = await page.$('.price-label__price').then(el => !!el).catch(() => false);
+            const dateValid = await page.$('.product__main-info > p.notice').then(el => el ? page.evaluate(el => el.textContent.trim(), el) : null).catch(() => null);
+            const priceWrapper = await page.$('.price-wrapper .price').catch(() => null);
+            const categories = await page.$$eval('.section-header__container a', links => links.map(a => a.textContent.trim())).catch(() => []);
+            const card = await page.$('img[src*="rimi-card-slanted-right@2x"]').then(el => !!el).catch(() => false);
+
+            let start_at = null;
+            let end_at = null;
+            if (dateValid) {
+                const matches = dateValid.match(/\d{4}\.\d{2}\.\d{2}/g);
+                if (matches && matches.length >= 2) {
+                    [start_at, end_at] = matches.map(d => d.replace(/\./g, '-'));
+                }
             }
-        }
-    };
 
-    try {
-        if (!product.link) return;
-        // console.log('Opening product ' + product.link);
-
-        await retryNavigation(page, product.link,);
-
-        await delay(1000);
-
-        const priceLabel = await page.$('.price-label__price') !== null;
-        const dateValid = await page.$('.product__main-info > p.notice');
-        let date = null;
-
-        if (dateValid) {
-            date = await page.evaluate(el => el.textContent.trim(), dateValid);
-        }
-
-        let start_at = null;
-        let end_at = null;
-        if (date) {
-            const matches = date.match(/\d{4}\.\d{2}\.\d{2}/g);
-            if (matches && matches.length >= 2) {
-                [start_at, end_at] = matches.map(d => d.replace(/\./g, '-'));
-            }
-        }
-
-        if (priceLabel) {
-            const priceWrapper = await page.$('.price-wrapper .price');
-            if (priceWrapper) {
+            if (priceLabel && priceWrapper) {
                 const price_before = await page.$eval('.price-wrapper .price', el => {
                     const main = el.querySelector('span')?.textContent.trim();
                     const decimal = el.querySelector('sup')?.textContent.trim() || '';
                     return `${main}.${decimal}`;
-                });
+                }).catch(() => null);
+
                 const price = await page.$eval('.price-label__price', el => {
                     const major = el.querySelector('.major')?.textContent.trim();
                     const cents = el.querySelector('.cents')?.textContent.trim();
                     return `${major}.${cents}`;
-                });
+                }).catch(() => null);
+
                 product.price = price;
                 product.price_before = price_before;
-            }
-        } else {
-            const priceWrapper = await page.$('.price-wrapper .price');
-            if (priceWrapper) {
+            } else if (priceWrapper) {
                 const price = await page.$eval('.price-wrapper .price', el => {
                     const main = el.querySelector('span')?.textContent.trim();
                     const decimal = el.querySelector('sup')?.textContent.trim() || '';
                     return `${main}.${decimal}`;
-                });
+                }).catch(() => null);
+
                 const price_before = await page.$eval('.price__old-price', el => el?.textContent.trim()).catch(() => null);
+
                 product.price = price;
                 product.price_before = price_before;
             }
+
+            product.category = categories.join('/');
+            product.start_at = start_at;
+            product.end_at = end_at;
+            product.card = card;
+
+            await page.close();
+            return product;
+
+        } catch (err) {
+            console.error(`Attempt ${attempt + 1} failed for product: ${product.link} - ${err.message}`);
+            if (page) {
+                try {
+                    await page.close();
+                } catch (closeErr) {
+                    console.error('Error closing page:', closeErr.message);
+                }
+            }
+
+            if (attempt === retries) {
+                console.error(`Failed to scrape details for product after ${retries + 1} attempts:`, product.link);
+                return product;
+            }
+            await delay(3000 * (attempt + 1));
         }
+    }
 
-        const categories = await page.$$eval('.section-header__container a', links => links.map(a => a.textContent.trim())).catch(() => []);
-        const card = await page.$('img[src*="rimi-card-slanted-right@2x"]') !== null;
+    return product;
+};
 
-        product.category = categories.join('/');
-        product.start_at = start_at;
-        product.end_at = end_at;
-        product.card = card;
+const processBatch = async (browser, products) => {
+    const results = [];
+    const chunks = [];
+
+    for (let i = 0; i < products.length; i += MAX_CONCURRENT_REQUESTS) {
+        chunks.push(products.slice(i, i + MAX_CONCURRENT_REQUESTS));
+    }
+
+    for (const chunk of chunks) {
+        const chunkPromises = chunk.map(product => scrapeProductDetails(browser, product));
+        const chunkResults = await Promise.all(chunkPromises);
+        results.push(...chunkResults);
+        await delay(REQUEST_DELAY);
+    }
+
+    return results;
+};
+
+const postBatchToAPI = async (products) => {
+    const data = products.map(p => ({
+        name: p.title,
+        category: p.category,
+        image_url: p.imageSrc,
+        product_url: p.link,
+        store: 'rimi',
+        original_price: p.price_before,
+        discounted_price: p.price,
+        discount_percent: p.discount,
+        start_at: p.start_at,
+        end_at: p.end_at,
+        info: p.info,
+        condition: p.condition,
+        card: p.card
+    }));
+
+    try {
+        await axiosInstance.post('/scrapers', data);
+        console.log(`Posted ${products.length} products to API`);
+        return true;
     } catch (err) {
-        console.error('Failed to scrape details for product:', product.link, err.message);
+        console.error('Error posting products:', err.message);
+        return false;
     }
 };
 
@@ -118,35 +204,31 @@ const runScraper = async () => {
     const browser = await puppeteer.launch({
         headless: false,
         protocolTimeout: 300000,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled']
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=TranslateUI',
+            '--disable-ipc-flooding-protection',
+            '--disable-images',
+            '--disable-javascript-harmony-shipping',
+            '--disable-default-apps',
+            '--disable-extensions',
+            '--disable-plugins',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
+        ]
     });
 
-    const page = await browser.newPage();
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-        const blockedTypes = ['image', 'stylesheet', 'font'];
-        if (blockedTypes.includes(req.resourceType())) req.abort();
-        else req.continue();
-    });
-
-    await page.setUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
-    );
-
-    const sleep = () => delay(Math.floor(Math.random() * 1000) + 1000);
-
-    const retryNavigation = async (page, url, maxRetries = 3) => {
-        for (let i = 1; i <= maxRetries; i++) {
-            try {
-                await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 5000 });
-                return true;
-            } catch (err) {
-                console.log(`Navigation attempt ${i} failed for ${url}: ${err.message}`);
-                if (i === maxRetries) return false;
-                await delay(5000);
-            }
-        }
-    };
+    const mainPage = await createPage(browser);
 
     const baseUrl = 'https://www.rimi.lt/';
     let currentPage = loadProgress();
@@ -154,10 +236,15 @@ const runScraper = async () => {
 
     if (currentPage === 1) {
         console.log(`Opening initial page to handle cookies.`);
-        await retryNavigation(page, `${baseUrl}e-parduotuve/lt/akcijos?currentPage=1&pageSize=80`);
+        await mainPage.goto(`${baseUrl}e-parduotuve/lt/akcijos?currentPage=1&pageSize=80`, {
+            waitUntil: 'domcontentloaded',
+            timeout: NAVIGATION_TIMEOUT
+        });
+
         try {
-            await page.waitForSelector('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll', { timeout: 5000 });
-            await page.click('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll');
+            await mainPage.waitForSelector('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll', { timeout: 5000 });
+            await mainPage.click('#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll');
+            await delay(1000);
         } catch {}
     }
 
@@ -165,21 +252,26 @@ const runScraper = async () => {
         const pageUrl = `${baseUrl}e-parduotuve/lt/akcijos?pageSize=80&currentPage=${currentPage}`;
         console.log(`Scraping page: ${currentPage}`);
 
-        if (!await retryNavigation(page, pageUrl, 5)) {
-            console.log(`Failed to load page ${currentPage}. Retrying will resume from here.`);
+        try {
+            await mainPage.goto(pageUrl, {
+                waitUntil: 'domcontentloaded',
+                timeout: NAVIGATION_TIMEOUT
+            });
+        } catch (err) {
+            console.log(`Failed to load page ${currentPage}: ${err.message}`);
             break;
         }
 
         try {
-            await page.waitForSelector('.js-product-container', { timeout: 5000 });
+            await mainPage.waitForSelector('.js-product-container', { timeout: 5000 });
         } catch {
             console.log(`Products not found on page ${currentPage}`);
             break;
         }
 
-        await sleep();
+        await delay(REQUEST_DELAY);
 
-        const productBlocks = await page.$$eval('.js-product-container', blocks => {
+        const productBlocks = await mainPage.$$eval('.js-product-container', blocks => {
             return blocks.map(block => {
                 const title = block.querySelector('.card__name')?.textContent.trim();
                 const price = block.querySelector('.card__price')?.textContent.trim();
@@ -195,44 +287,30 @@ const runScraper = async () => {
             });
         });
 
-        for (const product of productBlocks) {
-            await scrapeProductDetails(page, product);
+        if (productBlocks.length === 0) {
+            console.log(`No products found on page ${currentPage}`);
+            break;
         }
 
-        allProducts.push(...productBlocks);
+        console.log(`Processing ${productBlocks.length} products from page ${currentPage}`);
 
-        try {
-            const data = productBlocks.map(p => ({
-                name: p.title,
-                category: p.category,
-                image_url: p.imageSrc,
-                product_url: p.link,
-                store: 'rimi',
-                original_price: p.price_before,
-                discounted_price: p.price,
-                discount_percent: p.discount,
-                start_at: p.start_at,
-                end_at: p.end_at,
-                info: p.info,
-                condition: p.condition,
-                card: p.card
-            }));
-            await axios.post('http://127.0.0.1/api/scrapers', data);
-            console.log(`Posted ${productBlocks.length} products to API from page ${currentPage}`);
-        } catch (err) {
-            console.error('Error posting products:', err.message);
-        }
+        const processedProducts = await processBatch(browser, productBlocks);
+        allProducts.push(...processedProducts);
+
+        await postBatchToAPI(processedProducts);
 
         currentPage++;
         saveProgress(currentPage);
     }
 
+    await mainPage.close();
+    await browser.close();
+
     fs.writeFileSync('rimi.json', JSON.stringify(allProducts, null, 2));
     console.log('✅ Scraping completed. Data saved to rimi.json');
-    await browser.close();
 };
 
-const startWithRetries = async (maxRetries = 5, delayBetweenRetries = 10000) => {
+const startWithRetries = async (maxRetries = 3, delayBetweenRetries = 10000) => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         if (attempt === 1) {
             console.log('🔄 First attempt – resetting progress...');
