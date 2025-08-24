@@ -67,7 +67,7 @@ class ProductController extends Controller
             return response()->json(['error' => 'Store or category not found'], 404);
         }
 
-        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(10);
+        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(25);
 
         return response()->json([
             'data' => $this->formatter->format($discounts),
@@ -86,7 +86,7 @@ class ProductController extends Controller
                 $q->where('category_id', $category->id);
             });
 
-        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(10);
+        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(25);
 
         return response()->json([
             'data' => $this->formatter->format($discounts),
@@ -164,7 +164,7 @@ class ProductController extends Controller
     {
         $discounts = Discount::searchByProductName($query)
             ->with(['product', 'store'])
-            ->paginate(10);
+            ->paginate(25);
 
         return response()->json([
             'data' => $this->formatter->format($discounts),

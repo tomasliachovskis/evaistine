@@ -292,10 +292,14 @@ const runScraper = async () => {
                 const valid = block.querySelector('.ods-badge__label')?.textContent.trim();
                 let discount = block.querySelector('.m-price__label')?.textContent.trim() ?? '';
                 const link = block.querySelector('.card__url')?.href;
-                const imageSrc = block.querySelector('.card__image-wrapper img')?.src;
+                let imageSrc = block.querySelector('.card__image-wrapper img')?.src;
                 let info = block.querySelector('.card__price-per')?.textContent.trim();
                 let condition = block.querySelector('div.price-label__header.-red')?.textContent.trim();
                 info = info?.replace(/\s+/g, ' ').trim();
+                
+                if (imageSrc) {
+                    imageSrc = imageSrc.replace(/q_1/g, 'q_auto:low');
+                }
                 
                 if (condition && condition.includes('%')) {
                     discount = condition;

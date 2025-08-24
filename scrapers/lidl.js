@@ -70,7 +70,10 @@ puppeteer.use(StealthPlugin());
                 const original_price = block.querySelector('.ods-price__stroke-price')?.textContent.trim();
                 const info = block.querySelector('.ods-price__footer')?.textContent.trim();
                 const valid = block.querySelector('.product-grid-box__availabilities')?.textContent.trim();
-                const discount_percent = block.querySelector('.ods-price__box-content-text-el')?.textContent.trim() ?? '';
+                let discount_percent = block.querySelector('.ods-price__box-content-text-el')?.textContent.trim() ?? '';
+                if (discount_percent && discount_percent.includes('x')) {
+                    discount_percent = '';
+                }
                 const product_url = block.querySelector('a')?.href;
                 const image_url = block.querySelector('.odsc-image-gallery__image')?.src;
                 const card = block.querySelector('.seal .seal__badge') !== null;

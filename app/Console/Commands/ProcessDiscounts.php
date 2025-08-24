@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Category;
 use App\Models\DiscountHistory;
 use App\Models\DiscountTemp;
 use App\Models\Product;
@@ -14,15 +15,23 @@ use App\Rules\StoreRules\RimiRules;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use App\Models\CategoryMapper;
+use App\Services\ProductNameNormalizer;
 
 class ProcessDiscounts extends Command
 {
     protected $signature = 'discounts:process';
     protected $description = 'Process new discounts from discount_temp table';
 
+    private ProductNameNormalizer $normalizer;
+
+    public function __construct(ProductNameNormalizer $normalizer)
+    {
+        parent::__construct();
+        $this->normalizer = $normalizer;
+    }
+
     public function handle()
     {
-        // Remove duplicates based on product_url
         $duplicates = DiscountTemp::whereNotNull('product_url')
             ->select('product_url')
             ->groupBy('product_url')
@@ -35,7 +44,6 @@ class ProcessDiscounts extends Command
                 ->orderBy('id', 'desc')
                 ->get();
 
-            // Keep the first record, delete the rest
             $firstRecord = $records->shift();
             foreach ($records as $record) {
                 $record->delete();
@@ -80,11 +88,14 @@ class ProcessDiscounts extends Command
                 continue;
             }
 
+            $normalizedProductName = $this->normalizer->normalize($tempDiscount->name);
+            $productSlug = $this->normalizer->generateSlug($normalizedProductName);
+
             $product = Product::firstOrCreate(
-                ['slug' => Str::slug($tempDiscount->name)],
+                ['slug' => $productSlug],
                 [
-                    'name' => $tempDiscount->name,
-                    'slug' => Str::slug($tempDiscount->name),
+                    'name' => $normalizedProductName,
+                    'slug' => $productSlug,
                     'description' => '',
                     'category_id' => $this->assignCategory($tempDiscount, $store),
                     'image_url' => $tempDiscount->image_url,
@@ -130,25 +141,75 @@ class ProcessDiscounts extends Command
 
     private function assignCategory(DiscountTemp $tempDiscount, Store $store)
     {
+        $productName = strtolower($tempDiscount->name);
+        $petKeywords = ['šunų', 'ėdalas', 'kačių', 'gyvūnų'];
+
+        foreach ($petKeywords as $keyword) {
+            if (mb_strpos($productName, $keyword) !== false) {
+                return 619;
+            }
+        }
+
         if (empty($tempDiscount->category)) {
             return null;
         }
 
         $storeCategory = $tempDiscount->category;
+
+        // Try full category exact match
+        $mapper = CategoryMapper::where('store', $store->id)
+            ->where('store_category', $storeCategory)
+            ->orderBy('id', 'asc')
+            ->first();
+
+        if ($mapper) {
+            return $mapper->category_id;
+        }
+
+        // Try LIKE match with full category
+        $mapper = CategoryMapper::where('store', $store->id)
+            ->where('store_category', 'LIKE', $storeCategory . '%')
+            ->orderBy('id', 'asc')
+            ->first();
+
+        if ($mapper) {
+            return $mapper->category_id;
+        }
+
+        $storeCategory = str_replace(['https://iki.lt/'], '', $storeCategory);
+
         if (str_contains($storeCategory, '/')) {
-            $firstPart = explode('/', $storeCategory)[0];
+            $parts = explode('/', $storeCategory);
 
-            // Try full category exact match
-            $mapper = CategoryMapper::where('store', $store->id)
-                ->where('store_category', $storeCategory)
-                ->orderBy('id', 'asc')
-                ->first();
+            // Try 2 parts first (if available)
+            if (count($parts) >= 2) {
+                $twoParts = $parts[0] . '/' . $parts[1];
 
-            if ($mapper) {
-                return $mapper->category_id;
+                // Try exact match with 2 parts
+                $mapper = CategoryMapper::where('store', $store->id)
+                    ->where('store_category', $twoParts)
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+                if ($mapper) {
+                    return $mapper->category_id;
+                }
+
+                // Try LIKE match with 2 parts
+                $mapper = CategoryMapper::where('store', $store->id)
+                    ->where('store_category', 'LIKE', $twoParts . '%')
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+                if ($mapper) {
+                    return $mapper->category_id;
+                }
             }
 
-            // Try exact match first
+            // Try 1 part (first part)
+            $firstPart = $parts[0];
+
+            // Try exact match with 1 part
             $mapper = CategoryMapper::where('store', $store->id)
                 ->where('store_category', $firstPart)
                 ->orderBy('id', 'asc')
@@ -158,7 +219,7 @@ class ProcessDiscounts extends Command
                 return $mapper->category_id;
             }
 
-            // Try LIKE match
+            // Try LIKE match with 1 part
             $mapper = CategoryMapper::where('store', $store->id)
                 ->where('store_category', 'LIKE', $firstPart . '%')
                 ->orderBy('id', 'asc')
@@ -169,24 +230,21 @@ class ProcessDiscounts extends Command
             }
         }
 
-        $mapper = CategoryMapper::where('store', $store->id)
-            ->where('store_category', $storeCategory)
-            ->orderBy('id', 'asc')
-            ->first();
+        return $this->createCategoryAndMapping($tempDiscount->category, $store);
+    }
 
-        if ($mapper) {
-            return $mapper->category_id;
-        }
+    private function createCategoryAndMapping(string $storeCategory, Store $store)
+    {
+        CategoryMapper::create([
+            'category_id' => null,
+            'store_category' => $storeCategory,
+            'store' => $store->id,
+        ]);
 
-        $mapper = CategoryMapper::where('store', $store->id)
-            ->where('store_category', 'LIKE', $storeCategory . '%')
-            ->orderBy('id', 'asc')
-            ->first();
-
-        if ($mapper) {
-            return $mapper->category_id;
-        }
+        $this->info("Added unmapped category: {$storeCategory}");
 
         return null;
     }
+
+
 }
