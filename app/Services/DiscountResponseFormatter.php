@@ -8,14 +8,14 @@ class DiscountResponseFormatter
     {
         if ($discounts instanceof \Illuminate\Pagination\LengthAwarePaginator) {
             $discounts->getCollection()->transform(function ($discount) {
-                return $this->formatListDiscount($discount);
+                return $this?->formatListDiscount($discount);
             });
 
             return $discounts;
         }
 
         return $discounts->map(function ($discount) {
-            return $this->formatSingleDiscount($discount);
+            return $this?->formatSingleDiscount($discount);
         });
     }
 
@@ -32,9 +32,9 @@ class DiscountResponseFormatter
             'discount_percent' => $discount->discount_percent,
             'condition' => $discount->condition,
             'card' => $discount->card,
-            'from_date' => $discount->start_at->format('Y-m-d'),
-            'to_date' => $discount->end_at->format('Y-m-d'),
-            'valid_date' => $discount->start_at->format('Y-m-d') . ' - ' . $discount->end_at->format('Y-m-d'),
+            'from_date' => $discount->start_at?->format('Y-m-d'),
+            'to_date' => $discount->end_at?->format('Y-m-d'),
+            'valid_date' => $discount->start_at?->format('Y-m-d') . ' - ' . $discount->end_at?->format('Y-m-d'),
             'offer_count' => $offerCount,
             'min_price' => (float) $discount->product->discounts()->min('discounted_price'),
             'offers' => $offers->map(function($offer) {
@@ -46,9 +46,9 @@ class DiscountResponseFormatter
                     'discount_percent' => $offer->discount_percent,
                     'condition' => $offer->condition,
                     'card' => $offer->card,
-                    'valid_date' => $offer->start_at->format('m d') . ' - ' . $offer->end_at->format('m d'),
-                    'from_date' => $offer->start_at->format('Y-m-d'),
-                    'to_date' => $offer->end_at->format('Y-m-d'),
+                    'valid_date' => $offer->start_at?->format('m d') . ' - ' . $offer->end_at?->format('m d'),
+                    'from_date' => $offer->start_at?->format('Y-m-d'),
+                    'to_date' => $offer->end_at?->format('Y-m-d'),
                     'store' => [
                         'id' => $offer->store->id,
                         'name' => $offer->store->name,
@@ -89,9 +89,9 @@ class DiscountResponseFormatter
             'discount_percent' => $discount->discount_percent,
             'condition' => $discount->condition,
             'card' => $discount->card,
-            'valid_date' => $discount->start_at->format('m d') . ' - ' . $discount->end_at->format('m d'),
-            'from_date' => $discount->start_at->format('Y-m-d'),
-            'to_date' => $discount->end_at->format('Y-m-d'),
+            'valid_date' => $discount->start_at?->format('m d') . ' - ' . $discount->end_at?->format('m d'),
+            'from_date' => $discount->start_at?->format('Y-m-d'),
+            'to_date' => $discount->end_at?->format('Y-m-d'),
             'offers' => [],
             'offer_count' => $offerCount,
             'min_price' => (float) $discount->product->discounts()->min('discounted_price'),

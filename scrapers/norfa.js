@@ -28,8 +28,8 @@ puppeteer.use(StealthPlugin());
             }
 
             const name = block.querySelector('.c-product__name')?.textContent.trim() ?? '';
-            const discounted_price = block.querySelector('.c-product__price')?.textContent.trim() ?? '';
-            const original_price = block.querySelector('.c-product__old-price')?.textContent.trim() ?? '';
+            const discounted_price = (block.querySelector('.c-product__price')?.textContent.trim() ?? '').replace('€', '').trim();
+            const original_price = (block.querySelector('.c-product__old-price')?.textContent.trim() ?? '').replace('€', '').trim();
             let valid = block.querySelector('.c-more-info__content')?.textContent.trim() ?? '';
 
             if (valid.includes("\n")) {

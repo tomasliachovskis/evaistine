@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Category;
+use App\Models\CategoryMapper;
 use App\Models\DiscountHistory;
 use App\Models\DiscountTemp;
 use App\Models\Product;
@@ -14,7 +15,6 @@ use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use App\Models\CategoryMapper;
 use App\Services\ProductNameNormalizer;
 
 class ProcessDiscounts extends Command
@@ -141,6 +141,10 @@ class ProcessDiscounts extends Command
 
     private function assignCategory(DiscountTemp $tempDiscount, Store $store)
     {
+        if (empty($tempDiscount->category)) {
+            return null;
+        }
+
         $productName = strtolower($tempDiscount->name);
         $petKeywords = ['šunų', 'ėdalas', 'kačių', 'gyvūnų'];
 
@@ -150,15 +154,17 @@ class ProcessDiscounts extends Command
             }
         }
 
-        if (empty($tempDiscount->category)) {
-            return null;
-        }
+        $categoryName = $tempDiscount->category;
+        $storeCategory = str_replace(['https://iki.lt/'], '', $categoryName);
 
-        $storeCategory = $tempDiscount->category;
+        $category = Category::where('name', $categoryName)->first();
+        if ($category) {
+            return $category->id;
+        }
 
         // Try full category exact match
         $mapper = CategoryMapper::where('store', $store->id)
-            ->where('store_category', $storeCategory)
+            ->where('store_category', $categoryName)
             ->orderBy('id', 'asc')
             ->first();
 
@@ -168,15 +174,13 @@ class ProcessDiscounts extends Command
 
         // Try LIKE match with full category
         $mapper = CategoryMapper::where('store', $store->id)
-            ->where('store_category', 'LIKE', $storeCategory . '%')
+            ->where('store_category', 'LIKE', $categoryName . '%')
             ->orderBy('id', 'asc')
             ->first();
 
         if ($mapper) {
             return $mapper->category_id;
         }
-
-        $storeCategory = str_replace(['https://iki.lt/'], '', $storeCategory);
 
         if (str_contains($storeCategory, '/')) {
             $parts = explode('/', $storeCategory);
@@ -245,6 +249,4 @@ class ProcessDiscounts extends Command
 
         return null;
     }
-
-
 }
