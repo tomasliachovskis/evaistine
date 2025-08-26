@@ -180,8 +180,15 @@ class ProductController extends Controller
 
     public function getFavoriteProduct($slug)
     {
-        $discounts = Discount::whereHas('product', function ($query) use ($slug) {
-            $query->where('slug', '!=', $slug);
+        $product = \App\Models\Product::where('slug', $slug)->first();
+
+        if (!$product) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
+
+        $discounts = Discount::whereHas('product', function ($query) use ($slug, $product) {
+            $query->where('slug', '!=', $slug)
+                  ->where('category_id', $product->category_id);
         })
             ->with(['product', 'store'])
             ->inRandomOrder()

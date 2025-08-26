@@ -82,7 +82,7 @@ const __dirname = path.dirname(__filename);
 
         const productBlocks = await page.$$eval('.akcija-loyalty', (blocks, link) => {
             function parseDate(dateStr) {
-                const [month, day] = dateStr.split(' ').map(Number);
+                const [month, day] = dateStr.split('.').map(Number);
                 const year = new Date().getFullYear();
                 return new Date(year, month - 1, day).toLocaleDateString('en-CA');
             }
@@ -109,7 +109,14 @@ const __dirname = path.dirname(__filename);
                     discounted_price = null;
                 }
 
-                let original_price = block.querySelector('.price_old_block')?.textContent.trim() ?? '';
+                if (discounted_price) {
+                    discounted_price = discounted_price
+                        .split(/\r?\n/)
+                        .map(line => line.trim())
+                        .find(line => line !== '');
+                }
+
+                // let original_price = block.querySelector('.price_old_block')?.textContent.trim() ?? '';
                 let discount_percent = block.querySelector('.percentage_tag .main')?.textContent.trim() ?? '-';
 
                 if (discount_percent === '-') {
@@ -119,7 +126,18 @@ const __dirname = path.dirname(__filename);
                     discount_percent = block.querySelector('.price_block_red_wrapper .main')?.textContent.trim() ?? '-';
                 }
 
-                original_price = cleanPrice(original_price);
+                const priceInt = block.querySelector('.price_old_block .price_int')?.textContent.trim();
+                const priceCents = block.querySelector('.price_old_block .price_cents')?.textContent.trim();
+
+                let original_price = (priceInt && priceCents)
+                    ? `${priceInt}.${priceCents}`
+                    : '';
+
+                if ((discounted_price > 0 && original_price > 0) && discounted_price > original_price) {
+                    let tmp = original_price;
+                    original_price = discounted_price;
+                    discounted_price = tmp;
+                }
 
                 const info = block.querySelector('.akcija_description')?.textContent.trim();
                 let valid = block.querySelector('.m-0.w-100.akcija_description.text-center')?.textContent.trim();
@@ -131,8 +149,8 @@ const __dirname = path.dirname(__filename);
                 let end_at = '';
 
                 if (valid && typeof valid === 'string' && valid.includes(' - ')) {
-                    valid = valid.replace('Galioja: ', '').replace('.', ' ');
-                    const [start_atStr, end_atStr] = valid.split('-');
+                    valid = valid.replace('Galioja: ', '').trim();
+                    const [start_atStr, end_atStr] = valid.split('-').map(s => s.trim());
                     start_at = parseDate(start_atStr);
                     end_at = parseDate(end_atStr);
                 } else {
