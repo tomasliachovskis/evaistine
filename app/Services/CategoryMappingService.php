@@ -9,16 +9,30 @@ use Illuminate\Support\Facades\Log;
 
 class CategoryMappingService
 {
-    private string $apiKey;
+    private ?string $apiKey;
     private string $apiUrl = 'https://api.openai.com/v1/chat/completions';
 
     public function __construct()
     {
         $this->apiKey = config('services.openai.api_key');
+        
+        if (empty($this->apiKey)) {
+            Log::warning('OpenAI API key not configured in CategoryMappingService');
+        }
+    }
+
+    public function isConfigured(): bool
+    {
+        return !empty($this->apiKey);
     }
 
     public function bulkMapStoreProducts(string $storeName): void
     {
+        if (!$this->isConfigured()) {
+            $this->warn("CategoryMappingService is not configured. Skipping bulk mapping for {$storeName}.");
+            return;
+        }
+
         $products = DiscountTemp::where('store', $storeName)
             ->where(function($query) {
                 $query->whereNull('category')
@@ -32,7 +46,7 @@ class CategoryMappingService
 
         foreach ($chunks as $chunk) {
             $this->mapProductChunk($chunk, $storeName);
-            sleep(2); // Rate limiting between chunks
+            sleep(2);
         }
 
         $this->info("Completed bulk mapping for {$storeName}");

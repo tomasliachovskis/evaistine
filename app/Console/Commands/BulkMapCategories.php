@@ -34,6 +34,11 @@ class BulkMapCategories extends Command
     {
         $this->info("Starting category mapping for {$storeName}...");
         
+        if (!$this->mappingService->isConfigured()) {
+            $this->warn("CategoryMappingService is not configured. Please set OPENAI_API_KEY environment variable.");
+            return;
+        }
+        
         try {
             $this->mappingService->bulkMapStoreProducts($storeName);
             $this->info("Successfully completed mapping for {$storeName}");

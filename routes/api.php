@@ -25,3 +25,6 @@ Route::get('/favorite/home', [ProductController::class, 'getFavoriteHome']);
 
 //Route::post('/breadcrumbs', [SeoController::class, 'getBreadcrumbs']);
 //Route::post('/titles', [SeoController::class, 'getTitlesBySlug']);
+
+
+///discount?page=1&order=popular&store=maxima,norfa,lidl,iki,rimi

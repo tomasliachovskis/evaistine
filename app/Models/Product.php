@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Cache;
 
 class Product extends Model
 {
@@ -38,5 +39,18 @@ class Product extends Model
     public function discounts()
     {
         return $this->hasMany(Discount::class);
+    }
+
+    protected static function booted()
+    {
+        static::updated(function ($product) {
+            $cacheKey = "product_slug_{$product->slug}";
+            Cache::forget($cacheKey);
+        });
+
+        static::deleted(function ($product) {
+            $cacheKey = "product_slug_{$product->slug}";
+            Cache::forget($cacheKey);
+        });
     }
 }

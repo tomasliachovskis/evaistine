@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
 use App\Models\DiscountTemp;
 use App\Models\Discount;
 use App\Services\DiscountResponseFormatter;
@@ -40,12 +41,15 @@ class ProductController extends Controller
     public function getDiscounts($storeOrCategory, $category = null)
     {
         $filters = $this->getFilters();
+        $cacheKey = $this->generateDiscountsCacheKey($storeOrCategory, $category, $filters);
 
-        if ($category) {
-            return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category, $filters);
-        }
+        return Cache::remember($cacheKey, 3600, function () use ($storeOrCategory, $category, $filters) {
+            if ($category) {
+                return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category, $filters);
+            }
 
-        return $this->getDiscountsByStoreOrCategory($storeOrCategory, $filters);
+            return $this->getDiscountsByStoreOrCategory($storeOrCategory, $filters);
+        });
     }
 
     private function getDiscountsByStoreOrCategory($storeOrCategory, $filters)
@@ -101,6 +105,7 @@ class ProductController extends Controller
             'order' => request()->get('order', 'popular'),
             'card' => request()->get('card'),
             'plus' => request()->get('plus'),
+            'page' => request()->get('page'),
         ];
     }
 
@@ -212,21 +217,25 @@ class ProductController extends Controller
 
     public function getProductBySlug($slug)
     {
-        $product = \App\Models\Product::where('slug', $slug)
-            ->with([
-                'discounts' => function ($query) {
-                    $query->with('store')
-                        ->orderBy('created_at', 'desc');
-                },
-                'category'
-            ])
-            ->firstOrFail();
+        $cacheKey = "product_slug_{$slug}";
 
-        return response()->json([
-            'data' => $this->formatter->format($product->discounts),
-            'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
-            'seo' => $this->generateSeoData('product', $product)
-        ]);
+        return Cache::remember($cacheKey, 3600, function () use ($slug) {
+            $product = \App\Models\Product::where('slug', $slug)
+                ->with([
+                    'discounts' => function ($query) {
+                        $query->with('store')
+                            ->orderBy('created_at', 'desc');
+                    },
+                    'category'
+                ])
+                ->firstOrFail();
+
+            return response()->json([
+                'data' => $this->formatter->format($product->discounts),
+                'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
+                'seo' => $this->generateSeoData('product', $product)
+            ]);
+        });
     }
 
     private function generateBreadcrumbs($type, $entity, $secondaryEntity = null)
@@ -330,6 +339,32 @@ class ProductController extends Controller
                     'meta_title' => '',
                     'meta_description' => '',
                 ];
+        }
+    }
+
+    private function generateDiscountsCacheKey($storeOrCategory, $category = null, $filters = [])
+    {
+        $key = "discounts_{$storeOrCategory}";
+
+        if ($category) {
+            $key .= "_{$category}";
+        }
+
+        if (!empty($filters)) {
+            $key .= "_" . md5(serialize($filters));
+        }
+
+        return $key;
+    }
+
+    public function clearDiscountsCache($storeOrCategory = null, $category = null)
+    {
+        if ($storeOrCategory) {
+            $filters = $this->getFilters();
+            $cacheKey = $this->generateDiscountsCacheKey($storeOrCategory, $category, $filters);
+            Cache::forget($cacheKey);
+        } else {
+            Cache::flush();
         }
     }
 }
