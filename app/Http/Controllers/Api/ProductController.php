@@ -167,9 +167,11 @@ class ProductController extends Controller
 
     public function search(Request $request, $query)
     {
-        $discounts = Discount::searchByProductName($query)
-            ->with(['product', 'store'])
-            ->paginate(25);
+        $filters = $this->getFilters();
+        $queryQb = Discount::searchByProductName($query)
+            ->with(['product', 'store']);
+
+        $discounts = $this->buildDiscountQuery($queryQb, $filters)->paginate(25);
 
         return response()->json([
             'data' => $this->formatter->format($discounts),

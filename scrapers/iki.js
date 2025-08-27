@@ -133,7 +133,8 @@ const __dirname = path.dirname(__filename);
                     ? `${priceInt}.${priceCents}`
                     : '';
 
-                if ((discounted_price > 0 && original_price > 0) && discounted_price > original_price) {
+                if ((parseFloat(discounted_price) > 0 && parseFloat(original_price) > 0)
+                    && parseFloat(discounted_price) > parseFloat(original_price)) {
                     let tmp = original_price;
                     original_price = discounted_price;
                     discounted_price = tmp;

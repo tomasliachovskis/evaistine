@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Category;
 use App\Models\CategoryMapper;
+use App\Models\Discount;
 use App\Models\DiscountHistory;
 use App\Models\DiscountTemp;
 use App\Models\Product;
@@ -89,12 +90,13 @@ class ProcessDiscounts extends Command
             }
 
             $normalizedProductName = $this->normalizer->normalize($tempDiscount->name);
-            $productSlug = $this->normalizer->generateSlug($normalizedProductName);
+            $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand);
 
             $product = Product::firstOrCreate(
                 ['slug' => $productSlug],
                 [
                     'name' => $normalizedProductName,
+                    'brand' => $tempDiscount->brand,
                     'slug' => $productSlug,
                     'description' => '',
                     'category_id' => $this->assignCategory($tempDiscount, $store),
@@ -102,18 +104,48 @@ class ProcessDiscounts extends Command
                 ]
             );
 
-            DiscountHistory::create([
-                'product_id' => $product->id,
-                'store_id' => $store->id,
-                'product_url' => $tempDiscount->product_url,
-                'original_price' => $normalizedOriginalPrice,
-                'discounted_price' => $normalizedDiscountedPrice,
-                'discount_percent' => $discountPercent,
-                'condition' => $tempDiscount->condition,
-                'card' => $tempDiscount->card,
-                'start_at' => $startAt,
-                'end_at' => $endAt,
-            ]);
+            $existingDiscount = DiscountHistory::where('product_id', $product->id)
+                ->where('store_id', $store->id)
+                ->where('start_at', $startAt)
+                ->where('end_at', $endAt)
+                ->first();
+
+            if (!$existingDiscount) {
+                DiscountHistory::create([
+                    'product_id' => $product->id,
+                    'store_id' => $store->id,
+                    'product_url' => $tempDiscount->product_url,
+                    'original_price' => $normalizedOriginalPrice,
+                    'discounted_price' => $normalizedDiscountedPrice,
+                    'discount_percent' => $discountPercent,
+                    'condition' => $tempDiscount->condition,
+                    'card' => $tempDiscount->card,
+                    'start_at' => $startAt,
+                    'end_at' => $endAt,
+                ]);
+
+            }
+
+            $existingMainDiscount = Discount::where('product_id', $product->id)
+                ->where('store_id', $store->id)
+                ->where('start_at', $startAt)
+                ->where('end_at', $endAt)
+                ->first();
+
+            if (!$existingMainDiscount) {
+                Discount::create([
+                    'product_id' => $product->id,
+                    'store_id' => $store->id,
+                    'product_url' => $tempDiscount->product_url,
+                    'original_price' => $normalizedOriginalPrice,
+                    'discounted_price' => $normalizedDiscountedPrice,
+                    'discount_percent' => $discountPercent,
+                    'condition' => $tempDiscount->condition,
+                    'card' => $tempDiscount->card,
+                    'start_at' => $startAt,
+                    'end_at' => $endAt,
+                ]);
+            }
 
             // $tempDiscount->delete();
         }
@@ -248,5 +280,45 @@ class ProcessDiscounts extends Command
         $this->info("Added unmapped category: {$storeCategory}");
 
         return null;
+    }
+
+    private function generateProductSlug(string $productName, ?string $brand): string
+    {
+        $slugParts = [];
+
+        if (!empty($brand)) {
+            $normalizedBrand = $this->normalizeForSlug($brand);
+            if (!empty($normalizedBrand)) {
+                $slugParts[] = $normalizedBrand;
+            }
+        }
+
+        $normalizedName = $this->normalizeForSlug($productName);
+        if (!empty($normalizedName)) {
+            $slugParts[] = $normalizedName;
+        }
+
+        return implode('-', $slugParts);
+    }
+
+    private function normalizeForSlug(string $text): string
+    {
+        $text = trim($text);
+        if (empty($text)) {
+            return '';
+        }
+
+        $lithuanianToLatin = [
+            'ą' => 'a', 'č' => 'c', 'ę' => 'e', 'ė' => 'e', 'į' => 'i', 'š' => 's', 'ų' => 'u', 'ū' => 'u', 'ž' => 'z',
+            'Ą' => 'A', 'Č' => 'C', 'Ę' => 'E', 'Ė' => 'E', 'Į' => 'I', 'Š' => 'S', 'Ų' => 'U', 'Ū' => 'U', 'Ž' => 'Z'
+        ];
+
+        $text = strtr($text, $lithuanianToLatin);
+        $text = strtolower($text);
+        $text = preg_replace('/[^a-z0-9\s-]/', '', $text);
+        $text = preg_replace('/\s+/', '-', $text);
+        $text = preg_replace('/-+/', '-', $text);
+
+        return trim($text, '-');
     }
 }

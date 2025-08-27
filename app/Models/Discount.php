@@ -19,6 +19,8 @@ class Discount extends Model
         'condition',
         'card',
         'product_url',
+        'start_at',
+        'end_at',
         'created_at',
         'updated_at'
     ];
