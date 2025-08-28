@@ -126,10 +126,13 @@ const scrapeProductDetails = async (browser, product, retries = 1) => {
                 product.price_before = price_before;
             }
 
+            const brand = await page.$eval('div.other-from-brand > a', el => el?.textContent.trim()).catch(() => null);
+
             product.category = categories.join('/');
             product.start_at = start_at;
             product.end_at = end_at;
             product.card = card;
+            product.brand = brand;
 
             await page.close();
             return product;
@@ -187,7 +190,8 @@ const postBatchToAPI = async (products) => {
         end_at: p.end_at,
         info: p.info,
         condition: p.condition,
-        card: p.card
+        card: p.card,
+        brand: p.brand
     }));
 
     try {
@@ -296,16 +300,16 @@ const runScraper = async () => {
                 let info = block.querySelector('.card__price-per')?.textContent.trim();
                 let condition = block.querySelector('div.price-label__header.-red')?.textContent.trim();
                 info = info?.replace(/\s+/g, ' ').trim();
-                
+
                 if (imageSrc) {
                     imageSrc = imageSrc.replace(/q_1/g, 'q_auto:low');
                 }
-                
+
                 if (condition && condition.includes('%')) {
                     discount = condition;
                     condition = '';
                 }
-                
+
                 return { title, price, price_before, info, discount, valid, link, imageSrc, condition};
             });
         });

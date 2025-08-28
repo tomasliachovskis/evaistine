@@ -87,7 +87,9 @@ puppeteer.use(StealthPlugin());
             brand: product.brand,
             discounted_price: product.discounted_price,
             original_price: product.original_price,
-            card: JSON.stringify(product.info),
+            condition: product.info && Object.keys(product.info).length > 0
+                ? JSON.stringify(product.info)
+                : '',
             discount_percent: product.discount_percent,
             start_at: product.start_at,
             end_at: product.end_at,

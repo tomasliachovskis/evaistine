@@ -1,5 +1,105 @@
 [
   {
+    "name": "Atšildyta atlantinė skumbrė, 1 kg",
+    "discounted_price": "4.99",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-27",
+    "end_at": "2025-08-31",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/skumbre-atsildyta-atlantine.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Atšaldyta auksaspalvė dorada,1 kg",
+    "discounted_price": "8.99",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-27",
+    "end_at": "2025-08-31",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/dorada-auksaspalve-v6.png",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Nepjaustoma sūdyta atl. lašišų filė su oda, 1 kg",
+    "discounted_price": "11.99",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-27",
+    "end_at": "2025-08-31",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/lasisa-file-SUDYTA-Copy.png",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Sveriami apelsinai, 1 kg",
+    "discounted_price": "1.39",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-26",
+    "end_at": "2025-08-31",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/apelsin-removebg-preview-1.png",
+    "info": {}
+  },
+  {
+    "name": "Saldžiosios bulvės, 1 kg",
+    "discounted_price": "1.99",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-26",
+    "end_at": "2025-08-31",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/bulves-SALDZIOSIOS-v6.png",
+    "info": {}
+  },
+  {
+    "name": "Bananai, 1 kg",
+    "discounted_price": "0.99",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-26",
+    "end_at": "2025-08-31",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Bananai.jpg",
+    "info": {}
+  },
+  {
+    "name": "Fasuoti krapai, 50 g/pak.",
+    "discounted_price": "0.49",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-26",
+    "end_at": "2025-08-31",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/krapai-PAK-50-2-v10.png",
+    "info": {}
+  },
+  {
+    "name": "Nepjaustytas arbūzas, 1 kg",
+    "discounted_price": "0.49",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-26",
+    "end_at": "2025-08-31",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/arbuzas-v2.jpg",
+    "info": {}
+  },
+  {
     "name": "Šiukšlių maišai N, 60 l, 20 vnt./pak.",
     "discounted_price": "2.05",
     "original_price": "",
@@ -29,6 +129,17 @@
     }
   },
   {
+    "name": "Vanilinis plombyras NYKŠTUKAS, 800 ml",
+    "discounted_price": "3.77",
+    "original_price": "6.99",
+    "discount_percent": "-46%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/nykstukas-800ml2-9221.jpg",
+    "info": {}
+  },
+  {
     "name": "Panardinamas siurblys INGCO, art. SPD7508, 1 vnt.",
     "discounted_price": "41.99",
     "original_price": "69.99",
@@ -41,50 +152,6 @@
       "shopH": "shopH",
       "shopXxl": "shopXxl"
     }
-  },
-  {
-    "name": "GASPADORIAUS š. r. dešra, 500 g",
-    "discounted_price": "4.25",
-    "original_price": "6.99",
-    "discount_percent": "-39%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/GASPADORIAUS-s.rukyta-desra.jpg",
-    "info": {}
-  },
-  {
-    "name": "PIEMENĖLIO grietinė salotoms, 12% rieb., 380 g",
-    "discounted_price": "1.19",
-    "original_price": "1.49",
-    "discount_percent": "-20%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/grietine-Piemenelio-salotoms-380g.jpg",
-    "info": {}
-  },
-  {
-    "name": "Vanilinis plombyras NYKŠTUKAS, 800 ml",
-    "discounted_price": "3.77",
-    "original_price": "6.99",
-    "discount_percent": "-46%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/nykstukas-800ml2-9221.jpg",
-    "info": {}
-  },
-  {
-    "name": "Dešroms ir dešrelėms KAI NORISI MĖSOS (įv. rūšių), 200-600 g",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kai-norisi-mesos-VISI-Gaminiai.jpg",
-    "info": {}
   },
   {
     "name": "Batonėliai SNICKERS arba TWIX, 10 vnt./pak, 500 g/pak.",
@@ -113,14 +180,36 @@
     }
   },
   {
-    "name": "Avižų dribsniai ELOVENA, 500 g",
-    "discounted_price": "1.68",
-    "original_price": "2.59",
-    "discount_percent": "-35%",
+    "name": "Dešroms ir dešrelėms KAI NORISI MĖSOS (įv. rūšių), 200-600 g",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-50%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/avizu-dribsniai-Elovena-500g-New.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kai-norisi-mesos-VISI-Gaminiai.jpg",
+    "info": {}
+  },
+  {
+    "name": "PIEMENĖLIO grietinė salotoms, 12% rieb., 380 g",
+    "discounted_price": "1.19",
+    "original_price": "1.49",
+    "discount_percent": "-20%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/grietine-Piemenelio-salotoms-380g.jpg",
+    "info": {}
+  },
+  {
+    "name": "GASPADORIAUS š. r. dešra, 500 g",
+    "discounted_price": "4.25",
+    "original_price": "6.99",
+    "discount_percent": "-39%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/GASPADORIAUS-s.rukyta-desra.jpg",
     "info": {}
   },
   {
@@ -132,21 +221,6 @@
     "end_at": "2024-12-09",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/jogurtas-graikiskas-pieno-rojus-200g.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Elektrinis virdulys ONEX, art. HD-16, 1 vnt.",
-    "discounted_price": "13.79",
-    "original_price": "22.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Elektrinis-virdulys-HD-16.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -195,6 +269,21 @@
     "info": {}
   },
   {
+    "name": "Elektrinis virdulys ONEX, art. HD-16, 1 vnt.",
+    "discounted_price": "13.79",
+    "original_price": "22.99",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Elektrinis-virdulys-HD-16.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
     "name": "PIEMENĖLIO biri varškė liesa, 1 kg",
     "discounted_price": "3.39",
     "original_price": "4.49",
@@ -203,21 +292,6 @@
     "end_at": "2024-12-09",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/varske-biri-Piemenelio1-liesa-1kg-copy.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Atsuktuvų rinkinys INGCO, art. HKSD0628, 6 vnt./rink.",
-    "discounted_price": "3.99",
-    "original_price": "6.99",
-    "discount_percent": "-42%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/atsuktuvu-rinkinys-6vnt.-HKSD0628.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -239,6 +313,43 @@
     }
   },
   {
+    "name": "Avižų dribsniai ELOVENA, 500 g",
+    "discounted_price": "1.68",
+    "original_price": "2.59",
+    "discount_percent": "-35%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/avizu-dribsniai-Elovena-500g-New.jpg",
+    "info": {}
+  },
+  {
+    "name": "Atsuktuvų rinkinys INGCO, art. HKSD0628, 6 vnt./rink.",
+    "discounted_price": "3.99",
+    "original_price": "6.99",
+    "discount_percent": "-42%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/atsuktuvu-rinkinys-6vnt.-HKSD0628.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Al. folijai, kepimo popieriui, maistinei plėvelei",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kepimo-folijos-maiseliai-popierius-2025-06-v2.jpg",
+    "info": {}
+  },
+  {
     "name": "SUSLAVIČIAUS kečupas KLASIKINIS arba ŠAŠLYLŲ, 1 kg",
     "discounted_price": "2.19",
     "original_price": "",
@@ -250,15 +361,19 @@
     "info": {}
   },
   {
-    "name": "Elektrinis virdulys ONEX, art. JF-P108, 1 vnt.",
-    "discounted_price": "7.69",
-    "original_price": "12.99",
-    "discount_percent": "-40%",
+    "name": "USB optinė pelė ONEX art.M-103, 1 vnt.",
+    "discounted_price": "1.69",
+    "original_price": "2.99",
+    "discount_percent": "-",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/virdulys-JF-P108-model-with-logo-v3.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pele-optine2-M-103_2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
   },
   {
     "name": "Smulkių reikmenų. ir įrankių dėžėms KISTENBERG",
@@ -269,6 +384,21 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/deze-smulkmenu-kistenberg-VISOS-copy-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Nefiltruota gira TAURAS, 0,5 l",
+    "discounted_price": "0.51",
+    "original_price": "0.79",
+    "discount_percent": "-35%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tauras-Gira-nefiltruota-apkeisti2-05l.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -291,32 +421,6 @@
     }
   },
   {
-    "name": "Al. folijai, kepimo popieriui, maistinei plėvelei",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kepimo-folijos-maiseliai-popierius-2025-06-v2.jpg",
-    "info": {}
-  },
-  {
-    "name": "USB optinė pelė ONEX art.M-103, 1 vnt.",
-    "discounted_price": "1.69",
-    "original_price": "2.99",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pele-optine2-M-103_2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
     "name": "ROKIŠKIO lyd. sūrelis (3 rūšių), 23 % rieb., 175 g",
     "discounted_price": "1.39",
     "original_price": "1.78",
@@ -328,19 +432,15 @@
     "info": {}
   },
   {
-    "name": "Nefiltruota gira TAURAS, 0,5 l",
-    "discounted_price": "0.51",
-    "original_price": "0.79",
-    "discount_percent": "-35%",
+    "name": "Elektrinis virdulys ONEX, art. JF-P108, 1 vnt.",
+    "discounted_price": "7.69",
+    "original_price": "12.99",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tauras-Gira-nefiltruota-apkeisti2-05l.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/virdulys-JF-P108-model-with-logo-v3.jpg",
+    "info": {}
   },
   {
     "name": "Kept. vištien. filė kepsneliams HEAT&EAT (3 rūšių), 260 g, 290 g, 350 g",
@@ -369,6 +469,21 @@
     }
   },
   {
+    "name": "Svarstyklės TEFAL, art. PP1401, 1 vnt.",
+    "discounted_price": "11.99",
+    "original_price": "19.99",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/svarstykles-Tefal-PP1401_1-v3.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
     "name": "PONIŠKA bemielė šviesi duona, 600 g",
     "discounted_price": "1.18",
     "original_price": "1.69",
@@ -380,14 +495,14 @@
     "info": {}
   },
   {
-    "name": "Svarstyklės TEFAL, art. PP1401, 1 vnt.",
-    "discounted_price": "11.99",
-    "original_price": "19.99",
-    "discount_percent": "-40%",
+    "name": "Buitinėms lemputėms",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/svarstykles-Tefal-PP1401_1-v3.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/lemputes-buitines-2022-10.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -425,21 +540,6 @@
     }
   },
   {
-    "name": "Buitinėms lemputėms",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/lemputes-buitines-2022-10.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
     "name": "Maisto papildams, vitaminams, gyd. tepalams ir tirpalams",
     "discounted_price": "",
     "original_price": "",
@@ -448,28 +548,6 @@
     "end_at": "2024-12-09",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/papildai-vitaminai-visi-2024-05-v2.jpg",
-    "info": {}
-  },
-  {
-    "name": "Skalbimo kapsulės DER WASCHKONIG UNIVERSAL arba COLOR, 32 vnt./pak.",
-    "discounted_price": "5.49",
-    "original_price": "9.99",
-    "discount_percent": "-45%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Skalbimo-kapsules-DER-WASCHKONIG-UNIVERSAL-arba-COLOR.jpg",
-    "info": {}
-  },
-  {
-    "name": "Kepti ŠVEDIŠKI kukuliai, 400 g",
-    "discounted_price": "1.59",
-    "original_price": "2.99",
-    "discount_percent": "-46%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/svediski-Kukuliai-400g-V400-v2.jpg",
     "info": {}
   },
   {
@@ -487,6 +565,17 @@
     }
   },
   {
+    "name": "PIEMENĖLIO šaltibarščių rūgpienis, 5% rieb., 1 kg",
+    "discounted_price": "1.35",
+    "original_price": "1.69",
+    "discount_percent": "-20%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/rugpienis-saltibarsciu-piemenelio-1kg.jpg",
+    "info": {}
+  },
+  {
     "name": "Negazuotas gėrimas PULSE (4 rūšių), 500 ml",
     "discounted_price": "0.75",
     "original_price": "1.25",
@@ -501,14 +590,36 @@
     }
   },
   {
-    "name": "PIEMENĖLIO šaltibarščių rūgpienis, 5% rieb., 1 kg",
-    "discounted_price": "1.35",
-    "original_price": "1.69",
-    "discount_percent": "-20%",
+    "name": "Kepti ŠVEDIŠKI kukuliai, 400 g",
+    "discounted_price": "1.59",
+    "original_price": "2.99",
+    "discount_percent": "-46%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/svediski-Kukuliai-400g-V400-v2.jpg",
+    "info": {}
+  },
+  {
+    "name": "Skalbimo kapsulės DER WASCHKONIG UNIVERSAL arba COLOR, 32 vnt./pak.",
+    "discounted_price": "5.49",
+    "original_price": "9.99",
+    "discount_percent": "-45%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/rugpienis-saltibarsciu-piemenelio-1kg.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Skalbimo-kapsules-DER-WASCHKONIG-UNIVERSAL-arba-COLOR.jpg",
+    "info": {}
+  },
+  {
+    "name": "Sumuštinis FRESH WALK MARGIRIS su tunu ir kiauš., 165 g",
+    "discounted_price": "1.45",
+    "original_price": "2.19",
+    "discount_percent": "-33%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/sumustinis-Fresh-walk2-tunu.jpg",
     "info": {}
   },
   {
@@ -537,28 +648,6 @@
     }
   },
   {
-    "name": "Duonai skrudinimui TOSTE (4 rūšių), 380 g, 500 g",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-35%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Duonai-skrudinimui-TOSTE.jpg",
-    "info": {}
-  },
-  {
-    "name": "Sumuštinis FRESH WALK MARGIRIS su tunu ir kiauš., 165 g",
-    "discounted_price": "1.45",
-    "original_price": "2.19",
-    "discount_percent": "-33%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/sumustinis-Fresh-walk2-tunu.jpg",
-    "info": {}
-  },
-  {
     "name": "Greitai paruošiamoms košėms ACTIVUS (įv. rūšių)",
     "discounted_price": "",
     "original_price": "",
@@ -567,6 +656,17 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/koses-batoneliai-Activus-naujai-v2.jpg",
+    "info": {}
+  },
+  {
+    "name": "Duonai skrudinimui TOSTE (4 rūšių), 380 g, 500 g",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-35%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Duonai-skrudinimui-TOSTE.jpg",
     "info": {}
   },
   {
@@ -579,35 +679,6 @@
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/lietuviskos-medziotoju-desreles-copy-v2.jpg",
     "info": {}
-  },
-  {
-    "name": "Dulkių siurblys KARCHER, art. KWD 1 W, 1 vnt.",
-    "discounted_price": "49.99",
-    "original_price": "69.99",
-    "discount_percent": "-28%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/siurblys-Karcher1-KWD-1-W-1628401_std_02-copy.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Kosmetiniam glicerinui, ricinų aliejui ir moliui DEIVĖ, 100 ml, 300 g",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kosmetiniam-glicerinui-ricinu-aliejui-ir-moliui-DEIVE.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
   },
   {
     "name": "Kojinėms SPARTA",
@@ -623,50 +694,6 @@
       "shopXxl": "shopXxl",
       "shopXl": "shopXl"
     }
-  },
-  {
-    "name": "Ananasų griežinėliai sirupe GRALIMEX, 565 g",
-    "discounted_price": "0.99",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/ananasu-griezineliai-Gralimex-565g.jpg",
-    "info": {}
-  },
-  {
-    "name": "Gaz. arba mineral. citr. sk. geriamasis vanduo VICHY, 1,5 l",
-    "discounted_price": "0.55",
-    "original_price": "0.85",
-    "discount_percent": "-35%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Gazuotas-arba-mineralizuotas-citrinu-skonio-geriamasis-vanduo-VICHY.jpg",
-    "info": {}
-  },
-  {
-    "name": "Vištienos šašlykas FIESTA su jogurtiniu marinatu, 1,15 kg",
-    "discounted_price": "7.49",
-    "original_price": "9.99",
-    "discount_percent": "-25%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/vistienos-saslykas-jogurtin-Fiesta-115kg-9944.jpg",
-    "info": {}
-  },
-  {
-    "name": "PIEMENĖLIO plombyras vafl. puodelyje arba ant pagaliuko, 120 ml",
-    "discounted_price": "0.39",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/PIEMENELIO-plombyras-vafliniame-puodelyje-arba-glaistyti-ledai-ant-pagaliuko.jpg",
-    "info": {}
   },
   {
     "name": "Sveriamas k. r. servelatas RIVONA, 1 kg",
@@ -691,19 +718,77 @@
     "info": {}
   },
   {
-    "name": "Sumuštinių duona TIP TOP, 240 g",
-    "discounted_price": "1.02",
-    "original_price": "1.57",
-    "discount_percent": "-35%",
+    "name": "PIEMENĖLIO plombyras vafl. puodelyje arba ant pagaliuko, 120 ml",
+    "discounted_price": "0.39",
+    "original_price": "",
+    "discount_percent": "-",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/TIP-TOP-sumustinuku-duona-240g-1243.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/PIEMENELIO-plombyras-vafliniame-puodelyje-arba-glaistyti-ledai-ant-pagaliuko.jpg",
+    "info": {}
+  },
+  {
+    "name": "Ananasų griežinėliai sirupe GRALIMEX, 565 g",
+    "discounted_price": "0.99",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/ananasu-griezineliai-Gralimex-565g.jpg",
+    "info": {}
+  },
+  {
+    "name": "Vištienos šašlykas FIESTA su jogurtiniu marinatu, 1,15 kg",
+    "discounted_price": "7.49",
+    "original_price": "9.99",
+    "discount_percent": "-25%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/vistienos-saslykas-jogurtin-Fiesta-115kg-9944.jpg",
+    "info": {}
+  },
+  {
+    "name": "Kosmetiniam glicerinui, ricinų aliejui ir moliui DEIVĖ, 100 ml, 300 g",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kosmetiniam-glicerinui-ricinu-aliejui-ir-moliui-DEIVE.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Dulkių siurblys KARCHER, art. KWD 1 W, 1 vnt.",
+    "discounted_price": "49.99",
+    "original_price": "69.99",
+    "discount_percent": "-28%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/siurblys-Karcher1-KWD-1-W-1628401_std_02-copy.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
       "shopXl": "shopXl"
     }
+  },
+  {
+    "name": "Gaz. arba mineral. citr. sk. geriamasis vanduo VICHY, 1,5 l",
+    "discounted_price": "0.55",
+    "original_price": "0.85",
+    "discount_percent": "-35%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Gazuotas-arba-mineralizuotas-citrinu-skonio-geriamasis-vanduo-VICHY.jpg",
+    "info": {}
   },
   {
     "name": "Sėklų mišinys su braškėmis arba su migdolais BEATOS VIRTUVĖ, 150 g",
@@ -728,6 +813,21 @@
     "info": {}
   },
   {
+    "name": "Sumuštinių duona TIP TOP, 240 g",
+    "discounted_price": "1.02",
+    "original_price": "1.57",
+    "discount_percent": "-35%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/TIP-TOP-sumustinuku-duona-240g-1243.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
     "name": "Kukurūzų traškučiai TAFFEL NACHO CHEESE BALLS, 260 g",
     "discounted_price": "1.89",
     "original_price": "",
@@ -743,35 +843,6 @@
     }
   },
   {
-    "name": "Tekstilinėms staltiesėms",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tekstilinems-staltiesems.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "VERBŪNŲ plikytas plėšomas pyragas su cinamonu, 550 g",
-    "discounted_price": "1.46",
-    "original_price": "2.09",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Verbunu-pyragas3-plesomas-cinamon-0561.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
     "name": "Rankinis trintuvas ONEX, art. HG7711A1, 1 vnt.",
     "discounted_price": "9.99",
     "original_price": "17.99",
@@ -780,6 +851,20 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/trintuvas-rankinis-HG7711A1-High-copy.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Tekstilinėms staltiesėms",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tekstilinems-staltiesems.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -826,14 +911,14 @@
     }
   },
   {
-    "name": "Belaidė optinė pelė 2.4G ONEX art.WM-277, 1 vnt.",
-    "discounted_price": "2.69",
-    "original_price": "4.49",
-    "discount_percent": "-40%",
+    "name": "VERBŪNŲ plikytas plėšomas pyragas su cinamonu, 550 g",
+    "discounted_price": "1.46",
+    "original_price": "2.09",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pele-belaide-WM-277_1-v2.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Verbunu-pyragas3-plesomas-cinamon-0561.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -841,15 +926,19 @@
     }
   },
   {
-    "name": "Virta EKSTRA DAKTARIŠKA dešra su kumpiu, a. r., 550 g",
-    "discounted_price": "2.25",
-    "original_price": "3.49",
-    "discount_percent": "-35%",
+    "name": "Lygintuvas CLATRONIC, art. DB 3703, 1 vnt.",
+    "discounted_price": "10.99",
+    "original_price": "18.99",
+    "discount_percent": "-42%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Daktariska-Ekstra-SU-KUMPIU-v3.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/lygintuvas-Clatronic-db_3703_01_72.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
   },
   {
     "name": "Sumušt. FOOD ON FOOT CIABATTA, 195 g",
@@ -877,14 +966,14 @@
     }
   },
   {
-    "name": "Lygintuvas CLATRONIC, art. DB 3703, 1 vnt.",
-    "discounted_price": "10.99",
-    "original_price": "18.99",
-    "discount_percent": "-42%",
+    "name": "Belaidė optinė pelė 2.4G ONEX art.WM-277, 1 vnt.",
+    "discounted_price": "2.69",
+    "original_price": "4.49",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/lygintuvas-Clatronic-db_3703_01_72.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pele-belaide-WM-277_1-v2.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -892,28 +981,25 @@
     }
   },
   {
-    "name": "Vyriškai kosmetikai ARAS",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Vyriskai-kosmetikai-ARAS.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "NEMATEKO keptas saliamis, a. r., 380 g",
-    "discounted_price": "2.35",
-    "original_price": "3.99",
-    "discount_percent": "-41%",
+    "name": "Virta EKSTRA DAKTARIŠKA dešra su kumpiu, a. r., 550 g",
+    "discounted_price": "2.25",
+    "original_price": "3.49",
+    "discount_percent": "-35%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Keptas-Saliamis-380g.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Daktariska-Ekstra-SU-KUMPIU-v3.jpg",
+    "info": {}
+  },
+  {
+    "name": "Bandelėms PREMIUM (4 rūšių), 100 g, 130 g, 180 g",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-33%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Bandelems-PREMIUM.jpg",
     "info": {}
   },
   {
@@ -932,39 +1018,54 @@
     }
   },
   {
-    "name": "Bandelėms PREMIUM (4 rūšių), 100 g, 130 g, 180 g",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-33%",
+    "name": "NEMATEKO keptas saliamis, a. r., 380 g",
+    "discounted_price": "2.35",
+    "original_price": "3.99",
+    "discount_percent": "-41%",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Bandelems-PREMIUM.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Keptas-Saliamis-380g.jpg",
     "info": {}
   },
   {
-    "name": "Stiklinis indas art. MJ0044, 4 l,  1 vnt.",
-    "discounted_price": "4.20",
-    "original_price": "10.50",
-    "discount_percent": "-60%",
+    "name": "Vyriškai kosmetikai ARAS",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-50%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/indas2-MJ0044-4L.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Vyriskai-kosmetikai-ARAS.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
     }
   },
   {
-    "name": "Sausainiai SKANĖSTAS ADUGS, 700 g",
-    "discounted_price": "3.29",
+    "name": "Šald. YPATINGIEJI koldūnai su mėsos įd., 700 g",
+    "discounted_price": "2.12",
+    "original_price": "3.89",
+    "discount_percent": "-45%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/koldunai-Ypatingieji-07kg-liutukas-v5.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Pleistrams MEDRULL (įv. rūšių)",
+    "discounted_price": "",
     "original_price": "",
-    "discount_percent": "-",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/sausainiai-Skanestas-NEW-v2.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pleistrai-Medrull-VISI-2025.jpg",
     "info": {}
   },
   {
@@ -998,29 +1099,14 @@
     }
   },
   {
-    "name": "Šald. YPATINGIEJI koldūnai su mėsos įd., 700 g",
-    "discounted_price": "2.12",
-    "original_price": "3.89",
-    "discount_percent": "-45%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/koldunai-Ypatingieji-07kg-liutukas-v5.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Pleistrams MEDRULL (įv. rūšių)",
-    "discounted_price": "",
+    "name": "Sausainiai SKANĖSTAS ADUGS, 700 g",
+    "discounted_price": "3.29",
     "original_price": "",
-    "discount_percent": "-40%",
+    "discount_percent": "-",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pleistrai-Medrull-VISI-2025.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/sausainiai-Skanestas-NEW-v2.jpg",
     "info": {}
   },
   {
@@ -1036,6 +1122,20 @@
       "shopH": "shopH",
       "shopXxl": "shopXxl",
       "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Stiklinis indas art. MJ0044, 4 l,  1 vnt.",
+    "discounted_price": "4.20",
+    "original_price": "10.50",
+    "discount_percent": "-60%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/indas2-MJ0044-4L.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
     }
   },
   {
@@ -1112,6 +1212,17 @@
     "info": {}
   },
   {
+    "name": "Palapinėms, miegmaišiams ir turist. kilimėliams",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-50%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/palapines-miegmaisiai-visi-2022-06-v2.jpg",
+    "info": {}
+  },
+  {
     "name": "Vasarinėms kepurėms, papl.skrybėlėms ir skaroms",
     "discounted_price": "",
     "original_price": "",
@@ -1141,17 +1252,6 @@
     }
   },
   {
-    "name": "Palapinėms, miegmaišiams ir turist. kilimėliams",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/palapines-miegmaisiai-visi-2022-06-v2.jpg",
-    "info": {}
-  },
-  {
     "name": "Plaukų šukoms ir šepečiams",
     "discounted_price": "",
     "original_price": "",
@@ -1163,29 +1263,15 @@
     "info": {}
   },
   {
-    "name": "Higieniniai įklotai CARIN SLIP ANATOMIC, 45 vnt./pak.",
-    "discounted_price": "1.63",
-    "original_price": "2.98",
-    "discount_percent": "-45%",
+    "name": "Maisto papildai AKTYVINTA ANGLIS, 10 tabl./pak.",
+    "discounted_price": "0.19",
+    "original_price": "0.38",
+    "discount_percent": "-50%",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/iklotai-Carin-Slip-Anatomic-45vnt.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Aktyvinta-anglis-papildas-v2.jpg",
     "info": {}
-  },
-  {
-    "name": "Sveriami saldainiai VILNIUS arba SOSTINĖS, 1 kg",
-    "discounted_price": "15.99",
-    "original_price": "22.95",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Sveriami-saldainiai-VILNIUS-arba-SOSTINES.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
   },
   {
     "name": "Žemės riešutų kremas ALVO, 1 kg",
@@ -1202,6 +1288,20 @@
     }
   },
   {
+    "name": "Elektrinė orkaitė ONEX, art. HH3001A, 1 vnt.",
+    "discounted_price": "49.99",
+    "original_price": "84.99",
+    "discount_percent": "-41%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/orkaite-onex-HH3001A-v3.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
     "name": "Marinuoti agurkai TUKAS, 340 g",
     "discounted_price": "0.99",
     "original_price": "",
@@ -1210,6 +1310,17 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/agurkai-TUKAS-etikete-keisti-is-rio-santo-v5.jpg",
+    "info": {}
+  },
+  {
+    "name": "DVARO kefyras, 2,5% rieb., 0,9 kg",
+    "discounted_price": "1.32",
+    "original_price": "1.65",
+    "discount_percent": "-20%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Dvaro-kefyras-25_09.jpg",
     "info": {}
   },
   {
@@ -1228,42 +1339,6 @@
     }
   },
   {
-    "name": "DVARO kefyras, 2,5% rieb., 0,9 kg",
-    "discounted_price": "1.32",
-    "original_price": "1.65",
-    "discount_percent": "-20%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Dvaro-kefyras-25_09.jpg",
-    "info": {}
-  },
-  {
-    "name": "Maisto papildai AKTYVINTA ANGLIS, 10 tabl./pak.",
-    "discounted_price": "0.19",
-    "original_price": "0.38",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Aktyvinta-anglis-papildas-v2.jpg",
-    "info": {}
-  },
-  {
-    "name": "Elektrinė orkaitė ONEX, art. HH3001A, 1 vnt.",
-    "discounted_price": "49.99",
-    "original_price": "84.99",
-    "discount_percent": "-41%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/orkaite-onex-HH3001A-v3.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
     "name": "Elementams ENERGIZER",
     "discounted_price": "",
     "original_price": "",
@@ -1275,6 +1350,45 @@
     "info": {}
   },
   {
+    "name": "Sveriami saldainiai VILNIUS arba SOSTINĖS, 1 kg",
+    "discounted_price": "15.99",
+    "original_price": "22.95",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Sveriami-saldainiai-VILNIUS-arba-SOSTINES.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Higieniniai įklotai CARIN SLIP ANATOMIC, 45 vnt./pak.",
+    "discounted_price": "1.63",
+    "original_price": "2.98",
+    "discount_percent": "-45%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/iklotai-Carin-Slip-Anatomic-45vnt.jpg",
+    "info": {}
+  },
+  {
+    "name": "Zefyrai SKRIVERU (3 rūšių), 170 g",
+    "discounted_price": "1.49",
+    "original_price": "1.99",
+    "discount_percent": "-25%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Zefyrai-SKRIVERU-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
     "name": "Bulvių traškučiai LAY‘S OVEN BAKED, 5 rūšių, 110 g",
     "discounted_price": "1.24",
     "original_price": "",
@@ -1283,21 +1397,6 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/lays-oven-rendery-110g-VISOS.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Gazuotas mineralinis vanduo KOBI, 1 l",
-    "discounted_price": "0.90",
-    "original_price": "1.35",
-    "discount_percent": "-33%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kobi-1l-vanduo.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -1319,34 +1418,6 @@
     }
   },
   {
-    "name": "Bandelė su šokolado gabaliukais TREJOS GIRNOS, 150 g",
-    "discounted_price": "0.99",
-    "original_price": "1.49",
-    "discount_percent": "-33%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Bandeles-su-sokoladu.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Zefyrai SKRIVERU (3 rūšių), 170 g",
-    "discounted_price": "1.49",
-    "original_price": "1.99",
-    "discount_percent": "-25%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Zefyrai-SKRIVERU-v2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
     "name": "Kavos pupelės HIMMEL ESPRESSO arba CREMA, 1 kg",
     "discounted_price": "11.29",
     "original_price": "14.99",
@@ -1362,25 +1433,28 @@
     }
   },
   {
-    "name": "Didžiosios krevetės iš surimio VIČI, su česnakiniu aliejumi, 320 g",
-    "discounted_price": "2.69",
-    "original_price": "3.89",
-    "discount_percent": "-30%",
+    "name": "Bandelė su šokolado gabaliukais TREJOS GIRNOS, 150 g",
+    "discounted_price": "0.99",
+    "original_price": "1.49",
+    "discount_percent": "-33%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/krevetes-surimio2-cesnakais-Vici-6884-copy.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Bandeles-su-sokoladu.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
   },
   {
-    "name": "Šaltkrepšiams ir šaldymo įdėklams",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-50%",
+    "name": "Gazuotas mineralinis vanduo KOBI, 1 l",
+    "discounted_price": "0.90",
+    "original_price": "1.35",
+    "discount_percent": "-33%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saltkrepsiai-VISI-2025-06.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kobi-1l-vanduo.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -1388,14 +1462,14 @@
     }
   },
   {
-    "name": "Dražė ŽARA, 300 g",
-    "discounted_price": "3.99",
-    "original_price": "",
-    "discount_percent": "-",
+    "name": "AUKŠTAIČIŲ virtos sardelės, l r., 1 kg",
+    "discounted_price": "2.99",
+    "original_price": "4.99",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/draze-Zara-Ruta-300g.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Aukstaiciu-sardeles.jpg",
     "info": {}
   },
   {
@@ -1407,17 +1481,6 @@
     "end_at": "2024-12-09",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Ledai-vafliniame-puodelyje-DADU.jpg",
-    "info": {}
-  },
-  {
-    "name": "AUKŠTAIČIŲ virtos sardelės, l r., 1 kg",
-    "discounted_price": "2.99",
-    "original_price": "4.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Aukstaiciu-sardeles.jpg",
     "info": {}
   },
   {
@@ -1462,39 +1525,25 @@
     "info": {}
   },
   {
-    "name": "Karšto oro gruzdintuvė ONEX, art. CD35-02D, 3,5 l, 1 vnt.",
-    "discounted_price": "29.99",
-    "original_price": "49.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/gruzdintuve-karsto-oro-Onex-CD35-02D-copy.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Greitai paruošiamiems makaronams SUN YAN (įv. rūšių)",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-40%",
+    "name": "Didžiosios krevetės iš surimio VIČI, su česnakiniu aliejumi, 320 g",
+    "discounted_price": "2.69",
+    "original_price": "3.89",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/SUN-YAN-new-visi-2024-10-v4.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/krevetes-surimio2-cesnakais-Vici-6884-copy.jpg",
     "info": {}
   },
   {
-    "name": "Trimerio valams",
+    "name": "Šaltkrepšiams ir šaldymo įdėklams",
     "discounted_price": "",
     "original_price": "",
     "discount_percent": "-50%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Trimerio-valams.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saltkrepsiai-VISI-2025-06.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -1502,14 +1551,14 @@
     }
   },
   {
-    "name": "Vienkartiniams skustuvams EFFA (įv. rūšių)",
-    "discounted_price": "",
+    "name": "Dražė ŽARA, 300 g",
+    "discounted_price": "3.99",
     "original_price": "",
-    "discount_percent": "-40%",
+    "discount_percent": "-",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Vienkartiniams-skustuvams-EFFA-v2.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/draze-Zara-Ruta-300g.jpg",
     "info": {}
   },
   {
@@ -1527,29 +1576,14 @@
     }
   },
   {
-    "name": "Kvietiniai miltai 550D KAUNO GRŪDAI, a. r., 2 kg",
-    "discounted_price": "1.45",
-    "original_price": "2.19",
-    "discount_percent": "-33%",
+    "name": "STUDENTŲ maistas su riešutais ir džiov. vais. ARIMEX PREMIUM, 300 g/pak.",
+    "discounted_price": "3.49",
+    "original_price": "4.99",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/miltai-Kauno-grudai-550D-2kg.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Vytinta kiaulienos dešra JAMAIKA, 200 g",
-    "discounted_price": "1.99",
-    "original_price": "2.89",
-    "discount_percent": "-31%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Jamaika-vytinta-desra-Rivona.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Studentu-maistas-Premium-300g-316px.jpg",
     "info": {}
   },
   {
@@ -1568,6 +1602,65 @@
     }
   },
   {
+    "name": "Greitai paruošiamiems makaronams SUN YAN (įv. rūšių)",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/SUN-YAN-new-visi-2024-10-v4.jpg",
+    "info": {}
+  },
+  {
+    "name": "Vytinta kiaulienos dešra JAMAIKA, 200 g",
+    "discounted_price": "1.99",
+    "original_price": "2.89",
+    "discount_percent": "-31%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Jamaika-vytinta-desra-Rivona.jpg",
+    "info": {}
+  },
+  {
+    "name": "Vienkartiniams skustuvams EFFA (įv. rūšių)",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Vienkartiniams-skustuvams-EFFA-v2.jpg",
+    "info": {}
+  },
+  {
+    "name": "Trimerio valams",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-50%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Trimerio-valams.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Tirpiojo kavos gėrimo pakuotė NESCAFE CLASSIC 3IN1, 10 x 16,5 g/pak., 165 g/pak.",
+    "discounted_price": "1.49",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Nescafe2-Class_3in1_10ps_Bag-2022-12-2365-v2.jpg",
+    "info": {}
+  },
+  {
     "name": "Šald.argent. jūrinės lydekos be galvų ir uodegų NOWACO EXCLUSIVE, 800 g",
     "discounted_price": "3.65",
     "original_price": "4.89",
@@ -1583,26 +1676,33 @@
     }
   },
   {
-    "name": "STUDENTŲ maistas su riešutais ir džiov. vais. ARIMEX PREMIUM, 300 g/pak.",
-    "discounted_price": "3.49",
-    "original_price": "4.99",
-    "discount_percent": "-30%",
+    "name": "Kvietiniai miltai 550D KAUNO GRŪDAI, a. r., 2 kg",
+    "discounted_price": "1.45",
+    "original_price": "2.19",
+    "discount_percent": "-33%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Studentu-maistas-Premium-300g-316px.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/miltai-Kauno-grudai-550D-2kg.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
   },
   {
-    "name": "Tirpiojo kavos gėrimo pakuotė NESCAFE CLASSIC 3IN1, 10 x 16,5 g/pak., 165 g/pak.",
-    "discounted_price": "1.49",
-    "original_price": "",
-    "discount_percent": "-",
+    "name": "Karšto oro gruzdintuvė ONEX, art. CD35-02D, 3,5 l, 1 vnt.",
+    "discounted_price": "29.99",
+    "original_price": "49.99",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Nescafe2-Class_3in1_10ps_Bag-2022-12-2365-v2.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/gruzdintuve-karsto-oro-Onex-CD35-02D-copy.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
   },
   {
     "name": "KĖDAINIŲ KONSERVŲ pikantiškos lašišos užtep. sumuštiniams, 280 g",
@@ -1620,15 +1720,19 @@
     }
   },
   {
-    "name": "Sultims, nektarams ir sulčių gėrimams CIDO FRUTTO (6 rūšių), 1,5 l",
-    "discounted_price": "",
+    "name": "Grietininiai ledai vafliniams ragelyje POLS, 150 ml",
+    "discounted_price": "0.89",
     "original_price": "",
-    "discount_percent": "-37%",
+    "discount_percent": "-",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Sultims-nektarams-ir-sulciu-gerimams-CIDO-FRUTTO.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Grietininiai-ledai-vafliniame-ragelyje-POLS.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
   },
   {
     "name": "Tualetų valymo gelis EFFA PUSH PULL (3 rūšių), 4x20g/pak.",
@@ -1660,19 +1764,15 @@
     }
   },
   {
-    "name": "Grietininiai ledai vafliniams ragelyje POLS, 150 ml",
-    "discounted_price": "0.89",
+    "name": "Sultims, nektarams ir sulčių gėrimams CIDO FRUTTO (6 rūšių), 1,5 l",
+    "discounted_price": "",
     "original_price": "",
-    "discount_percent": "-",
+    "discount_percent": "-37%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Grietininiai-ledai-vafliniame-ragelyje-POLS.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Sultims-nektarams-ir-sulciu-gerimams-CIDO-FRUTTO.jpg",
+    "info": {}
   },
   {
     "name": "Figūriniai meduoliai su šok. dek. ZEBRIUKAI, 800 g",
@@ -1684,35 +1784,6 @@
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/meduoliai-Lambertz-biale-800g-ogolne-zebra.jpg",
     "info": {}
-  },
-  {
-    "name": "Plombyras NYKŠTUKAS (4 rūšių), 800 ml",
-    "discounted_price": "4.21",
-    "original_price": "7.79",
-    "discount_percent": "-46%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Plombyras-NYKSTUKAS-4r-v2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Sausainiai BALTASIS PYRAGAS SKARELĖS su brašk. sk. įd., 250 g",
-    "discounted_price": "2.22",
-    "original_price": "3.19",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Skareles-sausainiai-su-braskemis-250g-BP.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
   },
   {
     "name": "Gazuotas grimas HAY! KREM SODA arba HEY! SNIEGELIS, 1.5 l",
@@ -1744,26 +1815,33 @@
     }
   },
   {
-    "name": "Š. r. ČESNAKINIS saliamis, 230 g",
-    "discounted_price": "1.94",
-    "original_price": "3.89",
-    "discount_percent": "-50%",
+    "name": "Sausainiai BALTASIS PYRAGAS SKARELĖS su brašk. sk. įd., 250 g",
+    "discounted_price": "2.22",
+    "original_price": "3.19",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/cesnakinis-Saliamis1-biovela-230g.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Skareles-sausainiai-su-braskemis-250g-BP.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
   },
   {
-    "name": "Marinuoti agurkai GRALIMEX, 6-9 cm, 1430 g",
-    "discounted_price": "1.79",
-    "original_price": "",
-    "discount_percent": "-",
+    "name": "Plombyras NYKŠTUKAS (4 rūšių), 800 ml",
+    "discounted_price": "4.21",
+    "original_price": "7.79",
+    "discount_percent": "-46%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/agurkai-Gralimex-marinuoti-1430g.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Plombyras-NYKSTUKAS-4r-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
   },
   {
     "name": "Kolonėlė ONEX art.COM 501, 1 rink.",
@@ -1774,31 +1852,6 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/koloneles-COM-501_2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Kosmetinės veido servetėlės MARGARITA (2 rūšių), 2 sl., 100 lap./pak.",
-    "discounted_price": "0.92",
-    "original_price": "1.68",
-    "discount_percent": "-45%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kosmetines-veido-serveteles-MARGARITA.jpg",
-    "info": {}
-  },
-  {
-    "name": "PALANGOS duona su saulėgr. GUDOBELĖ, 340 g",
-    "discounted_price": "0.75",
-    "original_price": "1.09",
-    "discount_percent": "-31%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Palangos-duona2-su-saulegrazom-340g.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -1816,19 +1869,51 @@
     "info": {}
   },
   {
-    "name": "Šaldyti virtų bulvių cepelinai su varškės įdaru DAGERA, 450 g",
-    "discounted_price": "1.45",
-    "original_price": "2.65",
+    "name": "Kosmetinės veido servetėlės MARGARITA (2 rūšių), 2 sl., 100 lap./pak.",
+    "discounted_price": "0.92",
+    "original_price": "1.68",
     "discount_percent": "-45%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kosmetines-veido-serveteles-MARGARITA.jpg",
+    "info": {}
+  },
+  {
+    "name": "Marinuoti agurkai GRALIMEX, 6-9 cm, 1430 g",
+    "discounted_price": "1.79",
+    "original_price": "",
+    "discount_percent": "-",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/cepelinai-su-varske-DAGERA-v5.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/agurkai-Gralimex-marinuoti-1430g.jpg",
+    "info": {}
+  },
+  {
+    "name": "PALANGOS duona su saulėgr. GUDOBELĖ, 340 g",
+    "discounted_price": "0.75",
+    "original_price": "1.09",
+    "discount_percent": "-31%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Palangos-duona2-su-saulegrazom-340g.jpg",
     "info": {
       "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
+      "shopXxl": "shopXxl"
     }
+  },
+  {
+    "name": "Š. r. ČESNAKINIS saliamis, 230 g",
+    "discounted_price": "1.94",
+    "original_price": "3.89",
+    "discount_percent": "-50%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/cesnakinis-Saliamis1-biovela-230g.jpg",
+    "info": {}
   },
   {
     "name": "Kapų žvakių įdėklams",
@@ -1857,6 +1942,32 @@
     }
   },
   {
+    "name": "Fasuoti kepinti sūdyti anakardžių riešutai GAR2, 500 g/pak.",
+    "discounted_price": "6.99",
+    "original_price": "10.99",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/anakardziu-riesutai-gar2-200g-v8.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "K. r. dešrelės SU SŪRIU, a. r., 1 kg",
+    "discounted_price": "3.99",
+    "original_price": "5.99",
+    "discount_percent": "-33%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/desreles-su-suriu-Rivona.jpg",
+    "info": {}
+  },
+  {
     "name": "Guminukams VIDAL (įv. rūšių), 19-180 g",
     "discounted_price": "",
     "original_price": "",
@@ -1868,14 +1979,14 @@
     "info": {}
   },
   {
-    "name": "Fasuoti kepinti sūdyti anakardžių riešutai GAR2, 500 g/pak.",
-    "discounted_price": "6.99",
-    "original_price": "10.99",
-    "discount_percent": "-30%",
+    "name": "Šaldyti virtų bulvių cepelinai su varškės įdaru DAGERA, 450 g",
+    "discounted_price": "1.45",
+    "original_price": "2.65",
+    "discount_percent": "-45%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/anakardziu-riesutai-gar2-200g-v8.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/cepelinai-su-varske-DAGERA-v5.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -1898,14 +2009,14 @@
     }
   },
   {
-    "name": "K. r. dešrelės SU SŪRIU, a. r., 1 kg",
+    "name": "Fasuoti bertoletijų branduoliai GAR2, 200 g/pak.",
     "discounted_price": "3.99",
     "original_price": "5.99",
     "discount_percent": "-33%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/desreles-su-suriu-Rivona.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/bertoletiju-riesutai-gar2-200g.jpg",
     "info": {}
   },
   {
@@ -1922,28 +2033,6 @@
       "shopXxl": "shopXxl",
       "shopXl": "shopXl"
     }
-  },
-  {
-    "name": "TIGRIUKO DAKTARIŠKA virta dešra, 300 g",
-    "discounted_price": "1.29",
-    "original_price": "1.99",
-    "discount_percent": "-35%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tigriuko-Daktariska-desra-5632-v2.jpg",
-    "info": {}
-  },
-  {
-    "name": "SKANDINAVIŠKA silkių filė ZIGMAS CLASSIC, 650 g",
-    "discounted_price": "3.49",
-    "original_price": "5.39",
-    "discount_percent": "-35%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/skandinaviska-silkiu-file-Zigmas-650g-v2.jpg",
-    "info": {}
   },
   {
     "name": "Viršutiniams frabužiams",
@@ -1975,32 +2064,6 @@
     }
   },
   {
-    "name": "Saldainių rinkiniams dėžutėse LAIMA (6 rūšių), 95–420 g",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-33%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saldainiu-rinkiniams-dezutese-LAIMA.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Fasuoti bertoletijų branduoliai GAR2, 200 g/pak.",
-    "discounted_price": "3.99",
-    "original_price": "5.99",
-    "discount_percent": "-33%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/bertoletiju-riesutai-gar2-200g.jpg",
-    "info": {}
-  },
-  {
     "name": "Kepta ruginė duona MACHO FRIED TOASTS, 65 g",
     "discounted_price": "0.48",
     "original_price": "0.75",
@@ -2026,6 +2089,54 @@
     "info": {}
   },
   {
+    "name": "TIGRIUKO DAKTARIŠKA virta dešra, 300 g",
+    "discounted_price": "1.29",
+    "original_price": "1.99",
+    "discount_percent": "-35%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tigriuko-Daktariska-desra-5632-v2.jpg",
+    "info": {}
+  },
+  {
+    "name": "Saldainių rinkiniams dėžutėse LAIMA (6 rūšių), 95–420 g",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-33%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saldainiu-rinkiniams-dezutese-LAIMA.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "SKANDINAVIŠKA silkių filė ZIGMAS CLASSIC, 650 g",
+    "discounted_price": "3.49",
+    "original_price": "5.39",
+    "discount_percent": "-35%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/skandinaviska-silkiu-file-Zigmas-650g-v2.jpg",
+    "info": {}
+  },
+  {
+    "name": "Lašišų filė PORT LITE I LOVE FISH (2 rūšių), 100 g",
+    "discounted_price": "2.49",
+    "original_price": "4.19",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Las_is_u_-file_-PORT-LITE-I-LOVE-FISH.jpg",
+    "info": {}
+  },
+  {
     "name": "Skrudintos moliūgų sėklos SĖKMĖS, 200 g",
     "discounted_price": "1.88",
     "original_price": "2.69",
@@ -2045,69 +2156,6 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/silke-Bajoriska.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Virtas KLASIKINIS kiaulienos arba vištienos kumpis, 90 g",
-    "discounted_price": "0.99",
-    "original_price": "1.99",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Virtas-KLASIKINIS-kiaulienos-arba-vistienos-kumpis.jpg",
-    "info": {}
-  },
-  {
-    "name": "Kapų žvakė art. 0420, 1 vnt.",
-    "discounted_price": "1.99",
-    "original_price": "3.98",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/zvake-0420-316px.jpg",
-    "info": {}
-  },
-  {
-    "name": "Lašišų filė PORT LITE I LOVE FISH (2 rūšių), 100 g",
-    "discounted_price": "2.49",
-    "original_price": "4.19",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Las_is_u_-file_-PORT-LITE-I-LOVE-FISH.jpg",
-    "info": {}
-  },
-  {
-    "name": "Konservuota troškinta kiauliena RITAL-D, 525 g",
-    "discounted_price": "1.99",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/konservai-Rital-D-525g-kiauliena-new-copy.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Elektrinis virdulys TEFAL, art. KO2M0B10, 1 vnt.",
-    "discounted_price": "24.99",
-    "original_price": "41.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/virdulys-Tefal-KO2M0B10.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -2141,6 +2189,17 @@
     }
   },
   {
+    "name": "Kapų žvakė art. 0420, 1 vnt.",
+    "discounted_price": "1.99",
+    "original_price": "3.98",
+    "discount_percent": "-50%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/zvake-0420-316px.jpg",
+    "info": {}
+  },
+  {
     "name": "Dėžė PINTA art. EWY1353, 1 vnt.",
     "discounted_price": "3.79",
     "original_price": "6.90",
@@ -2166,18 +2225,56 @@
     "info": {}
   },
   {
-    "name": "PJAUTINIS batonas TREJOS GIRNOS, 500 g",
-    "discounted_price": "0.76",
-    "original_price": "1.09",
-    "discount_percent": "-30%",
+    "name": "Konservuota troškinta kiauliena RITAL-D, 525 g",
+    "discounted_price": "1.99",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/konservai-Rital-D-525g-kiauliena-new-copy.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Virtas KLASIKINIS kiaulienos arba vištienos kumpis, 90 g",
+    "discounted_price": "0.99",
+    "original_price": "1.99",
+    "discount_percent": "-50%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Virtas-KLASIKINIS-kiaulienos-arba-vistienos-kumpis.jpg",
+    "info": {}
+  },
+  {
+    "name": "Elektrinis virdulys TEFAL, art. KO2M0B10, 1 vnt.",
+    "discounted_price": "24.99",
+    "original_price": "41.99",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/virdulys-Tefal-KO2M0B10.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "PIEMENĖLIO pasterizuota grietinėlė, 35% rieb., 250 ml",
+    "discounted_price": "1.39",
+    "original_price": "1.79",
+    "discount_percent": "-22%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Pjautinis-batonas-new.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/grietinele-Nauja2-Piemenelio-35pr.250ml.jpg",
+    "info": {}
   },
   {
     "name": "Daiktadėžėms, skalbinių, šiukšlių dėžėms ir buitiniams dubenims",
@@ -2194,40 +2291,14 @@
     }
   },
   {
-    "name": "PIEMENĖLIO pasterizuota grietinėlė, 35% rieb., 250 ml",
-    "discounted_price": "1.39",
-    "original_price": "1.79",
-    "discount_percent": "-22%",
+    "name": "PJAUTINIS batonas TREJOS GIRNOS, 500 g",
+    "discounted_price": "0.76",
+    "original_price": "1.09",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/grietinele-Nauja2-Piemenelio-35pr.250ml.jpg",
-    "info": {}
-  },
-  {
-    "name": "Fasuoti anakardžių riešutai GAR2, 200 g/pak.,",
-    "discounted_price": "2.65",
-    "original_price": "3.79",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/anakardziu-riesutai-Gar2-500g-v3.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Įkraunamas žibintuvėlis PROHELFER, art. NX1057,1 vnt.",
-    "discounted_price": "2.79",
-    "original_price": "4.99",
-    "discount_percent": "-44%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/zibintuvelis-ikraunamas1a-NX1057.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Pjautinis-batonas-new.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -2259,17 +2330,32 @@
     }
   },
   {
-    "name": "Mikropluošto šepetys SPONTEX MICROWIPER EXTRA, 1 vnt.",
-    "discounted_price": "16.35",
-    "original_price": "27.25",
-    "discount_percent": "-40%",
+    "name": "Įkraunamas žibintuvėlis PROHELFER, art. NX1057,1 vnt.",
+    "discounted_price": "2.79",
+    "original_price": "4.99",
+    "discount_percent": "-44%",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/sepetys-Mikropluosto-Spontex-1534.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/zibintuvelis-ikraunamas1a-NX1057.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Fasuoti anakardžių riešutai GAR2, 200 g/pak.,",
+    "discounted_price": "2.65",
+    "original_price": "3.79",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/anakardziu-riesutai-Gar2-500g-v3.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
     }
   },
   {
@@ -2287,17 +2373,6 @@
     }
   },
   {
-    "name": "Šaldyti UŽKALNIO koldūnai (3 rūšių), 500 g, 600 g",
-    "discounted_price": "1.31",
-    "original_price": "2.39",
-    "discount_percent": "-45%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saldyti-UZKALNIO-koldunai.jpg",
-    "info": {}
-  },
-  {
     "name": "Veget. ir vegan. gaminiams NESTLE GARDEN GOURMET (6 rūšių), 150-200 g",
     "discounted_price": "",
     "original_price": "",
@@ -2306,6 +2381,17 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Vegetariskiems-ir-veganiskiems-gaminiams-NESTLE-GARDEN-GOURMET-v4.jpg",
+    "info": {}
+  },
+  {
+    "name": "Šaldyti UŽKALNIO koldūnai (3 rūšių), 500 g, 600 g",
+    "discounted_price": "1.31",
+    "original_price": "2.39",
+    "discount_percent": "-45%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saldyti-UZKALNIO-koldunai.jpg",
     "info": {}
   },
   {
@@ -2318,6 +2404,84 @@
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Ryziams-ir-kruopoms-SKANEJA-v2.jpg",
     "info": {}
+  },
+  {
+    "name": "Mikropluošto šepetys SPONTEX MICROWIPER EXTRA, 1 vnt.",
+    "discounted_price": "16.35",
+    "original_price": "27.25",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/sepetys-Mikropluosto-Spontex-1534.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Dubenėlis FL, IVORY, BURBULAI arba RED, 17 cm, 1 vnt.",
+    "discounted_price": "1.15",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Dubenelis-FL.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Pom. padažas be pridėtinio krakmolo RIVONA, 500 g",
+    "discounted_price": "1.19",
+    "original_price": "1.79",
+    "discount_percent": "-33%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/padazas-pomidoru-be-krakmolo-Rivona.jpg",
+    "info": {}
+  },
+  {
+    "name": "KARALIŠKAS ORIGINALAUS SKONIO pom. padažas, 500 g",
+    "discounted_price": "1.19",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Karaliskas-Orginalaus-Skonio-NEW-Small.jpg",
+    "info": {}
+  },
+  {
+    "name": "MAMOS batonas, 500 g",
+    "discounted_price": "0.75",
+    "original_price": "1.19",
+    "discount_percent": "-36%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Mamos-batonas-500g-new-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Duonai ir batonui LIETUVAITĖ (4 rūšių), 350 g, 500 g, 800 g",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-33%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Duonai-ir-batonui-LIETUVAITEc.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
   },
   {
     "name": "Dribsnių batonėliai NESTLE, 35 g",
@@ -2346,68 +2510,15 @@
     "info": {}
   },
   {
-    "name": "Pom. padažas be pridėtinio krakmolo RIVONA, 500 g",
-    "discounted_price": "1.19",
-    "original_price": "1.79",
-    "discount_percent": "-33%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/padazas-pomidoru-be-krakmolo-Rivona.jpg",
-    "info": {}
-  },
-  {
-    "name": "KARALIŠKAS ORIGINALAUS SKONIO pom. padažas, 500 g",
-    "discounted_price": "1.19",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Karaliskas-Orginalaus-Skonio-NEW-Small.jpg",
-    "info": {}
-  },
-  {
-    "name": "Dubenėlis FL, IVORY, BURBULAI arba RED, 17 cm, 1 vnt.",
-    "discounted_price": "1.15",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Dubenelis-FL.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Duonai ir batonui LIETUVAITĖ (4 rūšių), 350 g, 500 g, 800 g",
+    "name": "Tortilijoms TORTILLA ORIGINAL, kukurūziniams tako krepš.ir traškučiams SANTA MARIA",
     "discounted_price": "",
     "original_price": "",
-    "discount_percent": "-33%",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Duonai-ir-batonui-LIETUVAITEc.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "MAMOS batonas, 500 g",
-    "discounted_price": "0.75",
-    "original_price": "1.19",
-    "discount_percent": "-36%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Mamos-batonas-500g-new-v2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tortilijoms-TORTILLA-ORIGINAL-kukuruziniams-tako-krepseliams-TACO-SHELLS.jpg",
+    "info": {}
   },
   {
     "name": "Vytintos KLEBONIŠKOS dešrelės (2 rūšių), a. r., 150 g",
@@ -2418,31 +2529,6 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Vytintos-KLEBONIS_KOS-des_rele_s.jpg",
-    "info": {}
-  },
-  {
-    "name": "Energinis gėrimas BATTERY (7 rūšių), 0,33 l, 0,5 l",
-    "discounted_price": "0.87",
-    "original_price": "1.45",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Energinis-gerimas-BATTERY.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Tortilijoms TORTILLA ORIGINAL, kukurūziniams tako krepš.ir traškučiams SANTA MARIA",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tortilijoms-TORTILLA-ORIGINAL-kukuruziniams-tako-krepseliams-TACO-SHELLS.jpg",
     "info": {}
   },
   {
@@ -2461,15 +2547,18 @@
     }
   },
   {
-    "name": "Virta DAKTARIŠKA dešra griežinėliais, 250 g",
-    "discounted_price": "1.09",
-    "original_price": "2.25",
-    "discount_percent": "-51%",
+    "name": "Energinis gėrimas BATTERY (7 rūšių), 0,33 l, 0,5 l",
+    "discounted_price": "0.87",
+    "original_price": "1.45",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Daktariska-UM-TB-250-g-be-fono.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Energinis-gerimas-BATTERY.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
   },
   {
     "name": "Makaronai be glitimo AL DENTE (3 rūšių), 400 g",
@@ -2483,21 +2572,6 @@
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "PUSRYČIŲ duona skrudinimui MAŽIAU CUKRŲ, 500 g",
-    "discounted_price": "0.69",
-    "original_price": "1.39",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Pusryciu-duona2-MAZIAU-CUKRU-1504-copy.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
     }
   },
   {
@@ -2516,18 +2590,41 @@
     }
   },
   {
-    "name": "Kačių kraikas MANO KATĖ natūralus iš molio, 5 kg",
-    "discounted_price": "2.39",
-    "original_price": "3.99",
-    "discount_percent": "-40%",
+    "name": "PUSRYČIŲ duona skrudinimui MAŽIAU CUKRŲ, 500 g",
+    "discounted_price": "0.69",
+    "original_price": "1.39",
+    "discount_percent": "-50%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kraikas-Mano-kate-new2-Molio-0131.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Pusryciu-duona2-MAZIAU-CUKRU-1504-copy.jpg",
     "info": {
       "shopH": "shopH",
-      "shopXxl": "shopXxl"
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
     }
+  },
+  {
+    "name": "Virta DAKTARIŠKA dešra griežinėliais, 250 g",
+    "discounted_price": "1.09",
+    "original_price": "2.25",
+    "discount_percent": "-51%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Daktariska-UM-TB-250-g-be-fono.jpg",
+    "info": {}
+  },
+  {
+    "name": "Aukščiausios kokybės pirmo spaudimo alyvuogių al. ARIOLI, 500 ml",
+    "discounted_price": "3.99",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/aliejus-Arioli-alyvuogiu-500ml-Small.jpg",
+    "info": {}
   },
   {
     "name": "Š. r. ČESNAKINIS saliamis griežinėliais, 90 g",
@@ -2592,15 +2689,43 @@
     "info": {}
   },
   {
-    "name": "Aukščiausios kokybės pirmo spaudimo alyvuogių al. ARIOLI, 500 ml",
-    "discounted_price": "3.99",
-    "original_price": "",
-    "discount_percent": "-",
+    "name": "Kačių kraikas MANO KATĖ natūralus iš molio, 5 kg",
+    "discounted_price": "2.39",
+    "original_price": "3.99",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/aliejus-Arioli-alyvuogiu-500ml-Small.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kraikas-Mano-kate-new2-Molio-0131.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Šlapimo nelaikančiųjų įklotams EMI LADY (9 rūšių), 10–20 vnt./pak.",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Emi-Lady-paketai-copy.jpg",
     "info": {}
+  },
+  {
+    "name": "Avinžirnių trapučiai JAVINĖ, 100 g",
+    "discounted_price": "0.87",
+    "original_price": "1.45",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/trapuciai-Javine-002-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
   },
   {
     "name": "Belaid. ausinės PHILIPS, art. TAT1209BK, 1 vnt.",
@@ -2616,17 +2741,6 @@
       "shopXxl": "shopXxl",
       "shopXl": "shopXl"
     }
-  },
-  {
-    "name": "Vytinta KLEBONIŠKA KUMPINĖ SKILANDINĖ dešra, 200 g",
-    "discounted_price": "2.49",
-    "original_price": "4.99",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kleboniska-kumpine-skilandine-v.desra-new1441.jpg",
-    "info": {}
   },
   {
     "name": "Žemės riešutų kremas ALVO, 500 g",
@@ -2659,29 +2773,52 @@
     }
   },
   {
-    "name": "Šlapimo nelaikančiųjų įklotams EMI LADY (9 rūšių), 10–20 vnt./pak.",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-40%",
+    "name": "Vytinta KLEBONIŠKA KUMPINĖ SKILANDINĖ dešra, 200 g",
+    "discounted_price": "2.49",
+    "original_price": "4.99",
+    "discount_percent": "-50%",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Emi-Lady-paketai-copy.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kleboniska-kumpine-skilandine-v.desra-new1441.jpg",
     "info": {}
   },
   {
-    "name": "Avinžirnių trapučiai JAVINĖ, 100 g",
-    "discounted_price": "0.87",
-    "original_price": "1.45",
-    "discount_percent": "-40%",
+    "name": "PIEMENĖLIO puskietis fermentinis sūris TILSIT, 45% rieb.s.m., 200 g",
+    "discounted_price": "1.79",
+    "original_price": "2.19",
+    "discount_percent": "-18%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/trapuciai-Javine-002-v2.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/suris-tilsit-piemenelio-new.jpg",
+    "info": {}
+  },
+  {
+    "name": "Plaukų džiovintuvas BOMANN, art. HTD 889 CB, 1 vnt.",
+    "discounted_price": "11.99",
+    "original_price": "19.99",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/plauku-dziovintuvas-Bomann-htd_889_cb_02-v5.jpg",
     "info": {
       "shopH": "shopH",
-      "shopXxl": "shopXxl"
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
     }
+  },
+  {
+    "name": "PUSRYČIŲ k. r. kiaulienos nugarinė, l r., 1 kg",
+    "discounted_price": "5.19",
+    "original_price": "6.99",
+    "discount_percent": "-25%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/nugarine-Pusryciu-k.r.Rivona.jpg",
+    "info": {}
   },
   {
     "name": "Mažai rūkyta kiaulienos šoninė, a. r., 1 kg",
@@ -2723,57 +2860,6 @@
     }
   },
   {
-    "name": "PIEMENĖLIO puskietis fermentinis sūris TILSIT, 45% rieb.s.m., 200 g",
-    "discounted_price": "1.79",
-    "original_price": "2.19",
-    "discount_percent": "-18%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/suris-tilsit-piemenelio-new.jpg",
-    "info": {}
-  },
-  {
-    "name": "Plaukų džiovintuvas BOMANN, art. HTD 889 CB, 1 vnt.",
-    "discounted_price": "11.99",
-    "original_price": "19.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/plauku-dziovintuvas-Bomann-htd_889_cb_02-v5.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "PUSRYČIŲ k. r. kiaulienos nugarinė, l r., 1 kg",
-    "discounted_price": "5.19",
-    "original_price": "6.99",
-    "discount_percent": "-25%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/nugarine-Pusryciu-k.r.Rivona.jpg",
-    "info": {}
-  },
-  {
-    "name": "Ekologiškas geriamasis jogurtas DOBILAS (3 rūšių), 330 g",
-    "discounted_price": "0.97",
-    "original_price": "1.39",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Geriamasis-ekologiskas-jogurtas-DOBILAS.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
     "name": "Sumuštinių keptuvė ONEX, art. ZM-206, 1 vnt.",
     "discounted_price": "10.69",
     "original_price": "17.99",
@@ -2782,21 +2868,6 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/sumustiniu-keptuve-ZM-206-v5.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Dribsniai KELLOGG‘S FROSTIES arba CORN FLAKES, 330 g, 375 g",
-    "discounted_price": "2.29",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Dribsniai-KELLOGGOCsS-FROSTIES.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -2815,14 +2886,29 @@
     "info": {}
   },
   {
-    "name": "KLAIPĖDOS raikytas batonas, 400 g",
-    "discounted_price": "0.75",
-    "original_price": "1.29",
-    "discount_percent": "-41%",
+    "name": "Dribsniai KELLOGG‘S FROSTIES arba CORN FLAKES, 330 g, 375 g",
+    "discounted_price": "2.29",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Dribsniai-KELLOGGOCsS-FROSTIES.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Ekologiškas geriamasis jogurtas DOBILAS (3 rūšių), 330 g",
+    "discounted_price": "0.97",
+    "original_price": "1.39",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Klaipedos-Batonas-400-g-copy.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Geriamasis-ekologiskas-jogurtas-DOBILAS.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -2843,17 +2929,32 @@
     }
   },
   {
-    "name": "Plėšomos bandelės su cinam. BRIOCHE BIRŽŲ DUONA, 150 g",
-    "discounted_price": "0.97",
-    "original_price": "1.39",
-    "discount_percent": "-30%",
+    "name": "KLAIPĖDOS raikytas batonas, 400 g",
+    "discounted_price": "0.75",
+    "original_price": "1.29",
+    "discount_percent": "-41%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Brioche-plesomos-bandeles2-new-cinamonuapkeisti.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Klaipedos-Batonas-400-g-copy.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Gazuotas gaivusis gėrimas ENJOY (3 rūšių), 1,5 l",
+    "discounted_price": "1.03",
+    "original_price": "1.59",
+    "discount_percent": "-35%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Gazuotas-gaivusis-gerimas-ENJOY-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
     }
   },
   {
@@ -2865,6 +2966,20 @@
     "end_at": "2024-12-09",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/SUMUSTINIU-duonai-ir-batonui-FAZER.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Plėšomos bandelės su cinam. BRIOCHE BIRŽŲ DUONA, 150 g",
+    "discounted_price": "0.97",
+    "original_price": "1.39",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Brioche-plesomos-bandeles2-new-cinamonuapkeisti.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -2900,56 +3015,15 @@
     }
   },
   {
-    "name": "Gazuotas gaivusis gėrimas ENJOY (3 rūšių), 1,5 l",
-    "discounted_price": "1.03",
-    "original_price": "1.59",
-    "discount_percent": "-35%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Gazuotas-gaivusis-gerimas-ENJOY-v2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "BAJORŲ virtas liežuvio vyniotinis vakuume, 1 kg",
-    "discounted_price": "6.99",
-    "original_price": "9.99",
-    "discount_percent": "-30%",
+    "name": "Silkių filė ZIGMAS MATES be aliej., 190 g arba su aliej., 240 g",
+    "discounted_price": "1.67",
+    "original_price": "2.79",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Liezuvio-vyniotinis-Bajoru-NEW.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Silkiu-file-ZIGMAS-MATES-be-aliejaus-copy.jpg",
     "info": {}
-  },
-  {
-    "name": "PIEMENĖLIO LIETUVIŠKAS varškės sūris su kmynais, 13% rieb., 1 kg",
-    "discounted_price": "7.55",
-    "original_price": "8.90",
-    "discount_percent": "-15%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/varskes-suris-Piemenelio-kmynais-Small.jpeg",
-    "info": {}
-  },
-  {
-    "name": "Sveriami saldainiai FORTŪNA, 1 kg",
-    "discounted_price": "5.59",
-    "original_price": "7.99",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Fortuna-saldainiai-nauji.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
   },
   {
     "name": "Nefiltruota gira TAURA, 2 rūšių, 1,5 l",
@@ -2977,25 +3051,29 @@
     }
   },
   {
-    "name": "Silkių filė ZIGMAS MATES be aliej., 190 g arba su aliej., 240 g",
-    "discounted_price": "1.67",
-    "original_price": "2.79",
-    "discount_percent": "-40%",
+    "name": "Sveriami saldainiai FORTŪNA, 1 kg",
+    "discounted_price": "5.59",
+    "original_price": "7.99",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Silkiu-file-ZIGMAS-MATES-be-aliejaus-copy.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Fortuna-saldainiai-nauji.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
   },
   {
-    "name": "Juodoji arbata DILMAH su siūlu, 50 g/pak.",
-    "discounted_price": "0.89",
-    "original_price": "",
-    "discount_percent": "-",
+    "name": "PIEMENĖLIO LIETUVIŠKAS varškės sūris su kmynais, 13% rieb., 1 kg",
+    "discounted_price": "7.55",
+    "original_price": "8.90",
+    "discount_percent": "-15%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/DILMAH-Premium2-25vnt.50g-arbata-copy.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/varskes-suris-Piemenelio-kmynais-Small.jpeg",
     "info": {}
   },
   {
@@ -3013,17 +3091,6 @@
     }
   },
   {
-    "name": "SAKARTVELO atšaldyt. sausai. marin. kiaulienos šašl., 800 g",
-    "discounted_price": "5.49",
-    "original_price": "7.99",
-    "discount_percent": "-31%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saslykas-Sakartvelo-Samson-1984.jpg",
-    "info": {}
-  },
-  {
     "name": "Pyragas RIEŠUTĖLIS, 340 g",
     "discounted_price": "1.29",
     "original_price": "1.79",
@@ -3039,15 +3106,52 @@
     }
   },
   {
-    "name": "Tualet. popierius GRITE FAMILY DECOR, 3 sl., 16 rit./pak.",
-    "discounted_price": "3.50",
-    "original_price": "6.38",
-    "discount_percent": "-45%",
+    "name": "BAJORŲ virtas liežuvio vyniotinis vakuume, 1 kg",
+    "discounted_price": "6.99",
+    "original_price": "9.99",
+    "discount_percent": "-30%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Grite-Family-Decor-115-TP-16vnt.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Liezuvio-vyniotinis-Bajoru-NEW.jpg",
     "info": {}
+  },
+  {
+    "name": "SAKARTVELO atšaldyt. sausai. marin. kiaulienos šašl., 800 g",
+    "discounted_price": "5.49",
+    "original_price": "7.99",
+    "discount_percent": "-31%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saslykas-Sakartvelo-Samson-1984.jpg",
+    "info": {}
+  },
+  {
+    "name": "Juodoji arbata DILMAH su siūlu, 50 g/pak.",
+    "discounted_price": "0.89",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/DILMAH-Premium2-25vnt.50g-arbata-copy.jpg",
+    "info": {}
+  },
+  {
+    "name": "VERBŪNŲ plikyta plėšomas pyragas su razinomis, 650 g",
+    "discounted_price": "1.53",
+    "original_price": "2.19",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Verbunu-pyragas2-SU-RAZINOMIS-NEW-650g.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
   },
   {
     "name": "Sumuštinių duona MORTA SĖKLŲ arba su RAUGU, 450 g",
@@ -3075,6 +3179,21 @@
     "info": {}
   },
   {
+    "name": "Terkšlė 1/4 INGCO, art. HRTH0814, 1 vnt.",
+    "discounted_price": "3.99",
+    "original_price": "6.99",
+    "discount_percent": "-42%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/terksle-HRTH0814.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
     "name": "Košėms, tyrel. ir užkandž. SEMPER ir ORGANIX (įv. rūšių)",
     "discounted_price": "",
     "original_price": "",
@@ -3090,34 +3209,15 @@
     }
   },
   {
-    "name": "VERBŪNŲ plikyta plėšomas pyragas su razinomis, 650 g",
-    "discounted_price": "1.53",
-    "original_price": "2.19",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Verbunu-pyragas2-SU-RAZINOMIS-NEW-650g.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Terkšlė 1/4 INGCO, art. HRTH0814, 1 vnt.",
-    "discounted_price": "3.99",
-    "original_price": "6.99",
-    "discount_percent": "-42%",
+    "name": "Tualet. popierius GRITE FAMILY DECOR, 3 sl., 16 rit./pak.",
+    "discounted_price": "3.50",
+    "original_price": "6.38",
+    "discount_percent": "-45%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/terksle-HRTH0814.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Grite-Family-Decor-115-TP-16vnt.jpg",
+    "info": {}
   },
   {
     "name": "Sumuštinių duona MORTA KLASIKA, 500 g",
@@ -3135,31 +3235,6 @@
     }
   },
   {
-    "name": "Vanilės skonio zefyrai SKRIVERU, 800 g",
-    "discounted_price": "3.99",
-    "original_price": "4.99",
-    "discount_percent": "-20%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/zefyrai-4751010575021.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Marinuotas kiaulienos šašlykas majonezo marinate, 1 kg",
-    "discounted_price": "4.49",
-    "original_price": "5.99",
-    "discount_percent": "-25%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saslykas-majonezo-marinate-Rivona-NEW.jpg",
-    "info": {}
-  },
-  {
     "name": "Kavos pupelės AROMA GOLD ESPRESSO, 1 kg",
     "discounted_price": "12.49",
     "original_price": "",
@@ -3173,17 +3248,6 @@
       "shopXxl": "shopXxl",
       "shopXl": "shopXl"
     }
-  },
-  {
-    "name": "Pieniniai vaniliniai arba kakaviniai ledai LOLO, 120 ml",
-    "discounted_price": "0.19",
-    "original_price": "0.29",
-    "discount_percent": "-34%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Pieniniai-ledai-vafliniame-puodelyje-LOLO.jpg",
-    "info": {}
   },
   {
     "name": "Marinuotos viščiukų blauzdelės GRILL, 1 kg",
@@ -3219,6 +3283,56 @@
     "info": {}
   },
   {
+    "name": "Pieniniai vaniliniai arba kakaviniai ledai LOLO, 120 ml",
+    "discounted_price": "0.19",
+    "original_price": "0.29",
+    "discount_percent": "-34%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Pieniniai-ledai-vafliniame-puodelyje-LOLO.jpg",
+    "info": {}
+  },
+  {
+    "name": "Vanilės skonio zefyrai SKRIVERU, 800 g",
+    "discounted_price": "3.99",
+    "original_price": "4.99",
+    "discount_percent": "-20%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/zefyrai-4751010575021.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Marinuotas kiaulienos šašlykas majonezo marinate, 1 kg",
+    "discounted_price": "4.49",
+    "original_price": "5.99",
+    "discount_percent": "-25%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saslykas-majonezo-marinate-Rivona-NEW.jpg",
+    "info": {}
+  },
+  {
+    "name": "Tekstilinėms paplūdimio rankinėms",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-60%",
+    "start_at": "2025-08-20",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tekstiline_ms-paplu_dimio-rankine_ms.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
     "name": "Moteriškas skustuvas ONEX, art. LD-9965, 1 vnt.",
     "discounted_price": "6.49",
     "original_price": "10.99",
@@ -3231,6 +3345,31 @@
       "shopH": "shopH",
       "shopXxl": "shopXxl"
     }
+  },
+  {
+    "name": "Aukšto slėgio plovykla KARCHER K2 HORIZONTAL, 1 vnt",
+    "discounted_price": "59.99",
+    "original_price": "99.99",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/plovykla-auksto-slegio-new-K2-HORIZONTAL_1.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Sausai marinuotas BRAZILIŠKAS šašlykas, 800 g",
+    "discounted_price": "6.99",
+    "original_price": "9.99",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/607642_MR_Sausai-Marinuotas_Brazilis_k-as-saslykas_800-g_Maisas_be_fono.jpg",
+    "info": {}
   },
   {
     "name": "Miltiniams mišiniams MALSENA (įv. rūšių), 250–498 g",
@@ -3248,53 +3387,14 @@
     }
   },
   {
-    "name": "Sausai marinuotas BRAZILIŠKAS šašlykas, 800 g",
-    "discounted_price": "6.99",
-    "original_price": "9.99",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/607642_MR_Sausai-Marinuotas_Brazilis_k-as-saslykas_800-g_Maisas_be_fono.jpg",
-    "info": {}
-  },
-  {
-    "name": "Aukšto slėgio plovykla KARCHER K2 HORIZONTAL, 1 vnt",
-    "discounted_price": "59.99",
-    "original_price": "99.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/plovykla-auksto-slegio-new-K2-HORIZONTAL_1.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Tekstilinėms paplūdimio rankinėms",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-60%",
-    "start_at": "2025-08-20",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tekstiline_ms-paplu_dimio-rankine_ms.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "DAUMANTŲ TRADICINĖS garstyčios, 185 g",
-    "discounted_price": "0.69",
+    "name": "Kepintos raudonosios paprikos TUKAS, 680 g",
+    "discounted_price": "1.89",
     "original_price": "",
     "discount_percent": "-",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/garstycios-Tradicines-atnaujintos.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/paprikos-kepintos-raudonos-Tukas.jpg",
     "info": {}
   },
   {
@@ -3309,17 +3409,6 @@
     "info": {}
   },
   {
-    "name": "Karštai rūkyta dešra UŽKANDINĖ, l r., 350 g",
-    "discounted_price": "1.35",
-    "original_price": "2.49",
-    "discount_percent": "-45%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Uzkandine-desra-Nematekas-350g-316px.jpg",
-    "info": {}
-  },
-  {
     "name": "Biriai arbatai PRESTO, 80 g, 90 g",
     "discounted_price": "",
     "original_price": "",
@@ -3328,6 +3417,17 @@
     "end_at": "2024-12-09",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Biriai-arbatai-PRESTO.jpg",
+    "info": {}
+  },
+  {
+    "name": "Sauskelnės-kelnaitės BAMBO (3 dydžių)",
+    "discounted_price": "7.89",
+    "original_price": "11.28",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Sauskelnes-kelnaites-BAMBO.jpg",
     "info": {}
   },
   {
@@ -3346,76 +3446,25 @@
     }
   },
   {
-    "name": "Sauskelnės-kelnaitės BAMBO (3 dydžių)",
-    "discounted_price": "7.89",
-    "original_price": "11.28",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Sauskelnes-kelnaites-BAMBO.jpg",
-    "info": {}
-  },
-  {
-    "name": "Kepintos raudonosios paprikos TUKAS, 680 g",
-    "discounted_price": "1.89",
+    "name": "DAUMANTŲ TRADICINĖS garstyčios, 185 g",
+    "discounted_price": "0.69",
     "original_price": "",
     "discount_percent": "-",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/paprikos-kepintos-raudonos-Tukas.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/garstycios-Tradicines-atnaujintos.jpg",
     "info": {}
   },
   {
-    "name": "Kvietiniai miltai 405D EKSTRA, 1,75 kg",
-    "discounted_price": "1.53",
-    "original_price": "2.29",
-    "discount_percent": "-33%",
+    "name": "Karštai rūkyta dešra UŽKANDINĖ, l r., 350 g",
+    "discounted_price": "1.35",
+    "original_price": "2.49",
+    "discount_percent": "-45%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/miltai-Kvietiniai-Ekstra1-Malsena-1-v2.75-kg-1711.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Pagalvėms, antklodėms, paklodėms ir rinkiniams",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/patalyne-uzvalkalai-2025-08.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Kiaulienos ir jautienos burgerių paplotėl. GRYNUOLIAI, 220 g",
-    "discounted_price": "2.59",
-    "original_price": "4.99",
-    "discount_percent": "-48%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/mesainiai-Grynuoliai_Burger_Pork-Beef.jpg",
-    "info": {}
-  },
-  {
-    "name": "Ledai ant pagaliuko AURUM, 100 ml",
-    "discounted_price": "0.45",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Ledai-ant-pagaliuko-AURUM-v2.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Uzkandine-desra-Nematekas-350g-316px.jpg",
     "info": {}
   },
   {
@@ -3441,39 +3490,6 @@
     "info": {}
   },
   {
-    "name": "K. r. viščiukų skrandukai, 250 g",
-    "discounted_price": "1.91",
-    "original_price": "3.19",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/visciuku-skrandukai-new-2182.jpg",
-    "info": {}
-  },
-  {
-    "name": "Kukurūzų spragėsiai MOGYI MICROPOP (3 rūšių), 100 g",
-    "discounted_price": "0.59",
-    "original_price": "0.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kukuruzu-spragesiai-MOGYI-MICROPOP.jpg",
-    "info": {}
-  },
-  {
-    "name": "Ledinukams CHUPA CHUPS (įv. rūšių), 12-120 g",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-35%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Ledinukams-CHUPA-CHUPS.jpg",
-    "info": {}
-  },
-  {
     "name": "Surimio lazdelės su padažu VIČI (2 rūšių), 200 g",
     "discounted_price": "1.59",
     "original_price": "2.69",
@@ -3489,6 +3505,90 @@
     }
   },
   {
+    "name": "Ledinukams CHUPA CHUPS (įv. rūšių), 12-120 g",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-35%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Ledinukams-CHUPA-CHUPS.jpg",
+    "info": {}
+  },
+  {
+    "name": "Kvietiniai miltai 405D EKSTRA, 1,75 kg",
+    "discounted_price": "1.53",
+    "original_price": "2.29",
+    "discount_percent": "-33%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/miltai-Kvietiniai-Ekstra1-Malsena-1-v2.75-kg-1711.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "K. r. viščiukų skrandukai, 250 g",
+    "discounted_price": "1.91",
+    "original_price": "3.19",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/visciuku-skrandukai-new-2182.jpg",
+    "info": {}
+  },
+  {
+    "name": "Kiaulienos ir jautienos burgerių paplotėl. GRYNUOLIAI, 220 g",
+    "discounted_price": "2.59",
+    "original_price": "4.99",
+    "discount_percent": "-48%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/mesainiai-Grynuoliai_Burger_Pork-Beef.jpg",
+    "info": {}
+  },
+  {
+    "name": "Pagalvėms, antklodėms, paklodėms ir rinkiniams",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/patalyne-uzvalkalai-2025-08.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Ledai ant pagaliuko AURUM, 100 ml",
+    "discounted_price": "0.45",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Ledai-ant-pagaliuko-AURUM-v2.jpg",
+    "info": {}
+  },
+  {
+    "name": "Kukurūzų spragėsiai MOGYI MICROPOP (3 rūšių), 100 g",
+    "discounted_price": "0.59",
+    "original_price": "0.99",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kukuruzu-spragesiai-MOGYI-MICROPOP.jpg",
+    "info": {}
+  },
+  {
     "name": "Kokteilių plaktuvas ONEX, art. WBL-1903,1 vnt.",
     "discounted_price": "15.99",
     "original_price": "29.99",
@@ -3500,32 +3600,6 @@
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Šviežios vištienos dešrelės, su žolelėmis be pridėtinių E, 400 g",
-    "discounted_price": "2.23",
-    "original_price": "3.49",
-    "discount_percent": "-36%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Sviezios-vistienos-desreles2-zoleles.jpg",
-    "info": {}
-  },
-  {
-    "name": "PIEMENĖLIO pienas, 3,5% rieb., 0,5 l",
-    "discounted_price": "0.69",
-    "original_price": "0.95",
-    "discount_percent": "-27%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pienas2-Piemenelio-05l-35proc-v2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
     }
   },
   {
@@ -3548,6 +3622,32 @@
     "end_at": "2024-12-09",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Glaistyti-ledai-LOLO-DUBAI-STYLE-ant-pagaliuko.jpg",
+    "info": {}
+  },
+  {
+    "name": "PIEMENĖLIO pienas, 3,5% rieb., 0,5 l",
+    "discounted_price": "0.69",
+    "original_price": "0.95",
+    "discount_percent": "-27%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pienas2-Piemenelio-05l-35proc-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Šviežios vištienos dešrelės, su žolelėmis be pridėtinių E, 400 g",
+    "discounted_price": "2.23",
+    "original_price": "3.49",
+    "discount_percent": "-36%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Sviezios-vistienos-desreles2-zoleles.jpg",
     "info": {}
   },
   {
@@ -3595,29 +3695,47 @@
     }
   },
   {
-    "name": "Glaist. plombyras LOLO VINTAGE ant pagaliuko, 2 rūšių, 120 ml/vnt.",
-    "discounted_price": "0.45",
-    "original_price": "",
-    "discount_percent": "-",
+    "name": "Pyragas su vanilės arba šokolado skonio įd. LA TRECCIA, 300 g",
+    "discounted_price": "1.29",
+    "original_price": "2.69",
+    "discount_percent": "-52%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Glaistytas-plombyras-LOLO-VINTAGE-ant-pagaliuko.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Pyragas-su-vaniles-arba-sokolado-skonio-idaru-LA-TRECCIA.jpg",
+    "info": {}
   },
   {
-    "name": "Kanceliarijos prekėms SMLT ART",
-    "discounted_price": "",
-    "original_price": "",
+    "name": "PIEMENĖLIO raugintos pasukos, 1 kg, butelis",
+    "discounted_price": "0.79",
+    "original_price": "0.99",
+    "discount_percent": "-20%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pasukos1-piemenelio-1kg-butelis-v6.jpg",
+    "info": {}
+  },
+  {
+    "name": "Virtos dešrelės EKSTRA, 495 g",
+    "discounted_price": "1.69",
+    "original_price": "2.49",
+    "discount_percent": "-32%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/ekstra-desreles-rivona-new-v3.jpg",
+    "info": {}
+  },
+  {
+    "name": "Vytinta UTENOS dešra, 200 g",
+    "discounted_price": "2.49",
+    "original_price": "4.99",
     "discount_percent": "-50%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kanceliarijos-prekems-SMLT-ART.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Utenos-desra-vytinta-616853.jpg",
     "info": {}
   },
   {
@@ -3635,28 +3753,14 @@
     }
   },
   {
-    "name": "Gazuotas gėrimas PEPSI, 2 l",
-    "discounted_price": "1.49",
-    "original_price": "2.39",
-    "discount_percent": "-37%",
+    "name": "Kanceliarijos prekėms SMLT ART",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-50%",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/PEPSI-2l-montage-v4.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Pyragas su vanilės arba šokolado skonio įd. LA TRECCIA, 300 g",
-    "discounted_price": "1.29",
-    "original_price": "2.69",
-    "discount_percent": "-52%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Pyragas-su-vaniles-arba-sokolado-skonio-idaru-LA-TRECCIA.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kanceliarijos-prekems-SMLT-ART.jpg",
     "info": {}
   },
   {
@@ -3690,36 +3794,91 @@
     }
   },
   {
-    "name": "Virtos dešrelės EKSTRA, 495 g",
-    "discounted_price": "1.69",
-    "original_price": "2.49",
-    "discount_percent": "-32%",
+    "name": "Glaist. plombyras LOLO VINTAGE ant pagaliuko, 2 rūšių, 120 ml/vnt.",
+    "discounted_price": "0.45",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Glaistytas-plombyras-LOLO-VINTAGE-ant-pagaliuko.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Gazuotas gėrimas PEPSI, 2 l",
+    "discounted_price": "1.49",
+    "original_price": "2.39",
+    "discount_percent": "-37%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/PEPSI-2l-montage-v4.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Šald. pica GUSTO GIRO (2 rūšių), 320 g",
+    "discounted_price": "2.35",
+    "original_price": "4.29",
+    "discount_percent": "-45%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/ekstra-desreles-rivona-new-v3.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saldyta-pica-GUSTO-GIRO-PROSCIUTTO-arba-QUATTRO-FORMAGGI.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
   },
   {
-    "name": "Vytinta UTENOS dešra, 200 g",
-    "discounted_price": "2.49",
-    "original_price": "4.99",
+    "name": "Virtos UTENOS dešrelės, 860 g",
+    "discounted_price": "2.99",
+    "original_price": "5.99",
     "discount_percent": "-50%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Utenos-desra-vytinta-616853.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Utenos-desreles-860-g-be-fono.jpg",
     "info": {}
   },
   {
-    "name": "PIEMENĖLIO raugintos pasukos, 1 kg, butelis",
-    "discounted_price": "0.79",
-    "original_price": "0.99",
-    "discount_percent": "-20%",
+    "name": "Konservavimo dangtaliemas ir dangtelių uždarymo mašinėlėms",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pasukos1-piemenelio-1kg-butelis-v6.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/dangteliai-masinele-uzdarymo-2024-05.jpg",
+    "info": {}
+  },
+  {
+    "name": "Virta EKSTRA DAKTARIŠKA dešra, 800 g",
+    "discounted_price": "3.49",
+    "original_price": "6.99",
+    "discount_percent": "-50%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/daktariska-ekstra-samsono-nauja-2098.jpg",
+    "info": {}
+  },
+  {
+    "name": "PIEMENĖLIO kefyras be laktozės, 2,5% rieb., 1 kg, butelis",
+    "discounted_price": "1.19",
+    "original_price": "1.59",
+    "discount_percent": "-25%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kefyras-Piemenelio-Be-laktozes-1kg-316px.jpg",
     "info": {}
   },
   {
@@ -3749,93 +3908,6 @@
     "info": {}
   },
   {
-    "name": "Virtos UTENOS dešrelės, 860 g",
-    "discounted_price": "2.99",
-    "original_price": "5.99",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Utenos-desreles-860-g-be-fono.jpg",
-    "info": {}
-  },
-  {
-    "name": "PIEMENĖLIO kefyras be laktozės, 2,5% rieb., 1 kg, butelis",
-    "discounted_price": "1.19",
-    "original_price": "1.59",
-    "discount_percent": "-25%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kefyras-Piemenelio-Be-laktozes-1kg-316px.jpg",
-    "info": {}
-  },
-  {
-    "name": "Konservavimo dangtaliemas ir dangtelių uždarymo mašinėlėms",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/dangteliai-masinele-uzdarymo-2024-05.jpg",
-    "info": {}
-  },
-  {
-    "name": "Virta EKSTRA DAKTARIŠKA dešra, 800 g",
-    "discounted_price": "3.49",
-    "original_price": "6.99",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/daktariska-ekstra-samsono-nauja-2098.jpg",
-    "info": {}
-  },
-  {
-    "name": "Šald. pica GUSTO GIRO (2 rūšių), 320 g",
-    "discounted_price": "2.35",
-    "original_price": "4.29",
-    "discount_percent": "-45%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saldyta-pica-GUSTO-GIRO-PROSCIUTTO-arba-QUATTRO-FORMAGGI.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Ruošinys keksiukams DR. OETKER (3 rūšių), 300 g, 335 g",
-    "discounted_price": "1.39",
-    "original_price": "2.49",
-    "discount_percent": "-44%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Ruosinys-keksiukams-DR.-OETKER.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Akumuliatorinis daugiafunkcis įrankis INGCO, 20 V, art. CMLI2022, 1 vnt.",
-    "discounted_price": "21.99",
-    "original_price": "36.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/daugiafunkcis-irankis-CMLI2022-copy.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
     "name": "Valgomieji ledai DADU D'ICE, tropinių vaisių arba kramt. gumos skonio, 110 g",
     "discounted_price": "0.47",
     "original_price": "",
@@ -3848,17 +3920,6 @@
       "shopH": "shopH",
       "shopXxl": "shopXxl"
     }
-  },
-  {
-    "name": "Malta kava JACOBS KRONUNG, 500 g",
-    "discounted_price": "6.29",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Jacobs-Kronung-250g-New-design-6533-copy-Medium.jpg",
-    "info": {}
   },
   {
     "name": "Tekstiliniams vonios rankšluosčiams",
@@ -3886,6 +3947,17 @@
     "info": {}
   },
   {
+    "name": "Stiklo valiklis EFFA, 500 ml",
+    "discounted_price": "1.12",
+    "original_price": "1.89",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/stiklo-valiklis-effa.jpg",
+    "info": {}
+  },
+  {
     "name": "PIEMENĖLIO natūralus jogurtas be laktozės, 380 g",
     "discounted_price": "0.87",
     "original_price": "1.09",
@@ -3901,80 +3973,39 @@
     }
   },
   {
-    "name": "Stiklo valiklis EFFA, 500 ml",
-    "discounted_price": "1.12",
-    "original_price": "1.89",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/stiklo-valiklis-effa.jpg",
-    "info": {}
-  },
-  {
-    "name": "Apsauginėms veido kaukėms ir respiratoriams",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-45%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kaukes-ir-respiratoriai-2023.jpg",
-    "info": {}
-  },
-  {
-    "name": "Sveriami saldainiai SALDI SALA, 1 kg",
-    "discounted_price": "5.15",
-    "original_price": "6.49",
-    "discount_percent": "-20%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saldi-sala-sufle-saldainiai-NEW.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "LANKŲ grietinės ir augal. rieb. mišinys, 30% rieb., 350 g",
-    "discounted_price": "1.49",
-    "original_price": "1.99",
-    "discount_percent": "-25%",
+    "name": "Ruošinys keksiukams DR. OETKER (3 rūšių), 300 g, 335 g",
+    "discounted_price": "1.39",
+    "original_price": "2.49",
+    "discount_percent": "-44%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Lanku1-30-grietine-350g.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Ruosinys-keksiukams-DR.-OETKER.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
     }
   },
   {
-    "name": "Kraujospūdžio matuoklis ESPERANZA, art. ECB001, 1 vnt.",
-    "discounted_price": "9.99",
-    "original_price": "16.99",
-    "discount_percent": "-41%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kraujospudzio-matuoklis1-ECB001_1-copy.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Bulvių traškučiai LAY‘S OVEN BAKED, 2 rūšių, 180 g",
-    "discounted_price": "1.79",
+    "name": "Malta kava JACOBS KRONUNG, 500 g",
+    "discounted_price": "6.29",
     "original_price": "",
     "discount_percent": "-",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kepti-bulviu-traskuciai-LAYS-OVEN-BAKED-2r-v2.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Jacobs-Kronung-250g-New-design-6533-copy-Medium.jpg",
+    "info": {}
+  },
+  {
+    "name": "Akumuliatorinis daugiafunkcis įrankis INGCO, 20 V, art. CMLI2022, 1 vnt.",
+    "discounted_price": "21.99",
+    "original_price": "36.99",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/daugiafunkcis-irankis-CMLI2022-copy.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -3992,6 +4023,34 @@
     "info": {}
   },
   {
+    "name": "Bulvių traškučiai LAY‘S OVEN BAKED, 2 rūšių, 180 g",
+    "discounted_price": "1.79",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kepti-bulviu-traskuciai-LAYS-OVEN-BAKED-2r-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "LANKŲ grietinės ir augal. rieb. mišinys, 30% rieb., 350 g",
+    "discounted_price": "1.49",
+    "original_price": "1.99",
+    "discount_percent": "-25%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Lanku1-30-grietine-350g.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
     "name": "Gėrimas COCA-COLA arba COCA COLA ZERO, 1,75 l",
     "discounted_price": "1.29",
     "original_price": "2.15",
@@ -4003,39 +4062,40 @@
     "info": {}
   },
   {
-    "name": "Keptas vištienos kumpelis su špinatais ČYZAS PREMIUM, 400 g",
-    "discounted_price": "2.99",
-    "original_price": "4.59",
-    "discount_percent": "-34%",
+    "name": "Apsauginėms veido kaukėms ir respiratoriams",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-45%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Cyzas-keptas-new2-spinat-2281-v3.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kaukes-ir-respiratoriai-2023.jpg",
     "info": {}
   },
   {
-    "name": "Vasarinei lauko avalynei",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-60%",
+    "name": "Kraujospūdžio matuoklis ESPERANZA, art. ECB001, 1 vnt.",
+    "discounted_price": "9.99",
+    "original_price": "16.99",
+    "discount_percent": "-41%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/avalyne-VISA-2025-04-v3.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kraujospudzio-matuoklis1-ECB001_1-copy.jpg",
     "info": {
       "shopH": "shopH",
-      "shopXxl": "shopXxl"
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
     }
   },
   {
-    "name": "Želė DR. OETKER (įv. rūšių), 72 g",
-    "discounted_price": "0.65",
-    "original_price": "1.19",
-    "discount_percent": "-45%",
+    "name": "Sveriami saldainiai SALDI SALA, 1 kg",
+    "discounted_price": "5.15",
+    "original_price": "6.49",
+    "discount_percent": "-20%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Zele-DR.-OETKER.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saldi-sala-sufle-saldainiai-NEW.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",
@@ -4057,6 +4117,73 @@
     }
   },
   {
+    "name": "Krekeriai GAIDELIS (3 rūšių), 70 g, 72 g",
+    "discounted_price": "0.62",
+    "original_price": "0.99",
+    "discount_percent": "-37%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Krekeriai-GAIDELIS-316px.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Keptas vištienos kumpelis su špinatais ČYZAS PREMIUM, 400 g",
+    "discounted_price": "2.99",
+    "original_price": "4.59",
+    "discount_percent": "-34%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Cyzas-keptas-new2-spinat-2281-v3.jpg",
+    "info": {}
+  },
+  {
+    "name": "Fasuoti saulėgrąžų sėklų branduoliai GAR2, 1 kg/pak.",
+    "discounted_price": "2.39",
+    "original_price": "3.49",
+    "discount_percent": "-31%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saulegrazu-branduoliai-Gar2-1kg.jpg",
+    "info": {}
+  },
+  {
+    "name": "Silkių filė gabaliukai su baravykais VIČI CLASSIC, 480 g",
+    "discounted_price": "3.49",
+    "original_price": "4.99",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/silkiu-file-Vici-480g2-baravyk-7736.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Želė DR. OETKER (įv. rūšių), 72 g",
+    "discounted_price": "0.65",
+    "original_price": "1.19",
+    "discount_percent": "-45%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Zele-DR.-OETKER.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
     "name": "RAMBYNO lyd. rūkyt. sūrio produkt. (2 rūšių), 45% rieb. s.m., 250 g",
     "discounted_price": "1.49",
     "original_price": "1.89",
@@ -4066,6 +4193,21 @@
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/RAMBYNO-lydytas-rukytas-surio-produktas-copy.jpg",
     "info": {}
+  },
+  {
+    "name": "Natūralus mineralinis vanduo BIRUTĖ, 0,5 l",
+    "discounted_price": "0.36",
+    "original_price": "0.55",
+    "discount_percent": "-34%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Birute2-500mL-2025-copy.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
   },
   {
     "name": "Šald.daržovėms ir jų mišiniams HORTEX (8 rūšių), 400 g, 450 g",
@@ -4094,71 +4236,18 @@
     }
   },
   {
-    "name": "Natūralus mineralinis vanduo BIRUTĖ, 0,5 l",
-    "discounted_price": "0.36",
-    "original_price": "0.55",
-    "discount_percent": "-34%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Birute2-500mL-2025-copy.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Silkių filė gabaliukai su baravykais VIČI CLASSIC, 480 g",
-    "discounted_price": "3.49",
-    "original_price": "4.99",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/silkiu-file-Vici-480g2-baravyk-7736.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Krekeriai GAIDELIS (3 rūšių), 70 g, 72 g",
-    "discounted_price": "0.62",
-    "original_price": "0.99",
-    "discount_percent": "-37%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Krekeriai-GAIDELIS-316px.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Fasuoti saulėgrąžų sėklų branduoliai GAR2, 1 kg/pak.",
-    "discounted_price": "2.39",
-    "original_price": "3.49",
-    "discount_percent": "-31%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saulegrazu-branduoliai-Gar2-1kg.jpg",
-    "info": {}
-  },
-  {
-    "name": "Smėlio žaislams ir vandens šautuvams",
+    "name": "Vasarinei lauko avalynei",
     "discounted_price": "",
     "original_price": "",
-    "discount_percent": "-50%",
+    "discount_percent": "-60%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/smelio-zaislai-vandens-sautuvai-2023-05.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/avalyne-VISA-2025-04-v3.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
   },
   {
     "name": "Virtos kepamosios kiaulienos dešrelės GERO ŪPO, a. r., 1 kg",
@@ -4170,20 +4259,6 @@
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kepamos-desreles-Gero-Upo-NEW.jpg",
     "info": {}
-  },
-  {
-    "name": "Dviračiams ir dviračių aksesuarams",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-50%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Dviraciams-ir-dviraciu-aksesuarams.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
   },
   {
     "name": "Burnos priežiūros priemonėms COLGATE",
@@ -4198,6 +4273,31 @@
       "shopH": "shopH",
       "shopXxl": "shopXxl",
       "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Smėlio žaislams ir vandens šautuvams",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-50%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/smelio-zaislai-vandens-sautuvai-2023-05.jpg",
+    "info": {}
+  },
+  {
+    "name": "Dviračiams ir dviračių aksesuarams",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-50%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Dviraciams-ir-dviraciu-aksesuarams.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
     }
   },
   {
@@ -4216,6 +4316,17 @@
     }
   },
   {
+    "name": "VILKYŠKIŲ jogurtas, 5 rūšių, 3,6% rieb., 200 g",
+    "discounted_price": "0.69",
+    "original_price": "1.05",
+    "discount_percent": "-34%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/VILKYSKIU-jogurtas.jpg",
+    "info": {}
+  },
+  {
     "name": "Kibirams",
     "discounted_price": "",
     "original_price": "",
@@ -4228,17 +4339,6 @@
       "shopH": "shopH",
       "shopXxl": "shopXxl"
     }
-  },
-  {
-    "name": "VILKYŠKIŲ jogurtas, 5 rūšių, 3,6% rieb., 200 g",
-    "discounted_price": "0.69",
-    "original_price": "1.05",
-    "discount_percent": "-34%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/VILKYSKIU-jogurtas.jpg",
-    "info": {}
   },
   {
     "name": "Kons. kačių ėdalas GOURMET GOLD (įv. rūšių), 85 g",
@@ -4256,31 +4356,6 @@
     }
   },
   {
-    "name": "Malta kava LAVAZZA ESPRESSO CLUB, 250 g",
-    "discounted_price": "5.99",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Lavazza-CLUB-250g-TINS-8000070015456-Small.jpg",
-    "info": {}
-  },
-  {
-    "name": "Akumul.gręžtuvas INGCO 20V art.CIDILI20558E, 1 vnt.",
-    "discounted_price": "59.99",
-    "original_price": "99.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/INGCO1-greztuvas-akum-v2.CIDLI200215.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
     "name": "TIGRIUKO virtos dešrelės, 250 g",
     "discounted_price": "1.15",
     "original_price": "1.79",
@@ -4289,6 +4364,17 @@
     "end_at": "2025-09-03",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Tigriuko-desreles-be-antibiotiku1-v2.jpg",
+    "info": {}
+  },
+  {
+    "name": "Malta kava LAVAZZA ESPRESSO CLUB, 250 g",
+    "discounted_price": "5.99",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Lavazza-CLUB-250g-TINS-8000070015456-Small.jpg",
     "info": {}
   },
   {
@@ -4307,30 +4393,18 @@
     }
   },
   {
-    "name": "Avižiniai sausainiai RIESTLITA, 350 g",
-    "discounted_price": "1.49",
-    "original_price": "1.99",
-    "discount_percent": "-25%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/aviziniai-sausainiai-350g-riestlita-v2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Atšaldytas kiaulienos šašlykas TRYS PIPIRAI, 800 g",
-    "discounted_price": "4.59",
-    "original_price": "6.99",
-    "discount_percent": "-34%",
+    "name": "Akumul.gręžtuvas INGCO 20V art.CIDILI20558E, 1 vnt.",
+    "discounted_price": "59.99",
+    "original_price": "99.99",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saslykas-Trys-pipirai-samson-459.jpg",
-    "info": {}
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/INGCO1-greztuvas-akum-v2.CIDLI200215.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
   },
   {
     "name": "KĖDAINIŲ KONSERVŲ konservuotoms sriuboms (9 rūšių), 480 g",
@@ -4344,14 +4418,14 @@
     "info": {}
   },
   {
-    "name": "MAMOS bemielė duona, 500 g",
-    "discounted_price": "0.97",
-    "original_price": "1.39",
-    "discount_percent": "-30%",
+    "name": "Garo valytuvas KARCHER, art. SC 1, 1 vnt.",
+    "discounted_price": "56.99",
+    "original_price": "89.99",
+    "discount_percent": "-36%",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/mamos-duona-500g-NEW.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/garo-valytuvas-Karcher-1516400_std_01.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -4387,14 +4461,14 @@
     }
   },
   {
-    "name": "Meduoliai BABBLE, 500 g",
-    "discounted_price": "1.39",
-    "original_price": "",
-    "discount_percent": "-",
+    "name": "Atšaldytas kiaulienos šašlykas TRYS PIPIRAI, 800 g",
+    "discounted_price": "4.59",
+    "original_price": "6.99",
+    "discount_percent": "-34%",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/meduoliai-Babble-NEW-500g..jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/saslykas-Trys-pipirai-samson-459.jpg",
     "info": {}
   },
   {
@@ -4409,17 +4483,58 @@
     "info": {}
   },
   {
-    "name": "Garo valytuvas KARCHER, art. SC 1, 1 vnt.",
-    "discounted_price": "56.99",
-    "original_price": "89.99",
-    "discount_percent": "-36%",
+    "name": "Avižiniai sausainiai RIESTLITA, 350 g",
+    "discounted_price": "1.49",
+    "original_price": "1.99",
+    "discount_percent": "-25%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/garo-valytuvas-Karcher-1516400_std_01.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/aviziniai-sausainiai-350g-riestlita-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Meduoliai BABBLE, 500 g",
+    "discounted_price": "1.39",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/meduoliai-Babble-NEW-500g..jpg",
+    "info": {}
+  },
+  {
+    "name": "MAMOS bemielė duona, 500 g",
+    "discounted_price": "0.97",
+    "original_price": "1.39",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/mamos-duona-500g-NEW.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Jogurtas GAR2 (3 rūšių), 400 g",
+    "discounted_price": "0.79",
+    "original_price": "0.99",
+    "discount_percent": "-20%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Jogurtas-GAR2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
     }
   },
   {
@@ -4449,19 +4564,26 @@
     }
   },
   {
-    "name": "Jogurtas GAR2 (3 rūšių), 400 g",
-    "discounted_price": "0.79",
-    "original_price": "0.99",
-    "discount_percent": "-20%",
+    "name": "GASPADORIŲ UŽKANDA k. r., 1 kg",
+    "discounted_price": "5.99",
+    "original_price": "9.99",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
+    "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Jogurtas-GAR2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/GASPADORIU-UZKANDA.jpg",
+    "info": {}
+  },
+  {
+    "name": "KLASIKINĖ silkių filė su keptomis daržovėmis aliejuje DESĖ, 480 g",
+    "discounted_price": "2.49",
+    "original_price": "3.79",
+    "discount_percent": "-34%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/silke-su-darzovem-Klasikine-480g-dese.jpg",
+    "info": {}
   },
   {
     "name": "Juodoji arbata DILMAH be siūlo, 200 g/pak.",
@@ -4479,50 +4601,14 @@
     }
   },
   {
-    "name": "VYTAUTO DIDŽIOJO kepta duona su saulėgr., česnaku ir druska, 180 g",
-    "discounted_price": "1.18",
-    "original_price": "1.69",
-    "discount_percent": "-30%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kepta-duona-Vytauto-Didziojo-saulegrazomis-cesnaku-ir-druska.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "GASPADORIŲ UŽKANDA k. r., 1 kg",
-    "discounted_price": "5.99",
-    "original_price": "9.99",
+    "name": "Skridininės kvapn.žvakutės 93 rūš.), 10 vnt./pak.",
+    "discounted_price": "1.14",
+    "original_price": "1.90",
     "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2025-09-03",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/GASPADORIU-UZKANDA.jpg",
-    "info": {}
-  },
-  {
-    "name": "Kukurūzų užkandis CHEETOS (5 rūšių), 145 g, 160 g, 165 g",
-    "discounted_price": "1.39",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kukuruzu-traskuciai-CHEETOS.jpg",
-    "info": {}
-  },
-  {
-    "name": "KLASIKINĖ silkių filė su keptomis daržovėmis aliejuje DESĖ, 480 g",
-    "discounted_price": "2.49",
-    "original_price": "3.79",
-    "discount_percent": "-34%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/silke-su-darzovem-Klasikine-480g-dese.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Skridinines-kvapniosios-zvakutes.jpg",
     "info": {}
   },
   {
@@ -4540,17 +4626,6 @@
     }
   },
   {
-    "name": "Skridininės kvapn.žvakutės 93 rūš.), 10 vnt./pak.",
-    "discounted_price": "1.14",
-    "original_price": "1.90",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Skridinines-kvapniosios-zvakutes.jpg",
-    "info": {}
-  },
-  {
     "name": "Sausainiai BALTASIS PYRAGAS NAMINIAI, 300 g",
     "discounted_price": "2.09",
     "original_price": "2.99",
@@ -4559,6 +4634,31 @@
     "end_at": "2024-12-09",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Naminiai-sausainiai-300g.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Kukurūzų užkandis CHEETOS (5 rūšių), 145 g, 160 g, 165 g",
+    "discounted_price": "1.39",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Kukuruzu-traskuciai-CHEETOS.jpg",
+    "info": {}
+  },
+  {
+    "name": "VYTAUTO DIDŽIOJO kepta duona su saulėgr., česnaku ir druska, 180 g",
+    "discounted_price": "1.18",
+    "original_price": "1.69",
+    "discount_percent": "-30%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/kepta-duona-Vytauto-Didziojo-saulegrazomis-cesnaku-ir-druska.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -4576,20 +4676,6 @@
     "info": {}
   },
   {
-    "name": "Dėžė PINTA art. EWY1460, 1 vnt.",
-    "discounted_price": "2.14",
-    "original_price": "3.90",
-    "discount_percent": "-45%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/deze-Pinta2-v2.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXl": "shopXl"
-    }
-  },
-  {
     "name": "Bulvių traškučiams ESTRELLA (įv. rūšių)",
     "discounted_price": "",
     "original_price": "",
@@ -4605,6 +4691,20 @@
     }
   },
   {
+    "name": "Dėžė PINTA art. EWY1460, 1 vnt.",
+    "discounted_price": "2.14",
+    "original_price": "3.90",
+    "discount_percent": "-45%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/deze-Pinta2-v2.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXl": "shopXl"
+    }
+  },
+  {
     "name": "Arbatai ŽOLYNĖLIS (įv. rūšių)",
     "discounted_price": "",
     "original_price": "",
@@ -4614,20 +4714,6 @@
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Arbatai-ZiOLYNEcLIS.jpg",
     "info": {}
-  },
-  {
-    "name": "Karšto oro gruzdintuvė ONEX, art. JF-AF01A, 1 vnt.",
-    "discounted_price": "35.99",
-    "original_price": "59.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/gruzdintuve-karsto-oro-ONEX-JH-AF01A.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
   },
   {
     "name": "Natūralus mineralinis vanduo BIRUTĖ (2 rūšių), 1,5 l",
@@ -4650,21 +4736,6 @@
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Sultingas-sonines-saslykas-su-cesnakais-arba-sprandines-saslykas-raugtas-su-svogunais.jpg",
     "info": {}
-  },
-  {
-    "name": "KĖDAINIŲ KONSERVŲ tuno užtepas (2 rūšių), 280 g",
-    "discounted_price": "1.73",
-    "original_price": "",
-    "discount_percent": "-",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/KEcDAINIU-KONSERVU-uzitepas-sumusitiniams-tuno.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
   },
   {
     "name": "Varškė be laktozės GRAIKIŠKA AMFORA, 200 g",
@@ -4696,14 +4767,97 @@
     }
   },
   {
-    "name": "Geriamasis jogurtas GRAIKIŠKA AMFORA, 500 g",
-    "discounted_price": "1.65",
-    "original_price": "2.19",
-    "discount_percent": "-24%",
+    "name": "KĖDAINIŲ KONSERVŲ tuno užtepas (2 rūšių), 280 g",
+    "discounted_price": "1.73",
+    "original_price": "",
+    "discount_percent": "-",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/KEcDAINIU-KONSERVU-uzitepas-sumusitiniams-tuno.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Karšto oro gruzdintuvė ONEX, art. JF-AF01A, 1 vnt.",
+    "discounted_price": "35.99",
+    "original_price": "59.99",
+    "discount_percent": "-40%",
     "start_at": "2025-08-21",
     "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Geriamasis-jogurtas-GRAIKISKA-AMFORA-500g.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/gruzdintuve-karsto-oro-ONEX-JH-AF01A.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Šaltoji kava LANDESSA (3 rūšių), 230 ml",
+    "discounted_price": "0.99",
+    "original_price": "1.65",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saltoji-kava-LANDESSA.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Pjūklas INGCO art. HHAS15450, 450 mm, 1 vnt.",
+    "discounted_price": "3.59",
+    "original_price": "5.99",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pjuklas-HHAS15450.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Bulvių traškučiai TAFFEL (5 rūšių), 180 g",
+    "discounted_price": "1.19",
+    "original_price": "2.69",
+    "discount_percent": "-55%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Traskuciai-TAFFEL-v3.jpg",
+    "info": {}
+  },
+  {
+    "name": "Buitinėms virvėms ir skalbinių segtukams",
+    "discounted_price": "",
+    "original_price": "",
+    "discount_percent": "-40%",
+    "start_at": "2025-08-21",
+    "end_at": "2024-12-09",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Buitinems-virvems-ir-skalbiniu-segtukams.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl"
+    }
+  },
+  {
+    "name": "Pieno plakiklis BOMANN, art. MS 344 CB+, 1 vnt.",
+    "discounted_price": "2.49",
+    "original_price": "3.99",
+    "discount_percent": "-37%",
+    "start_at": "2025-08-21",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pieno-plakiklis-ms_344_cb-copy.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -4725,40 +4879,14 @@
     }
   },
   {
-    "name": "Bulvių traškučiai TAFFEL (5 rūšių), 180 g",
-    "discounted_price": "1.19",
-    "original_price": "2.69",
-    "discount_percent": "-55%",
+    "name": "Geriamasis jogurtas GRAIKIŠKA AMFORA, 500 g",
+    "discounted_price": "1.65",
+    "original_price": "2.19",
+    "discount_percent": "-24%",
     "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
+    "end_at": "2024-12-09",
     "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Traskuciai-TAFFEL-v3.jpg",
-    "info": {}
-  },
-  {
-    "name": "Pjūklas INGCO art. HHAS15450, 450 mm, 1 vnt.",
-    "discounted_price": "3.59",
-    "original_price": "5.99",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pjuklas-HHAS15450.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
-    "name": "Pieno plakiklis BOMANN, art. MS 344 CB+, 1 vnt.",
-    "discounted_price": "2.49",
-    "original_price": "3.99",
-    "discount_percent": "-37%",
-    "start_at": "2025-08-21",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/pieno-plakiklis-ms_344_cb-copy.jpg",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Geriamasis-jogurtas-GRAIKISKA-AMFORA-500g.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl"
@@ -4780,34 +4908,6 @@
     }
   },
   {
-    "name": "Šaltoji kava LANDESSA (3 rūšių), 230 ml",
-    "discounted_price": "0.99",
-    "original_price": "1.65",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Saltoji-kava-LANDESSA.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
-    "name": "Buitinėms virvėms ir skalbinių segtukams",
-    "discounted_price": "",
-    "original_price": "",
-    "discount_percent": "-40%",
-    "start_at": "2025-08-21",
-    "end_at": "2024-12-09",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/Buitinems-virvems-ir-skalbiniu-segtukams.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl"
-    }
-  },
-  {
     "name": "Tirpioji kava JACOBS CRONAT GOLD, 200 g",
     "discounted_price": "6.99",
     "original_price": "",
@@ -4823,21 +4923,6 @@
     }
   },
   {
-    "name": "Bokštinis ventiliatorius ONEX, art. YF-TO3025, 1 vnt",
-    "discounted_price": "18.99",
-    "original_price": "39.99",
-    "discount_percent": "-52%",
-    "start_at": "2025-08-07",
-    "end_at": "2025-09-03",
-    "product_url": "",
-    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/ventiliatorius1-3-bokstinis-YF-T03205.jpg",
-    "info": {
-      "shopH": "shopH",
-      "shopXxl": "shopXxl",
-      "shopXl": "shopXl"
-    }
-  },
-  {
     "name": "Šaldyti DZŪKIŠKI koldūnais su mėsos įd., 1 kg",
     "discounted_price": "2.49",
     "original_price": "4.59",
@@ -4846,6 +4931,21 @@
     "end_at": "2025-08-20",
     "product_url": "",
     "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/DZUKISKI-koldunai-NEW-Medium.jpg",
+    "info": {
+      "shopH": "shopH",
+      "shopXxl": "shopXxl",
+      "shopXl": "shopXl"
+    }
+  },
+  {
+    "name": "Bokštinis ventiliatorius ONEX, art. YF-TO3025, 1 vnt",
+    "discounted_price": "18.99",
+    "original_price": "39.99",
+    "discount_percent": "-52%",
+    "start_at": "2025-08-07",
+    "end_at": "2025-09-03",
+    "product_url": "",
+    "image_url": "https://www.norfa.lt/assets/Uploads/PracticalSuggestions/ventiliatorius1-3-bokstinis-YF-T03205.jpg",
     "info": {
       "shopH": "shopH",
       "shopXxl": "shopXxl",

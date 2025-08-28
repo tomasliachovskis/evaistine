@@ -17,6 +17,7 @@ class Discount extends Model
         'discounted_price',
         'discount_percent',
         'condition',
+        'info',
         'card',
         'product_url',
         'start_at',

@@ -40,7 +40,6 @@ class ProcessDiscounts extends Command
             ->pluck('product_url');
 
         foreach ($duplicates as $url) {
-            dump($url);
             $records = DiscountTemp::where('product_url', $url)
                 ->orderBy('id', 'desc')
                 ->get();
@@ -68,12 +67,24 @@ class ProcessDiscounts extends Command
                 continue;
             }
 
+            $normalizedCondition = $this->normalizeCondition($tempDiscount->condition);
+            $normalizedInfo = $tempDiscount->info;
+            if (!empty($normalizedInfo)) {
+                $normalizedInfo = str_replace(['"', "'"], '', $normalizedInfo);
+            }
+
             $normalizedOriginalPrice = $rules->normalizePrice($tempDiscount->original_price);
             $normalizedDiscountedPrice = $rules->normalizePrice($tempDiscount->discounted_price);
 
             $discountPercent = $tempDiscount->discount_percent;
             if (!empty($discountPercent)) {
-                $discountPercent = preg_replace('/[^0-9]/', '', $discountPercent);
+                $discountPercent = strtolower(trim($discountPercent));
+                $discountPercent = preg_replace('/[^0-9-]/', '', $discountPercent);
+                $discountPercent = str_replace('-', '', $discountPercent);
+                $discountPercent = !empty($discountPercent) ? (int)$discountPercent : null;
+                if ($discountPercent < 0) {
+                    $discountPercent = 0;
+                }
             }
             if (empty($discountPercent) && $normalizedOriginalPrice > 0 && $normalizedDiscountedPrice > 0) {
                 $discountPercent = round((($normalizedOriginalPrice - $normalizedDiscountedPrice) / $normalizedOriginalPrice) * 100);
@@ -90,7 +101,7 @@ class ProcessDiscounts extends Command
             }
 
             $normalizedProductName = $this->normalizer->normalize($tempDiscount->name);
-            $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand);
+            $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand, $store->name);
 
             $product = Product::firstOrCreate(
                 ['slug' => $productSlug],
@@ -118,7 +129,8 @@ class ProcessDiscounts extends Command
                     'original_price' => $normalizedOriginalPrice,
                     'discounted_price' => $normalizedDiscountedPrice,
                     'discount_percent' => $discountPercent,
-                    'condition' => $tempDiscount->condition,
+                    'condition' => $normalizedCondition,
+                    'info' => $normalizedInfo,
                     'card' => $tempDiscount->card,
                     'start_at' => $startAt,
                     'end_at' => $endAt,
@@ -140,7 +152,8 @@ class ProcessDiscounts extends Command
                     'original_price' => $normalizedOriginalPrice,
                     'discounted_price' => $normalizedDiscountedPrice,
                     'discount_percent' => $discountPercent,
-                    'condition' => $tempDiscount->condition,
+                    'condition' => $normalizedCondition,
+                    'info' => $normalizedInfo,
                     'card' => $tempDiscount->card,
                     'start_at' => $startAt,
                     'end_at' => $endAt,
@@ -282,16 +295,16 @@ class ProcessDiscounts extends Command
         return null;
     }
 
-    private function generateProductSlug(string $productName, ?string $brand): string
+    private function generateProductSlug(string $productName, ?string $brand, string $storeName): string
     {
         $slugParts = [];
 
-        if (!empty($brand)) {
-            $normalizedBrand = $this->normalizeForSlug($brand);
-            if (!empty($normalizedBrand)) {
-                $slugParts[] = $normalizedBrand;
-            }
-        }
+//        if (!empty($brand) && $storeName !== 'maxima') {
+//            $normalizedBrand = $this->normalizeForSlug($brand);
+//            if (!empty($normalizedBrand)) {
+//                $slugParts[] = $normalizedBrand;
+//            }
+//        }
 
         $normalizedName = $this->normalizeForSlug($productName);
         if (!empty($normalizedName)) {
@@ -320,5 +333,47 @@ class ProcessDiscounts extends Command
         $text = preg_replace('/-+/', '-', $text);
 
         return trim($text, '-');
+    }
+
+    private function normalizeCondition(?string $condition): ?string
+    {
+        if (empty($condition)) {
+            return null;
+        }
+
+        if (preg_match('/[–-]\d+%/', $condition)) {
+            return '';
+        }
+
+        if (str_starts_with($condition, '{') && str_ends_with($condition, '}')) {
+            $jsonData = json_decode($condition, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($jsonData)) {
+                $parts = [];
+                foreach ($jsonData as $key => $value) {
+                    if ($key === 'shopH' && $value === 'shopH') {
+                        $parts[] = 'H';
+                    } elseif ($key === 'shopXxl' && $value === 'shopXxl') {
+                        $parts[] = 'XXL';
+                    } elseif ($key === 'shopXl' && $value === 'shopXl') {
+                        $parts[] = 'XL';
+                    }
+                }
+
+                if (!empty($parts)) {
+                    if (count($parts) === 1) {
+                        return $parts[0];
+                    } else {
+                        $last = array_pop($parts);
+                        return implode(', ', $parts) . ' ir ' . $last;
+                    }
+                }
+            }
+        }
+
+        $condition = str_replace(['"', "'"], '', $condition);
+
+        $condition = str_replace(['Įsidėk 2 už', 'Pirk 2 už'], '1+1', $condition);
+
+        return $condition;
     }
 }

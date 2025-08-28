@@ -15,6 +15,7 @@ ssh $SERVER << 'EOF'
     php artisan view:clear
     php artisan optimize
     php artisan config:clear
+    php artisan migrate
 EOF
 
 echo "Deployment completed successfully!"

@@ -253,15 +253,4 @@ class ProductNameNormalizer
         }
         return $name;
     }
-
-    public function generateSlug(string $productName): string
-    {
-        $normalized = $this->normalize($productName);
-        $slug = strtolower($normalized);
-        $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
-        $slug = preg_replace('/\s+/', '-', $slug);
-        $slug = preg_replace('/-+/', '-', $slug);
-
-        return trim($slug, '-');
-    }
 }

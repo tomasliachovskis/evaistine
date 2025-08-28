@@ -11,7 +11,7 @@ puppeteer.use(StealthPlugin());
     const sleep = ms => new Promise(res => setTimeout(res, ms));
 
     // Load the local HTML file
-    const filePath = 'https://www.lidl.lt/c/visos-sios-savaites-akcijos/a10025491';
+    const filePath = 'https://www.lidl.lt/c/visos-sios-savaites-akcijos';
     await page.goto(filePath, { waitUntil: 'domcontentloaded' });
 
     await page.waitForSelector('#onetrust-accept-btn-handler', { timeout: 5000 });
@@ -21,10 +21,12 @@ puppeteer.use(StealthPlugin());
     await sleep(5000);
 
     const offers = await page.evaluate(() => {
-        const elements = document.querySelectorAll('nav a.ATheHeroStage__OfferAnchor');
+        const elements = document.querySelectorAll('a.AHeroStageItems__Item--Wrapper');
         const texts = Array.from(elements).map(offer => offer.href);
         return [...new Set(texts)];
     });
+
+    console.log(offers.length);
 
     let allProducts = new Map();
 
