@@ -43,12 +43,29 @@ class ProductController extends Controller
         $filters = $this->getFilters();
         $cacheKey = $this->generateDiscountsCacheKey($storeOrCategory, $category, $filters);
 
-        return Cache::remember($cacheKey, 3600, function () use ($storeOrCategory, $category, $filters) {
+        return Cache::remember($cacheKey, 0, function () use ($storeOrCategory, $category, $filters) {
             if ($category) {
                 return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category, $filters);
             }
 
             return $this->getDiscountsByStoreOrCategory($storeOrCategory, $filters);
+        });
+    }
+
+    public function getAllDiscounts()
+    {
+        $filters = $this->getFilters();
+        $cacheKey = $this->generateAllDiscountsCacheKey($filters);
+
+        return Cache::remember($cacheKey, 0, function () use ($filters) {
+            $query = Discount::with(['product', 'store']);
+            $discounts = $this->buildDiscountQuery($query, $filters)->paginate(25);
+
+            return response()->json([
+                'data' => $this->formatter->format($discounts),
+                'breadcrumbs' => $this->generateBreadcrumbs('all_discounts'),
+                'seo' => $this->generateSeoData('all_discounts')
+            ]);
         });
     }
 
@@ -106,6 +123,7 @@ class ProductController extends Controller
             'card' => request()->get('card'),
             'plus' => request()->get('plus'),
             'page' => request()->get('page'),
+            'store' => request()->get('store'),
         ];
     }
 
@@ -117,6 +135,12 @@ class ProductController extends Controller
             })
             ->when($filters['plus'], function ($q) {
                 return $q->where('condition', '1+1');
+            })
+            ->when($filters['store'], function ($q, $stores) {
+                $storeSlugs = explode(',', $stores);
+                return $q->whereHas('store', function ($storeQuery) use ($storeSlugs) {
+                    $storeQuery->whereIn('slug', $storeSlugs);
+                });
             })
             ->when($filters['order'], function ($q, $order) {
                 return $this->applySorting($q, $order);
@@ -188,11 +212,14 @@ class ProductController extends Controller
             return response()->json(['error' => 'Product not found'], 404);
         }
 
-        $discounts = Discount::whereHas('product', function ($query) use ($slug, $product) {
+        $filters = $this->getFilters();
+        $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
             $query->where('slug', '!=', $slug)
                   ->where('category_id', $product->category_id);
         })
-            ->with(['product', 'store'])
+            ->with(['product', 'store']);
+
+        $discounts = $this->buildDiscountQuery($query, $filters)
             ->inRandomOrder()
             ->limit(10)
             ->get();
@@ -202,10 +229,13 @@ class ProductController extends Controller
 
     public function getFavoriteCategory($id)
     {
-        $discounts = Discount::whereHas('product', function ($q) use ($id) {
+        $filters = $this->getFilters();
+        $query = Discount::whereHas('product', function ($q) use ($id) {
             $q->where('category_id', $id);
         })
-            ->with(['product', 'store'])
+            ->with(['product', 'store']);
+
+        $discounts = $this->buildDiscountQuery($query, $filters)
             ->inRandomOrder()
             ->limit(10)
             ->get();
@@ -215,8 +245,10 @@ class ProductController extends Controller
 
     public function getFavoriteHome()
     {
-        $discounts = Discount::with(['product', 'store'])
-            ->orderBy('created_at', 'desc')
+        $filters = $this->getFilters();
+        $query = Discount::with(['product', 'store']);
+
+        $discounts = $this->buildDiscountQuery($query, $filters)
             ->inRandomOrder()
             ->limit(10)
             ->get();
@@ -228,7 +260,7 @@ class ProductController extends Controller
     {
         $cacheKey = "product_slug_{$slug}";
 
-        return Cache::remember($cacheKey, 3600, function () use ($slug) {
+        return Cache::remember($cacheKey, 0, function () use ($slug) {
             $product = \App\Models\Product::where('slug', $slug)
                 ->with([
                     'discounts' => function ($query) {
@@ -247,7 +279,7 @@ class ProductController extends Controller
         });
     }
 
-    private function generateBreadcrumbs($type, $entity, $secondaryEntity = null)
+    private function generateBreadcrumbs($type, $entity = null, $secondaryEntity = null)
     {
         $breadcrumbs = [
             [
@@ -304,12 +336,19 @@ class ProductController extends Controller
                     'slug' => 'akcijos/paieska/' . $entity,
                     'type' => 'search'
                 ];
+            case 'all_discounts':
+                $breadcrumbs[] = [
+                    'name' => 'Visos akcijos',
+                    'slug' => 'akcijos',
+                    'type' => 'all_discounts'
+                ];
+                break;
         }
 
         return $breadcrumbs;
     }
 
-    private function generateSeoData($type, $entity, $secondaryEntity = null)
+    private function generateSeoData($type, $entity = null, $secondaryEntity = null)
     {
         switch ($type) {
             case 'category':
@@ -341,6 +380,13 @@ class ProductController extends Controller
                     'meta_title' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
                     'meta_description' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
                 ];
+            case 'all_discounts':
+                return [
+                    'seo_title' => 'Visos akcijos',
+                    'seo_description' => 'Visos akcijos',
+                    'meta_title' => 'Visos akcijos',
+                    'meta_description' => 'Visos akcijos',
+                ];
             default:
                 return [
                     'seo_title' => '',
@@ -364,6 +410,11 @@ class ProductController extends Controller
         }
 
         return $key;
+    }
+
+    private function generateAllDiscountsCacheKey($filters = [])
+    {
+        return "all_discounts_" . md5(serialize($filters));
     }
 
     public function clearDiscountsCache($storeOrCategory = null, $category = null)

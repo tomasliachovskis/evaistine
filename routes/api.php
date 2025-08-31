@@ -11,6 +11,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/scrapers', [ProductController::class, 'storeDiscountTemp']);
 
+Route::get('/discount', [ProductController::class, 'getAllDiscounts']);
 Route::get('/discount/{storeOrCategory}', [ProductController::class, 'getDiscounts']);
 Route::get('/discount/{storeOrCategory}/{category}', [ProductController::class, 'getDiscounts']);
 

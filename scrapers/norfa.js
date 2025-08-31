@@ -22,7 +22,7 @@ puppeteer.use(StealthPlugin());
     const productBlocks = await page.$$eval('.c-discount-item-list .c-product', async blocks => {
         return Promise.all(blocks.map(async block => {
             function parseDate(dateStr) {
-                const [month, day] = dateStr.split(' ').map(Number);
+                const [month, day] = dateStr.trim().split(' ').map(Number);
                 const year = new Date().getFullYear();
                 return new Date(year, month - 1, day).toLocaleDateString('en-CA');
             }
@@ -59,7 +59,7 @@ puppeteer.use(StealthPlugin());
                 valid = valid.replace('Galioja ', '');
                 valid = valid.replace(' d.', '');
 
-                [start_atStr, end_atStr] = valid.split('-');
+                [start_atStr, end_atStr] = valid.split('-').map(s => s.trim());
                 start_at = parseDate(start_atStr);
                 end_at = parseDate(end_atStr);
             } else {
