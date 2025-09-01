@@ -65,6 +65,20 @@ puppeteer.use(StealthPlugin());
                 return new Date(year, month - 1, day).toLocaleDateString('en-CA');
             }
 
+            function extractCategory(block) {
+                try {
+                    const impressionData = block.getAttribute('data-gridbox-impression');
+                    if (impressionData) {
+                        const decodedData = decodeURIComponent(impressionData);
+                        const parsedData = JSON.parse(decodedData);
+                        return parsedData.wonCategoryPrimary || '';
+                    }
+                } catch (error) {
+                    console.log('Error parsing category data:', error);
+                }
+                return '';
+            }
+
             return blocks.map(block => {
                 const brand = block.querySelector('.product-grid-box__brand')?.textContent.trim() ?? '';
                 let name = block.querySelector('.odsc-tile__link')?.textContent.trim();
@@ -79,6 +93,7 @@ puppeteer.use(StealthPlugin());
                 const product_url = block.querySelector('a')?.href;
                 const image_url = block.querySelector('.odsc-image-gallery__image')?.src;
                 const card = block.querySelector('.seal .seal__badge') !== null;
+                const category = extractCategory(block);
 
                 let { start_atStr, end_atStr } = { start_atStr: '', end_atStr: '' };
                 let start_at = '';
@@ -107,7 +122,8 @@ puppeteer.use(StealthPlugin());
                     end_at,
                     card,
                     product_url,
-                    image_url
+                    image_url,
+                    category
                 };
             });
         });
@@ -139,6 +155,7 @@ puppeteer.use(StealthPlugin());
             card: product.card,
             product_url: product.product_url,
             image_url: product.image_url,
+            category: product.category,
             store: 'lidl'
         }));
         await axios.post('http://127.0.0.1/api/scrapers', data);

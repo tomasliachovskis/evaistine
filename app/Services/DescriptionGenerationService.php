@@ -358,25 +358,55 @@ HTML FORMATTING:
 - Use <em> tags for emphasis on key benefits (e.g., <em>nepraleiskite progos</em>)
 - Use <ul> and <li> tags for lists of benefits or features
 - Use <p> tags to separate paragraphs
+- Use <h3> tags for section headings
 - Use <span class=\"highlight\"> for highlighting special offers
-- Use <div class=\"stats\"> for statistical information
+- Use <div class=\"stats\"> for statistical information sections
+- Use <div class=\"top-products\"> for best product offers
+- Use <div class=\"discount-distribution\"> for discount distribution statistics
 - Use <div class=\"urgency\"> for time-sensitive information
+- Add proper spacing between sections with empty lines
 
 EXAMPLE STRUCTURE:
-<p><a href=\"/store\">Store Name</a> siūlo <strong>150 aktyvių akcijų</strong> su vidutine <strong>25%</strong> nuolaida!</p>
+<p><a href=\"/store\">Store Name</a> siūlo <strong>150 aktyvių akcijų</strong> su vidutine <strong>25%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
 
 <div class=\"stats\">
+<h3>Statistika:</h3>
 <ul>
 <li><strong>Iš viso produktų:</strong> 150</li>
 <li><strong>Vidutinė nuolaida:</strong> 25%</li>
 <li><strong>Maksimali nuolaida:</strong> 60%</li>
+<li><strong>Iš viso parduotuvių:</strong> 3</li>
+<li><strong>Vidutinė pradinė kaina:</strong> €3.61</li>
+<li><strong>Vidutinė nuolaidinė kaina:</strong> €2.67</li>
+<li><strong>Bendra taupymo suma:</strong> €127.27</li>
+<li><strong>Produktai su sąlygomis:</strong> 187</li>
 </ul>
 </div>
 
-<p>Raskite <a href=\"/category\">kategorijoje</a> nuostabius pasiūlymus!</p>
+<p>Geriausi pasiūlymai šioje kategorijoje laukia <a href=\"/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>60%</strong> nuolaida!</p>
+
+<div class=\"top-products\">
+<h3>Geriausi pasiūlymai:</h3>
+<ul>
+<li><a href=\"/product\">Produktas 1</a> - <strong>60%</strong> nuolaida</li>
+<li><a href=\"/product\">Produktas 2</a> - <strong>55%</strong> nuolaida</li>
+<li><a href=\"/product\">Produktas 3</a> - <strong>50%</strong> nuolaida</li>
+</ul>
+</div>
+
+<div class=\"discount-distribution\">
+<h3>Nuolaidų paskirstymas:</h3>
+<ul>
+<li><strong>10% ir mažiau:</strong> 13 produktų</li>
+<li><strong>10-20%:</strong> 31 produktas</li>
+<li><strong>20-30%:</strong> 117 produktų</li>
+<li><strong>30-50%:</strong> 130 produktų</li>
+<li><strong>Daugiau nei 50%:</strong> 14 produktų</li>
+</ul>
+</div>
 
 <div class=\"urgency\">
-<p><em>Akcijos galioja iki <strong>2024-12-31</strong>!</em></p>
+<p><em>Šios akcijos galioja iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
 </div>
 
 OUTPUT: Return only the description text with HTML formatting and links included.";
@@ -422,26 +452,55 @@ HTML FORMATTING:
 - Use <em> tags for emphasis on key benefits (e.g., <em>nepraleiskite progos</em>)
 - Use <ul> and <li> tags for lists of benefits or features
 - Use <p> tags to separate paragraphs
+- Use <h3> tags for section headings
 - Use <span class=\"highlight\"> for highlighting special offers
-- Use <div class=\"stats\"> for statistical information
+- Use <div class=\"stats\"> for statistical information sections
+- Use <div class=\"top-products\"> for best product offers
+- Use <div class=\"discount-distribution\"> for discount distribution statistics
 - Use <div class=\"urgency\"> for time-sensitive information
+- Add proper spacing between sections with empty lines
 
 EXAMPLE STRUCTURE:
-<p><a href=\"/category\">Category Name</a> kategorijoje raskite <strong>45 aktyvių akcijų</strong> su vidutine <strong>30%</strong> nuolaida!</p>
+<p><a href=\"/category\">Category Name</a> kategorijoje raskite <strong>45 aktyvių akcijų</strong> su vidutine <strong>30%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
 
 <div class=\"stats\">
+<h3>Statistika:</h3>
 <ul>
 <li><strong>Iš viso produktų:</strong> 45</li>
 <li><strong>Vidutinė nuolaida:</strong> 30%</li>
 <li><strong>Maksimali nuolaida:</strong> 55%</li>
 <li><strong>Iš viso parduotuvių:</strong> 3</li>
+<li><strong>Vidutinė pradinė kaina:</strong> €3.61</li>
+<li><strong>Vidutinė nuolaidinė kaina:</strong> €2.67</li>
+<li><strong>Bendra taupymo suma:</strong> €127.27</li>
+<li><strong>Produktai su sąlygomis:</strong> 187</li>
 </ul>
 </div>
 
-<p>Geriausi pasiūlymai <a href=\"/store\">parduotuvėje</a>!</p>
+<p>Geriausi pasiūlymai <a href=\"/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>55%</strong> nuolaida!</p>
+
+<div class=\"top-products\">
+<h3>Geriausi pasiūlymai:</h3>
+<ul>
+<li><a href=\"/product\">Produktas 1</a> - <strong>55%</strong> nuolaida</li>
+<li><a href=\"/product\">Produktas 2</a> - <strong>50%</strong> nuolaida</li>
+<li><a href=\"/product\">Produktas 3</a> - <strong>45%</strong> nuolaida</li>
+</ul>
+</div>
+
+<div class=\"discount-distribution\">
+<h3>Nuolaidų paskirstymas:</h3>
+<ul>
+<li><strong>10% ir mažiau:</strong> 5 produktų</li>
+<li><strong>10-20%:</strong> 10 produktų</li>
+<li><strong>20-30%:</strong> 15 produktų</li>
+<li><strong>30-50%:</strong> 12 produktų</li>
+<li><strong>Daugiau nei 50%:</strong> 3 produktai</li>
+</ul>
+</div>
 
 <div class=\"urgency\">
-<p><em>Akcijos galioja iki <strong>2024-12-31</strong>!</em></p>
+<p><em>Šios akcijos galioja iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
 </div>
 
 OUTPUT: Return only the description text with HTML formatting and links included.";
