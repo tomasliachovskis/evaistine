@@ -59,6 +59,40 @@ In order to ensure that the Laravel community is welcoming to all, please review
 
 If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
+## Commands
+
+### Generate Descriptions
+
+Generate compelling descriptions for stores and categories using ChatGPT API:
+
+```bash
+# Generate description for a specific store
+sail artisan descriptions:generate store --id=1
+
+# Generate descriptions for all stores
+sail artisan descriptions:generate store --all
+
+# Generate description for a specific category
+sail artisan descriptions:generate category --id=1
+
+# Generate descriptions for all categories
+sail artisan descriptions:generate category --all
+```
+
+The command analyzes active discounts, best deals, valid dates, and product information to create SEO-friendly descriptions in Lithuanian.
+
+### Bulk Map Categories
+
+Map product categories using ChatGPT API:
+
+```bash
+# Map categories for specific store
+sail artisan categories:bulk-map Norfa
+
+# Map categories for all supported stores
+sail artisan categories:bulk-map
+```
+
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
