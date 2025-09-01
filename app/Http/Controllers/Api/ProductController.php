@@ -129,22 +129,24 @@ class ProductController extends Controller
 
     private function buildDiscountQuery($query, $filters)
     {
-        return $query->with('product')
-            ->when($filters['card'], function ($q) {
-                return $q->where('card', true);
-            })
-            ->when($filters['plus'], function ($q) {
-                return $q->where('condition', '1+1');
-            })
-            ->when($filters['store'], function ($q, $stores) {
-                $storeSlugs = explode(',', $stores);
-                return $q->whereHas('store', function ($storeQuery) use ($storeSlugs) {
-                    $storeQuery->whereIn('slug', $storeSlugs);
-                });
-            })
-            ->when($filters['order'], function ($q, $order) {
-                return $this->applySorting($q, $order);
+        $query = $query->with('product');
+        
+        if ($filters['card']) {
+            $query = $query->where('card', true);
+        }
+        
+        if ($filters['plus']) {
+            $query = $query->where('condition', '1+1');
+        }
+        
+        if ($filters['store']) {
+            $storeSlugs = explode(',', $filters['store']);
+            $query = $query->whereHas('store', function ($storeQuery) use ($storeSlugs) {
+                $storeQuery->whereIn('slug', $storeSlugs);
             });
+        }
+        
+        return $this->applySorting($query, $filters['order']);
     }
 
     private function applySorting($query, $order)
