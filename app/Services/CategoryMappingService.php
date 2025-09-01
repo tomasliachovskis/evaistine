@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\DiscountTemp;
+use App\Models\UnmappedProduct;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\Product;
@@ -16,7 +17,7 @@ class CategoryMappingService
     public function __construct()
     {
         $this->apiKey = config('services.openai.api_key');
-        
+
         if (empty($this->apiKey)) {
             Log::warning('OpenAI API key not configured in CategoryMappingService');
         }
@@ -74,7 +75,7 @@ class CategoryMappingService
 
         foreach ($products as $product) {
             $existingProduct = Product::where('name', $product->name)->first();
-            
+
             if ($existingProduct && $existingProduct->category_id) {
                 $category = Category::find($existingProduct->category_id);
                 if ($category) {
@@ -127,11 +128,14 @@ class CategoryMappingService
                     $product->save();
                     $this->info("Mapped '{$product->name}' to category '{$categoryName}'");
                 } else {
-                    $this->warn("Failed to map '{$product->name}' - no mapping found for ID {$product->id}");
+                    $this->storeUnmappedProduct($product, $storeName, UnmappedProduct::STATUS_NO_RESPONSE, null, $productData);
                 }
             }
         } else {
             $this->warn("No mappings received from API");
+            foreach ($products as $product) {
+                $this->storeUnmappedProduct($product, $storeName, UnmappedProduct::STATUS_NO_RESPONSE, null, $productData);
+            }
         }
     }
 
@@ -160,7 +164,7 @@ class CategoryMappingService
                         'content' => "Products: {$productJson}"
                     ]
                 ],
-                'max_tokens' => 2000,
+//                'max_tokens' => 2000,
                 'temperature' => 0
             ]);
 
@@ -310,19 +314,29 @@ OUTPUT FORMAT: Return ONLY a JSON object mapping product IDs to category names. 
 
                 // Convert string keys to integers to match database IDs
                 $normalizedMappings = [];
+                $invalidCategories = [];
+                
                 foreach ($mappings as $productId => $category) {
                     $normalizedId = (int) $productId; // Convert string ID to integer
 
                     if (!in_array($category, $validCategories)) {
+                        $invalidCategories[] = [
+                            'product_id' => $normalizedId,
+                            'category' => $category
+                        ];
                         Log::warning('Invalid category in bulk response', [
                             'product_id' => $productId,
                             'category' => $category,
                             'valid_categories' => $validCategories
                         ]);
-                        return null;
+                        continue;
                     }
 
                     $normalizedMappings[$normalizedId] = $category;
+                }
+
+                if (!empty($invalidCategories)) {
+                    $this->storeInvalidCategories($invalidCategories, $content);
                 }
 
                 Log::info('Successfully parsed mappings', ['mappings' => $normalizedMappings]);
@@ -332,6 +346,7 @@ OUTPUT FORMAT: Return ONLY a JSON object mapping product IDs to category names. 
             }
         } catch (\Exception $e) {
             Log::warning('Failed to parse JSON response', ['content' => $content, 'error' => $e->getMessage()]);
+            $this->storeParseError($content, $e->getMessage());
         }
 
         return null;
@@ -347,5 +362,55 @@ OUTPUT FORMAT: Return ONLY a JSON object mapping product IDs to category names. 
     {
         echo "[WARN] {$message}\n";
         Log::warning($message);
+    }
+
+    private function storeUnmappedProduct($product, string $storeName, string $status, ?string $errorMessage = null, ?array $productData = null): void
+    {
+        UnmappedProduct::create([
+            'name' => $product->name,
+            'store' => $storeName,
+            'gpt_response' => null,
+            'error_message' => $errorMessage,
+            'product_data' => $productData,
+            'mapping_status' => $status,
+            'attempted_at' => now()
+        ]);
+
+        $this->warn("Stored unmapped product: {$product->name} (Status: {$status})");
+    }
+
+    private function storeInvalidCategories(array $invalidCategories, string $gptResponse): void
+    {
+        foreach ($invalidCategories as $invalid) {
+            $product = DiscountTemp::find($invalid['product_id']);
+            if ($product) {
+                UnmappedProduct::create([
+                    'name' => $product->name,
+                    'store' => $product->store,
+                    'gpt_response' => $gptResponse,
+                    'error_message' => "Invalid category: {$invalid['category']}",
+                    'product_data' => ['id' => $product->id, 'name' => $product->name],
+                    'mapping_status' => UnmappedProduct::STATUS_INVALID_CATEGORY,
+                    'attempted_at' => now()
+                ]);
+
+                $this->warn("Stored product with invalid category: {$product->name} -> {$invalid['category']}");
+            }
+        }
+    }
+
+    private function storeParseError(string $gptResponse, string $errorMessage): void
+    {
+        UnmappedProduct::create([
+            'name' => 'Bulk mapping parse error',
+            'store' => 'Unknown',
+            'gpt_response' => $gptResponse,
+            'error_message' => $errorMessage,
+            'product_data' => null,
+            'mapping_status' => UnmappedProduct::STATUS_PARSE_ERROR,
+            'attempted_at' => now()
+        ]);
+
+        $this->warn("Stored parse error: {$errorMessage}");
     }
 }

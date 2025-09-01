@@ -101,7 +101,7 @@ class ProcessDiscounts extends Command
             }
 
             $categoryId = $this->assignCategory($tempDiscount, $store);
-            if ($categoryId === false) {
+            if ($categoryId === false || $categoryId === null) {
                 $this->error("Category not mapped for product: {$tempDiscount->id}");
                 continue;
             }
@@ -286,6 +286,7 @@ class ProcessDiscounts extends Command
         }
 
         $this->createCategoryAndMapping($tempDiscount->category, $store);
+
         return false;
     }
 
