@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\DiscountTemp;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\Product;
 
 class CategoryMappingService
 {
@@ -47,6 +48,57 @@ class CategoryMappingService
         foreach ($chunks as $chunk) {
             $this->mapProductChunk($chunk, $storeName);
             sleep(2);
+        }
+
+        $this->info("Completed bulk mapping for {$storeName}");
+    }
+
+    public function bulkMapStoreProductsWithExistingCategories(string $storeName): void
+    {
+        if (!$this->isConfigured()) {
+            $this->warn("CategoryMappingService is not configured. Skipping bulk mapping for {$storeName}.");
+            return;
+        }
+
+        $products = DiscountTemp::where('store', $storeName)
+            ->where(function($query) {
+                $query->whereNull('category')
+                      ->orWhere('category', '');
+            })
+            ->get();
+
+        $this->info("Starting bulk mapping for {$storeName}. Found " . $products->count() . " products to map.");
+
+        $productsToMap = collect();
+        $mappedFromExisting = 0;
+
+        foreach ($products as $product) {
+            $existingProduct = Product::where('name', $product->name)->first();
+            
+            if ($existingProduct && $existingProduct->category_id) {
+                $category = Category::find($existingProduct->category_id);
+                if ($category) {
+                    $product->category = $category->name;
+                    $product->save();
+                    $mappedFromExisting++;
+                    $this->info("Mapped '{$product->name}' to existing category '{$category->name}'");
+                } else {
+                    $productsToMap->push($product);
+                }
+            } else {
+                $productsToMap->push($product);
+            }
+        }
+
+        $this->info("Mapped {$mappedFromExisting} products from existing categories. {$productsToMap->count()} products need GPT mapping.");
+
+        if ($productsToMap->count() > 0) {
+            $chunks = $productsToMap->chunk(50);
+
+            foreach ($chunks as $chunk) {
+                $this->mapProductChunk($chunk, $storeName);
+                sleep(2);
+            }
         }
 
         $this->info("Completed bulk mapping for {$storeName}");

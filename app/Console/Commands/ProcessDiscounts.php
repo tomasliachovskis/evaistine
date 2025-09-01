@@ -100,6 +100,12 @@ class ProcessDiscounts extends Command
                 continue;
             }
 
+            $categoryId = $this->assignCategory($tempDiscount, $store);
+            if ($categoryId === false) {
+                $this->error("Category not mapped for product: {$tempDiscount->id}");
+                continue;
+            }
+
             $normalizedProductName = $this->normalizer->normalize($tempDiscount->name);
             $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand, $store->name);
 
@@ -110,7 +116,7 @@ class ProcessDiscounts extends Command
                     'brand' => $tempDiscount->brand,
                     'slug' => $productSlug,
                     'description' => '',
-                    'category_id' => $this->assignCategory($tempDiscount, $store),
+                    'category_id' => $categoryId,
                     'image_url' => $tempDiscount->image_url,
                 ]
             );
@@ -279,7 +285,8 @@ class ProcessDiscounts extends Command
             }
         }
 
-        return $this->createCategoryAndMapping($tempDiscount->category, $store);
+        $this->createCategoryAndMapping($tempDiscount->category, $store);
+        return false;
     }
 
     private function createCategoryAndMapping(string $storeCategory, Store $store)
@@ -291,8 +298,6 @@ class ProcessDiscounts extends Command
         ]);
 
         $this->info("Added unmapped category: {$storeCategory}");
-
-        return null;
     }
 
     private function generateProductSlug(string $productName, ?string $brand, string $storeName): string

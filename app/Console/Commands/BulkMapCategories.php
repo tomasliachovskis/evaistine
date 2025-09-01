@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Product;
 use App\Services\CategoryMappingService;
 use Illuminate\Console\Command;
 
@@ -40,7 +41,7 @@ class BulkMapCategories extends Command
         }
         
         try {
-            $this->mappingService->bulkMapStoreProducts($storeName);
+            $this->mappingService->bulkMapStoreProductsWithExistingCategories($storeName);
             $this->info("Successfully completed mapping for {$storeName}");
         } catch (\Exception $e) {
             $this->error("Error mapping categories for {$storeName}: " . $e->getMessage());
