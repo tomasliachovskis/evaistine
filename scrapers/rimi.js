@@ -206,7 +206,7 @@ const postBatchToAPI = async (products) => {
 
 const runScraper = async () => {
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         protocolTimeout: 300000,
         args: [
             '--no-sandbox',

@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 
 (async () => {
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',

@@ -28,18 +28,20 @@ class BulkMapCategories extends Command
         } else {
             $this->mapStore('Norfa');
             $this->mapStore('Lidl');
+            $this->mapStore('Rimi');
+            $this->mapStore('Maxima');
         }
     }
 
     private function mapStore(string $storeName): void
     {
         $this->info("Starting category mapping for {$storeName}...");
-        
+
         if (!$this->mappingService->isConfigured()) {
             $this->warn("CategoryMappingService is not configured. Please set OPENAI_API_KEY environment variable.");
             return;
         }
-        
+
         try {
             $this->mappingService->bulkMapStoreProductsWithExistingCategories($storeName);
             $this->info("Successfully completed mapping for {$storeName}");

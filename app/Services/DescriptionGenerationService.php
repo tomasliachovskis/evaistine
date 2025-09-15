@@ -53,7 +53,7 @@ class DescriptionGenerationService
                         'content' => json_encode($storeData, JSON_UNESCAPED_UNICODE)
                     ]
                 ],
-                'max_tokens' => 500,
+//                'max_tokens' => 500,
                 'temperature' => 0.7
             ]);
 
@@ -129,9 +129,12 @@ class DescriptionGenerationService
         $activeDiscounts = Discount::whereHas('store', function($query) use ($store) {
             $query->where('id', $store->id);
         })
-        ->where('end_at', '>=', now()->startOfDay())
-        ->with(['product.category'])
-        ->get();
+            ->where(function ($query) {
+                $query->where('end_at', '>=', now()->startOfDay())
+                    ->orWhereNull('end_at');
+            })
+            ->with(['product.category'])
+            ->get();
 
         $topDiscounts = $activeDiscounts
             ->sortByDesc('discount_percent')
@@ -226,9 +229,12 @@ class DescriptionGenerationService
         $activeDiscounts = Discount::whereHas('product', function($query) use ($category) {
             $query->where('category_id', $category->id);
         })
-        ->where('end_at', '>=', now()->startOfDay())
-        ->with(['product', 'store'])
-        ->get();
+            ->where(function ($query) {
+                $query->where('end_at', '>=', now()->startOfDay())
+                    ->orWhereNull('end_at');
+            })
+            ->with(['product', 'store'])
+            ->get();
 
         $topDiscounts = $activeDiscounts
             ->sortByDesc('discount_percent')
@@ -352,6 +358,8 @@ GUIDELINES:
 - Focus on practical, everyday products that average users need
 - Highlight essential products with good discounts
 - Provide practical shopping advice and recommendations
+- ALWAYS add a unique twist or angle to make each description stand out (e.g., seasonal theme, special occasion, unexpected benefit, creative comparison, or interesting fact)
+- When mentioning promotion dates, always specify the full date range (from date to date) instead of just end date
 
 HTML FORMATTING:
 - Use <strong> tags for important numbers and percentages (e.g., <strong>50%</strong> nuolaida)
@@ -379,7 +387,6 @@ EXAMPLE STRUCTURE:
 <li><strong>Vidutinė pradinė kaina:</strong> €3.61</li>
 <li><strong>Vidutinė nuolaidinė kaina:</strong> €2.67</li>
 <li><strong>Bendra taupymo suma:</strong> €127.27</li>
-<li><strong>Produktai su sąlygomis:</strong> 187</li>
 </ul>
 </div>
 
@@ -406,7 +413,7 @@ EXAMPLE STRUCTURE:
 </div>
 
 <div class=\"urgency\">
-<p><em>Šios akcijos galioja iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+<p><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
 </div>
 
 OUTPUT: Return only the description text with HTML formatting and links included.";
@@ -446,6 +453,8 @@ GUIDELINES:
 - Focus on practical, everyday products that average users need
 - Highlight essential products with good discounts
 - Provide practical shopping advice
+- ALWAYS add a unique twist or angle to make each description stand out (e.g., seasonal theme, special occasion, unexpected benefit, creative comparison, or interesting fact)
+- When mentioning promotion dates, always specify the full date range (from date to date) instead of just end date
 
 HTML FORMATTING:
 - Use <strong> tags for important numbers and percentages (e.g., <strong>50%</strong> nuolaida)
@@ -500,7 +509,7 @@ EXAMPLE STRUCTURE:
 </div>
 
 <div class=\"urgency\">
-<p><em>Šios akcijos galioja iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+<p><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
 </div>
 
 OUTPUT: Return only the description text with HTML formatting and links included.";
@@ -529,7 +538,7 @@ OUTPUT: Return only the description text with HTML formatting and links included
     {
         $discountPercent = $discount->discount_percent;
         $savingsAmount = $discount->original_price - $discount->discounted_price;
-        
+
         if ($discountPercent >= 50 && $savingsAmount >= 2) {
             return 'excellent';
         } elseif ($discountPercent >= 30 && $savingsAmount >= 1) {

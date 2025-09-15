@@ -103,6 +103,12 @@ class ProcessDiscounts extends Command
             $categoryId = $this->assignCategory($tempDiscount, $store);
             if ($categoryId === false || $categoryId === null) {
                 $this->error("Category not mapped for product: {$tempDiscount->id}");
+
+                CategoryMapper::firstOrCreate(
+                    ['store_category' => $tempDiscount->category],
+                    ['store' => $store->id]
+                );
+
                 continue;
             }
 
@@ -242,7 +248,10 @@ class ProcessDiscounts extends Command
 
                 // Try exact match with 2 parts
                 $mapper = CategoryMapper::where('store', $store->id)
-                    ->where('store_category', $twoParts)
+                    ->where(function ($query) use ($twoParts) {
+                        $query->where('store_category', $twoParts)
+                            ->orWhere('store_category', $twoParts . '/');
+                    })
                     ->orderBy('id', 'asc')
                     ->first();
 
