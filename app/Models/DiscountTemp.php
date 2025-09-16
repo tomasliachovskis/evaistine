@@ -26,5 +26,6 @@ class DiscountTemp extends Model
         'end_at',
         'info',
         'brand',
+        'processed',
     ];
 }

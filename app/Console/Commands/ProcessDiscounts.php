@@ -34,6 +34,7 @@ class ProcessDiscounts extends Command
     public function handle()
     {
         $duplicates = DiscountTemp::whereNotNull('product_url')
+            ->where('processed', false)
             ->select('product_url')
             ->groupBy('product_url')
             ->havingRaw('COUNT(*) > 1')
@@ -41,6 +42,7 @@ class ProcessDiscounts extends Command
 
         foreach ($duplicates as $url) {
             $records = DiscountTemp::where('product_url', $url)
+                ->where('processed', false)
                 ->orderBy('id', 'desc')
                 ->get();
 
@@ -50,7 +52,7 @@ class ProcessDiscounts extends Command
             }
         }
 
-        $tempDiscounts = DiscountTemp::all();
+        $tempDiscounts = DiscountTemp::where('processed', false)->get();
 
         foreach ($tempDiscounts as $tempDiscount) {
             $store = Store::where('name', $tempDiscount->store)->first();
@@ -64,6 +66,7 @@ class ProcessDiscounts extends Command
 
             if (!$rules->validate()) {
                 $this->error("Invalid discount data for product: {$tempDiscount->id}");
+                $tempDiscount->update(['processed' => true]);
                 continue;
             }
 
@@ -97,6 +100,7 @@ class ProcessDiscounts extends Command
 
             if ($startAt === null && $endAt === null) {
                 $this->error("Invalid discount data for product: {$tempDiscount->id}");
+                $tempDiscount->update(['processed' => true]);
                 continue;
             }
 
@@ -109,6 +113,7 @@ class ProcessDiscounts extends Command
                     ['store' => $store->id]
                 );
 
+                $tempDiscount->update(['processed' => true]);
                 continue;
             }
 
@@ -172,7 +177,7 @@ class ProcessDiscounts extends Command
                 ]);
             }
 
-            // $tempDiscount->delete();
+            $tempDiscount->update(['processed' => true]);
         }
 
         $this->info('Discounts processed successfully');
