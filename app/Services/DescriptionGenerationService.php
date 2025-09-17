@@ -55,7 +55,7 @@ class DescriptionGenerationService
                             'content' => json_encode($storeData, JSON_UNESCAPED_UNICODE)
                         ]
                     ],
-                    'max_tokens' => 1500,
+                    'max_tokens' => 2000,
                     'temperature' => 0.7
                 ]);
 
@@ -105,7 +105,7 @@ class DescriptionGenerationService
                             'content' => json_encode($categoryData, JSON_UNESCAPED_UNICODE)
                         ]
                     ],
-                    'max_tokens' => 1500,
+                    'max_tokens' => 2000,
                     'temperature' => 0.7
                 ]);
 
@@ -137,15 +137,17 @@ class DescriptionGenerationService
                 $query->where('end_at', '>=', now()->startOfDay())
                     ->orWhereNull('end_at');
             })
-            ->with(['product.category'])
+            ->with(['product.category', 'store'])
             ->get();
 
         $topDiscounts = $activeDiscounts
+            ->where('product.category_id', '!=', 535)
             ->sortByDesc('discount_percent')
-            ->take(15)
+            ->take(10)
             ->map(function($discount) {
                 return [
                     'name' => $discount->product->name,
+                    'store' => $discount->store->name,
                     'category' => $discount->product->category->name,
                     'category_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}",
                     'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
@@ -241,8 +243,9 @@ class DescriptionGenerationService
             ->get();
 
         $topDiscounts = $activeDiscounts
+            ->where('product.category_id', '!=', 535)
             ->sortByDesc('discount_percent')
-            ->take(12)
+            ->take(10)
             ->map(function($discount) {
                 return [
                     'name' => $discount->product->name,
@@ -365,6 +368,18 @@ GUIDELINES:
 - ALWAYS add a unique twist or angle to make each description stand out (e.g., seasonal theme, special occasion, unexpected benefit, creative comparison, or interesting fact)
 - When mentioning promotion dates, always specify the full date range (from date to date) instead of just end date
 
+SEO OPTIMIZATION REQUIREMENTS:
+- Include primary keywords: \"akcijos\", \"nuolaidos\", \"parduotuvė\", \"prekės\", \"taupymas\", \"kainos\"
+- Use long-tail keywords: \"greičiausios akcijos\", \"geriausios kainos\", \"didelės nuolaidos\", \"kasdienės prekės\", \"šeimos biudžetas\"
+- Include local SEO keywords: \"Lietuvoje\", \"Vilniuje\", \"Kaune\", \"Klaipėdoje\", \"šalyje\"
+- Add seasonal keywords when relevant: \"šventinės akcijos\", \"vasaros nuolaidos\", \"žiemos pasiūlymai\", \"šventinės prekės\"
+- Include question-based keywords: \"kur pirkti\", \"kada akcijos\", \"kiek sutaupyti\", \"kokios kainos\"
+- Use power words: \"ekskluzyvus\", \"ribotas laikas\", \"nepraleiskite\", \"tik šiandien\", \"greičiausiai\"
+- Include brand names and product categories naturally
+- Add FAQ-style content answering common shopping questions
+- Use semantic keywords related to shopping, savings, and grocery
+- Include call-to-action phrases: \"apsilankykite\", \"nusipirkite dabar\", \"sutaupykite\"
+
 HTML FORMATTING:
 - Use <strong> tags for important numbers and percentages (e.g., <strong>50%</strong> nuolaida)
 - Use <em> tags for emphasis on key benefits (e.g., <em>nepraleiskite progos</em>)
@@ -374,9 +389,21 @@ HTML FORMATTING:
 - Use <span class=\"highlight\"> for highlighting special offers
 - Use <div class=\"stats\"> for statistical information sections
 - Use <div class=\"top-products\"> for best product offers
+- In top products section, include product name, discounted price, discount percentage, and store name
+- Format: Product Name - Price, X% nuolaida, Store Name
+- Always show exactly 10 products in the top products section
 - Use <div class=\"discount-distribution\"> for discount distribution statistics
 - Use <div class=\"urgency\"> for time-sensitive information
 - Add proper spacing between sections with empty lines
+
+STRUCTURED DATA MARKUP:
+- Include FAQ sections using <div class=\"faq\"> with <h3> questions and <p> answers
+- Add product comparison tables using <table> with <thead> and <tbody>
+- Use <time> tags for dates: <time datetime=\"2025-01-15\">sausio 15 d.</time>
+- Include <address> tags for store locations when relevant
+- Add <div class=\"breadcrumbs\"> for navigation context
+- Use <section> tags to group related content
+- Include <aside> tags for additional tips and recommendations
 
 EXAMPLE STRUCTURE:
 <p><a href=\"@https://superakcijos.lt/akcijos/store\">Store Name</a> siūlo <strong>150 aktyvių akcijų</strong> su vidutine <strong>25%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
@@ -399,9 +426,16 @@ EXAMPLE STRUCTURE:
 <div class=\"top-products\">
 <h3>Geriausi pasiūlymai:</h3>
 <ul>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 1</a> - <strong>60%</strong> nuolaida</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 2</a> - <strong>55%</strong> nuolaida</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 3</a> - <strong>50%</strong> nuolaida</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Žemaitijos varškė</a> - 4.66€, <strong>40%</strong> nuolaida, Iki</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Dvaro pienas</a> - 2.15€, <strong>35%</strong> nuolaida, Rimi</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Vilkyškių duona</a> - 1.89€, <strong>30%</strong> nuolaida, Maxima</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Lietuvos sūris</a> - 3.45€, <strong>25%</strong> nuolaida, Norfa</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Ekstra jogurtas</a> - 1.25€, <strong>20%</strong> nuolaida, Lidl</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Kiaušiniai</a> - 2.50€, <strong>18%</strong> nuolaida, Iki</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Bulvės</a> - 0.89€, <strong>15%</strong> nuolaida, Rimi</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Morkos</a> - 1.15€, <strong>12%</strong> nuolaida, Maxima</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Svogūnai</a> - 0.95€, <strong>10%</strong> nuolaida, Norfa</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Obuoliai</a> - 1.45€, <strong>8%</strong> nuolaida, Lidl</li>
 </ul>
 </div>
 
@@ -418,6 +452,18 @@ EXAMPLE STRUCTURE:
 
 <div class=\"urgency\">
 <p><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+</div>
+
+<div class=\"faq\">
+<h3>Dažniausi klausimai apie parduotuvę:</h3>
+<h3>Kada geriausia apsilankyti parduotuvėje?</h3>
+<p>Geriausias laikas apsilankyti yra ryte arba darbo dienomis, kai mažiau žmonių. Taip pat rekomenduojame sekti akcijų kalendorių.</p>
+<h3>Kiek galima sutaupyti šiose akcijose?</h3>
+<p>Vidutiniškai galite sutaupyti iki <strong>€127</strong> už pilną krepšelį, o kai kurie produktai siūlo net <strong>60%</strong> nuolaidą!</p>
+<h3>Ar parduotuvė siūlo pristatymą?</h3>
+<p>Taip, dauguma parduotuvių siūlo pristatymą į namus. Patikrinkite jų svetainėje arba skambinkite tiesiogiai parduotuvei.</p>
+<h3>Kokios darbo valandos?</h3>
+<p>Parduotuvės paprastai dirba 7-22 val., bet patikrinkite konkrečias darbo valandas jų svetainėje.</p>
 </div>
 
 OUTPUT: Return only the description text with HTML formatting and links included.";
@@ -460,6 +506,18 @@ GUIDELINES:
 - ALWAYS add a unique twist or angle to make each description stand out (e.g., seasonal theme, special occasion, unexpected benefit, creative comparison, or interesting fact)
 - When mentioning promotion dates, always specify the full date range (from date to date) instead of just end date
 
+SEO OPTIMIZATION REQUIREMENTS:
+- Include primary keywords: \"akcijos\", \"nuolaidos\", \"kategorija\", \"prekės\", \"taupymas\", \"kainos\"
+- Use long-tail keywords: \"greičiausios akcijos\", \"geriausios kainos\", \"didelės nuolaidos\", \"kasdienės prekės\", \"šeimos biudžetas\"
+- Include local SEO keywords: \"Lietuvoje\", \"Vilniuje\", \"Kaune\", \"Klaipėdoje\", \"šalyje\"
+- Add seasonal keywords when relevant: \"šventinės akcijos\", \"vasaros nuolaidos\", \"žiemos pasiūlymai\", \"šventinės prekės\"
+- Include question-based keywords: \"kur pirkti\", \"kada akcijos\", \"kiek sutaupyti\", \"kokios kainos\"
+- Use power words: \"ekskluzyvus\", \"ribotas laikas\", \"nepraleiskite\", \"tik šiandien\", \"greičiausiai\"
+- Include brand names and product categories naturally
+- Add FAQ-style content answering common shopping questions
+- Use semantic keywords related to shopping, savings, and grocery
+- Include call-to-action phrases: \"apsilankykite\", \"nusipirkite dabar\", \"sutaupykite\"
+
 HTML FORMATTING:
 - Use <strong> tags for important numbers and percentages (e.g., <strong>50%</strong> nuolaida)
 - Use <em> tags for emphasis on key benefits (e.g., <em>nepraleiskite progos</em>)
@@ -469,9 +527,21 @@ HTML FORMATTING:
 - Use <span class=\"highlight\"> for highlighting special offers
 - Use <div class=\"stats\"> for statistical information sections
 - Use <div class=\"top-products\"> for best product offers
+- In top products section, include product name, discounted price, discount percentage, and store name
+- Format: Product Name - Price, X% nuolaida, Store Name
+- Always show exactly 10 products in the top products section
 - Use <div class=\"discount-distribution\"> for discount distribution statistics
 - Use <div class=\"urgency\"> for time-sensitive information
 - Add proper spacing between sections with empty lines
+
+STRUCTURED DATA MARKUP:
+- Include FAQ sections using <div class=\"faq\"> with <h3> questions and <p> answers
+- Add product comparison tables using <table> with <thead> and <tbody>
+- Use <time> tags for dates: <time datetime=\"2025-01-15\">sausio 15 d.</time>
+- Include <address> tags for store locations when relevant
+- Add <div class=\"breadcrumbs\"> for navigation context
+- Use <section> tags to group related content
+- Include <aside> tags for additional tips and recommendations
 
 EXAMPLE STRUCTURE:
 <p><a href=\"@https://superakcijos.lt/akcijos/category\">Category Name</a> kategorijoje raskite <strong>45 aktyvių akcijų</strong> su vidutine <strong>30%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
@@ -514,6 +584,18 @@ EXAMPLE STRUCTURE:
 
 <div class=\"urgency\">
 <p><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+</div>
+
+<div class=\"faq\">
+<h3>Dažniausi klausimai apie kategoriją:</h3>
+<h3>Kokie produktai šioje kategorijoje turi geriausias nuolaidas?</h3>
+<p>Geriausios nuolaidos paprastai būna kasdieniniams produktams: pieno produktams, duonai, mėsai ir daržovėms. Taip pat stebėkite sezoninius pasiūlymus.</p>
+<h3>Kiek galima sutaupyti šioje kategorijoje?</h3>
+<p>Vidutiniškai galite sutaupyti iki <strong>€127</strong> už pilną krepšelį, o kai kurie produktai siūlo net <strong>60%</strong> nuolaidą!</p>
+<h3>Kurios parduotuvės siūlo geriausias kainas šioje kategorijoje?</h3>
+<p>Skirtingos parduotuvės siūlo skirtingus pasiūlymus. Rekomenduojame palyginti kainas ir pasirinkti geriausią variantą jūsų poreikiams.</p>
+<h3>Ar šie produktai tinka ilgalaikiam saugojimui?</h3>
+<p>Dauguma šios kategorijos produktų tinka ilgalaikiam saugojimui šaldytuve arba sandėliuojant saugiai. Patikrinkite etiketes dėl saugojimo instrukcijų.</p>
 </div>
 
 OUTPUT: Return only the description text with HTML formatting and links included.";
