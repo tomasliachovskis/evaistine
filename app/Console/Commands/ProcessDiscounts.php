@@ -88,6 +88,10 @@ class ProcessDiscounts extends Command
                 if ($discountPercent < 0) {
                     $discountPercent = 0;
                 }
+
+                if ($normalizedOriginalPrice <= 0) {
+                    $discountPercent = 0;
+                }
             }
             if (empty($discountPercent) && $normalizedOriginalPrice > 0 && $normalizedDiscountedPrice > 0) {
                 $discountPercent = round((($normalizedOriginalPrice - $normalizedDiscountedPrice) / $normalizedOriginalPrice) * 100);
@@ -175,6 +179,8 @@ class ProcessDiscounts extends Command
                     'start_at' => $startAt,
                     'end_at' => $endAt,
                 ]);
+            } else {
+                $existingMainDiscount->touch();
             }
 
             $tempDiscount->update(['processed' => true]);

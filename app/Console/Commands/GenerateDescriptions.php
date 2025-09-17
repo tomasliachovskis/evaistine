@@ -55,14 +55,14 @@ class GenerateDescriptions extends Command
         } elseif ($all) {
             $stores = Store::all();
             $this->info("Generating descriptions for {$stores->count()} stores...");
-            
+
             $bar = $this->output->createProgressBar($stores->count());
             $bar->start();
 
             foreach ($stores as $store) {
                 $this->generateStoreDescription($store);
                 $bar->advance();
-                sleep(1);
+                sleep(5);
             }
 
             $bar->finish();
@@ -81,20 +81,20 @@ class GenerateDescriptions extends Command
                 $this->error("Category with ID {$id} not found.");
                 return;
             }
-            
+
             $productCount = $category->products()->count();
             if ($productCount === 0) {
                 $this->warn("Category '{$category->name}' has no products. Skipping description generation.");
                 return;
             }
-            
+
             $this->generateCategoryDescription($category);
         } elseif ($all) {
             $categoriesWithActiveDiscounts = Category::whereHas('products.discounts', function($query) {
                 $query->where('end_at', '>=', now());
             })->get();
             $this->info("Generating descriptions for {$categoriesWithActiveDiscounts->count()} categories with active discounts...");
-            
+
             $bar = $this->output->createProgressBar($categoriesWithActiveDiscounts->count());
             $bar->start();
 
@@ -118,7 +118,7 @@ class GenerateDescriptions extends Command
 
         try {
             $description = $this->descriptionService->generateStoreDescription($store);
-            
+
             if ($description) {
                 $store->update(['description' => $description]);
                 $this->info("✓ Successfully generated description for {$store->name}");
@@ -148,7 +148,7 @@ class GenerateDescriptions extends Command
             }
 
             $description = $this->descriptionService->generateCategoryDescription($category);
-            
+
             if ($description) {
                 $category->update(['description' => $description]);
                 $this->info("✓ Successfully generated description for {$category->name}");

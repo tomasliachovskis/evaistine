@@ -38,24 +38,26 @@ class DescriptionGenerationService
         $storeData = $this->getStoreData($store);
 
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-            ])->post($this->apiUrl, [
-                'model' => config('services.openai.model', 'gpt-4o'),
-                'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => $this->getStoreSystemPrompt()
+            $response = Http::timeout(60)
+                ->retry(3, 1000)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($this->apiUrl, [
+                    'model' => config('services.openai.model', 'gpt-4o'),
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => $this->getStoreSystemPrompt()
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => json_encode($storeData, JSON_UNESCAPED_UNICODE)
+                        ]
                     ],
-                    [
-                        'role' => 'user',
-                        'content' => json_encode($storeData, JSON_UNESCAPED_UNICODE)
-                    ]
-                ],
-//                'max_tokens' => 500,
-                'temperature' => 0.7
-            ]);
+                    'max_tokens' => 1500,
+                    'temperature' => 0.7
+                ]);
 
             if ($response->successful()) {
                 $content = $response->json('choices.0.message.content');
@@ -86,24 +88,26 @@ class DescriptionGenerationService
         $categoryData = $this->getCategoryData($category);
 
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-            ])->post($this->apiUrl, [
-                'model' => config('services.openai.model', 'gpt-4o'),
-                'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => $this->getCategorySystemPrompt()
+            $response = Http::timeout(60)
+                ->retry(3, 1000)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($this->apiUrl, [
+                    'model' => config('services.openai.model', 'gpt-4o'),
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => $this->getCategorySystemPrompt()
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => json_encode($categoryData, JSON_UNESCAPED_UNICODE)
+                        ]
                     ],
-                    [
-                        'role' => 'user',
-                        'content' => json_encode($categoryData, JSON_UNESCAPED_UNICODE)
-                    ]
-                ],
-//                'max_tokens' => 400,
-                'temperature' => 0.7
-            ]);
+                    'max_tokens' => 1500,
+                    'temperature' => 0.7
+                ]);
 
             if ($response->successful()) {
                 $content = $response->json('choices.0.message.content');
@@ -143,13 +147,13 @@ class DescriptionGenerationService
                 return [
                     'name' => $discount->product->name,
                     'category' => $discount->product->category->name,
-                    'category_url' => "/{$discount->product->category->slug}",
-                    'product_url' => "/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'category_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}",
+                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
                     'savings_amount' => round($discount->original_price - $discount->discounted_price, 2),
-                    'valid_until' => $discount->end_at->format('Y-m-d'),
+                    'valid_until' => $discount->end_at ? $discount->end_at->format('Y-m-d') : null,
                     'condition' => $discount->condition,
                     'is_essential' => $this->isEssentialProduct($discount->product->name),
                     'value_rating' => $this->getValueRating($discount)
@@ -163,7 +167,7 @@ class DescriptionGenerationService
                 $firstDiscount = $discounts->first();
                 return [
                     'name' => $firstDiscount->product->category->name,
-                    'url' => "/{$firstDiscount->product->category->slug}",
+                    'url' => "@https://superakcijos.lt/akcijos/{$firstDiscount->product->category->slug}",
                     'count' => $discounts->count(),
                     'avg_discount' => round($discounts->avg('discount_percent'), 1),
                     'min_price' => $discounts->min('discounted_price'),
@@ -183,7 +187,7 @@ class DescriptionGenerationService
 
         return [
             'store_name' => $store->name,
-            'store_url' => "/{$store->slug}",
+            'store_url' => "@https://superakcijos.lt/akcijos/{$store->slug}",
             'total_active_discounts' => $activeDiscounts->count(),
             'total_products' => $activeDiscounts->unique('product_id')->count(),
             'total_categories' => $activeDiscounts->unique('product.category_id')->count(),
@@ -200,8 +204,8 @@ class DescriptionGenerationService
             'top_discounts' => $topDiscounts,
             'category_statistics' => $categoryStats,
             'valid_date_range' => [
-                'earliest_end' => $activeDiscounts->min('end_at') ? $activeDiscounts->min('end_at')->format('Y-m-d') : null,
-                'latest_end' => $activeDiscounts->max('end_at') ? $activeDiscounts->max('end_at')->format('Y-m-d') : null
+                'earliest_end' => ($earliest = $activeDiscounts->min('end_at')) ? $earliest->format('Y-m-d') : null,
+                'latest_end' => ($latest = $activeDiscounts->max('end_at')) ? $latest->format('Y-m-d') : null
             ],
             'discount_distribution' => [
                 'under_10_percent' => $activeDiscounts->where('discount_percent', '<', 10)->count(),
@@ -243,13 +247,13 @@ class DescriptionGenerationService
                 return [
                     'name' => $discount->product->name,
                     'store' => $discount->store->name,
-                    'store_url' => "/{$discount->store->slug}",
-                    'product_url' => "/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'store_url' => "@https://superakcijos.lt/akcijos/{$discount->store->slug}",
+                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
                     'savings_amount' => round($discount->original_price - $discount->discounted_price, 2),
-                    'valid_until' => $discount->end_at->format('Y-m-d'),
+                    'valid_until' => $discount->end_at ? $discount->end_at->format('Y-m-d') : null,
                     'condition' => $discount->condition,
                     'is_essential' => $this->isEssentialProduct($discount->product->name),
                     'value_rating' => $this->getValueRating($discount)
@@ -263,7 +267,7 @@ class DescriptionGenerationService
                 $firstDiscount = $discounts->first();
                 return [
                     'name' => $firstDiscount->store->name,
-                    'url' => "/{$firstDiscount->store->slug}",
+                    'url' => "@https://superakcijos.lt/akcijos/{$firstDiscount->store->slug}",
                     'count' => $discounts->count(),
                     'avg_discount' => round($discounts->avg('discount_percent'), 1),
                     'min_price' => $discounts->min('discounted_price'),
@@ -283,7 +287,7 @@ class DescriptionGenerationService
 
         return [
             'category_name' => $category->name,
-            'category_url' => "/{$category->slug}",
+            'category_url' => "@https://superakcijos.lt/akcijos/{$category->slug}",
             'total_active_discounts' => $activeDiscounts->count(),
             'total_products' => $activeDiscounts->unique('product_id')->count(),
             'total_stores' => $activeDiscounts->unique('store_id')->count(),
@@ -300,8 +304,8 @@ class DescriptionGenerationService
             'top_discounts' => $topDiscounts,
             'store_statistics' => $storeStats,
             'valid_date_range' => [
-                'earliest_end' => $activeDiscounts->min('end_at') ? $activeDiscounts->min('end_at')->format('Y-m-d') : null,
-                'latest_end' => $activeDiscounts->max('end_at') ? $activeDiscounts->max('end_at')->format('Y-m-d') : null
+                'earliest_end' => ($earliest = $activeDiscounts->min('end_at')) ? $earliest->format('Y-m-d') : null,
+                'latest_end' => ($latest = $activeDiscounts->max('end_at')) ? $latest->format('Y-m-d') : null
             ],
             'discount_distribution' => [
                 'under_10_percent' => $activeDiscounts->where('discount_percent', '<', 10)->count(),
@@ -375,7 +379,7 @@ HTML FORMATTING:
 - Add proper spacing between sections with empty lines
 
 EXAMPLE STRUCTURE:
-<p><a href=\"/store\">Store Name</a> siūlo <strong>150 aktyvių akcijų</strong> su vidutine <strong>25%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
+<p><a href=\"@https://superakcijos.lt/akcijos/store\">Store Name</a> siūlo <strong>150 aktyvių akcijų</strong> su vidutine <strong>25%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
 
 <div class=\"stats\">
 <h3>Statistika:</h3>
@@ -390,19 +394,19 @@ EXAMPLE STRUCTURE:
 </ul>
 </div>
 
-<p>Geriausi pasiūlymai šioje kategorijoje laukia <a href=\"/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>60%</strong> nuolaida!</p>
+<p>Geriausi pasiūlymai šioje kategorijoje laukia <a href=\"@https://superakcijos.lt/akcijos/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>60%</strong> nuolaida!</p>
 
 <div class=\"top-products\">
 <h3>Geriausi pasiūlymai:</h3>
 <ul>
-<li><a href=\"/product\">Produktas 1</a> - <strong>60%</strong> nuolaida</li>
-<li><a href=\"/product\">Produktas 2</a> - <strong>55%</strong> nuolaida</li>
-<li><a href=\"/product\">Produktas 3</a> - <strong>50%</strong> nuolaida</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 1</a> - <strong>60%</strong> nuolaida</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 2</a> - <strong>55%</strong> nuolaida</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 3</a> - <strong>50%</strong> nuolaida</li>
 </ul>
 </div>
 
 <div class=\"discount-distribution\">
-<h3>Nuolaidų paskirstymas:</h3>
+<h3 class='mt-3'>Nuolaidų paskirstymas:</h3>
 <ul>
 <li><strong>10% ir mažiau:</strong> 13 produktų</li>
 <li><strong>10-20%:</strong> 31 produktas</li>
@@ -470,7 +474,7 @@ HTML FORMATTING:
 - Add proper spacing between sections with empty lines
 
 EXAMPLE STRUCTURE:
-<p><a href=\"/category\">Category Name</a> kategorijoje raskite <strong>45 aktyvių akcijų</strong> su vidutine <strong>30%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
+<p><a href=\"@https://superakcijos.lt/akcijos/category\">Category Name</a> kategorijoje raskite <strong>45 aktyvių akcijų</strong> su vidutine <strong>30%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
 
 <div class=\"stats\">
 <h3>Statistika:</h3>
@@ -486,19 +490,19 @@ EXAMPLE STRUCTURE:
 </ul>
 </div>
 
-<p>Geriausi pasiūlymai <a href=\"/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>55%</strong> nuolaida!</p>
+<p>Geriausi pasiūlymai <a href=\"@https://superakcijos.lt/akcijos/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>55%</strong> nuolaida!</p>
 
 <div class=\"top-products\">
 <h3>Geriausi pasiūlymai:</h3>
 <ul>
-<li><a href=\"/product\">Produktas 1</a> - <strong>55%</strong> nuolaida</li>
-<li><a href=\"/product\">Produktas 2</a> - <strong>50%</strong> nuolaida</li>
-<li><a href=\"/product\">Produktas 3</a> - <strong>45%</strong> nuolaida</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 1</a> - <strong>55%</strong> nuolaida</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 2</a> - <strong>50%</strong> nuolaida</li>
+<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 3</a> - <strong>45%</strong> nuolaida</li>
 </ul>
 </div>
 
 <div class=\"discount-distribution\">
-<h3>Nuolaidų paskirstymas:</h3>
+<h3 class='mt-3'>Nuolaidų paskirstymas:</h3>
 <ul>
 <li><strong>10% ir mažiau:</strong> 5 produktų</li>
 <li><strong>10-20%:</strong> 10 produktų</li>
