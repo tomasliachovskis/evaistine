@@ -359,6 +359,7 @@ GUIDELINES:
 - Link category names to category URLs
 - Link product names to product URLs
 - Link store name to store URL
+- IMPORTANT: Remove the @ symbol from URLs in the final output - use clean URLs like https://superakcijos.lt/akcijos/...
 - Use statistical data to provide specific numbers and percentages
 - Mention discount distribution (how many products have different discount ranges)
 - Highlight total savings potential across all discounts
@@ -406,7 +407,7 @@ STRUCTURED DATA MARKUP:
 - Include <aside> tags for additional tips and recommendations
 
 EXAMPLE STRUCTURE:
-<p><a href=\"@https://superakcijos.lt/akcijos/store\">Store Name</a> siūlo <strong>150 aktyvių akcijų</strong> su vidutine <strong>25%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
+<p><a href=\"https://superakcijos.lt/akcijos/store\">Store Name</a> siūlo <strong>150 aktyvių akcijų</strong> su vidutine <strong>25%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
 
 <div class=\"stats\">
 <h3>Statistika:</h3>
@@ -421,26 +422,26 @@ EXAMPLE STRUCTURE:
 </ul>
 </div>
 
-<p>Geriausi pasiūlymai šioje kategorijoje laukia <a href=\"@https://superakcijos.lt/akcijos/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>60%</strong> nuolaida!</p>
+<p>Geriausi pasiūlymai šioje kategorijoje laukia <a href=\"https://superakcijos.lt/akcijos/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>60%</strong> nuolaida!</p>
 
 <div class=\"top-products\">
 <h3>Geriausi pasiūlymai:</h3>
 <ul>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Žemaitijos varškė</a> - 4.66€, <strong>40%</strong> nuolaida, Iki</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Dvaro pienas</a> - 2.15€, <strong>35%</strong> nuolaida, Rimi</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Vilkyškių duona</a> - 1.89€, <strong>30%</strong> nuolaida, Maxima</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Lietuvos sūris</a> - 3.45€, <strong>25%</strong> nuolaida, Norfa</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Ekstra jogurtas</a> - 1.25€, <strong>20%</strong> nuolaida, Lidl</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Kiaušiniai</a> - 2.50€, <strong>18%</strong> nuolaida, Iki</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Bulvės</a> - 0.89€, <strong>15%</strong> nuolaida, Rimi</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Morkos</a> - 1.15€, <strong>12%</strong> nuolaida, Maxima</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Svogūnai</a> - 0.95€, <strong>10%</strong> nuolaida, Norfa</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Obuoliai</a> - 1.45€, <strong>8%</strong> nuolaida, Lidl</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Žemaitijos varškė</a> - 4.66€, <strong>40%</strong> nuolaida, Iki</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Dvaro pienas</a> - 2.15€, <strong>35%</strong> nuolaida, Rimi</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Vilkyškių duona</a> - 1.89€, <strong>30%</strong> nuolaida, Maxima</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Lietuvos sūris</a> - 3.45€, <strong>25%</strong> nuolaida, Norfa</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Ekstra jogurtas</a> - 1.25€, <strong>20%</strong> nuolaida, Lidl</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Kiaušiniai</a> - 2.50€, <strong>18%</strong> nuolaida, Iki</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Bulvės</a> - 0.89€, <strong>15%</strong> nuolaida, Rimi</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Morkos</a> - 1.15€, <strong>12%</strong> nuolaida, Maxima</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Svogūnai</a> - 0.95€, <strong>10%</strong> nuolaida, Norfa</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Obuoliai</a> - 1.45€, <strong>8%</strong> nuolaida, Lidl</li>
 </ul>
 </div>
 
 <div class=\"discount-distribution\">
-<h3 class='mt-3'>Nuolaidų paskirstymas:</h3>
+<h3 class=\"mt-3\">Nuolaidų paskirstymas:</h3>
 <ul>
 <li><strong>10% ir mažiau:</strong> 13 produktų</li>
 <li><strong>10-20%:</strong> 31 produktas</li>
@@ -451,18 +452,18 @@ EXAMPLE STRUCTURE:
 </div>
 
 <div class=\"urgency\">
-<p><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+<p class=\"mt-2\"><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
 </div>
 
 <div class=\"faq\">
-<h3>Dažniausi klausimai apie parduotuvę:</h3>
-<h3>Kada geriausia apsilankyti parduotuvėje?</h3>
+<h3 class=\"mt-3\">Dažniausi klausimai apie parduotuvę:</h3>
+<h4>Kada geriausia apsilankyti parduotuvėje?</h4>
 <p>Geriausias laikas apsilankyti yra ryte arba darbo dienomis, kai mažiau žmonių. Taip pat rekomenduojame sekti akcijų kalendorių.</p>
-<h3>Kiek galima sutaupyti šiose akcijose?</h3>
+<h4 class=\"mt-2\">Kiek galima sutaupyti šiose akcijose?</h4>
 <p>Vidutiniškai galite sutaupyti iki <strong>€127</strong> už pilną krepšelį, o kai kurie produktai siūlo net <strong>60%</strong> nuolaidą!</p>
-<h3>Ar parduotuvė siūlo pristatymą?</h3>
+<h4 class=\"mt-2\">Ar parduotuvė siūlo pristatymą?</h4>
 <p>Taip, dauguma parduotuvių siūlo pristatymą į namus. Patikrinkite jų svetainėje arba skambinkite tiesiogiai parduotuvei.</p>
-<h3>Kokios darbo valandos?</h3>
+<h4 class=\"mt-2\">Kokios darbo valandos?</h4>
 <p>Parduotuvės paprastai dirba 7-22 val., bet patikrinkite konkrečias darbo valandas jų svetainėje.</p>
 </div>
 
@@ -544,7 +545,7 @@ STRUCTURED DATA MARKUP:
 - Include <aside> tags for additional tips and recommendations
 
 EXAMPLE STRUCTURE:
-<p><a href=\"@https://superakcijos.lt/akcijos/category\">Category Name</a> kategorijoje raskite <strong>45 aktyvių akcijų</strong> su vidutine <strong>30%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
+<p><a href=\"https://superakcijos.lt/akcijos/category\">Category Name</a> kategorijoje raskite <strong>45 aktyvių akcijų</strong> su vidutine <strong>30%</strong> nuolaida! Tai puiki proga papildyti atsargas ir mėgautis skaniais desertais už mažesnę kainą.</p>
 
 <div class=\"stats\">
 <h3>Statistika:</h3>
@@ -560,19 +561,19 @@ EXAMPLE STRUCTURE:
 </ul>
 </div>
 
-<p>Geriausi pasiūlymai <a href=\"@https://superakcijos.lt/akcijos/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>55%</strong> nuolaida!</p>
+<p>Geriausi pasiūlymai <a href=\"https://superakcijos.lt/akcijos/store\">parduotuvėje</a>, kur galite rasti populiariausius produktus su <strong>55%</strong> nuolaida!</p>
 
 <div class=\"top-products\">
 <h3>Geriausi pasiūlymai:</h3>
 <ul>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 1</a> - <strong>55%</strong> nuolaida</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 2</a> - <strong>50%</strong> nuolaida</li>
-<li><a href=\"@https://superakcijos.lt/akcijos/product\">Produktas 3</a> - <strong>45%</strong> nuolaida</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 1</a> - <strong>55%</strong> nuolaida</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 2</a> - <strong>50%</strong> nuolaida</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 3</a> - <strong>45%</strong> nuolaida</li>
 </ul>
 </div>
 
 <div class=\"discount-distribution\">
-<h3 class='mt-3'>Nuolaidų paskirstymas:</h3>
+<h3 class=\"mt-3\">Nuolaidų paskirstymas:</h3>
 <ul>
 <li><strong>10% ir mažiau:</strong> 5 produktų</li>
 <li><strong>10-20%:</strong> 10 produktų</li>
@@ -583,18 +584,18 @@ EXAMPLE STRUCTURE:
 </div>
 
 <div class=\"urgency\">
-<p><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+<p class=\"mt-2\"><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
 </div>
 
 <div class=\"faq\">
-<h3>Dažniausi klausimai apie kategoriją:</h3>
-<h3>Kokie produktai šioje kategorijoje turi geriausias nuolaidas?</h3>
+<h3 class=\"mt-3\">Dažniausi klausimai apie kategoriją:</h3>
+<h4>Kokie produktai šioje kategorijoje turi geriausias nuolaidas?</h4>
 <p>Geriausios nuolaidos paprastai būna kasdieniniams produktams: pieno produktams, duonai, mėsai ir daržovėms. Taip pat stebėkite sezoninius pasiūlymus.</p>
-<h3>Kiek galima sutaupyti šioje kategorijoje?</h3>
+<h4 class=\"mt-2\">Kiek galima sutaupyti šioje kategorijoje?</h4>
 <p>Vidutiniškai galite sutaupyti iki <strong>€127</strong> už pilną krepšelį, o kai kurie produktai siūlo net <strong>60%</strong> nuolaidą!</p>
-<h3>Kurios parduotuvės siūlo geriausias kainas šioje kategorijoje?</h3>
+<h4 class=\"mt-2\">Kurios parduotuvės siūlo geriausias kainas šioje kategorijoje?</h4>
 <p>Skirtingos parduotuvės siūlo skirtingus pasiūlymus. Rekomenduojame palyginti kainas ir pasirinkti geriausią variantą jūsų poreikiams.</p>
-<h3>Ar šie produktai tinka ilgalaikiam saugojimui?</h3>
+<h4 class=\"mt-2\">Ar šie produktai tinka ilgalaikiam saugojimui?</h4>
 <p>Dauguma šios kategorijos produktų tinka ilgalaikiam saugojimui šaldytuve arba sandėliuojant saugiai. Patikrinkite etiketes dėl saugojimo instrukcijų.</p>
 </div>
 
