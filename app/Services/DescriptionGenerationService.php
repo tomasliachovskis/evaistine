@@ -55,7 +55,7 @@ class DescriptionGenerationService
                             'content' => json_encode($storeData, JSON_UNESCAPED_UNICODE)
                         ]
                     ],
-                    'max_tokens' => 2000,
+                    'max_tokens' => 3000,
                     'temperature' => 0.7
                 ]);
 
@@ -105,7 +105,7 @@ class DescriptionGenerationService
                             'content' => json_encode($categoryData, JSON_UNESCAPED_UNICODE)
                         ]
                     ],
-                    'max_tokens' => 2000,
+                    'max_tokens' => 3000,
                     'temperature' => 0.7
                 ]);
 
