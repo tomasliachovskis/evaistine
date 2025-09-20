@@ -44,7 +44,7 @@ puppeteer.use(StealthPlugin());
         await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
 
         try {
-            await page.waitForSelector('.tw-flex-shrink-0.tw-list-none.tw-w-full', { timeout: 5000 });
+            await page.waitForSelector('.tw-flex-shrink-0.tw-list-none.tw-w-full', { timeout: 20000 });
         } catch (error) {
             console.log(`Failed to load products on page ${currentPage}, stopping scrape.`);
             break;

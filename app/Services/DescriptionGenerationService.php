@@ -368,6 +368,11 @@ GUIDELINES:
 - Provide practical shopping advice and recommendations
 - ALWAYS add a unique twist or angle to make each description stand out (e.g., seasonal theme, special occasion, unexpected benefit, creative comparison, or interesting fact)
 - When mentioning promotion dates, always specify the full date range (from date to date) instead of just end date
+- Use the actual date ranges from the data: earliest_end and latest_end from valid_date_range
+- IMPORTANT: Replace [earliest_end] and [latest_end] with the actual dates from the data, not example dates
+- Use the exact date format provided in the data (Y-m-d format like 2025-09-21)
+- If earliest_end and latest_end are the same date, use format: iki [date] instead of nuo [date] iki [date]
+- Always use the full date format with year (e.g., 2025-09-21, not just rugsėjo 21 d.)
 
 SEO OPTIMIZATION REQUIREMENTS:
 - Include primary keywords: \"akcijos\", \"nuolaidos\", \"parduotuvė\", \"prekės\", \"taupymas\", \"kainos\"
@@ -393,7 +398,7 @@ HTML FORMATTING:
 - In top products section, include product name, discounted price, discount percentage, and store name
 - Format: Product Name - Price, X% nuolaida, Store Name
 - Always show exactly 10 products in the top products section
-- Use <div class=\"discount-distribution\"> for discount distribution statistics
+- Use <div class=\"discount-distribution mb-3\"> for discount distribution statistics
 - Use <div class=\"urgency\"> for time-sensitive information
 - Add proper spacing between sections with empty lines
 
@@ -440,7 +445,7 @@ EXAMPLE STRUCTURE:
 </ul>
 </div>
 
-<div class=\"discount-distribution\">
+<div class=\"discount-distribution mb-3\">
 <h3 class=\"mt-3\">Nuolaidų paskirstymas:</h3>
 <ul>
 <li><strong>10% ir mažiau:</strong> 13 produktų</li>
@@ -452,18 +457,19 @@ EXAMPLE STRUCTURE:
 </div>
 
 <div class=\"urgency\">
-<p class=\"mt-2\"><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+<p class=\"mt-2\"><em>Šios akcijos galioja nuo <strong>[earliest_end]</strong> iki <strong>[latest_end]</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+<p class=\"mt-2\"><em>Šios akcijos galioja iki <strong>[latest_end]</strong>, tad nepraleiskite progos sutaupyti!</em></p>
 </div>
 
 <div class=\"faq\">
 <h3 class=\"mt-3\">Dažniausi klausimai apie parduotuvę:</h3>
 <h4>Kada geriausia apsilankyti parduotuvėje?</h4>
 <p>Geriausias laikas apsilankyti yra ryte arba darbo dienomis, kai mažiau žmonių. Taip pat rekomenduojame sekti akcijų kalendorių.</p>
-<h4 class=\"mt-2\">Kiek galima sutaupyti šiose akcijose?</h4>
+<h4 class=\"mt-3\">Kiek galima sutaupyti šiose akcijose?</h4>
 <p>Vidutiniškai galite sutaupyti iki <strong>€127</strong> už pilną krepšelį, o kai kurie produktai siūlo net <strong>60%</strong> nuolaidą!</p>
-<h4 class=\"mt-2\">Ar parduotuvė siūlo pristatymą?</h4>
+<h4 class=\"mt-3\">Ar parduotuvė siūlo pristatymą?</h4>
 <p>Taip, dauguma parduotuvių siūlo pristatymą į namus. Patikrinkite jų svetainėje arba skambinkite tiesiogiai parduotuvei.</p>
-<h4 class=\"mt-2\">Kokios darbo valandos?</h4>
+<h4 class=\"mt-3\">Kokios darbo valandos?</h4>
 <p>Parduotuvės paprastai dirba 7-22 val., bet patikrinkite konkrečias darbo valandas jų svetainėje.</p>
 </div>
 
@@ -506,6 +512,11 @@ GUIDELINES:
 - Provide practical shopping advice
 - ALWAYS add a unique twist or angle to make each description stand out (e.g., seasonal theme, special occasion, unexpected benefit, creative comparison, or interesting fact)
 - When mentioning promotion dates, always specify the full date range (from date to date) instead of just end date
+- Use the actual date ranges from the data: earliest_end and latest_end from valid_date_range
+- IMPORTANT: Replace [earliest_end] and [latest_end] with the actual dates from the data, not example dates
+- Use the exact date format provided in the data (Y-m-d format like 2025-09-21)
+- If earliest_end and latest_end are the same date, use format: iki [date] instead of nuo [date] iki [date]
+- Always use the full date format with year (e.g., 2025-09-21, not just rugsėjo 21 d.)
 
 SEO OPTIMIZATION REQUIREMENTS:
 - Include primary keywords: \"akcijos\", \"nuolaidos\", \"kategorija\", \"prekės\", \"taupymas\", \"kainos\"
@@ -531,7 +542,7 @@ HTML FORMATTING:
 - In top products section, include product name, discounted price, discount percentage, and store name
 - Format: Product Name - Price, X% nuolaida, Store Name
 - Always show exactly 10 products in the top products section
-- Use <div class=\"discount-distribution\"> for discount distribution statistics
+- Use <div class=\"discount-distribution mb-3\"> for discount distribution statistics
 - Use <div class=\"urgency\"> for time-sensitive information
 - Add proper spacing between sections with empty lines
 
@@ -572,7 +583,7 @@ EXAMPLE STRUCTURE:
 </ul>
 </div>
 
-<div class=\"discount-distribution\">
+<div class=\"discount-distribution mb-3\">
 <h3 class=\"mt-3\">Nuolaidų paskirstymas:</h3>
 <ul>
 <li><strong>10% ir mažiau:</strong> 5 produktų</li>
@@ -584,18 +595,19 @@ EXAMPLE STRUCTURE:
 </div>
 
 <div class=\"urgency\">
-<p class=\"mt-2\"><em>Šios akcijos galioja nuo <strong>2025-08-15</strong> iki <strong>2025-09-01</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+<p class=\"mt-2\"><em>Šios akcijos galioja nuo <strong>[earliest_end]</strong> iki <strong>[latest_end]</strong>, tad nepraleiskite progos sutaupyti!</em></p>
+<p class=\"mt-2\"><em>Šios akcijos galioja iki <strong>[latest_end]</strong>, tad nepraleiskite progos sutaupyti!</em></p>
 </div>
 
 <div class=\"faq\">
 <h3 class=\"mt-3\">Dažniausi klausimai apie kategoriją:</h3>
 <h4>Kokie produktai šioje kategorijoje turi geriausias nuolaidas?</h4>
 <p>Geriausios nuolaidos paprastai būna kasdieniniams produktams: pieno produktams, duonai, mėsai ir daržovėms. Taip pat stebėkite sezoninius pasiūlymus.</p>
-<h4 class=\"mt-2\">Kiek galima sutaupyti šioje kategorijoje?</h4>
+<h4 class=\"mt-3\">Kiek galima sutaupyti šioje kategorijoje?</h4>
 <p>Vidutiniškai galite sutaupyti iki <strong>€127</strong> už pilną krepšelį, o kai kurie produktai siūlo net <strong>60%</strong> nuolaidą!</p>
-<h4 class=\"mt-2\">Kurios parduotuvės siūlo geriausias kainas šioje kategorijoje?</h4>
+<h4 class=\"mt-3\">Kurios parduotuvės siūlo geriausias kainas šioje kategorijoje?</h4>
 <p>Skirtingos parduotuvės siūlo skirtingus pasiūlymus. Rekomenduojame palyginti kainas ir pasirinkti geriausią variantą jūsų poreikiams.</p>
-<h4 class=\"mt-2\">Ar šie produktai tinka ilgalaikiam saugojimui?</h4>
+<h4 class=\"mt-3\">Ar šie produktai tinka ilgalaikiam saugojimui?</h4>
 <p>Dauguma šios kategorijos produktų tinka ilgalaikiam saugojimui šaldytuve arba sandėliuojant saugiai. Patikrinkite etiketes dėl saugojimo instrukcijų.</p>
 </div>
 

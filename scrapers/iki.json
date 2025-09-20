@@ -819,16 +819,16 @@
     "link": "https://iki.lt/akciju-kategorijos/bakaleja/"
   },
   {
-    "name": "Atrinktiems mėsos gaminiams iki -70%",
+    "name": "Atrinktiems užkandžiams iki -70%",
     "discounted_price": null,
     "original_price": "",
     "info": "",
     "discount_percent": "70",
-    "start_at": "TIK INTERNETU! Prekių kiekis ribotas. Pasiūlymas galioja perkant ne daugiau nei 1 vnt. vienam pirkėjui per dieną. Akcija galioja tik 2025 09 16",
+    "start_at": "TIK INTERNETU! Prekių kiekis ribotas. Pasiūlymas galioja perkant ne daugiau nei 1 vnt. vienam pirkėjui per dieną. Akcija galioja tik 2025 09 18",
     "end_at": null,
     "card": false,
-    "product_url": "https://lastmile.lt/chain/banner/antradienis/n0QaZaeUZ6kdroWSfd2N/CvKfTzV4TN5U8BTMF1Hl?utm_source=iki-popup&utm_medium=antradienis",
-    "image_url": "https://iki.lt/wp-content/uploads/2025/09/10/Produkto_800x580-2-4.png",
+    "product_url": "https://lastmile.lt/chain/banner/ketvirtadienis/oSkVxUmq0mBvp0IryUpL/CvKfTzV4TN5U8BTMF1Hl?utm_source=iki-popup&utm_medium=ketvirtadienis",
+    "image_url": "https://iki.lt/wp-content/uploads/2025/09/10/Produkto_800x580-4-4.png",
     "link": "https://iki.lt/akciju-kategorijos/bakaleja/"
   },
   {
@@ -1492,6 +1492,19 @@
     "card": true,
     "product_url": "https://lastmile.lt/chain/banner/ClRwhQUZ946XV7vm20Hp/ClRwhQUZ946XV7vm20Hp/CvKfTzV4TN5U8BTMF1Hl?utm_source=iki&utm_medium=Supplier&utm_campaign=Savaitines_akcijos",
     "image_url": "https://iki.lt/wp-content/uploads/2025/09/12/20250915-381.jpg",
+    "link": "https://iki.lt/akciju-kategorijos/gerimai-kava-arbata/"
+  },
+  {
+    "name": "Vaisvandeniams",
+    "discounted_price": null,
+    "original_price": "",
+    "info": "Įvairių rūšių",
+    "discount_percent": "40",
+    "start_at": "Pasiūlymas galioja IKI ir IKI EXPRESS parduotuvėse su IKI lojalumo kortele tik 2025 m. rugsėjo 19 d. Daugiau informacijos, sąlygos ir išimtys iki.lt.",
+    "end_at": null,
+    "card": true,
+    "product_url": "https://lastmile.lt/chain/banner/D5sSUwVkrJTomqnZujbg/D5sSUwVkrJTomqnZujbg/CvKfTzV4TN5U8BTMF1Hl?utm_source=iki&utm_medium=Supplier&utm_campaign=Savaitines_akcijos",
+    "image_url": "https://iki.lt/wp-content/uploads/2025/09/12/800x580-2.jpg",
     "link": "https://iki.lt/akciju-kategorijos/gerimai-kava-arbata/"
   },
   {
@@ -2522,6 +2535,19 @@
     "link": "https://iki.lt/akciju-kategorijos/namu-ukio-ir-gyvunu-prekes/"
   },
   {
+    "name": "Atrinktoms virtuvinėms šluostėms ir kempinėms iki -70%",
+    "discounted_price": null,
+    "original_price": "",
+    "info": "",
+    "discount_percent": "70",
+    "start_at": "TIK INTERNETU! Prekių kiekis ribotas. Pasiūlymas galioja perkant ne daugiau nei 1 vnt. vienam pirkėjui per dieną. Akcija galioja tik 2025 09 17",
+    "end_at": null,
+    "card": false,
+    "product_url": "https://lastmile.lt/chain/banner/treciadienis/44XC6UnVe7xAK0aKoPAq/CvKfTzV4TN5U8BTMF1Hl?utm_source=iki-popup&utm_medium=treciadienis",
+    "image_url": "https://iki.lt/wp-content/uploads/2025/09/10/Produkto_800x580-3-4.png",
+    "link": "https://iki.lt/akciju-kategorijos/namu-ukio-ir-gyvunu-prekes/"
+  },
+  {
     "name": "ŽEMAITIJOS varškė",
     "discounted_price": "3.99",
     "original_price": "6.99",
@@ -3455,6 +3481,19 @@
     "card": true,
     "product_url": "https://lastmile.lt/chain/banner/epRuS9oOzZv6LB8WJ1dd/epRuS9oOzZv6LB8WJ1dd/CvKfTzV4TN5U8BTMF1Hl?utm_source=iki&utm_medium=Supplier&utm_campaign=Savaitines_akcijos",
     "image_url": "https://iki.lt/wp-content/uploads/2025/09/12/20250915-379.jpg",
+    "link": "https://iki.lt/akciju-kategorijos/saldumynai-ir-konditerija/"
+  },
+  {
+    "name": "Sveriamiems saldainiams ir saldainių dėžutėms",
+    "discounted_price": null,
+    "original_price": "",
+    "info": "Įvairių rūšių",
+    "discount_percent": "40",
+    "start_at": "Pasiūlymas galioja IKI ir IKI EXPRESS parduotuvėse su IKI lojalumo kortele tik 2025 m. rugsėjo 19 d. Daugiau informacijos, sąlygos ir išimtys iki.lt.",
+    "end_at": null,
+    "card": true,
+    "product_url": "https://lastmile.lt/chain/banner/D5sSUwVkrJTomqnZujbg/D5sSUwVkrJTomqnZujbg/CvKfTzV4TN5U8BTMF1Hl?utm_source=iki&utm_medium=Supplier&utm_campaign=Savaitines_akcijos",
+    "image_url": "https://iki.lt/wp-content/uploads/2025/09/12/800x580-.jpg",
     "link": "https://iki.lt/akciju-kategorijos/saldumynai-ir-konditerija/"
   },
   {

@@ -61,7 +61,7 @@ class CategoryMappingService
             return;
         }
 
-        $products = DiscountTemp::where('store', $storeName)
+        $products = DiscountTemp::where('store', $storeName)->where('processed', 0)
             ->where(function($query) {
                 $query->whereNull('category')
                       ->orWhere('category', '');
@@ -149,7 +149,9 @@ class CategoryMappingService
         try {
             $productJson = json_encode($productData, JSON_UNESCAPED_UNICODE);
 
-            $response = Http::withHeaders([
+            $response = Http::timeout(60)
+                ->retry(3, 1000)
+                ->withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl, [
@@ -164,7 +166,7 @@ class CategoryMappingService
                         'content' => "Products: {$productJson}"
                     ]
                 ],
-//                'max_tokens' => 2000,
+                'max_tokens' => 2000,
                 'temperature' => 0
             ]);
 
@@ -315,7 +317,7 @@ OUTPUT FORMAT: Return ONLY a JSON object mapping product IDs to category names. 
                 // Convert string keys to integers to match database IDs
                 $normalizedMappings = [];
                 $invalidCategories = [];
-                
+
                 foreach ($mappings as $productId => $category) {
                     $normalizedId = (int) $productId; // Convert string ID to integer
 

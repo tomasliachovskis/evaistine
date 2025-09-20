@@ -15,7 +15,6 @@ use App\Rules\StoreRules\MaximaRules;
 use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
 use Illuminate\Console\Command;
-use Illuminate\Support\Str;
 use App\Services\ProductNameNormalizer;
 
 class ProcessDiscounts extends Command
@@ -33,6 +32,10 @@ class ProcessDiscounts extends Command
 
     public function handle()
     {
+        $this->info('Starting bulk category mapping...');
+        $this->call('categories:bulk-map');
+        $this->info('Bulk category mapping completed.');
+
         $duplicates = DiscountTemp::whereNotNull('product_url')
             ->where('processed', false)
             ->select('product_url')
@@ -43,6 +46,7 @@ class ProcessDiscounts extends Command
         foreach ($duplicates as $url) {
             $records = DiscountTemp::where('product_url', $url)
                 ->where('processed', false)
+                ->where('category', '!=', '')
                 ->orderBy('id', 'desc')
                 ->get();
 
@@ -52,7 +56,7 @@ class ProcessDiscounts extends Command
             }
         }
 
-        $tempDiscounts = DiscountTemp::where('processed', false)->get();
+        $tempDiscounts = DiscountTemp::where('processed', false)->where('category', '!=', '')->get();
 
         foreach ($tempDiscounts as $tempDiscount) {
             $store = Store::where('name', $tempDiscount->store)->first();
