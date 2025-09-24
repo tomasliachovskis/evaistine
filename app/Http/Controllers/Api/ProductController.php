@@ -130,22 +130,22 @@ class ProductController extends Controller
     private function buildDiscountQuery($query, $filters)
     {
         $query = $query->with('product');
-        
+
         if ($filters['card']) {
             $query = $query->where('card', true);
         }
-        
+
         if ($filters['plus']) {
             $query = $query->where('condition', '1+1');
         }
-        
+
         if ($filters['store']) {
             $storeSlugs = explode(',', $filters['store']);
             $query = $query->whereHas('store', function ($storeQuery) use ($storeSlugs) {
                 $storeQuery->whereIn('slug', $storeSlugs);
             });
         }
-        
+
         return $this->applySorting($query, $filters['order']);
     }
 
@@ -354,26 +354,32 @@ class ProductController extends Controller
     {
         switch ($type) {
             case 'category':
+                return [
+                    'seo_title' => $entity->name . ' akcijos',
+                    'seo_description' => $entity->description,
+                    'meta_title' => $entity->name . " akcijos – naujausi leidiniai, nuolaidos & specialūs pasiūlymai",
+                    'meta_description' => "Peržiūrėkite naujausias " . mb_strtolower($entity->name) . " akcijas",
+                ];
             case 'store':
                 return [
-                    'seo_title' => $entity->name,
+                    'seo_title' => $entity->name . ' akcijos',
                     'seo_description' => $entity->description,
-                    'meta_title' => $entity->name,
-                    'meta_description' => $entity->description,
+                    'meta_title' => mb_strtoupper($entity->name) . " akcijos – naujausi leidiniai, nuolaidos & specialūs pasiūlymai",
+                    'meta_description' => "Peržiūrėkite naujausias" . $entity->name . " akcijas, savaitinius leidinius ir specialius pasiūlymus – sutaupykite su " . $entity->name . "! Galioja parduotuvėse ir internetu.",
                 ];
             case 'store_category':
                 return [
-                    'seo_title' => $entity->name . ' akcija ' . strtolower($secondaryEntity->name),
-                    'seo_description' => $secondaryEntity->description,
-                    'meta_title' => $entity->name . ' akcija ' . strtolower($secondaryEntity->name),
-                    'meta_description' => $secondaryEntity->description,
+                    'seo_title' => $entity->name . ' akcija ' . mb_strtolower($secondaryEntity->name),
+                    'seo_description' => "",
+                    'meta_title' => mb_strtoupper($entity->name) . ' akcija ' . mb_strtolower($secondaryEntity->name),
+                    'meta_description' => "Atraskite naujausias " . ucfirst($entity->name) . " akcijas " . mb_strtolower($secondaryEntity->name) . " – švieži, kokybiški produktai su puikiomis nuolaidomis. Pirkite pigiau šią savaitę!“",
                 ];
             case 'product':
                 return [
                     'seo_title' => $entity->name,
                     'seo_description' => $entity->description ?? '',
-                    'meta_title' => $entity->name,
-                    'meta_description' => $entity->description ?? '',
+                    'meta_title' => 'Akcija ' . mb_strtolower($entity->name),
+                    'meta_description' => "Atraskite akciją " . mb_strtolower($entity->name) . " – puiki proga įsigyti produktus už mažesnę kainą. Pasinaudokite specialiais pasiūlymais ir sutaupykite šiandien!“"
                 ];
             case 'search':
                 return [

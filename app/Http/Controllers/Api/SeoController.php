@@ -162,9 +162,9 @@ class SeoController extends Controller
                 $category = Category::where('slug', $segments[2])->first();
                 if ($category) {
                     return response()->json([
-                        'seo_title' => $store->name  . ' akcija ' . strtolower($category->name),
+                        'seo_title' => $store->name  . ' akcija ' . mb_strtolower($category->name),
                         'seo_description' => $category->description,
-                        'meta_title' => $store->name  . ' akcija ' . strtolower($category->name),
+                        'meta_title' => $store->name  . ' akcija ' . mb_strtolower($category->name),
                         'meta_description' => $category->description,
                     ]);
                 }
@@ -173,4 +173,4 @@ class SeoController extends Controller
 
         return response()->json(['error' => 'Entity not found'], 404);
     }
-} 
+}
