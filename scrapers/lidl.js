@@ -6,7 +6,7 @@ import axios from 'axios';
 puppeteer.use(StealthPlugin());
 
 (async () => {
-    const browser = await puppeteer.launch({headless: true });
+    const browser = await puppeteer.launch({headless: false });
     const page = await browser.newPage();
     const sleep = ms => new Promise(res => setTimeout(res, ms));
 
@@ -17,15 +17,18 @@ puppeteer.use(StealthPlugin());
     await page.waitForSelector('#onetrust-accept-btn-handler', { timeout: 5000 });
     await page.click('#onetrust-accept-btn-handler'); // Click the button
 
-    // Wait for a few seconds to see the result
-    await sleep(5000);
+    await sleep(2000);
+
+    await page.click('#week-panel-0 > div > div > button'); // Click the button
+    await sleep(2000);
 
     const offers = await page.evaluate(() => {
-        const elements = document.querySelectorAll('a.AHeroStageItems__Item--Wrapper');
+        const elements = document.querySelectorAll('a.ABaseContentTile__content');
         const texts = Array.from(elements).map(offer => offer.href);
         return [...new Set(texts)];
     });
 
+    console.log(offers);
     console.log(offers.length);
 
     let allProducts = new Map();
@@ -162,9 +165,6 @@ puppeteer.use(StealthPlugin());
     } catch (error) {
         console.error('Error posting products:', error.message);
     }
-
-    // Save to JSON file
-    // fs.writeFileSync('scrapers/lidl.json', JSON.stringify(uniqueProducts, null, 2));
 
     await browser.close();
 })();

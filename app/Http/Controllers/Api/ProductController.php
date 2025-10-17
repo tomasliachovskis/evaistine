@@ -151,6 +151,10 @@ class ProductController extends Controller
 
     private function applySorting($query, $order)
     {
+        $query = $query->leftJoin('products', 'discounts.product_id', '=', 'products.id')
+            ->select('discounts.*')
+            ->orderByRaw('CASE WHEN products.category_id IN (1, 52, 121, 352, 380) THEN 0 ELSE 1 END');
+
         switch ($order) {
             case 'price_min':
                 return $query->orderBy('discounted_price', 'asc');
@@ -162,7 +166,7 @@ class ProductController extends Controller
                 return $query->orderByRaw('discount_percent DESC');
             case 'popular':
             default:
-                return $query->orderBy('created_at', 'desc');
+                return $query;
         }
     }
 

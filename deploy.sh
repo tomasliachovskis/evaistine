@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Define server and project details
-SERVER="root@195.181.245.125"
+SERVER="root@84.247.186.143"
 REMOTE_DIR="/var/www/api"
 
 # Sync project files to the server
-rsync -avz --exclude='.env' --exclude='storage' --exclude='.idea' --exclude='.git' . $SERVER:$REMOTE_DIR
+rsync -avz --exclude='.env' --exclude='storage' --exclude='node_modules'  --exclude='.idea' --exclude='.git' . $SERVER:$REMOTE_DIR
 
 # Run Laravel commands on the server
 ssh $SERVER << 'EOF'
