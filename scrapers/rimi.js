@@ -206,7 +206,7 @@ const postBatchToAPI = async (products) => {
 
 const runScraper = async () => {
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         protocolTimeout: 300000,
         args: [
             '--no-sandbox',
@@ -280,7 +280,7 @@ const runScraper = async () => {
         }
 
         try {
-            await mainPage.waitForSelector('.js-product-container', { timeout: 5000 });
+            await mainPage.waitForSelector('.js-product-container', { timeout: 10000 });
         } catch {
             console.log(`Products not found on page ${currentPage}`);
             break;

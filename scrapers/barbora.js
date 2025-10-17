@@ -21,7 +21,7 @@ puppeteer.use(StealthPlugin());
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
     );
 
-    const sleep = () => new Promise(res => setTimeout(res, Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000));
+    const sleep = () => new Promise(res => setTimeout(res, Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000));
 
     const baseUrl = 'https://barbora.lt';
     let currentPage = 1;
@@ -117,31 +117,32 @@ puppeteer.use(StealthPlugin());
         console.log(`Scraped ${productBlocks.length} products from page ${currentPage}`);
         console.log(`Total  ${allProducts.length}`);
 
+        try {
+            const data = productBlocks.map(product => ({
+                name: product.name,
+                brand: product.brand,
+                discounted_price: product.discounted_price,
+                original_price: product.original_price,
+                card: product.card,
+                discount_percent: product.discount_percent,
+                start_at: product.start_at,
+                end_at: product.end_at,
+                product_url: product.product_url,
+                image_url: product.image_url,
+                category: product.category,
+                condition: product.condition,
+                store: 'maxima'
+            }));
+            await axios.post('http://127.0.0.1/api/scrapers', data);
+            console.log(`Posted ${data.length} products from page ${currentPage} to API`);
+        } catch (error) {
+            console.error(`Error posting products from page ${currentPage}:`, error.message);
+        }
+
         currentPage++;
     }
 
     console.log(`Scraped total ${allProducts.length} products from ${currentPage} pages`);
-
-    try {
-        const data = allProducts.map(product => ({
-            name: product.name,
-            brand: product.brand,
-            discounted_price: product.discounted_price,
-            original_price: product.original_price,
-            card: product.card,
-            discount_percent: product.discount_percent,
-            start_at: product.start_at,
-            end_at: product.end_at,
-            product_url: product.product_url,
-            image_url: product.image_url,
-            category: product.category,
-            condition: product.condition,
-            store: 'maxima'
-        }));
-        await axios.post('http://127.0.0.1/api/scrapers', data);
-    } catch (error) {
-        console.error('Error posting products:', error.message);
-    }
 
     fs.writeFileSync('barbora.json', JSON.stringify(allProducts, null, 2));
     console.log('Scraping completed. Data saved to barbora.json');
