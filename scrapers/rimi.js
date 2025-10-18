@@ -206,7 +206,7 @@ const postBatchToAPI = async (products) => {
 
 const runScraper = async () => {
     const browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         protocolTimeout: 300000,
         args: [
             '--no-sandbox',
@@ -288,7 +288,7 @@ const runScraper = async () => {
 
         await delay(REQUEST_DELAY);
 
-        const productBlocks = await mainPage.$$eval('.js-product-container', blocks => {
+        const productBlocks = await mainPage.$$eval('div.js-product-container', blocks => {
             return blocks.map(block => {
                 const title = block.querySelector('.card__name')?.textContent.trim();
                 const price = block.querySelector('.card__price')?.textContent.trim();
