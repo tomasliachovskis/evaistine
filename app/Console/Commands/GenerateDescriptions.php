@@ -36,8 +36,8 @@ class GenerateDescriptions extends Command
         } elseif ($type === 'category') {
             $this->handleCategories($id, $all);
         } else {
-            $this->error('Invalid type. Use "store" or "category".');
-            return 1;
+            $this->handleStores($id, $all);
+            $this->handleCategories($id, $all);
         }
 
         return 0;

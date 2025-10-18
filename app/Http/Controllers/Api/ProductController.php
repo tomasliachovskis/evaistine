@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
@@ -43,7 +44,7 @@ class ProductController extends Controller
         $filters = $this->getFilters();
         $cacheKey = $this->generateDiscountsCacheKey($storeOrCategory, $category, $filters);
 
-        return Cache::remember($cacheKey, 0, function () use ($storeOrCategory, $category, $filters) {
+        return Cache::remember($cacheKey, 864000, function () use ($storeOrCategory, $category, $filters) {
             if ($category) {
                 return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category, $filters);
             }
@@ -57,7 +58,7 @@ class ProductController extends Controller
         $filters = $this->getFilters();
         $cacheKey = $this->generateAllDiscountsCacheKey($filters);
 
-        return Cache::remember($cacheKey, 0, function () use ($filters) {
+        return Cache::remember($cacheKey, 864000, function () use ($filters) {
             $query = Discount::with(['product', 'store']);
             $discounts = $this->buildDiscountQuery($query, $filters)->paginate(25);
 
@@ -212,62 +213,74 @@ class ProductController extends Controller
 
     public function getFavoriteProduct($slug)
     {
-        $product = \App\Models\Product::where('slug', $slug)->first();
-
-        if (!$product) {
-            return response()->json(['error' => 'Product not found'], 404);
-        }
-
         $filters = $this->getFilters();
-        $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
-            $query->where('slug', '!=', $slug)
-                  ->where('category_id', $product->category_id);
-        })
-            ->with(['product', 'store']);
+        $cacheKey = $this->generateFavoriteProductCacheKey($slug, $filters);
 
-        $discounts = $this->buildDiscountQuery($query, $filters)
-            ->inRandomOrder()
-            ->limit(10)
-            ->get();
+        return Cache::remember($cacheKey, 864000, function () use ($slug, $filters) {
+            $product = \App\Models\Product::where('slug', $slug)->first();
 
-        return response()->json($this->formatter->format($discounts));
+            if (!$product) {
+                return response()->json(['error' => 'Product not found'], 404);
+            }
+
+            $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
+                $query->where('slug', '!=', $slug)
+                      ->where('category_id', $product->category_id);
+            })
+                ->with(['product', 'store']);
+
+            $discounts = $this->buildDiscountQuery($query, $filters)
+                ->inRandomOrder()
+                ->limit(10)
+                ->get();
+
+            return response()->json($this->formatter->format($discounts));
+        });
     }
 
     public function getFavoriteCategory($id)
     {
         $filters = $this->getFilters();
-        $query = Discount::whereHas('product', function ($q) use ($id) {
-            $q->where('category_id', $id);
-        })
-            ->with(['product', 'store']);
+        $cacheKey = $this->generateFavoriteCategoryCacheKey($id, $filters);
 
-        $discounts = $this->buildDiscountQuery($query, $filters)
-            ->inRandomOrder()
-            ->limit(10)
-            ->get();
+        return Cache::remember($cacheKey, 864000, function () use ($id, $filters) {
+            $query = Discount::whereHas('product', function ($q) use ($id) {
+                $q->where('category_id', $id);
+            })
+                ->with(['product', 'store']);
 
-        return response()->json($this->formatter->format($discounts));
+            $discounts = $this->buildDiscountQuery($query, $filters)
+                ->inRandomOrder()
+                ->limit(10)
+                ->get();
+
+            return response()->json($this->formatter->format($discounts));
+        });
     }
 
     public function getFavoriteHome()
     {
         $filters = $this->getFilters();
-        $query = Discount::with(['product', 'store']);
+        $cacheKey = $this->generateFavoriteHomeCacheKey($filters);
 
-        $discounts = $this->buildDiscountQuery($query, $filters)
-            ->inRandomOrder()
-            ->limit(10)
-            ->get();
+        return Cache::remember($cacheKey, 864000, function () use ($filters) {
+            $query = Discount::with(['product', 'store']);
 
-        return response()->json($this->formatter->format($discounts));
+            $discounts = $this->buildDiscountQuery($query, $filters)
+                ->inRandomOrder()
+                ->limit(10)
+                ->get();
+
+            return response()->json($this->formatter->format($discounts));
+        });
     }
 
     public function getProductBySlug($slug)
     {
         $cacheKey = "product_slug_{$slug}";
 
-        return Cache::remember($cacheKey, 0, function () use ($slug) {
-            $product = \App\Models\Product::where('slug', $slug)
+        return Cache::remember($cacheKey, 864000, function () use ($slug) {
+            $product = Product::where('slug', $slug)
                 ->with([
                     'discounts' => function ($query) {
                         $query->with('store')
@@ -427,6 +440,39 @@ class ProductController extends Controller
     private function generateAllDiscountsCacheKey($filters = [])
     {
         return "all_discounts_" . md5(serialize($filters));
+    }
+
+    private function generateFavoriteProductCacheKey($slug, $filters = [])
+    {
+        $key = "favorite_product_{$slug}";
+        
+        if (!empty($filters)) {
+            $key .= "_" . md5(serialize($filters));
+        }
+        
+        return $key;
+    }
+
+    private function generateFavoriteCategoryCacheKey($id, $filters = [])
+    {
+        $key = "favorite_category_{$id}";
+        
+        if (!empty($filters)) {
+            $key .= "_" . md5(serialize($filters));
+        }
+        
+        return $key;
+    }
+
+    private function generateFavoriteHomeCacheKey($filters = [])
+    {
+        $key = "favorite_home";
+        
+        if (!empty($filters)) {
+            $key .= "_" . md5(serialize($filters));
+        }
+        
+        return $key;
     }
 
     public function clearDiscountsCache($storeOrCategory = null, $category = null)
