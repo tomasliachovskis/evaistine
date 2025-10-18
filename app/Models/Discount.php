@@ -69,6 +69,8 @@ class Discount extends Model
 
     private static function clearDiscountsCache()
     {
-        Cache::flush();
+        Cache::forget('discounts_*');
+        Cache::forget('all_discounts_*');
+        Cache::forget('favorite_*');
     }
 }

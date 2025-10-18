@@ -21,8 +21,9 @@ class DiscountResponseFormatter
 
     protected function formatSingleDiscount($discount)
     {
-        $offers = $discount->product->discounts()->with('store')->get();
-        $offerCount = $offers->count();
+        $productDiscounts = $discount->product->discounts()->with('store')->get();
+        $offerCount = $productDiscounts->count();
+        $minPrice = $productDiscounts->min('discounted_price');
 
         return [
             'id' => $discount->id,
@@ -37,8 +38,8 @@ class DiscountResponseFormatter
             'to_date' => $discount->end_at?->format('Y-m-d'),
             'valid_date' => $discount->start_at?->format('Y-m-d') . ' - ' . $discount->end_at?->format('Y-m-d'),
             'offer_count' => $offerCount,
-            'min_price' => (float) $discount->product->discounts()->min('discounted_price'),
-            'offers' => $offers->map(function($offer) {
+            'min_price' => (float) $minPrice,
+            'offers' => $productDiscounts->map(function($offer) {
                 return [
                     'id' => $offer->id,
                     'store_id' => $offer->store_id,
@@ -81,8 +82,9 @@ class DiscountResponseFormatter
 
     protected function formatListDiscount($discount)
     {
-        $offers = $discount->product->discounts()->with('store')->get();
-        $offerCount = $offers->count();
+        $productDiscounts = $discount->product->discounts()->with('store')->get();
+        $offerCount = $productDiscounts->count();
+        $minPrice = $productDiscounts->min('discounted_price');
 
         return [
             'id' => $discount->id,
@@ -98,7 +100,7 @@ class DiscountResponseFormatter
             'to_date' => $discount->end_at?->format('Y-m-d'),
             'offers' => [],
             'offer_count' => $offerCount,
-            'min_price' => (float) $discount->product->discounts()->min('discounted_price'),
+            'min_price' => (float) $minPrice,
             'product' => [
                 'id' => $discount->product->id,
                 'name' => $discount->product->name,

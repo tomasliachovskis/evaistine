@@ -130,7 +130,7 @@ class ProductController extends Controller
 
     private function buildDiscountQuery($query, $filters)
     {
-        $query = $query->with('product');
+        $query = $query->with(['product.category', 'store']);
 
         if ($filters['card']) {
             $query = $query->where('card', true);
