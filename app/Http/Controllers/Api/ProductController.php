@@ -189,11 +189,11 @@ class ProductController extends Controller
     public function getStores()
     {
         $stores = \App\Models\Store::select('id', 'name', 'slug')
-        ->withCount([
-            'discounts' => function ($query) {
-                $query->select(\DB::raw('count(distinct discounts.id)'));
-            }
-        ])->get();
+            ->withCount([
+                'discounts' => function ($query) {
+                    $query->select(\DB::raw('count(distinct discounts.id)'));
+                }
+            ])->get();
 
         return response()->json($stores);
     }
@@ -233,7 +233,7 @@ class ProductController extends Controller
 
                 $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
                     $query->where('slug', '!=', $slug)
-                          ->where('category_id', $product->category_id);
+                        ->where('category_id', $product->category_id);
                 })
                     ->with(['product.category', 'store'])
                     ->orderBy('discount_percent', 'desc')
@@ -317,20 +317,18 @@ class ProductController extends Controller
                     ->firstOrFail();
 
                 $similarProducts = Discount::whereHas('product', function ($query) use ($slug, $product) {
-                        $query->where('slug', '!=', $slug)
-                              ->where('category_id', $product->category_id);
-                    })
+                    $query->where('slug', '!=', $slug)
+                        ->where('category_id', $product->category_id);
+                })
                     ->with(['product.category', 'store'])
                     ->orderBy('discount_percent', 'desc')
                     ->limit(10)
                     ->get();
 
                 return response()->json([
-                    'product' => [
-                        'data' => $this->formatter->format($product->discounts),
-                        'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
-                        'seo' => $this->generateSeoData('product', $product)
-                    ],
+                    'data' => $this->formatter->format($product->discounts),
+                    'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
+                    'seo' => $this->generateSeoData('product', $product),
                     'similar' => $this->formatter->format($similarProducts)
                 ]);
             });
@@ -516,28 +514,28 @@ class ProductController extends Controller
     public function clearCache()
     {
         Cache::tags(['discounts'])->flush();
-        
+
         return response()->json(['message' => 'Cache cleared successfully']);
     }
 
     public function clearProductCache($slug)
     {
         Cache::tags(['discounts', 'product', $slug])->flush();
-        
+
         return response()->json(['message' => "Product cache cleared for {$slug}"]);
     }
 
     public function clearStoreCache($storeSlug)
     {
         Cache::tags(['discounts', $storeSlug])->flush();
-        
+
         return response()->json(['message' => "Store cache cleared for {$storeSlug}"]);
     }
 
     public function clearCategoryCache($categorySlug)
     {
         Cache::tags(['discounts', $categorySlug])->flush();
-        
+
         return response()->json(['message' => "Category cache cleared for {$categorySlug}"]);
     }
 }

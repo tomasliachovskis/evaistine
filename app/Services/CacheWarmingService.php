@@ -34,7 +34,7 @@ class CacheWarmingService
     public function warmStoreCaches()
     {
         $stores = Store::select('slug')->get();
-        
+
         foreach ($stores as $store) {
             $this->productController->getDiscounts($store->slug);
         }
@@ -43,7 +43,7 @@ class CacheWarmingService
     public function warmCategoryCaches()
     {
         $categories = Category::whereNull('parent_id')->select('slug')->get();
-        
+
         foreach ($categories as $category) {
             $this->productController->getDiscounts($category->slug);
         }
@@ -51,15 +51,23 @@ class CacheWarmingService
 
     public function warmPopularProductsCache()
     {
-        $popularProducts = Product::withCount('discounts')
+        $productsWithDiscounts = Product::withCount('discounts')
+            ->having('discounts_count', '>=', 1)
             ->orderBy('discounts_count', 'desc')
-            ->limit(20)
             ->get();
 
-        foreach ($popularProducts as $product) {
+        foreach ($productsWithDiscounts as $product) {
+            dump($product->slug);
             $this->productController->getProductBySlug($product->slug);
-            $this->productController->getProductWithSimilar($product->slug);
+//            $this->productController->getProductWithSimilar($product->slug);
         }
+    }
+
+    public function getProductsWithDiscountsCount()
+    {
+        return Product::withCount('discounts')
+            ->having('discounts_count', '>=', 1)
+            ->count();
     }
 
     public function warmStoreCategoryCaches()
@@ -77,7 +85,7 @@ class CacheWarmingService
     public function warmFavoritesCache()
     {
         $this->productController->getFavoriteHome();
-        
+
         $categories = Category::whereNull('parent_id')->limit(10)->get();
         foreach ($categories as $category) {
             $this->productController->getFavoriteCategory($category->id);

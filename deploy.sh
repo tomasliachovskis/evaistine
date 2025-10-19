@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Define server and project details
-SERVER="root@84.247.186.143"
+#SERVER="root@84.247.186.143"
+SERVER="root@195.181.245.125"
 REMOTE_DIR="/var/www/api"
 
 # Sync project files to the server

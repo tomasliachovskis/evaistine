@@ -29,7 +29,10 @@ class WarmCacheCommand extends Command
                 $cacheWarmingService->warmCategoryCaches();
                 break;
             case 'products':
+                $count = $cacheWarmingService->getProductsWithDiscountsCount();
+                $this->info("Warming cache for {$count} products with discounts...");
                 $cacheWarmingService->warmPopularProductsCache();
+                $this->info('Product cache warming completed!');
                 break;
             case 'favorites':
                 $cacheWarmingService->warmFavoritesCache();
