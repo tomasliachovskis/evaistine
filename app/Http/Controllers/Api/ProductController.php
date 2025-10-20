@@ -321,7 +321,7 @@ class ProductController extends Controller
                         ->where('category_id', $product->category_id);
                 })
                     ->with(['product.category', 'store'])
-                    ->orderBy('discount_percent', 'desc')
+                    ->inRandomOrder()
                     ->limit(10)
                     ->get();
 
@@ -381,7 +381,7 @@ class ProductController extends Controller
                 }
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/' . ($entity->category ? $entity->category->slug . '/' : '') . $entity->slug,
+                    'slug' => 'akcija/' . ($entity->category ? $entity->category->slug . '/' : '') . $entity->slug,
                     'type' => 'product'
                 ];
                 break;
@@ -436,7 +436,7 @@ class ProductController extends Controller
                 ];
             case 'search':
                 return [
-                    'seo_title' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
+                    'seo_title' => $entity,
                     'seo_description' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
                     'meta_title' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
                     'meta_description' => 'Paieškos rezultatai pagal užklausą: ' . $entity,

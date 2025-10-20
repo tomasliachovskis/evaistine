@@ -47,7 +47,7 @@ class SeoController extends Controller
                 if ($product) {
                     $breadcrumbs[] = [
                         'name' => $product->name,
-                        'slug' => 'akcijos/' . $segments[1] . '/' . $segments[2],
+                        'slug' => 'akcija/' . $segments[1] . '/' . $segments[2],
                         'type' => 'product'
                     ];
 
@@ -78,7 +78,7 @@ class SeoController extends Controller
                 if ($product) {
                     $breadcrumbs[] = [
                         'name' => $product->name,
-                        'slug' => 'akcijos/' . $segments[1] . '/' . $segments[2],
+                        'slug' => 'akcija/' . $segments[1] . '/' . $segments[2],
                         'type' => 'product'
                     ];
                 }
