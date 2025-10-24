@@ -76,8 +76,7 @@ class CategoryMappingService
         foreach ($products as $product) {
             $existingProduct = Product::where('name', $product->name)->first();
 
-//            if ($existingProduct && $existingProduct->category_id) {
-            if (false) {
+            if ($existingProduct && $existingProduct->category_id) {
                 $category = Category::find($existingProduct->category_id);
                 if ($category) {
                     $product->category = $category->name;
@@ -218,6 +217,8 @@ TASK: For each product name provided, determine which category it belongs to and
 
 IMPORTANT: All product names are in Lithuanian language. Pay attention to Lithuanian terms and product descriptions.
 
+CRITICAL INSTRUCTION: You MUST use the EXACT product IDs that are provided in the input. Do NOT generate your own IDs or use sequential numbering. Use the exact same IDs that appear in the input data.
+
 Available categories with detailed examples:
 
 1. Vaisiai ir daržovės (Fruits and Vegetables)
@@ -300,10 +301,10 @@ MAPPING INSTRUCTIONS:
 - Frozen seafood belongs to \"Šaldytas maistas ir ledai\"
 - Marinated/preserved foods belong to \"Bakalėja\"
 
-INPUT FORMAT: You will receive a JSON array like: [{\"id\": 123, \"name\": \"Obuoliai\"}, {\"id\": 124, \"name\": \"Pienas\"}]
+CRITICAL: You will receive a JSON array with products. You MUST use the EXACT product IDs from the input data. Do NOT generate new IDs or use sequential numbering.
 
-OUTPUT FORMAT: Return ONLY a JSON object mapping product IDs to category names. Use the exact product IDs as provided. Do NOT include any markdown formatting, code blocks, or explanatory text - just the raw JSON:
-{\"123\": \"Vaisiai ir daržovės\", \"124\": \"Pieno produktai ir kiaušiniai\"}";
+OUTPUT FORMAT: Return ONLY a JSON object mapping the EXACT product IDs from the input to category names. Do NOT include any markdown formatting, code blocks, or explanatory text - just the raw JSON:
+{\"14740\": \"Vaisiai ir daržovės\", \"14741\": \"Pieno produktai ir kiaušiniai\"}";
     }
 
     private function parseBulkResponse(array $response): ?array
