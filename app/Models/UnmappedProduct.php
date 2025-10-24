@@ -25,4 +25,5 @@ class UnmappedProduct extends Model
     const STATUS_INVALID_CATEGORY = 'invalid_category';
     const STATUS_NO_RESPONSE = 'no_response';
     const STATUS_PARSE_ERROR = 'parse_error';
+    const STATUS_INVALID_PRODUCT_IDS = 'invalid_product_ids';
 }

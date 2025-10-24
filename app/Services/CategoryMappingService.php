@@ -76,7 +76,8 @@ class CategoryMappingService
         foreach ($products as $product) {
             $existingProduct = Product::where('name', $product->name)->first();
 
-            if ($existingProduct && $existingProduct->category_id) {
+//            if ($existingProduct && $existingProduct->category_id) {
+            if (false) {
                 $category = Category::find($existingProduct->category_id);
                 if ($category) {
                     $product->category = $category->name;
@@ -105,7 +106,7 @@ class CategoryMappingService
         $this->info("Completed bulk mapping for {$storeName}");
     }
 
-    private function mapProductChunk($products, string $storeName): void
+    private function mapProductChunk($products, string $storeName, int $retryCount = 0): void
     {
         $productData = $products->map(function($product) {
             return [
@@ -114,16 +115,31 @@ class CategoryMappingService
             ];
         })->toArray();
 
-        $this->info("Sending " . count($productData) . " products for mapping");
+        $this->info("Sending " . count($productData) . " products for mapping" . ($retryCount > 0 ? " (retry #{$retryCount})" : ""));
 
         $mappings = $this->bulkMapProductsToCategories($productData, $storeName);
 
         $this->info("Received mappings: " . ($mappings ? json_encode($mappings) : 'null'));
 
         if ($mappings) {
+            $validMappings = $this->validateProductIds($mappings, $productData, $storeName);
+
+            if (empty($validMappings) && $retryCount < 2) {
+                $this->warn("No valid product IDs found in mappings, retrying... (attempt " . ($retryCount + 1) . "/3)");
+                sleep(1);
+                $this->mapProductChunk($products, $storeName, $retryCount + 1);
+                return;
+            } elseif (empty($validMappings) && $retryCount >= 2) {
+                $this->warn("Max retries reached for chunk with invalid product IDs. Storing all products as unmapped.");
+                foreach ($products as $product) {
+                    $this->storeUnmappedProduct($product, $storeName, UnmappedProduct::STATUS_INVALID_PRODUCT_IDS, 'Max retries reached with invalid product IDs', $productData);
+                }
+                return;
+            }
+
             foreach ($products as $product) {
-                if (isset($mappings[$product->id])) {
-                    $categoryName = $mappings[$product->id];
+                if (isset($validMappings[$product->id])) {
+                    $categoryName = $validMappings[$product->id];
                     $product->category = $categoryName;
                     $product->save();
                     $this->info("Mapped '{$product->name}' to category '{$categoryName}'");
@@ -414,5 +430,46 @@ OUTPUT FORMAT: Return ONLY a JSON object mapping product IDs to category names. 
         ]);
 
         $this->warn("Stored parse error: {$errorMessage}");
+    }
+
+    private function validateProductIds(array $mappings, array $productData, string $storeName): array
+    {
+        $validProductIds = array_column($productData, 'id');
+        $validMappings = [];
+        $invalidIds = [];
+
+        foreach ($mappings as $productId => $category) {
+            if (in_array($productId, $validProductIds)) {
+                $validMappings[$productId] = $category;
+            } else {
+                $invalidIds[] = $productId;
+            }
+        }
+
+        if (!empty($invalidIds)) {
+            $this->warn("Found invalid product IDs in GPT response: " . implode(', ', $invalidIds));
+            $this->warn("Valid product IDs were: " . implode(', ', $validProductIds));
+
+            $this->storeInvalidProductIds($invalidIds, $validProductIds, $storeName);
+        }
+
+        $this->info("Validated mappings: " . count($validMappings) . " valid, " . count($invalidIds) . " invalid");
+
+        return $validMappings;
+    }
+
+    private function storeInvalidProductIds(array $invalidIds, array $validIds, string $storeName): void
+    {
+        UnmappedProduct::create([
+            'name' => 'Invalid product IDs in GPT response',
+            'store' => $storeName,
+            'gpt_response' => json_encode(['invalid_ids' => $invalidIds, 'valid_ids' => $validIds]),
+            'error_message' => 'GPT returned product IDs that do not match sent products',
+            'product_data' => null,
+            'mapping_status' => UnmappedProduct::STATUS_INVALID_PRODUCT_IDS,
+            'attempted_at' => now()
+        ]);
+
+        $this->warn("Stored invalid product IDs: " . implode(', ', $invalidIds));
     }
 }
