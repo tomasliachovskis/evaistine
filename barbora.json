@@ -195,21 +195,6 @@
     "condition": "–25%"
   },
   {
-    "name": "Šviežia broilerių, užaugintų be antibiotikų, šlaunelių mėsa, 500 g",
-    "brand": "Vilniaus paukštynas",
-    "discounted_price": 3.49,
-    "original_price": 4.99,
-    "info": "6.98€/kg",
-    "discount_percent": "30%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Šviežia paukštiena/Vištiena",
-    "product_url": "https://barbora.lt/produktai/sviezia-broileriu-uzaugintu-be-antibiotiku-slauneliu-mesa-500-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/0fafa5c4-c307-4ece-84a2-a2f073d70a5e_s.png",
-    "condition": "–30%"
-  },
-  {
     "name": "Konservuoti smulkinti lupti pomidorai WELL DONE, 400 g",
     "brand": "WELL DONE",
     "discounted_price": 1.19,
@@ -373,6 +358,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/32def010-f279-48a2-abf2-e84d48570574_s.png",
     "condition": "–33%"
+  },
+  {
+    "name": "Pieno batonėlis KINDER MAXI KING, 105 g",
+    "brand": "Kinder",
+    "discounted_price": 2.69,
+    "original_price": 2.69,
+    "info": "25.62€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Jogurtai ir desertai/Desertai ir desertiniai batonėliai",
+    "product_url": "https://barbora.lt/produktai/pieno-batonelis-kinder-maxi-king-105-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/cf2e4183-bcbc-44bb-9f87-4b9fd893d2ea_s.png",
+    "condition": "2 ar daugiau su –30%"
   },
   {
     "name": "Marinuoti agurkai WELL DONE, 6-9 cm, 680 g",
@@ -687,36 +687,6 @@
     "product_url": "https://barbora.lt/produktai/avokadai-hass-750-g",
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/0488091b-3b91-4f17-bad4-f1934fad5fd1_s.png",
-    "condition": "–30%"
-  },
-  {
-    "name": "Varškės sūrelis MURR, sutirštinto pieno skonio, 28 % rieb., 40 g",
-    "brand": "Vilkyškių",
-    "discounted_price": 0.59,
-    "original_price": null,
-    "info": "14.75€/kg",
-    "discount_percent": "",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/varskes-surelis-murr-sutirstinto-pieno-skonio-28-proc-rieb-40-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/845b75b5-3c5c-4b34-b84e-07bad16d1251_s.png",
-    "condition": "3 už 0,99€"
-  },
-  {
-    "name": "Fermentuotos daržovės KIMCHI, 400 g",
-    "brand": "KVEDARŲ ŪKIS",
-    "discounted_price": 2.79,
-    "original_price": 3.99,
-    "info": "6.98€/kg",
-    "discount_percent": "30%",
-    "start_at": "2025-11-03",
-    "end_at": "2025-11-03",
-    "category": "Daržovės ir vaisiai/Daržovės ir grybai/Marinuotos, raugintos ir sūdytos daržovės",
-    "product_url": "https://barbora.lt/produktai/fermentuotos-darzoves-kimchi-400-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/f74a9752-c3e9-4e33-b47c-b79d9da37797_s.png",
     "condition": "–30%"
   },
   {
@@ -1110,6 +1080,21 @@
     "condition": "–40%"
   },
   {
+    "name": "Raikytas KLAIPĖDOS batonas, 400 g",
+    "brand": "Klaipėdos duona",
+    "discounted_price": 1.09,
+    "original_price": 1.39,
+    "info": "2.73€/kg",
+    "discount_percent": "22%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Duonos gaminiai ir konditerija/Duona/Sumuštinių duona, batonas ir duonelės",
+    "product_url": "https://barbora.lt/produktai/raikytas-klaipedos-batonas-400-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/f5758972-9f44-44fa-b849-02f943de779d_s.png",
+    "condition": "–22%"
+  },
+  {
     "name": "Tamsi duona MORTA su raugu ir saulėgrąžomis, 500 g",
     "brand": "MORTA",
     "discounted_price": 1.39,
@@ -1140,21 +1125,6 @@
     "condition": "–51%"
   },
   {
-    "name": "Glaist. VILKYŠKIŲ varškės sūrelis su žemuogėmis, 23 % rieb., 40 g",
-    "brand": "Vilkyškių",
-    "discounted_price": 0.59,
-    "original_price": null,
-    "info": "14.75€/kg",
-    "discount_percent": "",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/glaist-vilkyskiu-varskes-surelis-su-zemuogemis-23-proc-rieb-40-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/4baa6627-5a1c-4f16-9e9d-4964de4ca84e_s.png",
-    "condition": "3 už 0,99€"
-  },
-  {
     "name": "Ekologiška pusriebė varškė DOBILAS, 9 % rieb., 1 kg",
     "brand": "Dobilas",
     "discounted_price": 6.85,
@@ -1168,6 +1138,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/91a8a7f8-e784-496e-ae54-eea7669dbd04_s.png",
     "condition": "–30%"
+  },
+  {
+    "name": "Varškės sūrelis LESS SUGAR, karameliz. bananų sk., 30% rieb., 40 g",
+    "brand": "Vilkyškių",
+    "discounted_price": 0.65,
+    "original_price": null,
+    "info": "16.25€/kg",
+    "discount_percent": "",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
+    "product_url": "https://barbora.lt/produktai/varskes-surelis-less-sugar-karameliz-bananu-sk-30-proc-rieb-40-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/f9327da1-5c66-4266-a07f-f7e9215c45ed_s.png",
+    "condition": "3 už 0,99€"
   },
   {
     "name": "Virta DAKTARIŠKA EKSTRA dešra, a. r., 600 g",
@@ -1275,21 +1260,6 @@
     "condition": "–31%"
   },
   {
-    "name": "Glaistytas VILKYŠKIŲ varškės sūrelis LESS SUGAR, braškių sk., 30 %, 40 g",
-    "brand": "VILVI",
-    "discounted_price": 0.65,
-    "original_price": null,
-    "info": "16.25€/kg",
-    "discount_percent": "",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/gl-vilkyskiu-varskes-surelis-less-sugar-braskiu-sk-30-proc-40-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/29de5110-52c6-4704-a010-645712b94fc1_s.png",
-    "condition": "3 už 0,99€"
-  },
-  {
     "name": "Silikagelio kačių kraikas KLUMPE CRYSTAL CLEAR, 3,8 l",
     "brand": "Klumpe",
     "discounted_price": 2.99,
@@ -1318,21 +1288,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/3049a7ae-2c74-4eff-a0c4-773d21018d94_s.png",
     "condition": "–30%"
-  },
-  {
-    "name": "\tVILKYŠKIŲ glaistytas sūrelis MURR, braškinės panakotos sk., 29 %, 40 g",
-    "brand": "VILVI",
-    "discounted_price": 0.59,
-    "original_price": null,
-    "info": "14.75€/kg",
-    "discount_percent": "",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/vilkyskiu-gl-surelis-murr-braskines-panakotos-sk-29-proc-40-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/aa6c1851-b199-4547-bbb8-6331ab674a32_s.png",
-    "condition": "3 už 0,99€"
   },
   {
     "name": "Šaldytos bandelės WELL DONE su cinamonu, 350 g",
@@ -1395,21 +1350,6 @@
     "condition": "–20%"
   },
   {
-    "name": "Šaldyta pica DR. OETKER FELICIANA SALAME E CHORIZO, 320 g",
-    "brand": "Dr. Oetker",
-    "discounted_price": 1.79,
-    "original_price": 3.59,
-    "info": "5.59€/kg",
-    "discount_percent": "50%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Šaldytas maistas/Šaldyti kulinarijos ir konditerijos gaminiai/Šaldytos picos ir užkandžiai ",
-    "product_url": "https://barbora.lt/produktai/saldyta-pica-dr-oetker-feliciana-salame-e-chorizo-320-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/16e64fae-b461-4969-8314-1b84956e21ee_s.png",
-    "condition": "–50%"
-  },
-  {
     "name": "Šaldyti maži sviestiniai kruasanai WELL DONE, 350 g",
     "brand": "WELL DONE",
     "discounted_price": 3.29,
@@ -1423,21 +1363,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/c6e653a7-7769-4826-aebe-8a404b96910c_s.png",
     "condition": "–18%"
-  },
-  {
-    "name": "Glaistytas VILKYŠKIŲ vanilės sk. varškės sūrelis, 24 % rieb., 40 g",
-    "brand": "Vilkyškių",
-    "discounted_price": 0.59,
-    "original_price": null,
-    "info": "14.75€/kg",
-    "discount_percent": "",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/glaistytas-vilkyskiu-vaniles-sk-varskes-surelis-24-proc-rieb-40-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/b369bb15-bef7-41c0-95ea-1aae690fa3ee_s.png",
-    "condition": "3 už 0,99€"
   },
   {
     "name": "Jog. gėrimas ACTIMEL, braškių, ban. sk., 8x100g, 1,4 % rieb., 800 g",
@@ -1543,21 +1468,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/acd5484c-fec4-4b3a-bf92-da07db2df285_s.png",
     "condition": "–25%"
-  },
-  {
-    "name": "Saldus varškės sūrelis RYTAS su razinomis, 8 % rieb., 100 g",
-    "brand": "Rytas",
-    "discounted_price": 1.09,
-    "original_price": null,
-    "info": "10.9€/kg",
-    "discount_percent": "",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Desertinė varškė",
-    "product_url": "https://barbora.lt/produktai/varskes-surelis-rytas-su-razinomis-8-proc-rieb-100-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/4f20a604-c5ac-4c79-83a0-dafc48879aef_s.png",
-    "condition": "2 už 1,95€"
   },
   {
     "name": "Sausainiai GAIDELIS 7 GRŪDAI su kokosais ir šokoladu, 160 g",
@@ -1875,21 +1785,6 @@
     "condition": "–40%"
   },
   {
-    "name": "Atšaldyti kiaulienos šonkauliai WELL DONE, 1 kg",
-    "brand": "WELL DONE",
-    "discounted_price": 4.99,
-    "original_price": 5.99,
-    "info": "4.99€/kg",
-    "discount_percent": "17%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Šviežia mėsa/Kiauliena",
-    "product_url": "https://barbora.lt/produktai/atsaldyti-kiaulienos-sonkauliai-well-done-1-kg",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/4b30a7a1-8239-485f-bab4-09892c8e8d68_s.png",
-    "condition": "–17%"
-  },
-  {
     "name": "Ryžiai \"Basmati\", 400 g",
     "brand": "Galinta",
     "discounted_price": 1.25,
@@ -1993,6 +1888,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/7dd86142-f766-4a79-ba26-c6a6a64e4395_s.png",
     "condition": "–40%"
+  },
+  {
+    "name": "Saldus varškės sūrelis RYTAS su vanile, 7,5 % rieb., 100 g",
+    "brand": "Rytas",
+    "discounted_price": 1.09,
+    "original_price": null,
+    "info": "10.9€/kg",
+    "discount_percent": "",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Desertinė varškė",
+    "product_url": "https://barbora.lt/produktai/varskes-surelis-rytas-su-vanile-7-5-proc-rieb-100-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/d6ac10bd-c9a8-45d5-b486-8c40004f88ad_s.png",
+    "condition": "2 už 1,95€"
   },
   {
     "name": "Šaldyti sviestiniai kruasanai WELL DONE, 360 g",
@@ -2385,19 +2295,19 @@
     "condition": "2 ar daugiau su –30%"
   },
   {
-    "name": "Glaist. VILKYŠKIŲ varškės sūrelis su aguonomis, 25 % rieb., 40 g",
-    "brand": "Vilkyškių",
-    "discounted_price": 0.59,
-    "original_price": null,
-    "info": "14.75€/kg",
-    "discount_percent": "",
+    "name": "Buratos sūris NONNO NANNI, 58 % rieb. s. m., 125 g",
+    "brand": "NONNO NANNI",
+    "discounted_price": 2.19,
+    "original_price": 2.79,
+    "info": "17.52€/kg",
+    "discount_percent": "22%",
     "start_at": "2025-10-27",
     "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/glaist-vilkyskiu-varskes-surelis-su-aguonomis-25-proc-rieb-40-g",
+    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Sūris/Mocarelos ir buratos sūriai",
+    "product_url": "https://barbora.lt/produktai/buratos-suris-nonno-nanni-58-proc-rieb-s-m-125-g",
     "card": false,
-    "image_url": "https://cdn.barbora.lt/products/d2211f20-5e81-4093-8112-fdeedcef045f_s.png",
-    "condition": "3 už 0,99€"
+    "image_url": "https://cdn.barbora.lt/products/25bd58a9-8d7d-4406-8a95-2296b87515ce_s.png",
+    "condition": "–22%"
   },
   {
     "name": "Čeburekas MANTINGA su kiaulienos įdaru (atitirpintas), 130 g",
@@ -3195,21 +3105,6 @@
     "condition": "–40%"
   },
   {
-    "name": "Ryžių actas SAITAKU RICE VINEGAR, 150 ml",
-    "brand": "Saitaku",
-    "discounted_price": 1.41,
-    "original_price": 1.89,
-    "info": "9.4€/l",
-    "discount_percent": "25%",
-    "start_at": "2025-11-03",
-    "end_at": "2025-11-03",
-    "category": "Bakalėja/Pasaulio virtuvės/Kinijos virtuvė",
-    "product_url": "https://barbora.lt/produktai/ryziu-actas-saitaku-rice-vinegar-150-ml",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/288facee-b2a0-4582-960e-8a80163abf95_s.png",
-    "condition": "–25%"
-  },
-  {
     "name": "Kapų žvakė \"AMFORA\"",
     "brand": "GERALDA",
     "discounted_price": 0.85,
@@ -3510,6 +3405,21 @@
     "condition": "2 ar daugiau su –30%"
   },
   {
+    "name": "Ryžių miltų lapai suktinukams AJI, 100 g",
+    "brand": "AJI",
+    "discounted_price": 1.5,
+    "original_price": 2.15,
+    "info": "15€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-11-03",
+    "end_at": "2025-11-03",
+    "category": "Bakalėja/Pasaulio virtuvės/Tailando virtuvė",
+    "product_url": "https://barbora.lt/produktai/ryziu-miltu-lapai-suktinukams-aji-100-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/51c2ce01-10f5-484d-92bd-60620121acde_s.png",
+    "condition": "–30%"
+  },
+  {
     "name": "Raudonojo kario prieskonių mišinys SANTA MARIA, 32 g",
     "brand": "Santa Maria",
     "discounted_price": 0.99,
@@ -3733,6 +3643,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/ebe4daf6-ae1f-495a-b519-507420f94be0_s.png",
     "condition": "2 ar daugiau su –30%"
+  },
+  {
+    "name": "SUMUŠTINIŲ mažas prancūziškas batonas, 220 g",
+    "brand": "Gardėsis",
+    "discounted_price": 1.25,
+    "original_price": 1.49,
+    "info": "5.68€/kg",
+    "discount_percent": "16%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Duonos gaminiai ir konditerija/Duona/Sumuštinių duona, batonas ir duonelės",
+    "product_url": "https://barbora.lt/produktai/sumustiniu-mazas-prancuziskas-batonas-220-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/1435f974-41e8-4750-a61a-f1085fd8365d_s.png",
+    "condition": "–16%"
   },
   {
     "name": "Makaronai UDON SAMLIP, 200 g",
@@ -4320,21 +4245,6 @@
     "condition": "–50%"
   },
   {
-    "name": "Karštai rūkyta vištienos krūtinėlė, a. r., 1 kg",
-    "brand": "Nematekas",
-    "discounted_price": 7.49,
-    "original_price": 9.49,
-    "info": "7.49€/kg",
-    "discount_percent": "21%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Mėsos ir paukštienos gaminiai/Karštai rūkyti gaminiai",
-    "product_url": "https://barbora.lt/produktai/karstai-rukyta-vistienos-krutinele-a-r-1-kg",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/19522c50-f37b-49fa-927e-723d83c16e89_s.png",
-    "condition": "–21%"
-  },
-  {
     "name": "Šaldytos garbanotosios bulvytės FARM FRITES CRINKLE, 750 g",
     "brand": "Farm Frites",
     "discounted_price": 2.54,
@@ -4348,21 +4258,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/9671a74c-2494-4399-b048-90d607c1039d_s.png",
     "condition": "–15%"
-  },
-  {
-    "name": "Gl. varškės sūrelis MURR, braškinės mačios sk., 30 % rieb., 40 g",
-    "brand": "VILVI",
-    "discounted_price": 0.65,
-    "original_price": null,
-    "info": "16.25€/kg",
-    "discount_percent": "",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/gl-varskes-surelis-murr-braskines-macios-sk-30-proc-rieb-40-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/feab8af9-134a-44cf-8b6a-9e81ad591c00_s.png",
-    "condition": "3 už 0,99€"
   },
   {
     "name": "Baltyminis batonėlis GO ON PROTEIN su spanguolėmis, 50 g",
@@ -4635,21 +4530,6 @@
     "condition": "–20%"
   },
   {
-    "name": "Avietinis sūrelis be laktozės POLS, 22,7 % rieb., 45 g",
-    "brand": "Pols",
-    "discounted_price": 0.49,
-    "original_price": 0.65,
-    "info": "10.89€/kg",
-    "discount_percent": "25%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/avietinis-surelis-be-laktozes-pols-22-7-proc-rieb-45-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/b213bdf6-f148-4f4a-b7ed-7b520ca0f670_s.png",
-    "condition": "–25%"
-  },
-  {
     "name": "Saldus aitriųjų paprikų padažas SANTA MARIA, 500 ml",
     "brand": "Santa Maria",
     "discounted_price": 1.97,
@@ -4860,36 +4740,6 @@
     "condition": "–40%"
   },
   {
-    "name": "Sūrelis su aguonomis, šokol. gl., be lakt. POLS, 22,8% rieb., 45 g",
-    "brand": "Pols",
-    "discounted_price": 0.49,
-    "original_price": 0.65,
-    "info": "10.89€/kg",
-    "discount_percent": "25%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/surelis-su-aguonomis-sokol-gl-be-lakt-pols-22-8-proc-rieb-45-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/5a7da0b1-c8a8-4dee-ac73-dd85fd91c9c8_s.png",
-    "condition": "–25%"
-  },
-  {
-    "name": "TILŽĖS sūris WELL DONE (riekėlės), 45 % rieb. s. m., 150 g",
-    "brand": "WELL DONE",
-    "discounted_price": 1.99,
-    "original_price": null,
-    "info": "13.27€/kg",
-    "discount_percent": "",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Sūris/Fermentiniai sūriai",
-    "product_url": "https://barbora.lt/produktai/tilzes-suris-well-done-riekeles-45-proc-rieb-s-m-150-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/d894ae59-c831-4d35-b276-a7bea2808b0f_s.png",
-    "condition": "2 už 3,49€"
-  },
-  {
     "name": "Mėlynių uogienė WELL DONE, 350 g",
     "brand": "WELL DONE",
     "discounted_price": 2.31,
@@ -4903,21 +4753,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/42dc4034-a3ac-474d-9008-feb0e1ce8ea7_s.png",
     "condition": "–20%"
-  },
-  {
-    "name": "Gaudos sūris WELL DONE (riekelės), 48 % rieb. s. m., 150 g",
-    "brand": "WELL DONE",
-    "discounted_price": 1.99,
-    "original_price": null,
-    "info": "13.27€/kg",
-    "discount_percent": "",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Sūris/Fermentiniai sūriai",
-    "product_url": "https://barbora.lt/produktai/gaudos-suris-well-done-riekeles-48-proc-rieb-s-m-150-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/03312418-a4bf-4682-aa7e-71e489286824_s.png",
-    "condition": "2 už 3,49€"
   },
   {
     "name": "Saldus aitriųjų paprikų padažas SANTA MARIA, 200 ml, 200 ml",
@@ -5550,6 +5385,21 @@
     "condition": "–40%"
   },
   {
+    "name": "Skrudintos sojų pupelės EDAMAME, lengvai sūdytos AJI, 200 g",
+    "brand": "AJI",
+    "discounted_price": 2.58,
+    "original_price": 3.69,
+    "info": "12.9€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-11-03",
+    "end_at": "2025-11-03",
+    "category": "Bakalėja/Pasaulio virtuvės/Kitos virtuvės ",
+    "product_url": "https://barbora.lt/produktai/skrudintos-soju-pupeles-edamame-lengvai-sudytos-aji-200-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/d1a6a503-7bb8-4e8a-9955-14526a895154_s.png",
+    "condition": "–30%"
+  },
+  {
     "name": "Lėtai virti šonkauliai BIOVELA, terijakio skonio, 900 g",
     "brand": "Biovela",
     "discounted_price": 8.49,
@@ -6030,6 +5880,21 @@
     "condition": "–30%"
   },
   {
+    "name": "Gazuotas gėrimas SCHWEPPES ZERO, 1 l",
+    "brand": "SCHWEPPES",
+    "discounted_price": 1.75,
+    "original_price": null,
+    "info": "1.75€/l",
+    "discount_percent": "",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Gėrimai/Gaivieji gėrimai/Gazuoti vaisvandeniai",
+    "product_url": "https://barbora.lt/produktai/gazuotas-gerimas-schweppes-zero-1-l",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/707c8595-c459-4f7d-ae28-c857fc281ecf_s.png",
+    "condition": "2 už 1 kainą"
+  },
+  {
     "name": "Vaisių ir sėklų užkandis GREENZ, mangų skonio, 30 g",
     "brand": "",
     "discounted_price": 0.99,
@@ -6405,6 +6270,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Atšild. nilinių tilapijų (Oreochromis niloticus)filė be odos, 1 kg",
+    "brand": "",
+    "discounted_price": 8.99,
+    "original_price": 12.99,
+    "info": "8.99€/kg",
+    "discount_percent": "31%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Mėsa, žuvis ir kulinarija/Šviežios žuvys ir jūrų gėrybės/Šviežia žuvis",
+    "product_url": "https://barbora.lt/produktai/atsild-niliniu-tilapiju-oreochromis-niloticus-file-be-odos-1-kg",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/316e050d-fa9d-47ff-9e86-f2a19c5abc82_s.png",
+    "condition": "–31%"
+  },
+  {
     "name": "Kokosiniai traškūs vafliai be glitimo, 140 g",
     "brand": "Thai Coco",
     "discounted_price": 2.99,
@@ -6508,21 +6388,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/00e63689-749b-4814-b1a2-20d1a565de6b_s.png",
     "condition": "2 ar daugiau su –30%"
-  },
-  {
-    "name": "Skalbiamieji lapeliai DR. BECKMANN, 40 vnt.",
-    "brand": "Dr. Beckmann",
-    "discounted_price": 6.49,
-    "original_price": 6.49,
-    "info": "0.16€/vnt.",
-    "discount_percent": "40%",
-    "start_at": "2025-10-26",
-    "end_at": "2025-10-26",
-    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbiamieji lapeliai",
-    "product_url": "https://barbora.lt/produktai/skalbiamieji-lapeliai-dr-beckmann-40-vnt",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/0332c9b7-b3d6-4afb-949d-2b5ab55724f4_s.png",
-    "condition": "2 ar daugiau su –40%"
   },
   {
     "name": "Kedrinės pinijos ARIMEX, 50 g",
@@ -6765,6 +6630,21 @@
     "condition": "2 ar daugiau su –30%"
   },
   {
+    "name": "Grybai ENOKI, 100 g",
+    "brand": "",
+    "discounted_price": 1.39,
+    "original_price": 1.99,
+    "info": "13.9€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-11-03",
+    "end_at": "2025-11-03",
+    "category": "Daržovės ir vaisiai/Daržovės ir grybai/Grybai",
+    "product_url": "https://barbora.lt/produktai/grybai-enoki-100-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/e85e669b-dbf0-48b7-b1fa-b9c005082237_s.png",
+    "condition": "–30%"
+  },
+  {
     "name": "Pieninis šokoladas KINDER, 50 g",
     "brand": "Kinder",
     "discounted_price": 1.19,
@@ -6853,6 +6733,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/8e4895a6-55d0-473c-a419-b90979a7ac41_s.png",
     "condition": "–23%"
+  },
+  {
+    "name": "Burokėlių karpačas, 400 g",
+    "brand": "SKONIO LINIJA",
+    "discounted_price": 1.39,
+    "original_price": 1.99,
+    "info": "3.48€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-11-03",
+    "end_at": "2025-11-03",
+    "category": "Daržovės ir vaisiai/Daržovės ir grybai/Marinuotos, raugintos ir sūdytos daržovės",
+    "product_url": "https://barbora.lt/produktai/burokeliu-karpacas-400-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/e22a7246-68db-449c-99ea-fcbbf95db6ed_s.png",
+    "condition": "–30%"
   },
   {
     "name": "Indų ploviklis FAIRY Lemon, 900ml",
@@ -7123,6 +7018,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/0db15024-1056-43ab-b4c7-2906efc0dc72_s.png",
     "condition": "–15%"
+  },
+  {
+    "name": "Visav.ėdal.šun.su eko.jaut.BIO DOG,150g, 150 g",
+    "brand": "BIO DOG",
+    "discounted_price": 0.99,
+    "original_price": 1.49,
+    "info": "6.6€/kg",
+    "discount_percent": "34%",
+    "start_at": "2025-11-05",
+    "end_at": "2025-11-05",
+    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Konservuotas šunų ėdalas",
+    "product_url": "https://barbora.lt/produktai/visav-edal-sun-su-eko-jaut-bio-dog-150-g-150-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/9352a14f-64ff-4077-b799-4ba56e4dac09_s.png",
+    "condition": "–34%"
   },
   {
     "name": "Šokoladinis batonėlis SNICKERS SUPER +1, 112,5 g",
@@ -7605,6 +7515,21 @@
     "condition": "2 ar daugiau su –30%"
   },
   {
+    "name": "Ekologiškas visavertis šunų ėdalas BIO DOG su ėriena, 150 g",
+    "brand": "BIO DOG",
+    "discounted_price": 0.99,
+    "original_price": 1.49,
+    "info": "6.6€/kg",
+    "discount_percent": "34%",
+    "start_at": "2025-11-05",
+    "end_at": "2025-11-05",
+    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Konservuotas šunų ėdalas",
+    "product_url": "https://barbora.lt/produktai/ekologiskas-visavertis-sunu-edalas-bio-dog-su-eriena-150-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/97f3354e-622b-4508-b8b2-6af8b75eaf52_s.png",
+    "condition": "–34%"
+  },
+  {
     "name": "Pieninis šokoladas LACMI su neskaldytais lazdynų riešutais, 90 g",
     "brand": "Roshen",
     "discounted_price": 2.19,
@@ -7785,21 +7710,6 @@
     "condition": "2 ar daugiau su –30%"
   },
   {
-    "name": "Pistacijų batonėlis EPBAR, be pridėtinio cukraus, 25 g",
-    "brand": "",
-    "discounted_price": 1.99,
-    "original_price": 1.99,
-    "info": "79.6€/kg",
-    "discount_percent": "30%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Specialusis maistas/Diabetinis maistas",
-    "product_url": "https://barbora.lt/produktai/pistaciju-batonelis-epbar-be-pridetinio-cukraus-25-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/21fc2387-da6a-4930-8fc8-840086754aea_s.png",
-    "condition": "2 ar daugiau su –30%"
-  },
-  {
     "name": "Ekologiškas spiritinio langų valiklio papildas FROSCH SPIRITUS, 1 l",
     "brand": "Frosch",
     "discounted_price": 2.89,
@@ -7918,6 +7828,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/861be468-9e9e-4366-bc71-1ed913e9bab5_s.png",
     "condition": "–30%"
+  },
+  {
+    "name": "Visų grūdo dalių ruginė duona JONĖ be pridėtinių mielių, 340 g",
+    "brand": "Baltasis pyragas",
+    "discounted_price": 1.29,
+    "original_price": 1.65,
+    "info": "3.79€/kg",
+    "discount_percent": "22%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Duonos gaminiai ir konditerija/Duona/Tamsi duona",
+    "product_url": "https://barbora.lt/produktai/visu-grudo-daliu-rugine-duona-jone-be-pridetiniu-mieliu-340-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/325501c4-12fd-4085-8565-39078250bcd1_s.png",
+    "condition": "–22%"
   },
   {
     "name": "Oro gaiviklis AMBRA, 300 ml",
@@ -8310,6 +8235,21 @@
     "condition": "–20%"
   },
   {
+    "name": "Tamsi ruginė duona JONĖ, 5-ių grūdų, 340 g",
+    "brand": "Baltasis pyragas",
+    "discounted_price": 1.29,
+    "original_price": 1.65,
+    "info": "3.79€/kg",
+    "discount_percent": "22%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Duonos gaminiai ir konditerija/Duona/Tamsi duona",
+    "product_url": "https://barbora.lt/produktai/tamsi-rugine-duona-jone-5-iu-grudu-340-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/920f5ab4-b1aa-4bf5-8160-35f5429bd55b_s.png",
+    "condition": "–22%"
+  },
+  {
     "name": "Teleskopinis įdėklas 14-22 cm \"LURDO\"",
     "brand": "GERALDA",
     "discounted_price": 1.15,
@@ -8608,21 +8548,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/d7d43b0c-649d-4d4e-b9c2-15cd81e1d906_s.png",
     "condition": "2 ar daugiau su –40%"
-  },
-  {
-    "name": "Glaistytas varškės sūrelis su karamele POLS, 22 % rieb., 45 g",
-    "brand": "Pols",
-    "discounted_price": 0.49,
-    "original_price": 0.65,
-    "info": "10.89€/kg",
-    "discount_percent": "25%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Varškės produktai/Varškės sūreliai",
-    "product_url": "https://barbora.lt/produktai/glaistytas-varskes-surelis-su-karamele-pols-22-proc-rieb-45-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/463c2613-a0c9-4aaa-a43e-b444adbf2529_s.png",
-    "condition": "–25%"
   },
   {
     "name": "Rūgštūs guminukai ROSHEN YUMMI GUMMI SOUR BELTS, 70 g",
@@ -9480,21 +9405,6 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
-    "name": "Rožių puokštė (11 vnt.), 11 vnt. ",
-    "brand": "",
-    "discounted_price": 2.99,
-    "original_price": 4.39,
-    "info": "0.27€/vnt.",
-    "discount_percent": "32%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Namai ir laisvalaikis/Augalai ir jų priežiūra/Gėlės",
-    "product_url": "https://barbora.lt/produktai/roziu-puokste-11-vnt-11-vnt",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/b9c427c5-9d71-4ac1-8f0c-40c8b1a9f505_s.png",
-    "condition": "–32%"
-  },
-  {
     "name": "Greitai par.makaronai OYAKATA su višt.terijakio sk. padažu, 96 g",
     "brand": "OYAKATA",
     "discounted_price": 1.49,
@@ -10260,21 +10170,6 @@
     "condition": "2 už 1 kainą"
   },
   {
-    "name": "Grikių medus WELL DONE (surinktas grikių žydėjimo metu), 500 g",
-    "brand": "WELL DONE",
-    "discounted_price": 3.99,
-    "original_price": 4.99,
-    "info": "7.98€/kg",
-    "discount_percent": "20%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Konservuotas maistas/Medus",
-    "product_url": "https://barbora.lt/produktai/grikiu-medus-well-done-surinktas-grikiu-zydejimo-metu-500-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/1e3f2c84-fb18-4319-9ca3-55abc6fae905_s.png",
-    "condition": "–20%"
-  },
-  {
     "name": "Želė DR. OETKER, apelsinų skonio, 72 g",
     "brand": "Dr. Oetker",
     "discounted_price": 0.64,
@@ -10798,21 +10693,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/45ac6e6e-918f-450b-bcaf-0bc4203f7b67_s.png",
     "condition": "–40%"
-  },
-  {
-    "name": "Vištų šlaun.mėsos iešmeliai su sviestu ir kukurūz. WELL DONE, 480 g",
-    "brand": "WELL DONE",
-    "discounted_price": 3.99,
-    "original_price": 5.49,
-    "info": "8.31€/kg",
-    "discount_percent": "27%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Šviežios mėsos ir paukštienos pusgaminiai/Marinuota paukštiena",
-    "product_url": "https://barbora.lt/produktai/vistu-slaun-mesos-iesmel-su-sviestu-ir-kukuruz-well-done-480-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/82d410eb-541e-4e89-8bfc-596931046a94_s.png",
-    "condition": "–27%"
   },
   {
     "name": "Virtos pieniškos dešrelės BIOVELA, Aukščiausia rūšis, 780 g",
@@ -11460,21 +11340,6 @@
     "condition": "–10%"
   },
   {
-    "name": "Muskatiniai moliūgai, 1 kg",
-    "brand": "",
-    "discounted_price": 0.89,
-    "original_price": 1.59,
-    "info": "0.89€/kg",
-    "discount_percent": "44%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Daržovės ir vaisiai/Daržovės ir grybai/Moliūgai ir cukinijos",
-    "product_url": "https://barbora.lt/produktai/muskatiniai-moliugai-1-kg",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/5293c7f9-16de-4544-8351-d9480f1cf46b_s.png",
-    "condition": "–44%"
-  },
-  {
     "name": "Sausas kačių ėdalas FRISKIES su vištiena ir daržovėmis, 1 kg",
     "brand": "Friskies",
     "discounted_price": 2.98,
@@ -11503,6 +11368,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/d6ccfc60-6b92-4aa6-8c31-cc7ec5296281_s.png",
     "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Indaplovių kapsulės FINISH POWERBALL ULTIMATE ALL IN 1, 50 vnt.",
+    "brand": "Finish",
+    "discounted_price": 16.99,
+    "original_price": 33.99,
+    "info": "0.34€/vnt.",
+    "discount_percent": "50%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Švaros ir gyvūnų prekės/Indų plovikliai/Plovimo priemonės indaplovėms",
+    "product_url": "https://barbora.lt/produktai/indaploviu-kapsules-finish-powerball-ultimate-all-in-1-50-vnt",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/dcae7a0f-0844-4113-81c3-17233e525d5b_s.png",
+    "condition": "–50%"
   },
   {
     "name": "Sušių rinkinys TEKANTI SAULĖ, 280 g",
@@ -12630,6 +12510,21 @@
     "condition": "–20%"
   },
   {
+    "name": "Duonelės skrudinti FAZER STREET FOOD, 330 g",
+    "brand": "Fazer",
+    "discounted_price": 2.39,
+    "original_price": 2.99,
+    "info": "7.24€/kg",
+    "discount_percent": "20%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Duonos gaminiai ir konditerija/Duona/Sumuštinių duona, batonas ir duonelės",
+    "product_url": "https://barbora.lt/produktai/duoneles-skrudinti-fazer-street-food-330-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/16ac6d45-5808-4348-888a-7fb8e6347e11_s.png",
+    "condition": "–20%"
+  },
+  {
     "name": "Greitai paruošiami makaronai SUN YAN YAKISOBA, vištienos sk., 85 g",
     "brand": "SUN YAN",
     "discounted_price": 1.24,
@@ -13635,21 +13530,6 @@
     "condition": "–25%"
   },
   {
-    "name": "Konservuotas kačių ėdalas GOURMET PERLE su įvairia mėsa, 340 g",
-    "brand": "Gourmet",
-    "discounted_price": 1.74,
-    "original_price": 3.49,
-    "info": "5.12€/kg",
-    "discount_percent": "50%",
-    "start_at": "2025-11-05",
-    "end_at": "2025-11-05",
-    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Konservuotas kačių ėdalas",
-    "product_url": "https://barbora.lt/produktai/konservuotas-kaciu-edalas-gourmet-perle-su-ivairia-mesa-340-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/ecfb576c-9495-4563-b334-5b592fc3fc96_s.png",
-    "condition": "–50%"
-  },
-  {
     "name": "Malti imbierai WELL DONE, 40 g",
     "brand": "WELL DONE",
     "discounted_price": 0.74,
@@ -13963,21 +13843,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/f04d6c84-3476-4a98-bb2a-62df1cdf6c07_s.png",
     "condition": "–25%"
-  },
-  {
-    "name": "Kiniškas vištienos troškinys VYŠNAITĖ, 1 kg",
-    "brand": "Meistro Kokybė",
-    "discounted_price": 9.49,
-    "original_price": 10.99,
-    "info": "9.49€/kg",
-    "discount_percent": "14%",
-    "start_at": "2025-11-03",
-    "end_at": "2025-11-03",
-    "category": "Mėsa, žuvis ir kulinarija/Kulinarija/Pagrindiniai patiekalai ",
-    "product_url": "https://barbora.lt/produktai/kiniskas-vistienos-troskinys-vysnaite-1-kg",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/4e61f955-5050-4e1b-b343-9e5fa19f216a_s.png",
-    "condition": "–14%"
   },
   {
     "name": "Konserv. keptos pupelės aitriųjų paprikų padaže WELL DONE, 400 g",
@@ -15015,6 +14880,21 @@
     "condition": "–27%"
   },
   {
+    "name": "Visavertis suaugusių kačių pašaras, 1 kg",
+    "brand": "",
+    "discounted_price": 1.49,
+    "original_price": 2.09,
+    "info": "1.49€/kg",
+    "discount_percent": "29%",
+    "start_at": "2025-11-05",
+    "end_at": "2025-11-05",
+    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Sausas kačių ėdalas",
+    "product_url": "https://barbora.lt/produktai/visavertis-suaugusiu-kaciu-pasaras-1-kg",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/438d3913-7ca7-425e-85d2-784dd532c7b9_s.png",
+    "condition": "–29%"
+  },
+  {
     "name": "Šokoladinis batonėlis ROSHEN su krembriulė skonio įdaru, 43 g",
     "brand": "Roshen",
     "discounted_price": 0.69,
@@ -15163,21 +15043,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/7b038e9c-f558-47de-9b75-5a764fed300f_s.png",
     "condition": "2 ar daugiau su –30%"
-  },
-  {
-    "name": "Ekologiškas DAUMANTŲ majonezas su jūros druska, 66 % rieb., 230 g",
-    "brand": "Daumantų",
-    "discounted_price": 1.59,
-    "original_price": 2.19,
-    "info": "6.91€/kg",
-    "discount_percent": "27%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Majonezas/Majonezas",
-    "product_url": "https://barbora.lt/produktai/ekologiskas-daumantu-majonezas-su-juros-druska-66-proc-rieb-230-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/24c3c0a4-81a7-461e-bc53-ec14a3ee62fb_s.png",
-    "condition": "–27%"
   },
   {
     "name": "Club 4 Paws Premium su ėriena padaže. Visavertis konservuotas pašaras suaugusiems mažų veislių šunims, 4 x 85 g",
@@ -15585,21 +15450,6 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
-    "name": "Batonėlis su avietėmis NAKD, 140 g",
-    "brand": "NAKD",
-    "discounted_price": 3.69,
-    "original_price": 4.99,
-    "info": "26.36€/kg",
-    "discount_percent": "26%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Saldumynai/Kiti saldumynai",
-    "product_url": "https://barbora.lt/produktai/batonelis-su-avietemis-nakd-140-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/3700b83f-9b25-499e-8d8a-f78b7ec40181_s.png",
-    "condition": "–26%"
-  },
-  {
     "name": "Kons. kačių ėdalas GOURMET GOLD su jautiena ir vištiena, 85 g",
     "brand": "Gourmet",
     "discounted_price": 0.99,
@@ -15688,6 +15538,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/8249537c-961e-48d6-b1e5-cc687ccc7c8c_s.png",
     "condition": "–25%"
+  },
+  {
+    "name": "Aštrūs azijietiški makaronai UDON su vištiena, 300 g",
+    "brand": "Meistro Kokybė",
+    "discounted_price": 2.69,
+    "original_price": 2.99,
+    "info": "8.97€/kg",
+    "discount_percent": "10%",
+    "start_at": "2025-11-03",
+    "end_at": "2025-11-03",
+    "category": "Mėsa, žuvis ir kulinarija/Kulinarija/Pagrindiniai patiekalai ",
+    "product_url": "https://barbora.lt/produktai/astrus-azijietiski-makaronai-udon-su-vistiena-300-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/48b4f004-a5f1-48c4-8d30-4677e8391e2f_s.png",
+    "condition": "–10%"
   },
   {
     "name": "Žvėrienos ėdalas PRIMADOG, 260 g",
@@ -16185,21 +16050,6 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
-    "name": "Mocarelos sūris NONNO NANNI, 50 % rieb. s. m., 125 g",
-    "brand": "",
-    "discounted_price": 1.79,
-    "original_price": 2.29,
-    "info": "14.32€/kg",
-    "discount_percent": "22%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Sūris/Mocarelos ir buratos sūriai",
-    "product_url": "https://barbora.lt/produktai/mocarelos-suris-nonno-nanni-50-proc-rieb-s-m-125-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/1fb03250-e9a0-4db0-aa3c-b1f8ea9e2bfb_s.png",
-    "condition": "–22%"
-  },
-  {
     "name": "Alstremerijų puokštė, 7 vnt.",
     "brand": "",
     "discounted_price": 4.99,
@@ -16348,21 +16198,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/cb7b345a-9a66-4d14-8246-547562ccd550_s.png",
     "condition": "–29%"
-  },
-  {
-    "name": "Vištienos troškinys su pievagrybiais ir voveraitėmis, 390 g",
-    "brand": "Meistro Kokybė",
-    "discounted_price": 3.99,
-    "original_price": 4.99,
-    "info": "10.23€/kg",
-    "discount_percent": "20%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Kulinarija/Pagrindiniai patiekalai ",
-    "product_url": "https://barbora.lt/produktai/vistienos-troskinys-su-pievagrybiais-ir-voveraitemis-390-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/17ebd36c-8940-4e6f-ac0d-064a7f1ef097_s.png",
-    "condition": "–20%"
   },
   {
     "name": "Pieninis šokoladas MILKA su jogurtu ir traškučiais, 300 g",
@@ -16890,21 +16725,6 @@
     "condition": "–50%"
   },
   {
-    "name": "Keksiukų su šokolado gabaliukais miltų mišinys DR. OETKER, 300 g",
-    "brand": "Dr. Oetker",
-    "discounted_price": 1.24,
-    "original_price": 2.49,
-    "info": "4.13€/kg",
-    "discount_percent": "50%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Miltai ir miltų mišiniai/Miltiniai mišiniai",
-    "product_url": "https://barbora.lt/produktai/keksiuku-su-sokolado-gabaliukais-miltu-misinys-dr-oetker-300-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/5995c41b-1c04-4232-b1b8-a8ec7afb48c7_s.png",
-    "condition": "–50%"
-  },
-  {
     "name": "Šokoladiniai saldainiai FERRERO ROCHER, 100 g",
     "brand": "Ferrero Rocher",
     "discounted_price": 4.69,
@@ -17385,21 +17205,6 @@
     "condition": "–30%"
   },
   {
-    "name": "Karštai rūkyti didieji jūriniai ešeriai (Sebastes marinus) be galvų., skr., 1 kg",
-    "brand": "DAUPARŲ ŽUVIS",
-    "discounted_price": 7.99,
-    "original_price": 9.99,
-    "info": "7.99€/kg",
-    "discount_percent": "20%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Žuvų gaminiai/Rūkytos žuvys ir jūrų gėrybės",
-    "product_url": "https://barbora.lt/produktai/k-r-didieji-juriniai-eseriai-sebastes-marinus-be-glv-skr-1-kg-45167",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/137e8dc0-0d28-49b9-bfa2-3c7930e801d6_s.png",
-    "condition": "–20%"
-  },
-  {
     "name": "Vamzdžių valiklis HELPER (granulės), 500 g, 500 g",
     "brand": "HELPER",
     "discounted_price": 1.99,
@@ -17668,21 +17473,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/a9e41ad3-2890-4ef4-b6da-00b7b43244d2_s.png",
     "condition": "–31%"
-  },
-  {
-    "name": "Hermetiškas indelis BORGONOVO IGLOO, 11 cm, 320 ml, 1 vnt.",
-    "brand": "IGLOO",
-    "discounted_price": 2.49,
-    "original_price": 2.49,
-    "info": "2.49€/vnt.",
-    "discount_percent": "40%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Namai ir laisvalaikis/Maisto ruošimo ir laikymo indai/Maisto produktų laikymo indai",
-    "product_url": "https://barbora.lt/produktai/hermetiskas-indelis-borgonovo-igloo-11-cm-320-ml-1-vnt",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/4c69db9b-4bcc-4aab-810a-f4135f735ff1_s.png",
-    "condition": "2 ar daugiau su –40%"
   },
   {
     "name": "Saldainiai PERGALĖ VILNIUS, 170 g",
@@ -18450,21 +18240,6 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
-    "name": "Eko. Cannellini pupelės WELL DONE, 420g, 420 g",
-    "brand": "WELL DONE",
-    "discounted_price": 1.35,
-    "original_price": 1.69,
-    "info": "3.21€/kg",
-    "discount_percent": "20%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Konservuotas maistas/Konservuotos pupelės",
-    "product_url": "https://barbora.lt/produktai/ekologiskos-darzines-pupeles-well-done-420-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/02f42557-fa5e-4272-aa39-794ffac685d5_s.png",
-    "condition": "–20%"
-  },
-  {
     "name": "Minkštiklis LENOR  Northern Soltice, 50 skalb., 700 ml",
     "brand": "Lenor",
     "discounted_price": 7.99,
@@ -18795,21 +18570,6 @@
     "condition": "–40%"
   },
   {
-    "name": "Lėtai virta višč. šlaunelių mėsa PERI PERI marinate HEAT&EAT, 400 g",
-    "brand": "VILNIAUS PAUKSTYNAS",
-    "discounted_price": 3.99,
-    "original_price": 5.59,
-    "info": "9.98€/kg",
-    "discount_percent": "29%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Šviežios mėsos ir paukštienos pusgaminiai/Marinuota paukštiena",
-    "product_url": "https://barbora.lt/produktai/letai-virta-visc-slauneliu-mesa-peri-peri-marinate-heat-eat-400-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/51e9d643-c6bf-4b8e-92ce-7795c0933373_s.png",
-    "condition": "–29%"
-  },
-  {
     "name": "Majonezinis padažas WOWMAMA CURRY MANGO, 30,7 % rieb., 450 g",
     "brand": "WOWMAMA",
     "discounted_price": 2.09,
@@ -19033,21 +18793,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/1eac8479-496a-4616-86b8-a3eba4211146_s.png",
     "condition": "–25%"
-  },
-  {
-    "name": "Konservuotas kačių ėdalas FELIX su mėsa padaže, 340 g",
-    "brand": "Felix",
-    "discounted_price": 1.43,
-    "original_price": 2.39,
-    "info": "4.21€/kg",
-    "discount_percent": "40%",
-    "start_at": "2025-11-05",
-    "end_at": "2025-11-05",
-    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Konservuotas kačių ėdalas",
-    "product_url": "https://barbora.lt/produktai/konservuotas-kaciu-edalas-felix-su-mesa-padaze-340-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/729cd16f-3486-4209-ae46-797939279059_s.png",
-    "condition": "–40%"
   },
   {
     "name": "Konservuotas kačių ėdalas su jautiena ONE, 340 g",
@@ -19800,21 +19545,6 @@
     "condition": "2 ar daugiau su –30%"
   },
   {
-    "name": "FELIX sriuba katėms su mėsa (jautiena, vištiena, ėriena) 6*48 g",
-    "brand": "Felix",
-    "discounted_price": 2.09,
-    "original_price": 3.49,
-    "info": "7.26€/kg",
-    "discount_percent": "40%",
-    "start_at": "2025-11-05",
-    "end_at": "2025-11-05",
-    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Konservuotas kačių ėdalas",
-    "product_url": "https://barbora.lt/produktai/sriuba-katems-felix-su-ivairia-mesa-288-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/f9780423-8172-4e11-8e50-b6cf0d2e7795_s.png",
-    "condition": "–40%"
-  },
-  {
     "name": "Juodasis šokoladas RŪTA SU GIMIMO DIENA!, 55 %, 70 g",
     "brand": "Rūta",
     "discounted_price": 2.49,
@@ -20355,6 +20085,21 @@
     "condition": "–40%"
   },
   {
+    "name": "Grik.kr.NAMŲ RESTORANO PATIEKALAI su lęš., sėklomis ir svog., 250 g",
+    "brand": "Namų restorano patiekalai",
+    "discounted_price": 1.25,
+    "original_price": 1.75,
+    "info": "5€/kg",
+    "discount_percent": "29%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Bakalėja/Kruopos/Grikiai",
+    "product_url": "https://barbora.lt/produktai/grik-kr-namu-restorano-patiekalai-su-les-seklomis-ir-svog-250-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/42cecba8-8f65-47cd-9ab8-b7042c63a823_s.png",
+    "condition": "–29%"
+  },
+  {
     "name": "Šunų skanėstas lazdelės LOVETT su jaut.,12 vnt., 108 g",
     "brand": "LOVETT",
     "discounted_price": 0.69,
@@ -20368,21 +20113,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/95055874-b4ab-4f8c-a4c9-df5c3c200137_s.png",
     "condition": "–37%"
-  },
-  {
-    "name": "Vanilės ankščių pasta su sėklomis TAYLOR & COLLEDGE, 65 g",
-    "brand": "Dr. Oetker",
-    "discounted_price": 3.99,
-    "original_price": 7.99,
-    "info": "61.38€/kg",
-    "discount_percent": "50%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Priedai maistui ruošti/Kepinių priedai",
-    "product_url": "https://barbora.lt/produktai/vaniles-anksciu-pasta-su-seklomis-taylor-colledge-65-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/f91f4754-4412-45ce-85de-d9603c50c3db_s.png",
-    "condition": "–50%"
   },
   {
     "name": "Vafliniai batonėliai LION PEANUT, 2 vnt., 62 g",
@@ -21870,36 +21600,6 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
-    "name": "Avižinė košė DR.OETKER su obuoliais, razinomis ir cinamonu, 62 g",
-    "brand": "Dr. Oetker",
-    "discounted_price": 0.39,
-    "original_price": 0.79,
-    "info": "6.29€/kg",
-    "discount_percent": "51%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Sausi pusryčiai, dribsniai ir javainių batonėliai/Greitai paruošiami dribsniai košėms",
-    "product_url": "https://barbora.lt/produktai/avizine-kose-dr-oetker-su-obuoliais-razinomis-ir-cinamonu-62-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/0308ba85-dedc-428e-b2a9-2b7b7508c916_s.png",
-    "condition": "–51%"
-  },
-  {
-    "name": "Kepti vištienos filė gabalėliai džiuvėsėliuose, 350 g, 350 g",
-    "brand": "MORLINY",
-    "discounted_price": 3.85,
-    "original_price": 4.85,
-    "info": "11€/kg",
-    "discount_percent": "21%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Mėsos ir paukštienos gaminiai/Virti, kepti ir sūdyti gaminiai",
-    "product_url": "https://barbora.lt/produktai/kepti-vistienos-file-gabaleliai-dziuveseliuose-350-g-350-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/a8ab4aa7-1bd6-4188-b4ed-e62c79c0dbbc_s.png",
-    "condition": "–21%"
-  },
-  {
     "name": "Kanalizacijos vamzdžių valiklis ŪLA, 1 l",
     "brand": "Ūla",
     "discounted_price": 2.19,
@@ -22213,6 +21913,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/5e2d5230-b8ac-4c12-943e-1c56eb63d5a7_s.png",
     "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Mocarelos rutuliukai NONNO NANNI, 50 % rieb. s. m., 150 g",
+    "brand": "NONNO NANNI",
+    "discounted_price": 2.29,
+    "original_price": 2.89,
+    "info": "15.27€/kg",
+    "discount_percent": "21%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Pieno gaminiai, kiaušiniai ir majonezas/Sūris/Mocarelos ir buratos sūriai",
+    "product_url": "https://barbora.lt/produktai/mocarelos-rutuliukai-nonno-nanni-50-proc-rieb-s-m-150-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/2c92b1d2-6bfe-4d53-8b6a-06c5f8d718df_s.png",
+    "condition": "–21%"
   },
   {
     "name": "Rausvoji silkių filė VIČI aliejuje, 240 g",
@@ -22965,21 +22680,6 @@
     "condition": "–25%"
   },
   {
-    "name": "Helovino kaukė ELEMENTS SENSE, juoda",
-    "brand": "ELEMENTS SENSE",
-    "discounted_price": 1.39,
-    "original_price": 3.39,
-    "info": "1.39€/vnt.",
-    "discount_percent": "59%",
-    "start_at": "2025-11-03",
-    "end_at": "2025-11-03",
-    "category": "Namai ir laisvalaikis/Helovino atributika",
-    "product_url": "https://barbora.lt/produktai/helovino-kauke-elements-sense-1-vnt",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/22c19efc-5cc3-457b-8a49-b4cc5b35627e_s.png",
-    "condition": "–59%"
-  },
-  {
     "name": "Šokoladiniai saldainiai FERRERO ROCHER, 37.5 g",
     "brand": "",
     "discounted_price": 1.55,
@@ -23053,21 +22753,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/b23d7238-9d7e-4426-b503-8579af5d1f12_s.png",
     "condition": "2 ar daugiau su –30%"
-  },
-  {
-    "name": "Kepinti lazdynų riešutai THE BEST OF ARIMEX be luobelių, 300 g",
-    "brand": "Arimex",
-    "discounted_price": 4.85,
-    "original_price": 8.09,
-    "info": "16.17€/kg",
-    "discount_percent": "40%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Riešutai, sėklos, džiovinti vaisiai, uogos ir daržovės/Lazdynų ir graikiniai riešutai",
-    "product_url": "https://barbora.lt/produktai/kepinti-lazdynu-riesutai-the-best-of-arimex-be-luobeliu-300-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/13ea9b78-0903-420f-b1ff-6598a8cc2260_s.png",
-    "condition": "–40%"
   },
   {
     "name": "Guminukai HARIBO WORMS, 100 g",
@@ -23880,21 +23565,6 @@
     "condition": "–40%"
   },
   {
-    "name": "Helovino dekoracijos, 3 vnt., Šikšnosparniai",
-    "brand": "ELEMENTS SENSE",
-    "discounted_price": 1.19,
-    "original_price": 2.99,
-    "info": "0.4€/vnt.",
-    "discount_percent": "60%",
-    "start_at": "2025-11-03",
-    "end_at": "2025-11-03",
-    "category": "Namai ir laisvalaikis/Helovino atributika",
-    "product_url": "https://barbora.lt/produktai/helovino-dekoracijos-3-vnt-3-vnt-65084",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/2c33ee68-77dd-4849-ac09-e9dcb372b0b5_s.png",
-    "condition": "–60%"
-  },
-  {
     "name": "Majonezinis padažas WOWMAMA FRENCH FRIES, 37,9 % rieb., 450 g",
     "brand": "WOWMAMA",
     "discounted_price": 2.09,
@@ -24045,6 +23715,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Saldainiai PERGALĖ VILNIUS ORIGINAL, 380 g",
+    "brand": "Pergalė",
+    "discounted_price": 12.69,
+    "original_price": 12.69,
+    "info": "33.39€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Bakalėja/Saldumynai/Saldainiai dėžutėse",
+    "product_url": "https://barbora.lt/produktai/saldainiai-pergale-vilnius-original-380-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/18e7dc06-8a9c-48da-b75a-67b1722a009f_s.png",
+    "condition": "2 ar daugiau su –30%"
+  },
+  {
     "name": "Juodasis šokoladas DIANELLA su saldikliu, 85 g",
     "brand": "CHOCOLAND",
     "discounted_price": 1.79,
@@ -24073,21 +23758,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/8455e30e-8a6f-4ab4-96f7-4a04cd8e0e1d_s.png",
     "condition": "–50%"
-  },
-  {
-    "name": "Vytintos KLEBONIŠKOS mini dešrelės, a.r., 220 g",
-    "brand": "Samsonas",
-    "discounted_price": 3.29,
-    "original_price": 5.49,
-    "info": "14.95€/kg",
-    "discount_percent": "40%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Mėsos ir paukštienos gaminiai/Mėsos užkandžiai ir dešrelės",
-    "product_url": "https://barbora.lt/produktai/vytintos-kleboniskos-mini-desreles-a-r-220-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/7802c0cd-0f84-433b-9129-1ff8f77dd40e_s.png",
-    "condition": "–40%"
   },
   {
     "name": "Sausas šunų ėdalas LOVETT su jautiena, 10 kg",
@@ -24510,6 +24180,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Saldainių rinkinys PERGALĖ HAZELNUT, 110 g",
+    "brand": "Pergalė",
+    "discounted_price": 2.99,
+    "original_price": 2.99,
+    "info": "27.18€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Bakalėja/Saldumynai/Saldainiai dėžutėse",
+    "product_url": "https://barbora.lt/produktai/saldainiu-rinkinys-pergale-hazelnut-110-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/62f18c43-82a1-483f-8507-109c2b43549d_s.png",
+    "condition": "2 ar daugiau su –30%"
+  },
+  {
     "name": "Puršk. oro gaiviklis AIRWICK (rožių ir baltųjų jazminų kv.), 237 ml",
     "brand": "Airwick",
     "discounted_price": 5.69,
@@ -24583,21 +24268,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/2128b278-4a52-4aeb-8c58-94419c786554_s.png",
     "condition": "2 ar daugiau su –40%"
-  },
-  {
-    "name": "Graužikų pašaras COMPLETE MENU, 350 g",
-    "brand": "COMPLETE MENU",
-    "discounted_price": 1.49,
-    "original_price": 2.49,
-    "info": "4.25€/kg",
-    "discount_percent": "40%",
-    "start_at": "2025-11-05",
-    "end_at": "2025-11-05",
-    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Graužikų ėdalas",
-    "product_url": "https://barbora.lt/produktai/grauziku-pasaras-complete-menu-350-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/44f7628e-b038-4bbd-9dde-adaa09522b32_s.png",
-    "condition": "–40%"
   },
   {
     "name": "Skystasis skalbiklis BONUX MAGNOLIA, 18 skalb., 900 ml",
@@ -25305,21 +24975,6 @@
     "condition": "–27%"
   },
   {
-    "name": "Pieninio šokolado gabaliukai DR. OETKER kepiniams glaistyti, 100 g",
-    "brand": "Dr. Oetker",
-    "discounted_price": 1.74,
-    "original_price": 3.49,
-    "info": "17.4€/kg",
-    "discount_percent": "50%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Priedai maistui ruošti/Kepinių papuošimai",
-    "product_url": "https://barbora.lt/produktai/pieninio-sokolado-gabaliukai-dr-oetker-kepiniams-glaistyti-100-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/15952ec0-842f-4efe-892c-7b79f2a8336b_s.png",
-    "condition": "–50%"
-  },
-  {
     "name": "Drėgnosios servetėlės gyvūnų akims ir ausims valyti PETINO, 20 vnt.",
     "brand": "PETINO",
     "discounted_price": 0.9,
@@ -25393,21 +25048,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/d3b74eb2-3432-4d2b-b445-5a3d89299622_s.png",
     "condition": "2 ar daugiau su –30%"
-  },
-  {
-    "name": "Kapų žvakė \"SU-34\"",
-    "brand": "GERALDA",
-    "discounted_price": 1,
-    "original_price": 1.99,
-    "info": "1€/vnt.",
-    "discount_percent": "50%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Namai ir laisvalaikis/Namų apyvokos reikmenys/Kapų žvakės",
-    "product_url": "https://barbora.lt/produktai/kapu-zvake-geralda-dega-iki-30-val-1-vnt",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/59328b47-f2b6-4dc8-af6c-b317be712fd3_s.png",
-    "condition": "–50%"
   },
   {
     "name": "Kapų žvakė su dangteliu, dega 36 val., 1 vnt.",
@@ -27645,6 +27285,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Sauskelnės-kelnaitės PAMPERS Pants, Giant Pack, 6 dydis, 48 vnt.",
+    "brand": "Pampers",
+    "discounted_price": 16.79,
+    "original_price": 23.99,
+    "info": "0.35€/vnt.",
+    "discount_percent": "30%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Kūdikių ir vaikų prekės/Sauskelnės ir servetėlės/Sauskelnės, dydis 6+",
+    "product_url": "https://barbora.lt/produktai/sauskelnes-kelnaites-pampers-pants-gp-6-14-19-kg-48-vnt",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/923e1f06-8915-4cc2-8af2-c58774331eca_s.png",
+    "condition": "–30%"
+  },
+  {
     "name": "Pipirų mišinys malūnėlyje WELL DONE, 35 g",
     "brand": "WELL DONE",
     "discounted_price": 2.46,
@@ -29055,21 +28710,6 @@
     "condition": "–50%"
   },
   {
-    "name": "Helovino dekoracija ELEMENTS SENSE, 1,15m",
-    "brand": "ELEMENTS SENSE",
-    "discounted_price": 5.99,
-    "original_price": 11.99,
-    "info": "5.99€/vnt.",
-    "discount_percent": "50%",
-    "start_at": "2025-11-03",
-    "end_at": "2025-11-03",
-    "category": "Namai ir laisvalaikis/Helovino atributika",
-    "product_url": "https://barbora.lt/produktai/null",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/bb9edc07-982a-4f86-a502-e08e981b1431_s.png",
-    "condition": "–50%"
-  },
-  {
     "name": "Milteliai užuolaidoms skalbti HI-LABS, 2 skalbimams, 100 g",
     "brand": "HI-LABS",
     "discounted_price": 0.92,
@@ -29925,21 +29565,6 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
-    "name": "Virta dešra su lašinukais BIOVELA EKSTRA, a. r., 1 kg",
-    "brand": "Biovela",
-    "discounted_price": 4.19,
-    "original_price": 6.99,
-    "info": "4.19€/kg",
-    "discount_percent": "40%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Mėsos ir paukštienos gaminiai/Virtos dešros",
-    "product_url": "https://barbora.lt/produktai/virta-desra-su-lasinukais-biovela-ekstra-a-r-1-kg",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/c654fc06-12b5-4001-b090-dbd06cb8c7dc_s.png",
-    "condition": "–40%"
-  },
-  {
     "name": "Guminukai SOUR PATCH, 99 g",
     "brand": "SOUR PATCH",
     "discounted_price": 2.99,
@@ -30013,21 +29638,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/f0dbbb0a-3f3a-46d4-a55a-5ca98b37a9f4_s.png",
     "condition": "2 ar daugiau su –30%"
-  },
-  {
-    "name": "Vyriškos kojinės SKINIJA, 43-46 dydis, 1 vnt.",
-    "brand": "SKINIJA",
-    "discounted_price": 2.69,
-    "original_price": 4.49,
-    "info": "2.69€/vnt.",
-    "discount_percent": "40%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Namai ir laisvalaikis/Kojinės ir apatinis trikotažas/Vyriškos kojinės",
-    "product_url": "https://barbora.lt/produktai/vyriskos-kojines-skinija-43-46-dydis-1-vnt-95907",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/35159392-5c8f-4b45-b1cc-2c102db356af_s.png",
-    "condition": "–40%"
   },
   {
     "name": "Drėgnosios servetėlės VORTEX baldams valyti, 48 vnt.",
@@ -30238,21 +29848,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/5d137845-9a78-44f8-ac58-3a5de6461687_s.png",
     "condition": "2 ar daugiau su –40%"
-  },
-  {
-    "name": "Lauko augalas viržis ",
-    "brand": "GARDEN GURU",
-    "discounted_price": 3.49,
-    "original_price": 4.99,
-    "info": "3.49€/vnt.",
-    "discount_percent": "30%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Namai ir laisvalaikis/Augalai ir jų priežiūra/Gėlės",
-    "product_url": "https://barbora.lt/produktai/virzis-beauty-ladies-1-vnt-65870",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/03c39c18-9b2c-4d26-a0c7-b73160dd9b73_s.png",
-    "condition": "–30%"
   },
   {
     "name": "Ledai BONBON MAGNUM su sūdyta karamele ir migdolais, 168 g, 168 g",
@@ -32235,21 +31830,6 @@
     "condition": "2 ar daugiau su –30%"
   },
   {
-    "name": "Visavertis šunų ėdalas DARLING su paukštiena ir daržovėmis, 3 kg",
-    "brand": "Darling",
-    "discounted_price": 4.99,
-    "original_price": 8.49,
-    "info": "1.66€/kg",
-    "discount_percent": "41%",
-    "start_at": "2025-11-05",
-    "end_at": "2025-11-05",
-    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Sausas šunų ėdalas",
-    "product_url": "https://barbora.lt/produktai/visavertis-sunu-edalas-darling-su-paukstiena-ir-darzovemis-3-kg",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/9cfdea85-c0b5-4986-b645-13d95d153366_s.png",
-    "condition": "–41%"
-  },
-  {
     "name": "Juodojo šokolado saldainių rinkinys LAIMA VILNIUS, 360 g",
     "brand": "Laima",
     "discounted_price": 8.39,
@@ -33060,21 +32640,6 @@
     "condition": "–40%"
   },
   {
-    "name": "Kalifornijos migdolai THE BEST OF ARIMEX, 250 g",
-    "brand": "Arimex",
-    "discounted_price": 4.19,
-    "original_price": 6.99,
-    "info": "16.76€/kg",
-    "discount_percent": "40%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Riešutai, sėklos, džiovinti vaisiai, uogos ir daržovės/Migdolų riešutai",
-    "product_url": "https://barbora.lt/produktai/kalifornijos-migdolai-the-best-of-arimex-250-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/f7e84880-2437-427d-b01c-a256664ae203_s.png",
-    "condition": "–40%"
-  },
-  {
     "name": " Silikoninė mentelė UNIWELL",
     "brand": "UNIWELL",
     "discounted_price": 2.29,
@@ -33493,21 +33058,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/ddf58cee-421c-4234-9559-a658e32faab9_s.png",
     "condition": "2 ar daugiau su –40%"
-  },
-  {
-    "name": "Sausas šunų ėdalas DARLING su paukštiena, 10 kg",
-    "brand": "Darling",
-    "discounted_price": 15.99,
-    "original_price": 25.99,
-    "info": "1.6€/kg",
-    "discount_percent": "38%",
-    "start_at": "2025-11-05",
-    "end_at": "2025-11-05",
-    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Sausas šunų ėdalas",
-    "product_url": "https://barbora.lt/produktai/sausas-sunu-edalas-darling-su-paukstiena-10-kg",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/991f4f73-920d-49a1-88df-8907c53dafbb_s.png",
-    "condition": "–38%"
   },
   {
     "name": "Silikoninė kepimo forma JULIETTE, 24 cm, 1 vnt.",
@@ -34588,21 +34138,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/f6f57cda-fed4-4379-b720-81e154a91d2d_s.png",
     "condition": "2 ar daugiau su –40%"
-  },
-  {
-    "name": "Silpnai sūdyti silkių filė gab.su moliūgų sėklomis aliejuje, 200 g",
-    "brand": "DESĖ",
-    "discounted_price": 1.59,
-    "original_price": 1.99,
-    "info": "7.95€/kg",
-    "discount_percent": "20%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Žuvų gaminiai/Silkės ir jų gaminiai",
-    "product_url": "https://barbora.lt/produktai/silpnai-sudyti-silkiu-file-gab-su-moliugu-seklomis-aliejuje-200-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/4814e32f-5b0e-44c8-931b-096c02b59a61_s.png",
-    "condition": "–20%"
   },
   {
     "name": "Vasabiai SAITAKU, 43 g",
@@ -37080,21 +36615,6 @@
     "condition": "–30%"
   },
   {
-    "name": "Vytinta pjaustyta čioriso dešra GRAN VELA, nerūšinis gaminys, 100 g",
-    "brand": "",
-    "discounted_price": 1.89,
-    "original_price": 2.99,
-    "info": "18.9€/kg",
-    "discount_percent": "37%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Mėsa, žuvis ir kulinarija/Mėsos ir paukštienos gaminiai/Vytintos dešros",
-    "product_url": "https://barbora.lt/produktai/vytinta-pjaustyta-cioriso-desra-gran-vela-nerusinis-gaminys-100-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/ea0bf38c-7e79-4c12-bbda-5ad5e6add072_s.png",
-    "condition": "–37%"
-  },
-  {
     "name": "Majonezinis padažas WOWMAMA THOUSAND ISLAND, 25 % rieb., 440 g",
     "brand": "WOWMAMA",
     "discounted_price": 2.09,
@@ -37108,21 +36628,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/83346945-fbb0-40da-9ee3-f80c46e1efdb_s.png",
     "condition": "–25%"
-  },
-  {
-    "name": "Sausas šunų ėdalas DARLING su mėsa ir daržovėmis, 10 kg",
-    "brand": "Darling",
-    "discounted_price": 15.99,
-    "original_price": 25.99,
-    "info": "1.6€/kg",
-    "discount_percent": "38%",
-    "start_at": "2025-11-05",
-    "end_at": "2025-11-05",
-    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Sausas šunų ėdalas",
-    "product_url": "https://barbora.lt/produktai/sausas-sunu-edalas-darling-su-mesa-ir-darzovemis-10-kg",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/1d3adf7f-3864-43bc-a139-aa045f711e98_s.png",
-    "condition": "–38%"
   },
   {
     "name": "Šokoladiniai saldainiai FAZER LIQUEUR FILLS su likerio įdaru, 150 g",
@@ -37965,21 +37470,6 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
-    "name": "Helovino dekoracija ELEMENTS SENSE, 40 cm, juoda ir balta",
-    "brand": "ELEMENTS SENSE",
-    "discounted_price": 2.19,
-    "original_price": 4.99,
-    "info": "2.19€/vnt.",
-    "discount_percent": "56%",
-    "start_at": "2025-11-03",
-    "end_at": "2025-11-03",
-    "category": "Namai ir laisvalaikis/Helovino atributika",
-    "product_url": "https://barbora.lt/produktai/helovyno-dekoracija-elements-sense-40-cm-1-vnt",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/6a72c260-20f7-4615-9248-6c94e96a9906_s.png",
-    "condition": "–56%"
-  },
-  {
     "name": "Tortas RED VELVET, 1 kg",
     "brand": "Meistro Kokybė",
     "discounted_price": 13.49,
@@ -38412,21 +37902,6 @@
     "product_url": "https://barbora.lt/produktai/keptuve-simply-clean-24-cm-1-vnt",
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/0c3b2b55-8ab8-4c2d-af28-ee5a1de0ee52_s.png",
-    "condition": "2 ar daugiau su –40%"
-  },
-  {
-    "name": "Skystasis skalbiklis LOVELA BABY COLOR (32 skalb.), 2,9 l",
-    "brand": "LOVELA BABY",
-    "discounted_price": 17.99,
-    "original_price": 17.99,
-    "info": "6.2€/l",
-    "discount_percent": "40%",
-    "start_at": "2025-10-26",
-    "end_at": "2025-10-26",
-    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbimo priemonės jautriai odai ir kūdikiams",
-    "product_url": "https://barbora.lt/produktai/skystasis-skalbiklis-lovela-baby-color-32-skalb-2-9-l",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/10c90042-85b6-4b3a-b722-12e953ce255e_s.png",
     "condition": "2 ar daugiau su –40%"
   },
   {
@@ -39088,21 +38563,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/fac14a8f-b44d-41c8-b0e9-62d149706ce3_s.png",
     "condition": "–26%"
-  },
-  {
-    "name": "Baltyminis batonėlis GRENADE FUDGED UP, 60 g",
-    "brand": "GRENADE",
-    "discounted_price": 3.69,
-    "original_price": 3.69,
-    "info": "61.5€/kg",
-    "discount_percent": "30%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Specialusis maistas/Baltyminiai batonėliai ir mišiniai",
-    "product_url": "https://barbora.lt/produktai/baltyminis-batonelis-grenade-fudged-up-60-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/3f6df49b-52a6-461c-9e43-ef2c202b76bd_s.png",
-    "condition": "2 ar daugiau su –30%"
   },
   {
     "name": "Vytintos KLEBONIŠKOS PUTŲ MEISTRO dešrelės, A. r., 150 g",
@@ -39795,21 +39255,6 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
-    "name": "Vyno taurės AURORA NOLA 320 ml 6 vnt.",
-    "brand": "AURORA MAXIMA",
-    "discounted_price": 14.99,
-    "original_price": 14.99,
-    "info": "2.5€/vnt.",
-    "discount_percent": "40%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Namai ir laisvalaikis/Virtuvės ir stalo serviravimo reikmenys/Taurės ir stiklinės",
-    "product_url": "https://barbora.lt/produktai/vyno-taures-aurora-nola-320-ml-6-vnt-6-vnt",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/a0ab874e-212b-4594-8cc7-84f13a9efe6a_s.png",
-    "condition": "2 ar daugiau su –40%"
-  },
-  {
     "name": "Audinių minkštiklis Angel Kiss Hypoalergical , Mayeri , 750 ml ",
     "brand": "MAYERI",
     "discounted_price": 3.89,
@@ -39868,21 +39313,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/3f0b743a-ba01-4bcf-b050-3b9ce01151c7_s.png",
     "condition": "–36%"
-  },
-  {
-    "name": "Baltyminis batonėlis MYPROTEIN, trijų šokoladų skonio, 60 g",
-    "brand": "MYPROTEIN",
-    "discounted_price": 2.49,
-    "original_price": 2.49,
-    "info": "41.5€/kg",
-    "discount_percent": "30%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Bakalėja/Specialusis maistas/Baltyminiai batonėliai ir mišiniai",
-    "product_url": "https://barbora.lt/produktai/baltyminis-batonelis-myprotein-triju-sokoladu-skonio-60-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/b5e045bf-6863-4182-96fd-c34cb7b93d34_s.png",
-    "condition": "2 ar daugiau su –30%"
   },
   {
     "name": "Universalusis valiklis AJAX MULTI-SURFACE, 500 ml",
@@ -41220,6 +40650,21 @@
     "condition": "–40%"
   },
   {
+    "name": "Vytinta dešra SALCHICHON SARTA, nerūšinė, 230 g",
+    "brand": "LA GLORIA RIOJANA",
+    "discounted_price": 3.39,
+    "original_price": 5.29,
+    "info": "14.74€/kg",
+    "discount_percent": "36%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Mėsa, žuvis ir kulinarija/Mėsos ir paukštienos gaminiai/Vytintos dešros",
+    "product_url": "https://barbora.lt/produktai/vytinta-desra-salchichon-sarta-nerusine-230-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/3d42144c-0052-452f-8835-d6709f976cb6_s.png",
+    "condition": "–36%"
+  },
+  {
     "name": "Juodojo šokolado PURE CHOCOLATE triufeliai su likerio COINTREAU įdaru, 108 g",
     "brand": "PURE CHOCOLATE",
     "discounted_price": 4.99,
@@ -41352,21 +40797,6 @@
     "product_url": "https://barbora.lt/produktai/sviecianti-helovyno-dekoracija-1-vnt",
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/7f129cdb-04db-4795-a8fd-1c32b1eb23b4_s.png",
-    "condition": "–50%"
-  },
-  {
-    "name": "Helovino dekoracija ELEMENTS SENSE, 3 vnt.",
-    "brand": "ELEMENTS SENSE",
-    "discounted_price": 0.99,
-    "original_price": 1.99,
-    "info": "0.33€/vnt.",
-    "discount_percent": "50%",
-    "start_at": "2025-11-03",
-    "end_at": "2025-11-03",
-    "category": "Namai ir laisvalaikis/Helovino atributika",
-    "product_url": "https://barbora.lt/produktai/helovyno-dekoracija-elements-sense-3-vnt-3-vnt",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/dfe58385-8f4c-4aef-b4c1-76467174d1a7_s.png",
     "condition": "–50%"
   },
   {
@@ -43935,6 +43365,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Žaliosios alyvuogės WELL DONE, įdarytos lašišų pasta, 280 g",
+    "brand": "WELL DONE",
+    "discounted_price": 1.75,
+    "original_price": 2.19,
+    "info": "6.25€/kg",
+    "discount_percent": "20%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Bakalėja/Konservuotas maistas/Konservuotos alyvuogės",
+    "product_url": "https://barbora.lt/produktai/zaliosios-alyvuoges-well-done-idarytos-lasisu-pasta-280-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/fe83a603-c512-40c5-ad9c-2ee9ef4a1889_s.png",
+    "condition": "–20%"
+  },
+  {
     "name": "Saldainiai KARL FAZER su avietinio jogurto skonio įdaru, 250 g",
     "brand": "Karl Fazer",
     "discounted_price": 10.19,
@@ -44668,21 +44113,6 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/4b9f99ce-0f1a-48e1-b054-11683a1cbc49_s.png",
     "condition": "–50%"
-  },
-  {
-    "name": "Kiniška (WOK) keptuvė, 28 cm",
-    "brand": "",
-    "discounted_price": 26.99,
-    "original_price": 26.99,
-    "info": "26.99€/vnt.",
-    "discount_percent": "40%",
-    "start_at": "2025-10-27",
-    "end_at": "2025-10-27",
-    "category": "Namai ir laisvalaikis/Maisto ruošimo ir laikymo indai/Puodai ir keptuvės",
-    "product_url": "https://barbora.lt/produktai/kiniska-wok-keptuve-28-cm-1-vnt",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/c2319b87-e81d-415a-862a-7a35bdf0d208_s.png",
-    "condition": "2 ar daugiau su –40%"
   },
   {
     "name": "Aromatinė kortelė ODORO KUBOS ŠĖLSMAS, 1 vnt.",
@@ -47220,6 +46650,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Žaliosios alyvuogės WELL DONE, įdarytos krevečių pasta, 280 g",
+    "brand": "WELL DONE",
+    "discounted_price": 1.75,
+    "original_price": 2.19,
+    "info": "6.25€/kg",
+    "discount_percent": "20%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Bakalėja/Konservuotas maistas/Konservuotos alyvuogės",
+    "product_url": "https://barbora.lt/produktai/zaliosios-alyvuoges-well-done-idarytos-kreveciu-pasta-280-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/7f1fae10-eafb-4e95-b418-4a25956d7e1a_s.png",
+    "condition": "–20%"
+  },
+  {
     "name": "Skalbimo kapsulės PERSIL EXPERT DISCS Stain Removal 37 skalbimams, 37 vnt.",
     "brand": "",
     "discounted_price": 16.39,
@@ -47337,6 +46782,21 @@
     "product_url": "https://barbora.lt/produktai/oro-gaiviklio-papildymas-air-wick-linen-orchid-20-ml",
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/ea33c9c5-da23-4de5-b627-900df22b96dd_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbimo kapsulės \"PERSIL DISCS Color\" 60 vnt.",
+    "brand": "PERSIL",
+    "discounted_price": 31.99,
+    "original_price": 31.99,
+    "info": "0.53€/vnt.",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skystos skalbimo priemonės",
+    "product_url": "https://barbora.lt/produktai/skalbimo-kapsules-persil-discs-color-60-skalb-60-vnt",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/6dee68e2-9171-455b-840f-722907656cba_s.png",
     "condition": "2 ar daugiau su –40%"
   },
   {
@@ -47472,6 +46932,21 @@
     "product_url": "https://barbora.lt/produktai/aerozolis-bros-nuo-skraidanciu-ir-ropojanciuju-vabzdziu-400-ml",
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/2532c6cc-0396-4b38-ba62-ff9888ba8b09_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Puodelis AURORA BASIC 370 ml, stiklinis",
+    "brand": "ILAJA",
+    "discounted_price": 1.79,
+    "original_price": 1.79,
+    "info": "1.79€/vnt.",
+    "discount_percent": "40%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Namai ir laisvalaikis/Virtuvės ir stalo serviravimo reikmenys/Puodeliai",
+    "product_url": "https://barbora.lt/produktai/puodelis-aurora-basic-370-ml-1-vnt",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/1c58c96f-b11d-4d29-b740-ea800314f68c_s.png",
     "condition": "2 ar daugiau su –40%"
   },
   {
@@ -47700,6 +47175,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Filtravimo kasetė AQUAPHOR A5",
+    "brand": "AQUAPHOR",
+    "discounted_price": 7.99,
+    "original_price": 7.99,
+    "info": "7.99€/vnt.",
+    "discount_percent": "40%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Namai ir laisvalaikis/Virtuvės ir stalo serviravimo reikmenys/Vandens filtrai ir jų priedai",
+    "product_url": "https://barbora.lt/produktai/filtravimo-kasete-aquaphor-a-5-1-vnt",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/5a18c6d6-dd0c-407d-ba2f-fa524d85bd0e_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
     "name": "Vienkartinių įrankių rinkinys ILAJA, 1 asm.",
     "brand": "ILAJA",
     "discounted_price": 0.49,
@@ -47895,6 +47385,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Raudono Vyno taurės RCR Etna 280 ml, 6 vnt.",
+    "brand": "RCR CRISTALLERIA ITALIANA",
+    "discounted_price": 47.99,
+    "original_price": 47.99,
+    "info": "8€/vnt.",
+    "discount_percent": "40%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Namai ir laisvalaikis/Virtuvės ir stalo serviravimo reikmenys/Taurės ir stiklinės",
+    "product_url": "https://barbora.lt/produktai/raud-vyno-taures-rcr-etna-280-ml-6-vnt-6-vnt",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/fbeb828f-6257-46e4-9385-f192c526d1bf_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
     "name": "Dubenėlis ILAJA CLEAR, 23 cm",
     "brand": "ILAJA",
     "discounted_price": 6.99,
@@ -47967,6 +47472,36 @@
     "product_url": "https://barbora.lt/produktai/saukstas-fiskars-1-vnt",
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/6a81486f-5941-4f79-b318-35c51fa124d0_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Filtruojanti gertuvė AQUAPHOR City, 0,5 l, 1 vnt., mėlyna",
+    "brand": "AQUAPHOR",
+    "discounted_price": 11.99,
+    "original_price": 11.99,
+    "info": "11.99€/vnt.",
+    "discount_percent": "40%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Namai ir laisvalaikis/Virtuvės ir stalo serviravimo reikmenys/Vandens filtrai ir jų priedai",
+    "product_url": "https://barbora.lt/produktai/filtruojanti-gertuve-aquaphor-city-0-5-l-1-vnt-85733",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/7721fc37-5727-4cae-9d03-e81820503a70_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Filtruojanti gertuvė AQUAPHOR City, 0,5 l, 1 vnt",
+    "brand": "AQUAPHOR",
+    "discounted_price": 11.99,
+    "original_price": 11.99,
+    "info": "11.99€/vnt.",
+    "discount_percent": "40%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Namai ir laisvalaikis/Virtuvės ir stalo serviravimo reikmenys/Vandens filtrai ir jų priedai",
+    "product_url": "https://barbora.lt/produktai/filtruojanti-gertuve-aquaphor-city-0-5-l-1-vnt",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/a956c857-d26a-47a7-b352-8d6d9aaa1236_s.png",
     "condition": "2 ar daugiau su –40%"
   },
   {
@@ -48193,6 +47728,21 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/b55b280d-36b9-4309-9323-696718b6065b_s.png",
     "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Baltyminis batonėlis GO ON, sausainių skonio, 50 g",
+    "brand": "GO ON",
+    "discounted_price": 1.15,
+    "original_price": 1.15,
+    "info": "23€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Bakalėja/Specialusis maistas/Diabetinis maistas",
+    "product_url": "https://barbora.lt/produktai/baltyminis-batonelis-go-on-sausainiu-skonio-50-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/cbc79264-3b17-4c93-87f7-98c05b8a0ff1_s.png",
+    "condition": "2 ar daugiau su –30%"
   },
   {
     "name": "Gyvūnų antkaklis, 25MMx45-66CM, A-1057",
@@ -48450,21 +48000,6 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
-    "name": "Jautienos gabaliukai šunims PEDIGREE RANCHOS, 60 g",
-    "brand": "Pedigree",
-    "discounted_price": 1.07,
-    "original_price": 1.79,
-    "info": "17.83€/kg",
-    "discount_percent": "40%",
-    "start_at": "2025-11-05",
-    "end_at": "2025-11-05",
-    "category": "Švaros ir gyvūnų prekės/Gyvūnų prekės/Šunų skanėstai",
-    "product_url": "https://barbora.lt/produktai/jautienos-gabaliukai-sunims-pedigree-ranchos-60-g",
-    "card": false,
-    "image_url": "https://cdn.barbora.lt/products/8beafe69-3736-43f1-a460-b2297186a9a1_s.png",
-    "condition": "–40%"
-  },
-  {
     "name": "Sausas kačių ėdalas su vištiena CLUB 4 PAWS, 300 g",
     "brand": "Club 4 Paws",
     "discounted_price": 0.99,
@@ -48615,6 +48150,51 @@
     "condition": "–30%"
   },
   {
+    "name": "Skalbinių minkštiklis \"SILAN Fresh Sky\" 130sk. (2.86L)",
+    "brand": "SILAN",
+    "discounted_price": 10.99,
+    "original_price": 10.99,
+    "info": "3.84€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbinių minkštikliai",
+    "product_url": "https://barbora.lt/produktai/skalbiniu-minkstiklis-silan-fresh-sky-130-sk-2-86-l-2-86-l",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/fb67d148-a8fc-4d2b-9d39-fa448b23e7fd_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbinių minkštiklis \"SILAN Dreamy Lotus\" 126sk.",
+    "brand": "SILAN",
+    "discounted_price": 10.99,
+    "original_price": 10.99,
+    "info": "3.96€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbinių minkštikliai",
+    "product_url": "https://barbora.lt/produktai/skalbiniu-minkstiklis-silan-dreamy-lotus-126-sk-2-772-l-2-77-l",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/e7bcefb1-619e-47fb-a788-c21011ed654a_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbinių minkštiklis \"SILAN Sensitive\" 130sk. (2.86L)",
+    "brand": "SILAN",
+    "discounted_price": 10.99,
+    "original_price": 10.99,
+    "info": "3.84€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbinių minkštikliai",
+    "product_url": "https://barbora.lt/produktai/skalbiniu-minkstiklis-silan-sensitive-130-skalbimu-2-86-l-2-86-l",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/cdde79cd-7e1c-40da-89e4-0722ba4f440b_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
     "name": "Dubenėlis AURORA Modern White 19 cm",
     "brand": "AURORA MAXIMA",
     "discounted_price": 6.99,
@@ -48657,6 +48237,21 @@
     "product_url": "https://barbora.lt/produktai/vyno-taures-aurora-fleya-500-ml-4-vnt-4-vnt",
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/26f4cb6e-a818-41c3-bb12-d907922ad3b9_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbinių minkštiklis \"SILAN Fascinating Jungle\" 126sk",
+    "brand": "SILAN",
+    "discounted_price": 10.99,
+    "original_price": 10.99,
+    "info": "3.96€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbinių minkštikliai",
+    "product_url": "https://barbora.lt/produktai/skalbiniu-minkstiklis-silan-fascinating-jungle-126-skalb-2-77-l",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/8f824cb6-8e4c-42d9-a963-8fb069eb00d6_s.png",
     "condition": "2 ar daugiau su –40%"
   },
   {
@@ -48705,6 +48300,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Raudonojo vyno taurės RCR OPERA, 230 ml, 6 vnt.",
+    "brand": "RCR",
+    "discounted_price": 32.99,
+    "original_price": 32.99,
+    "info": "5.5€/vnt.",
+    "discount_percent": "40%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Namai ir laisvalaikis/Virtuvės ir stalo serviravimo reikmenys/Taurės ir stiklinės",
+    "product_url": "https://barbora.lt/produktai/raudonojo-vyno-taures-rcr-opera-230-ml-6-vnt-6-vnt",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/5b85a7c8-f093-4c91-9a27-7721fb9f727c_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
     "name": "Viskio taurės RCR OPERA, 300 ml, 6 vnt.",
     "brand": "RCR",
     "discounted_price": 24.99,
@@ -48717,6 +48327,36 @@
     "product_url": "https://barbora.lt/produktai/viskio-taures-rcr-opera-300-ml-6-vnt-6-vnt",
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/af98c919-3f12-45f5-98ee-1070d0b09691_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbimo gelis \"PERSIL Active Gel\" 66sk.",
+    "brand": "PERSIL",
+    "discounted_price": 23.49,
+    "original_price": 23.49,
+    "info": "7.91€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skystos skalbimo priemonės",
+    "product_url": "https://barbora.lt/produktai/skalbiamasis-gelis-persil-active-66-skalb-2970-ml",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/17fd7df8-466b-4556-af36-6ad53b3321aa_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbimo gelis \"PERSIL Color\" 66sk. ",
+    "brand": "PERSIL",
+    "discounted_price": 23.49,
+    "original_price": 23.49,
+    "info": "7.91€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skystos skalbimo priemonės",
+    "product_url": "https://barbora.lt/produktai/skalbimo-gelis-persil-color-66-skalb-2970-ml",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/d1ee13ba-efee-4a08-afd3-c7430fd7426d_s.png",
     "condition": "2 ar daugiau su –40%"
   },
   {
@@ -49800,6 +49440,21 @@
     "condition": "2 ar daugiau su –40%"
   },
   {
+    "name": "Virta BIOVELOS PUSRYČIŲ dešra, aukščiausia rūšis, 330 g",
+    "brand": "BIOVELA-UTENOS MĖSA",
+    "discounted_price": 1.95,
+    "original_price": 3.29,
+    "info": "5.91€/kg",
+    "discount_percent": "41%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Mėsa, žuvis ir kulinarija/Mėsos ir paukštienos gaminiai/Virtos dešros",
+    "product_url": "https://barbora.lt/produktai/virta-biovelos-pusryciu-desra-auksciausia-rusis-330-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/b40cb3db-5ba8-49b4-b922-b75e4287b434_s.png",
+    "condition": "–41%"
+  },
+  {
     "name": "Vytintos mažos SALAMINI dešrelės WELL DONE, A. r., 80 g",
     "brand": "WELL DONE",
     "discounted_price": 2.29,
@@ -49813,6 +49468,36 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/92dea9fe-e6d7-4c93-bb96-ef232b43dce3_s.png",
     "condition": "–15%"
+  },
+  {
+    "name": "Baltyminis batonėlis GO ON su kokosais, 45 g",
+    "brand": "GO ON",
+    "discounted_price": 1.15,
+    "original_price": 1.15,
+    "info": "25.56€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Bakalėja/Specialusis maistas/Diabetinis maistas",
+    "product_url": "https://barbora.lt/produktai/baltyminis-batonelis-go-on-su-kokosais-45-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/f3c9763a-7b91-45e9-a9a1-4b1cfb32ea9d_s.png",
+    "condition": "2 ar daugiau su –30%"
+  },
+  {
+    "name": "Baltyminis batonėlis GO ON su žemės riešutais ir karamele, 45 g",
+    "brand": "GO ON",
+    "discounted_price": 1.15,
+    "original_price": 1.15,
+    "info": "25.56€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Bakalėja/Specialusis maistas/Diabetinis maistas",
+    "product_url": "https://barbora.lt/produktai/baltyminis-batonelis-go-on-su-zemes-riesutais-ir-karamele-45-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/2e8d2e78-0677-4ef7-8519-4fa063695fae_s.png",
+    "condition": "2 ar daugiau su –30%"
   },
   {
     "name": "Dirbtinė gėlė ELEMENTS SENSE, H73cm",
@@ -50023,5 +49708,110 @@
     "card": false,
     "image_url": "https://cdn.barbora.lt/products/ebd2ffe7-116e-4f4f-86f0-029bb3153baf_s.png",
     "condition": "–50%"
+  },
+  {
+    "name": "Skalbinių kvepalai \"SILAN FLORAL ESSENCES Diamond Orchid\" 30sk. (540ml)",
+    "brand": "SILAN",
+    "discounted_price": 7.99,
+    "original_price": 7.99,
+    "info": "14.8€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbinių minkštikliai",
+    "product_url": "https://barbora.lt/produktai/skalbiniu-kvapiklis-silan-diam-orchid-30-skalb-540-ml",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/09f6f41b-eb0d-4d78-a103-aca2c4ad31ce_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbinių minkštiklis \"SILAN Fresh Ocean\" 35sk. (770ml)",
+    "brand": "SILAN",
+    "discounted_price": 4.59,
+    "original_price": 4.59,
+    "info": "5.96€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbinių minkštikliai",
+    "product_url": "https://barbora.lt/produktai/skalbiniu-minkstiklis-silan-fresh-ocean-35-skalb-770-ml",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/1da92b2f-32fa-4098-8760-0f0ec419e58f_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbimo kapsulės \"PERSIL DISCS Universal\" 60 vnt.",
+    "brand": "PERSIL",
+    "discounted_price": 31.99,
+    "original_price": 31.99,
+    "info": "0.53€/vnt.",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skystos skalbimo priemonės",
+    "product_url": "https://barbora.lt/produktai/skalbimo-kapsules-persil-universal-mega-60-vnt-60-vnt",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/e3afae03-b2ea-4d13-8801-93b778fe167f_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbinių minkštiklis \"SILAN FLORAL ESSENCES Cherry Blossom\" 30sk. (540ml)",
+    "brand": "SILAN",
+    "discounted_price": 7.99,
+    "original_price": 7.99,
+    "info": "14.8€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbinių minkštikliai",
+    "product_url": "https://barbora.lt/produktai/skalbiniu-kvapiklis-silan-cherry-blos-30-skalb-540-ml",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/9816f8a7-a495-42e5-809f-75cf686b1ea5_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "WC valiklis-gaiviklis \"BREF POWER AKTIV Fruitopia\" 3x50g",
+    "brand": "BREF",
+    "discounted_price": 5.99,
+    "original_price": 5.99,
+    "info": "39.93€/kg",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Buitinės chemijos prekės/Kietieji WC valikliai - gaivikliai",
+    "product_url": "https://barbora.lt/produktai/tualeto-gaiviklis-bref-fruitopia-3-50-g-150-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/2826ee83-7da4-4d1d-8aa2-cf8e6d75e819_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Skalbinių minkštiklis \"SILAN FLORAL ESSENCES Blue Jasmine\" 30sk.  (540ml)",
+    "brand": "SILAN",
+    "discounted_price": 7.99,
+    "original_price": 7.99,
+    "info": "14.8€/l",
+    "discount_percent": "40%",
+    "start_at": "2025-10-26",
+    "end_at": "2025-10-26",
+    "category": "Švaros ir gyvūnų prekės/Skalbimo priemonės/Skalbinių minkštikliai",
+    "product_url": "https://barbora.lt/produktai/skalbiniu-kvapiklis-silna-blue-jasmine-30-skalb-540-ml",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/6ee354f3-821b-4d8b-b6eb-d3002eed14ec_s.png",
+    "condition": "2 ar daugiau su –40%"
+  },
+  {
+    "name": "Baltyminis vaflis MY PROTEIN CHOCOLATE, 40 g",
+    "brand": "MYPROTEIN",
+    "discounted_price": 2.49,
+    "original_price": 2.49,
+    "info": "62.25€/kg",
+    "discount_percent": "30%",
+    "start_at": "2025-10-27",
+    "end_at": "2025-10-27",
+    "category": "Bakalėja/Specialusis maistas/Diabetinis maistas",
+    "product_url": "https://barbora.lt/produktai/baltyminis-vaflis-my-protein-chocolate-40-g",
+    "card": false,
+    "image_url": "https://cdn.barbora.lt/products/08343cfb-b3d3-4222-9d7c-f68ffb2d0127_s.png",
+    "condition": "2 ar daugiau su –30%"
   }
 ]

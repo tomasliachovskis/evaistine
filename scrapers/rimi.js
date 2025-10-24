@@ -14,7 +14,7 @@ const progressFile = path.join(__dirname, 'progress.json');
 const BATCH_SIZE = 100;
 const MAX_CONCURRENT_REQUESTS = 25;
 const REQUEST_DELAY = 300;
-const NAVIGATION_TIMEOUT = 10000;
+const NAVIGATION_TIMEOUT = 5000;
 
 const saveProgress = (pageNumber) => {
     fs.writeFileSync(progressFile, JSON.stringify({ currentPage: pageNumber }, null, 2));
@@ -274,7 +274,7 @@ const runScraper = async () => {
 
     const baseUrl = 'https://www.rimi.lt/';
     // let currentPage = loadProgress();
-    let currentPage = 56;
+    let currentPage = 1;
     let allProducts = [];
 
     if (currentPage === 1) {
@@ -319,7 +319,7 @@ const runScraper = async () => {
         }
 
         try {
-            await mainPage.waitForSelector('.js-product-container', { timeout: 10000 });
+            await mainPage.waitForSelector('.js-product-container', { timeout: 5000 });
         } catch {
             console.log(`Products not found on page ${currentPage}`);
             break;
@@ -376,7 +376,7 @@ const runScraper = async () => {
     console.log('✅ Scraping completed. Data saved to rimi.json');
 };
 
-const startWithRetries = async (maxRetries = 3, delayBetweenRetries = 10000) => {
+const startWithRetries = async (maxRetries = 3, delayBetweenRetries = 5000) => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         if (attempt === 1) {
             console.log('🔄 First attempt – resetting progress...');
