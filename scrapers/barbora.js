@@ -24,7 +24,7 @@ puppeteer.use(StealthPlugin());
     const sleep = () => new Promise(res => setTimeout(res, Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000));
 
     const baseUrl = 'https://barbora.lt';
-    let currentPage = 140;
+    let currentPage = 28;
     let allProducts = [];
 
     console.log(`Opening initial page to handle cookies.`);

@@ -140,29 +140,6 @@ class ProcessDiscounts extends Command
                 ]
             );
 
-            $existingDiscount = DiscountHistory::where('product_id', $product->id)
-                ->where('store_id', $store->id)
-                ->where('start_at', $startAt)
-                ->where('end_at', $endAt)
-                ->first();
-
-            if (!$existingDiscount) {
-                DiscountHistory::create([
-                    'product_id' => $product->id,
-                    'store_id' => $store->id,
-                    'product_url' => $tempDiscount->product_url,
-                    'original_price' => $normalizedOriginalPrice,
-                    'discounted_price' => $normalizedDiscountedPrice,
-                    'discount_percent' => $discountPercent,
-                    'condition' => $normalizedCondition,
-                    'info' => $normalizedInfo,
-                    'card' => $tempDiscount->card,
-                    'start_at' => $startAt,
-                    'end_at' => $endAt,
-                ]);
-
-            }
-
             $existingMainDiscount = Discount::where('product_id', $product->id)
                 ->where('store_id', $store->id)
                 ->where('start_at', $startAt)

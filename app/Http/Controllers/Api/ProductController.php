@@ -308,30 +308,55 @@ class ProductController extends Controller
     public function getProductWithSimilar($slug)
     {
         $filters = $this->getFilters();
-        $cacheKey = "product_with_similar_{$slug}_" . md5(serialize($filters));
+        $filtersHash = md5(json_encode($filters));
+        $cacheKey = "product_with_similar_{$slug}_{$filtersHash}";
+        $cacheTags = ['discounts', 'product', $slug, 'similar'];
 
-        return Cache::tags(['discounts', 'product', $slug, 'similar'])
-            ->remember($cacheKey, 7200, function () use ($slug, $filters) {
-                $product = Product::where('slug', $slug)
-                    ->with(['discounts.store', 'category'])
-                    ->firstOrFail();
+        \Log::debug("Cache key: {$cacheKey}");
 
-                $similarProducts = Discount::whereHas('product', function ($query) use ($slug, $product) {
-                    $query->where('slug', '!=', $slug)
-                        ->where('category_id', $product->category_id);
-                })
-                    ->with(['product.category', 'store'])
-                    ->inRandomOrder()
-                    ->limit(10)
-                    ->get();
+        $cacheStart = microtime(true);
+        $cachedResponse = Cache::tags($cacheTags)->get($cacheKey);
+        $cacheElapsed = (microtime(true) - $cacheStart) * 1000;
 
-                return response()->json([
-                    'data' => $this->formatter->format($product->discounts),
-                    'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
-                    'seo' => $this->generateSeoData('product', $product),
-                    'similar' => $this->formatter->format($similarProducts)
-                ]);
-            });
+        if ($cachedResponse !== null) {
+            \Log::debug("Cache HIT for {$slug} ({$cacheElapsed} ms)");
+            return response($cachedResponse, 200, ['Content-Type' => 'application/json']);
+        }
+
+        \Log::debug("Cache MISS for {$slug}");
+
+        $startTime = microtime(true);
+
+        $product = Product::where('slug', $slug)
+            ->with(['discounts.store', 'category'])
+            ->firstOrFail();
+
+        $randomSeed = $this->generateRandomSeed($slug);
+
+        $similarProducts = Discount::whereHas('product', function ($query) use ($slug, $product) {
+            $query->where('slug', '!=', $slug)
+                ->where('category_id', $product->category_id);
+        })
+            ->with(['product.category', 'store'])
+            ->orderByRaw("RAND({$randomSeed})")
+            ->limit(7)
+            ->get();
+
+        $endTime = microtime(true);
+        \Log::debug("DB queries took " . round(($endTime - $startTime) * 1000, 2) . " ms");
+
+        $responseData = [
+            'data' => $this->formatter->format($product->discounts),
+            'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
+            'seo' => $this->generateSeoData('product', $product),
+            'similar' => $this->formatter->format($similarProducts)
+        ];
+
+        $jsonString = json_encode($responseData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        Cache::tags($cacheTags)->put($cacheKey, $jsonString, 7200);
+
+        return response($jsonString, 200, ['Content-Type' => 'application/json']);
     }
 
     private function generateBreadcrumbs($type, $entity = null, $secondaryEntity = null)
@@ -537,6 +562,11 @@ class ProductController extends Controller
         Cache::tags(['discounts', $categorySlug])->flush();
 
         return response()->json(['message' => "Category cache cleared for {$categorySlug}"]);
+    }
+
+    private function generateRandomSeed($slug)
+    {
+        return crc32($slug . date('Y-m-d'));
     }
 }
 

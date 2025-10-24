@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Cache;
 use App\Models\Store;
 use App\Models\Category;
 use App\Models\Product;
@@ -58,8 +57,7 @@ class CacheWarmingService
 
         foreach ($productsWithDiscounts as $product) {
             dump($product->slug);
-            $this->productController->getProductBySlug($product->slug);
-//            $this->productController->getProductWithSimilar($product->slug);
+            $this->productController->getProductWithSimilar($product->slug);
         }
     }
 

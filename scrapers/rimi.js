@@ -11,10 +11,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const progressFile = path.join(__dirname, 'progress.json');
 
-const BATCH_SIZE = 50;
-const MAX_CONCURRENT_REQUESTS = 10;
-const REQUEST_DELAY = 1000;
-const NAVIGATION_TIMEOUT = 20000;
+const BATCH_SIZE = 100;
+const MAX_CONCURRENT_REQUESTS = 25;
+const REQUEST_DELAY = 300;
+const NAVIGATION_TIMEOUT = 10000;
 
 const saveProgress = (pageNumber) => {
     fs.writeFileSync(progressFile, JSON.stringify({ currentPage: pageNumber }, null, 2));
@@ -55,6 +55,17 @@ const createPage = async (browser) => {
     );
 
     await page.setViewport({ width: 1280, height: 720 });
+
+    // Block images, CSS, and fonts for faster loading
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+        const resourceType = req.resourceType();
+        if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+            req.abort();
+        } else {
+            req.continue();
+        }
+    });
 
     await page.setExtraHTTPHeaders({
         'Accept-Language': 'en-US,en;q=0.9',
@@ -151,7 +162,9 @@ const scrapeProductDetails = async (browser, product, retries = 1) => {
                 console.error(`Failed to scrape details for product after ${retries + 1} attempts:`, product.link);
                 return product;
             }
-            await delay(3000 * (attempt + 1));
+
+            // Small delay only for this product's retry - doesn't block others
+            await delay(500 * (attempt + 1));
         }
     }
 
@@ -161,16 +174,30 @@ const scrapeProductDetails = async (browser, product, retries = 1) => {
 const processBatch = async (browser, products) => {
     const results = [];
     const chunks = [];
+    let failedProducts = 0;
 
     for (let i = 0; i < products.length; i += MAX_CONCURRENT_REQUESTS) {
         chunks.push(products.slice(i, i + MAX_CONCURRENT_REQUESTS));
     }
 
     for (const chunk of chunks) {
-        const chunkPromises = chunk.map(product => scrapeProductDetails(browser, product));
+        const chunkPromises = chunk.map(async (product) => {
+            try {
+                return await scrapeProductDetails(browser, product);
+            } catch (err) {
+                console.error(`Failed to process product: ${product.link}`);
+                failedProducts++;
+                return product; // Return original product data
+            }
+        });
+
         const chunkResults = await Promise.all(chunkPromises);
         results.push(...chunkResults);
         await delay(REQUEST_DELAY);
+    }
+
+    if (failedProducts > 0) {
+        console.log(`Warning: ${failedProducts} products failed to scrape completely`);
     }
 
     return results;
@@ -228,14 +255,26 @@ const runScraper = async () => {
             '--disable-extensions',
             '--disable-plugins',
             '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
+            '--disable-features=VizDisplayCompositor',
+            '--memory-pressure-off',
+            '--max_old_space_size=8192',
+            '--disable-background-networking',
+            '--disable-sync',
+            '--disable-translate',
+            '--hide-scrollbars',
+            '--mute-audio',
+            '--no-default-browser-check',
+            '--no-pings',
+            '--disable-logging',
+            '--disable-permissions-api'
         ]
     });
 
     const mainPage = await createPage(browser);
 
     const baseUrl = 'https://www.rimi.lt/';
-    let currentPage = loadProgress();
+    // let currentPage = loadProgress();
+    let currentPage = 56;
     let allProducts = [];
 
     if (currentPage === 1) {

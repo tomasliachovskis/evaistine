@@ -147,7 +147,7 @@ class DescriptionGenerationService
                     'store' => $discount->store->name,
                     'category' => $discount->product->category->name,
                     'category_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}",
-                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'product_url' => "@https://superakcijos.lt/akcija/{$discount->product->category->slug}/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
@@ -245,7 +245,7 @@ class DescriptionGenerationService
                     'name' => $discount->product->name,
                     'store' => $discount->store->name,
                     'store_url' => "@https://superakcijos.lt/akcijos/{$discount->store->slug}",
-                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'product_url' => "@https://superakcijos.lt/akcija/{$discount->product->category->slug}/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
@@ -435,16 +435,16 @@ EXAMPLE FORMAT:
 <h3>Populiariausi produktai su nuolaida</h3>
 <div class=\"top-products\">
 <ul>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Žemaitijos varškė</a> – €4.66 (-40%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Dvaro pienas</a> – €2.15 (-35%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Vilkyškių duona</a> – €1.89 (-30%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Lietuvos sūris</a> – €3.45 (-25%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Ekstra jogurtas</a> – €1.25 (-20%, Lidl)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Kiaušiniai</a> – €2.50 (-18%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Bulvės</a> – €0.89 (-15%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Morkos</a> – €1.15 (-12%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Svogūnai</a> – €0.95 (-10%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Obuoliai</a> – €1.45 (-8%, Lidl)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Žemaitijos varškė</a> – €4.66 (-40%, Iki)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Dvaro pienas</a> – €2.15 (-35%, Rimi)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Vilkyškių duona</a> – €1.89 (-30%, Maxima)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Lietuvos sūris</a> – €3.45 (-25%, Norfa)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Ekstra jogurtas</a> – €1.25 (-20%, Lidl)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Kiaušiniai</a> – €2.50 (-18%, Iki)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Bulvės</a> – €0.89 (-15%, Rimi)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Morkos</a> – €1.15 (-12%, Maxima)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Svogūnai</a> – €0.95 (-10%, Norfa)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Obuoliai</a> – €1.45 (-8%, Lidl)</li>
 </ul>
 </div>
 
@@ -584,16 +584,16 @@ EXAMPLE FORMAT:
 <h3>Populiariausi produktai su nuolaida</h3>
 <div class=\"top-products\">
 <ul>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 1</a> – €0.99 (-50%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 2</a> – €1.24 (-50%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 3</a> – €1.19 (-50%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 4</a> – €2.15 (-45%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 5</a> – €1.89 (-40%, Lidl)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 6</a> – €3.45 (-35%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 7</a> – €1.25 (-30%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 8</a> – €2.50 (-25%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 9</a> – €0.89 (-20%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 10</a> – €1.15 (-15%, Lidl)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 1</a> – €0.99 (-50%, Rimi)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 2</a> – €1.24 (-50%, Maxima)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 3</a> – €1.19 (-50%, Norfa)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 4</a> – €2.15 (-45%, Iki)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 5</a> – €1.89 (-40%, Lidl)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 6</a> – €3.45 (-35%, Rimi)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 7</a> – €1.25 (-30%, Maxima)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 8</a> – €2.50 (-25%, Norfa)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 9</a> – €0.89 (-20%, Iki)</li>
+<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 10</a> – €1.15 (-15%, Lidl)</li>
 </ul>
 </div>
 
@@ -666,53 +666,53 @@ OUTPUT: Return only the description text with HTML formatting and links included
     private function getDiverseTopDiscounts($discounts, int $limit = 10)
     {
         $filteredDiscounts = $discounts->where('product.category_id', '!=', 535);
-        
+
         $selectedDiscounts = collect();
         $usedBrands = collect();
         $usedProductTypes = collect();
-        
+
         // Sort by discount percentage descending
         $sortedDiscounts = $filteredDiscounts->sortByDesc('discount_percent');
-        
+
         foreach ($sortedDiscounts as $discount) {
             if ($selectedDiscounts->count() >= $limit) {
                 break;
             }
-            
+
             $productName = $discount->product->name;
             $brand = $this->extractBrand($productName);
             $productType = $this->extractProductType($productName);
-            
+
             // Skip if we already have too many products from the same brand (max 2 per brand)
             if ($usedBrands->where('brand', $brand)->count() >= 2) {
                 continue;
             }
-            
+
             // Skip if we already have the same product type (e.g., different sizes of same product)
             if ($usedProductTypes->contains($productType)) {
                 continue;
             }
-            
+
             $selectedDiscounts->push($discount);
             $usedBrands->push(['brand' => $brand, 'product' => $productName]);
             $usedProductTypes->push($productType);
         }
-        
+
         // If we don't have enough diverse products, fill with remaining best discounts
         if ($selectedDiscounts->count() < $limit) {
             $remaining = $limit - $selectedDiscounts->count();
             $selectedIds = $selectedDiscounts->pluck('id');
-            
+
             $additionalDiscounts = $sortedDiscounts
                 ->whereNotIn('id', $selectedIds)
                 ->take($remaining);
-                
+
             $selectedDiscounts = $selectedDiscounts->merge($additionalDiscounts);
         }
-        
+
         return $selectedDiscounts->take($limit);
     }
-    
+
     private function extractBrand(string $productName): string
     {
         // Common brand patterns
@@ -722,25 +722,25 @@ OUTPUT: Return only the description text with HTML formatting and links included
             'LIDL', 'MAXIMA', 'RIMI', 'NORFA', 'IKI', 'BARBORA',
             'GOWIPES', 'MAŽYLIS', 'AUKŠTAITIŠKI', 'DOVANA'
         ];
-        
+
         $productNameUpper = mb_strtoupper($productName);
-        
+
         foreach ($brands as $brand) {
             if (mb_strpos($productNameUpper, $brand) !== false) {
                 return $brand;
             }
         }
-        
+
         // If no brand found, use first word as brand
         $words = explode(' ', $productName);
         return $words[0] ?? 'UNKNOWN';
     }
-    
+
     private function extractProductType(string $productName): string
     {
         // Extract product type by removing size/quantity info and brand
         $productName = mb_strtoupper($productName);
-        
+
         // Remove common size/quantity patterns
         $patterns = [
             '/\b\d+\s*(CM|ML|G|KG|VNT|PAK|S\d+|M\d+|L\d+|XL\d+)\b/',
@@ -750,17 +750,17 @@ OUTPUT: Return only the description text with HTML formatting and links included
             '/\b\d+\s*G\b/',
             '/\b\d+\s*CM\b/'
         ];
-        
+
         foreach ($patterns as $pattern) {
             $productName = preg_replace($pattern, '', $productName);
         }
-        
+
         // Remove common brand names
         $brands = ['PAMPERS', 'HUGGIES', 'ELMEX', 'COLGATE', 'SENSODYNE', 'NUTRI', 'BALTIJA', 'ŽEMAITIJA', 'DOVANA', 'VILKYŠKIAI', 'GOWIPES', 'MAŽYLIS', 'AUKŠTAITIŠKI'];
         foreach ($brands as $brand) {
             $productName = str_replace($brand, '', $productName);
         }
-        
+
         // Clean up and return
         $productName = trim(preg_replace('/\s+/', ' ', $productName));
         return $productName ?: 'UNKNOWN';
