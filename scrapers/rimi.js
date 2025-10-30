@@ -14,7 +14,7 @@ const progressFile = path.join(__dirname, 'progress.json');
 const BATCH_SIZE = 100;
 const MAX_CONCURRENT_REQUESTS = 25;
 const REQUEST_DELAY = 300;
-const NAVIGATION_TIMEOUT = 5000;
+const NAVIGATION_TIMEOUT = 10000;
 
 const saveProgress = (pageNumber) => {
     fs.writeFileSync(progressFile, JSON.stringify({ currentPage: pageNumber }, null, 2));
@@ -175,6 +175,7 @@ const processBatch = async (browser, products) => {
     const results = [];
     const chunks = [];
     let failedProducts = 0;
+    let skippedProducts = 0;
 
     for (let i = 0; i < products.length; i += MAX_CONCURRENT_REQUESTS) {
         chunks.push(products.slice(i, i + MAX_CONCURRENT_REQUESTS));
@@ -183,6 +184,15 @@ const processBatch = async (browser, products) => {
     for (const chunk of chunks) {
         const chunkPromises = chunk.map(async (product) => {
             try {
+                const isValidDiscount = await checkValidDiscount(product);
+
+                if (isValidDiscount) {
+                    console.log(`Skipping product (discount already exists): ${product.link}`);
+                    skippedProducts++;
+                    product.skipped = true; // Mark as skipped
+                    return product; // Return original product data without scraping
+                }
+
                 return await scrapeProductDetails(browser, product);
             } catch (err) {
                 console.error(`Failed to process product: ${product.link}`);
@@ -200,7 +210,43 @@ const processBatch = async (browser, products) => {
         console.log(`Warning: ${failedProducts} products failed to scrape completely`);
     }
 
+    if (skippedProducts > 0) {
+        console.log(`Info: ${skippedProducts} products skipped (discounts already exist)`);
+    }
+
     return results;
+};
+
+const checkValidDiscount = async (product) => {
+    if (!product.link || !product.price) {
+        return false;
+    }
+
+    // Use GTM data price if available, otherwise fallback to extracted price
+    let priceToCheck = product.price;
+    let originalPriceToCheck = product.price_before;
+
+    if (product.gtmData && product.gtmData.price) {
+        priceToCheck = product.gtmData.price.toString();
+    }
+
+    // If we have labelPrice (from price-label), use that as the discounted price
+    if (product.labelPrice) {
+        priceToCheck = product.labelPrice;
+    }
+
+    try {
+        const response = await axiosInstance.post('/scrapers/check-discount', {
+            store: 'rimi',
+            url: product.link,
+            discounted_price: parseFloat(priceToCheck)
+        });
+
+        return response.data.is_valid;
+    } catch (err) {
+        console.error('Error checking discount validity:', err.message);
+        return false;
+    }
 };
 
 const postBatchToAPI = async (products) => {
@@ -329,6 +375,20 @@ const runScraper = async () => {
 
         const productBlocks = await mainPage.$$eval('div.js-product-container', blocks => {
             return blocks.map(block => {
+                // Extract from data attributes
+                const productId = block.getAttribute('data-gtms-product-id');
+                const gtmData = block.getAttribute('data-gtm-eec-product');
+
+                let parsedGtmData = null;
+                if (gtmData) {
+                    try {
+                        parsedGtmData = JSON.parse(gtmData.replace(/&quot;/g, '"'));
+                    } catch (e) {
+                        console.error('Error parsing GTM data:', e);
+                    }
+                }
+
+                // Extract from DOM elements
                 const title = block.querySelector('.card__name')?.textContent.trim();
                 const price = block.querySelector('.card__price')?.textContent.trim();
                 const price_before = block.querySelector('.card__old-price')?.textContent.trim();
@@ -340,6 +400,20 @@ const runScraper = async () => {
                 let condition = block.querySelector('div.price-label__header.-red')?.textContent.trim();
                 info = info?.replace(/\s+/g, ' ').trim();
 
+                // Extract price from price-label if available
+                const priceLabelPrice = block.querySelector('.price-label__price');
+                let labelPrice = null;
+                if (priceLabelPrice) {
+                    const major = priceLabelPrice.querySelector('.major')?.textContent.trim();
+                    const cents = priceLabelPrice.querySelector('.cents')?.textContent.trim();
+                    if (major && cents) {
+                        labelPrice = `${major}.${cents}`;
+                    }
+                }
+
+                // Extract price per unit from price-label
+                const pricePerUnit = block.querySelector('.price-per-unit')?.textContent.trim();
+
                 if (imageSrc) {
                     imageSrc = imageSrc.replace(/q_1/g, 'q_auto:low');
                 }
@@ -349,7 +423,31 @@ const runScraper = async () => {
                     condition = '';
                 }
 
-                return { title, price, price_before, info, discount, valid, link, imageSrc, condition};
+                console.log({
+                    productId,
+                    gtmData: parsedGtmData,
+                    link,
+                    price,
+                    price_before,
+                    labelPrice,
+                    pricePerUnit
+                });
+
+                return {
+                    title,
+                    price,
+                    price_before,
+                    info,
+                    discount,
+                    valid,
+                    link,
+                    imageSrc,
+                    condition,
+                    productId,
+                    gtmData: parsedGtmData,
+                    labelPrice,
+                    pricePerUnit
+                };
             });
         });
 
@@ -361,9 +459,20 @@ const runScraper = async () => {
         console.log(`Processing ${productBlocks.length} products from page ${currentPage}`);
 
         const processedProducts = await processBatch(browser, productBlocks);
+
+        // Filter out products that have valid discounts (were skipped)
+        const productsToPost = processedProducts.filter(product => {
+            // If product was skipped, it means discount already exists
+            return !product.skipped;
+        });
+
         allProducts.push(...processedProducts);
 
-        await postBatchToAPI(processedProducts);
+        if (productsToPost.length > 0) {
+            await postBatchToAPI(productsToPost);
+        } else {
+            console.log('No new products to post to API');
+        }
 
         currentPage++;
         saveProgress(currentPage);

@@ -65,8 +65,8 @@ puppeteer.use(StealthPlugin());
 
                     const category = json.category_name_full_path;
                     const valid = json.ShowInOffersTo;
-                    let start_at = valid ? valid.split('T')[0] : null;
-                    let end_at = start_at;
+                    let start_at= null;
+                    let end_at = valid ? valid.split('T')[0] : null;
 
                     const discounted_price = json.price;
                     const original_price = json.promotion?.oldPrice || null;

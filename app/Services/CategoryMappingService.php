@@ -170,7 +170,7 @@ class CategoryMappingService
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl, [
-                'model' => config('services.openai.model', 'gpt-4o'), // Configurable model
+                'model' => config('services.openai.model', 'gpt-5-mini'), // Configurable model
                 'messages' => [
                     [
                         'role' => 'system',

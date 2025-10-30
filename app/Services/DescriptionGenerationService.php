@@ -44,7 +44,7 @@ class DescriptionGenerationService
                     'Authorization' => 'Bearer ' . $this->apiKey,
                     'Content-Type' => 'application/json',
                 ])->post($this->apiUrl, [
-                    'model' => config('services.openai.model', 'gpt-4o'),
+                    'model' => config('services.openai.model', 'gpt-5-mini'),
                     'messages' => [
                         [
                             'role' => 'system',
@@ -55,8 +55,8 @@ class DescriptionGenerationService
                             'content' => json_encode($storeData, JSON_UNESCAPED_UNICODE)
                         ]
                     ],
-                    'max_tokens' => 3000,
-                    'temperature' => 0.7
+//                    'max_tokens' => 3000,
+//                    'temperature' => 0.7
                 ]);
 
             if ($response->successful()) {
@@ -94,7 +94,7 @@ class DescriptionGenerationService
                     'Authorization' => 'Bearer ' . $this->apiKey,
                     'Content-Type' => 'application/json',
                 ])->post($this->apiUrl, [
-                    'model' => config('services.openai.model', 'gpt-4o'),
+                    'model' => config('services.openai.model', 'gpt-5-mini'),
                     'messages' => [
                         [
                             'role' => 'system',
@@ -105,8 +105,8 @@ class DescriptionGenerationService
                             'content' => json_encode($categoryData, JSON_UNESCAPED_UNICODE)
                         ]
                     ],
-                    'max_tokens' => 3000,
-                    'temperature' => 0.7
+//                    'max_tokens' => 3000,
+//                    'temperature' => 0.7
                 ]);
 
             if ($response->successful()) {
@@ -147,7 +147,7 @@ class DescriptionGenerationService
                     'store' => $discount->store->name,
                     'category' => $discount->product->category->name,
                     'category_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}",
-                    'product_url' => "@https://superakcijos.lt/akcija/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
@@ -245,7 +245,7 @@ class DescriptionGenerationService
                     'name' => $discount->product->name,
                     'store' => $discount->store->name,
                     'store_url' => "@https://superakcijos.lt/akcijos/{$discount->store->slug}",
-                    'product_url' => "@https://superakcijos.lt/akcija/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
@@ -435,16 +435,16 @@ EXAMPLE FORMAT:
 <h3>Populiariausi produktai su nuolaida</h3>
 <div class=\"top-products\">
 <ul>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Žemaitijos varškė</a> – €4.66 (-40%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Dvaro pienas</a> – €2.15 (-35%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Vilkyškių duona</a> – €1.89 (-30%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Lietuvos sūris</a> – €3.45 (-25%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Ekstra jogurtas</a> – €1.25 (-20%, Lidl)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Kiaušiniai</a> – €2.50 (-18%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Bulvės</a> – €0.89 (-15%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Morkos</a> – €1.15 (-12%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Svogūnai</a> – €0.95 (-10%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Obuoliai</a> – €1.45 (-8%, Lidl)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Žemaitijos varškė</a> – €4.66 (-40%, Iki)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Dvaro pienas</a> – €2.15 (-35%, Rimi)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Vilkyškių duona</a> – €1.89 (-30%, Maxima)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Lietuvos sūris</a> – €3.45 (-25%, Norfa)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Ekstra jogurtas</a> – €1.25 (-20%, Lidl)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Kiaušiniai</a> – €2.50 (-18%, Iki)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Bulvės</a> – €0.89 (-15%, Rimi)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Morkos</a> – €1.15 (-12%, Maxima)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Svogūnai</a> – €0.95 (-10%, Norfa)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Obuoliai</a> – €1.45 (-8%, Lidl)</li>
 </ul>
 </div>
 
@@ -584,16 +584,16 @@ EXAMPLE FORMAT:
 <h3>Populiariausi produktai su nuolaida</h3>
 <div class=\"top-products\">
 <ul>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 1</a> – €0.99 (-50%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 2</a> – €1.24 (-50%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 3</a> – €1.19 (-50%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 4</a> – €2.15 (-45%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 5</a> – €1.89 (-40%, Lidl)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 6</a> – €3.45 (-35%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 7</a> – €1.25 (-30%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 8</a> – €2.50 (-25%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 9</a> – €0.89 (-20%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcija/product\">Produktas 10</a> – €1.15 (-15%, Lidl)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 1</a> – €0.99 (-50%, Rimi)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 2</a> – €1.24 (-50%, Maxima)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 3</a> – €1.19 (-50%, Norfa)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 4</a> – €2.15 (-45%, Iki)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 5</a> – €1.89 (-40%, Lidl)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 6</a> – €3.45 (-35%, Rimi)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 7</a> – €1.25 (-30%, Maxima)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 8</a> – €2.50 (-25%, Norfa)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 9</a> – €0.89 (-20%, Iki)</li>
+<li><a href=\"https://superakcijos.lt/akcijos/product\">Produktas 10</a> – €1.15 (-15%, Lidl)</li>
 </ul>
 </div>
 

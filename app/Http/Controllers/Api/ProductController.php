@@ -20,25 +20,6 @@ class ProductController extends Controller
         $this->formatter = $formatter;
     }
 
-    public function storeDiscountTemp(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            '*.name' => 'nullable|string',
-            '*.store' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $discountTemps = [];
-        foreach ($request->all() as $product) {
-            $discountTemps[] = DiscountTemp::create($product);
-        }
-
-        return response()->json($discountTemps, 201);
-    }
-
     public function getDiscounts($storeOrCategory, $category = null)
     {
         $filters = $this->getFilters();
@@ -312,20 +293,11 @@ class ProductController extends Controller
         $cacheKey = "product_with_similar_{$slug}_{$filtersHash}";
         $cacheTags = ['discounts', 'product', $slug, 'similar'];
 
-        \Log::debug("Cache key: {$cacheKey}");
-
-        $cacheStart = microtime(true);
         $cachedResponse = Cache::tags($cacheTags)->get($cacheKey);
-        $cacheElapsed = (microtime(true) - $cacheStart) * 1000;
 
         if ($cachedResponse !== null) {
-            \Log::debug("Cache HIT for {$slug} ({$cacheElapsed} ms)");
             return response($cachedResponse, 200, ['Content-Type' => 'application/json']);
         }
-
-        \Log::debug("Cache MISS for {$slug}");
-
-        $startTime = microtime(true);
 
         $product = Product::where('slug', $slug)
             ->with(['discounts.store', 'category'])
@@ -341,9 +313,6 @@ class ProductController extends Controller
             ->orderByRaw("RAND({$randomSeed})")
             ->limit(7)
             ->get();
-
-        $endTime = microtime(true);
-        \Log::debug("DB queries took " . round(($endTime - $startTime) * 1000, 2) . " ms");
 
         $responseData = [
             'data' => $this->formatter->format($product->discounts),
@@ -406,7 +375,7 @@ class ProductController extends Controller
                 }
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcija/' . ($entity->category ? $entity->category->slug . '/' : '') . $entity->slug,
+                    'slug' => 'akcijos/' . ($entity->category ? $entity->category->slug . '/' : '') . $entity->slug,
                     'type' => 'product'
                 ];
                 break;
@@ -432,25 +401,34 @@ class ProductController extends Controller
     {
         switch ($type) {
             case 'category':
+                $count = $this->getDiscountCountForCategory($entity);
+                $maxDiscount = $this->getMaxDiscountForCategory($entity);
+                $minDiscount = $this->getMinDiscountForCategory($entity);
                 return [
                     'seo_title' => $entity->name . ' akcijos',
                     'seo_description' => $entity->description,
-                    'meta_title' => $entity->name . " akcijos – naujausi leidiniai, nuolaidos & specialūs pasiūlymai",
+                    'meta_title' => $entity->name . " akcijos – " . $this->formatCount($count) . "+ prekių nuolaidos {$minDiscount}-{$maxDiscount}%",
                     'meta_description' => "Peržiūrėkite naujausias " . mb_strtolower($entity->name) . " akcijas",
                 ];
             case 'store':
+                $count = $this->getDiscountCountForStore($entity);
+                $maxDiscount = $this->getMaxDiscountForStore($entity);
+                $minDiscount = $this->getMinDiscountForStore($entity);
                 return [
                     'seo_title' => $entity->name . ' akcijos',
                     'seo_description' => $entity->description,
-                    'meta_title' => mb_strtoupper($entity->name) . " akcijos – naujausi leidiniai, nuolaidos & specialūs pasiūlymai",
+                    'meta_title' => mb_strtoupper($entity->name) . " akcijos – " . $this->formatCount($count) . "+ prekių nuolaidos {$minDiscount}-{$maxDiscount}%",
                     'meta_description' => "Peržiūrėkite naujausias" . $entity->name . " akcijas, savaitinius leidinius ir specialius pasiūlymus – sutaupykite su " . $entity->name . "! Galioja parduotuvėse ir internetu.",
                 ];
             case 'store_category':
+                $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);
+                $maxDiscount = $this->getMaxDiscountForStoreCategory($entity, $secondaryEntity);
+                $minDiscount = $this->getMinDiscountForStoreCategory($entity, $secondaryEntity);
                 return [
                     'seo_title' => $entity->name . ' akcija ' . mb_strtolower($secondaryEntity->name),
                     'seo_description' => "",
-                    'meta_title' => mb_strtoupper($entity->name) . ' akcija ' . mb_strtolower($secondaryEntity->name),
-                    'meta_description' => "Atraskite naujausias " . ucfirst($entity->name) . " akcijas " . mb_strtolower($secondaryEntity->name) . " – švieži, kokybiški produktai su puikiomis nuolaidomis. Pirkite pigiau šią savaitę!“",
+                    'meta_title' => mb_strtoupper($entity->name) . ' akcija ' . mb_strtolower($secondaryEntity->name) . " – " . $this->formatCount($count) . "+ prek. nuolaidos {$minDiscount}-{$maxDiscount}%",
+                    'meta_description' => "Atraskite naujausias " . ucfirst($entity->name) . " akcijas " . mb_strtolower($secondaryEntity->name) . " – švieži, kokybiški produktai su puikiomis nuolaidomis. Pirkite pigiau šią savaitę!",
                 ];
             case 'product':
                 return [
@@ -567,6 +545,77 @@ class ProductController extends Controller
     private function generateRandomSeed($slug)
     {
         return crc32($slug . date('Y-m-d'));
+    }
+
+    private function getDiscountCountForCategory($category)
+    {
+        return Discount::whereHas('product', function ($q) use ($category) {
+            $q->where('category_id', $category->id);
+        })->count();
+    }
+
+    private function getMaxDiscountForCategory($category)
+    {
+        return Discount::whereHas('product', function ($q) use ($category) {
+            $q->where('category_id', $category->id);
+        })->max('discount_percent') ?: 0;
+    }
+
+    private function getDiscountCountForStore($store)
+    {
+        return Discount::where('store_id', $store->id)->count();
+    }
+
+    private function getMaxDiscountForStore($store)
+    {
+        return Discount::where('store_id', $store->id)->max('discount_percent') ?: 0;
+    }
+
+    private function getDiscountCountForStoreCategory($store, $category)
+    {
+        return Discount::where('store_id', $store->id)
+            ->whereHas('product', function ($q) use ($category) {
+                $q->where('category_id', $category->id);
+            })->count();
+    }
+
+    private function getMaxDiscountForStoreCategory($store, $category)
+    {
+        return Discount::where('store_id', $store->id)
+            ->whereHas('product', function ($q) use ($category) {
+                $q->where('category_id', $category->id);
+            })->max('discount_percent') ?: 0;
+    }
+
+    private function getMinDiscountForCategory($category)
+    {
+        return Discount::whereHas('product', function ($q) use ($category) {
+            $q->where('category_id', $category->id);
+        })->min('discount_percent') ?: 10;
+    }
+
+    private function getMinDiscountForStore($store)
+    {
+        return Discount::where('store_id', $store->id)->min('discount_percent') ?: 10;
+    }
+
+    private function getMinDiscountForStoreCategory($store, $category)
+    {
+        return Discount::where('store_id', $store->id)
+            ->whereHas('product', function ($q) use ($category) {
+                $q->where('category_id', $category->id);
+            })->min('discount_percent') ?: 10;
+    }
+
+    private function formatCount($count)
+    {
+        if ($count >= 1000) {
+            return floor($count / 100) * 100;
+        } elseif ($count >= 100) {
+            return floor($count / 10) * 10;
+        } else {
+            return $count;
+        }
     }
 }
 
