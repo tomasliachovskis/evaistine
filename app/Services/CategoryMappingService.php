@@ -44,7 +44,7 @@ class CategoryMappingService
 
         $this->info("Starting bulk mapping for {$storeName}. Found " . $products->count() . " products to map.");
 
-        $chunks = $products->chunk(50);
+        $chunks = $products->chunk(20);
 
         foreach ($chunks as $chunk) {
             $this->mapProductChunk($chunk, $storeName);
@@ -94,7 +94,7 @@ class CategoryMappingService
         $this->info("Mapped {$mappedFromExisting} products from existing categories. {$productsToMap->count()} products need GPT mapping.");
 
         if ($productsToMap->count() > 0) {
-            $chunks = $productsToMap->chunk(50);
+            $chunks = $productsToMap->chunk(20);
 
             foreach ($chunks as $chunk) {
                 $this->mapProductChunk($chunk, $storeName);
@@ -181,8 +181,8 @@ class CategoryMappingService
                         'content' => "Products: {$productJson}"
                     ]
                 ],
-                'max_tokens' => 3000,
-                'temperature' => 0
+//                'max_tokens' => 3000,
+//                'temperature' => 0
             ]);
 
             if ($response->successful()) {

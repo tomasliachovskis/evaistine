@@ -51,26 +51,4 @@ class Discount extends Model
             $q->where('name', 'like', '%' . $searchTerm . '%');
         });
     }
-
-    protected static function booted()
-    {
-        static::created(function ($discount) {
-            static::clearDiscountsCache();
-        });
-
-        static::updated(function ($discount) {
-            static::clearDiscountsCache();
-        });
-
-        static::deleted(function ($discount) {
-            static::clearDiscountsCache();
-        });
-    }
-
-    private static function clearDiscountsCache()
-    {
-        Cache::forget('discounts_*');
-        Cache::forget('all_discounts_*');
-        Cache::forget('favorite_*');
-    }
 }

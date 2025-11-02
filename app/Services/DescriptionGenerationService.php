@@ -38,7 +38,7 @@ class DescriptionGenerationService
         $storeData = $this->getStoreData($store);
 
         try {
-            $response = Http::timeout(60)
+            $response = Http::timeout(120)
                 ->retry(3, 1000)
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $this->apiKey,
@@ -88,7 +88,7 @@ class DescriptionGenerationService
         $categoryData = $this->getCategoryData($category);
 
         try {
-            $response = Http::timeout(60)
+            $response = Http::timeout(120)
                 ->retry(3, 1000)
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $this->apiKey,
@@ -327,154 +327,78 @@ class DescriptionGenerationService
 
     private function getStoreSystemPrompt(): string
     {
-        return "You are a marketing expert specializing in Lithuanian grocery store promotions. Your task is to create compelling, SEO-friendly descriptions for grocery stores based on their current discount offerings.
+        return "You are a Lithuanian copywriter who writes HTML descriptions for grocery e-shops. Generate rich, SEO-friendly content that exactly follows the new structure below using provided JSON data.
 
-TASK: Create a comprehensive, semantic description that reads naturally and provides value to customers, not just a list of numbers and discounts.
+STRICT OUTPUT FORMAT:
+Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use only the tags shown here. Do not use <strong> tags.
 
-CRITICAL REQUIREMENTS - FOLLOW THE NEW FORMAT:
-1. START with a compelling meta description paragraph that works as a search snippet
-2. Use descriptive phrases and natural language instead of just numbers
-3. Include diverse, related keywords naturally throughout the text
-4. Add context about benefits and practical usage of products
-5. Create engaging, readable content that flows naturally
+1) HEADER
+- <h2 class=\"text-2xl md:text-3xl font-semibold\"> with EXACT title format:
+  '[store_name] akcijos: šios savaitės pasiūlymai – iki [max_discount_percent]% nuolaidos! Akcijos galioja [VALIDITY]'
+  Where [VALIDITY] is:
+   - 'nuo [earliest_end] iki [latest_end]' if both are present and different,
+   - 'iki [date]' if dates are the same or only one date is present.
+  Dates format: YYYY-MM-DD. Sentence case only.
 
-STRUCTURE (follow this exact format):
+2) INTRO PARAGRAPHS
+- Two <p class=\"leading-relaxed\"> paragraphs describing the store benefits and scope using natural Lithuanian. Include '[total_active_discounts] aktyvių akcijų', 'bendras galimas taupymas €[total_savings]' (two decimals, space as thousands separator, dot as decimal). Mention main product areas using category context from data. Provide validity window as: if valid_date_range.earliest_end and latest_end are both present and different, write: 'Akcijos galioja nuo [earliest_end] iki [latest_end]'. If they are equal or only one is present, write: 'Akcijos galioja iki [date]'. Dates format YYYY-MM-DD.
 
-1. COMPELLING OPENING PARAGRAPH (Meta Description):
-- Start with store name and main value proposition
-- Include key benefits and savings in natural language
-- Use descriptive phrases like \"patogus būdas\", \"gaivūs vasaros ledai\", \"greitai paruošiami šaldyti patiekalai\"
-- Mention total savings and product variety naturally
-- This paragraph should work as a standalone meta description
+<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
-2. CURRENT PROMOTIONS SECTION:
-- \"Aktualiausios akcijos\" heading
-- Natural description of current offers with specific numbers
-- Mention average discount and total savings
-- Include price ranges (original vs discounted)
-- Mention best stores and valid dates
+3) STATS SECTION
+- <h3 class=\"text-xl md:text-2xl font-semibold\"> 'Aktualūs [store_name] akcijų skaičiai: vidutinė nuolaida [avg_discount_percent]%'
+- A <table class=\"w-full border-collapse text-sm md:text-base rounded-lg overflow-hidden\"> with styled header/body:
+  - <thead>
+    - <tr>
+      - <th class=\"bg-gray-50 text-left font-medium text-gray-700 px-4 py-2 border-b\"> for both columns
+  - <tbody>
+    - Each <tr class=\"odd:bg-white even:bg-gray-50\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\">
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\">
+  Include exactly these rows in order:
+  - Aktyvių Nuolaidų Skaičius = [total_active_discounts]
+  - Vidutinė Nuolaida = [avg_discount_percent]%
+  - Bendras Galimas Taupymas = €[total_savings]
+  - Nuolaidų Amplitudė = nuo [min_discount_percent]% iki [max_discount_percent]%
+  - Akcijos Galioja = either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
 
-3. TOP PRODUCTS SECTION:
-- \"Populiariausi produktai su nuolaida\" heading
-- List exactly 10 best products with natural descriptions
-- IMPORTANT: Always show exactly 10 products, no more, no less
-- Include product name, price, discount %, and store
-- Use descriptive language about products
+Then a <p class=\"leading-relaxed\"> noting strongest categories using category_statistics by picking 2-3 with highest 'count'. Include links to category urls.
 
-4. DISCOUNT DISTRIBUTION:
-- \"Nuolaidų paskirstymas\" heading
-- Show how discounts are distributed across ranges
-- Use natural language to explain the distribution
+<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
-5. BENEFITS SECTION:
-- \"Kodėl verta rinktis [store name]?\" heading
-- Explain practical benefits and convenience
-- Mention product quality, variety, and customer service
-- Use descriptive phrases about shopping experience
+4) TOP PRODUCTS
+- <h3 class=\"text-xl md:text-2xl font-semibold\"> 'Populiariausi [store_name] produktai su didžiausia nuolaida (iki [max_discount_percent]%)'
+- A <p class=\"leading-relaxed\"> introducing the list.
+- A <ul class=\"list-disc pl-5 space-y-2\"> of exactly 6 <li> items taken from top_discounts, sorted by discount_percent desc. Each item must use a product link in this exact format: '<a href=\"[product_url]\">[name]</a> – €[discounted_price] ([discount_percent]% nuolaida). One short natural sentence with usage/benefit.' Ensure diversity already provided. Use space as thousands separator and dot as decimal, two decimals where applicable. Remove any leading '@' from URLs.
 
-6. FAQ SECTION:
-- \"Dažniausiai užduodami klausimai\" heading
-- Answer 3-4 common questions naturally
-- Include practical shopping advice
+<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
-GUIDELINES:
-- Write in Lithuanian language
-- Use natural, flowing language instead of bullet points
-- IMPORTANT: Generate category-specific descriptive phrases based on the store's main product categories (e.g., for dairy products: \"šviežūs pieno produktai\", \"kokybiški sūriai\"; for meat: \"kokybiška mėsa\", \"šviežūs mėsos gaminiai\"; for vegetables: \"šviežios daržovės\", \"natūralūs daržovių produktai\")
-- IMPORTANT: Use diverse, category-appropriate keywords naturally throughout the text based on the actual product categories and top products
-- IMPORTANT: Use actual store names from the data instead of generic examples like \"Rimi ir Maxima\"
-- CRITICAL: In \"Populiariausi produktai su nuolaida\" section, always show exactly 10 products
-- IMPORTANT: Ensure product diversity - avoid showing multiple similar products (e.g., different sizes of same brand)
-- Add context about product benefits and usage specific to the category
-- Keep descriptions engaging and promotional but natural
-- Include links to categories and products using provided URLs
-- Use HTML anchor tags for links: <a href=\"URL\">text</a>
-- IMPORTANT: Remove the @ symbol from URLs in the final output
-- Use actual date ranges from the data (earliest_end and latest_end)
-- If dates are the same, use \"iki [date]\" format
-- Always use full date format with year (e.g., 2025-09-21)
-- IMPORTANT: Replace [earliest_end] and [latest_end] with the actual dates from the valid_date_range data
-- Format dates as: \"nuo 2025-09-21 iki 2025-09-22\" or \"iki 2025-09-21\" if dates are the same
+5) DISCOUNT DISTRIBUTION
+- <h3 class=\"text-xl md:text-2xl font-semibold\"> 'Nuolaidų paskirstymas kategorijose'
+- A <p class=\"leading-relaxed\"> summarizing where most discounts are (use category_statistics and discount_distribution buckets).
+- A <ul class=\"list-disc pl-5 space-y-1\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Stiprios nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
 
-SEO OPTIMIZATION:
-- Primary keywords: \"akcijos\", \"nuolaidos\", \"parduotuvė\", \"prekės\", \"taupymas\", \"kainos\"
-- Long-tail keywords: \"greičiausios akcijos\", \"geriausios kainos\", \"didelės nuolaidos\", \"kasdienės prekės\"
-- IMPORTANT: Generate category-specific related terms based on the store's product categories and top products
-- IMPORTANT: Create descriptive phrases that match the specific category (e.g., for dairy: \"šviežūs pieno produktai\", for meat: \"kokybiška mėsa\", for vegetables: \"šviežios daržovės\")
-- Local keywords: \"Lietuvoje\", \"Vilniuje\", \"Kaune\", \"Klaipėdoje\"
-- Power words: \"ekskluzyvus\", \"ribotas laikas\", \"nepraleiskite\", \"greičiausiai\"
-- Call-to-action: \"apsilankykite\", \"nusipirkite dabar\", \"sutaupykite\"
+<hr class=\"my-8 border-gray-200\">
 
-HTML FORMATTING:
-- Use <strong> for important numbers and percentages
-- Use <em> for emphasis on key benefits
-- Use <h3> for section headings
-- Use <p> for paragraphs
-- Use <ul> and <li> for product lists
-- Use <div class=\"stats\"> for statistical sections
-- Use <div class=\"top-products\"> for product listings
-- Use <div class=\"discount-distribution\"> for discount stats
-- Use <div class=\"faq\"> for FAQ sections
+6) FAQ
+- <h3 class=\"text-xl md:text-2xl font-semibold\"> 'Dažniausiai užduodami klausimai (DUK)'
+- A <div class=\"faq-section space-y-4\"> containing three Q/A blocks using <h4 class=\"font-semibold\"> and <p class=\"leading-relaxed\">:
+  - Which categories have most offers? Link to 2 category urls.
+  - How long are offers valid? Use the computed validity text.
+  - How to save more? Mention card_discounts count if >0 and shopping tips.
 
-EXAMPLE FORMAT:
-<p><a href=\"https://superakcijos.lt/akcijos/store\">Store Name</a> – geriausios nuolaidos vienoje vietoje</p>
-
-<p><a href=\"https://superakcijos.lt/akcijos/store\">Store Name</a> – tai patogus būdas mėgautis skaniu maistu ir kokybiškais produktais bet kuriuo metų laiku. Čia rasite platų pasirinkimą: nuo šviežių daržovių ir vaisių iki pieno produktų, mėsos gaminių ar kitų kasdieninių prekių. Visi produktai šioje parduotuvėje parduodami su ypatingomis nuolaidomis, todėl galėsite sutaupyti net iki 50%.</p>
-
-<h3>Aktualiausios akcijos</h3>
-<p>Šiuo metu mūsų parduotuvėje laukia 150 aktyvių akcijų, o vidutinė nuolaida siekia net 25%. Tai puiki proga pigiau įsigyti mėgstamų produktų ar šaldytų patiekalų vakarienei bei atsargoms šaldiklyje.</p>
-
-<div class=\"stats\">
-<p><strong>Vidutinė pradinė kaina:</strong> €3.61</p>
-<p><strong>Vidutinė nuolaidinė kaina:</strong> €2.67</p>
-<p><strong>Bendra taupymo suma:</strong> €127.27</p>
-</div>
-
-<p>Geriausi pasiūlymai šiuo metu pasiekiami <a href=\"https://superakcijos.lt/akcijos/store\">parduotuvėje</a>, kur atrinkti populiariausi produktai su nuolaidomis iki 60%. Akcijos galioja nuo [earliest_end] iki [latest_end], todėl nepraleiskite progos apsipirkti pigiau!</p>
-
-<h3>Populiariausi produktai su nuolaida</h3>
-<div class=\"top-products\">
-<ul>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Žemaitijos varškė</a> – €4.66 (-40%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Dvaro pienas</a> – €2.15 (-35%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Vilkyškių duona</a> – €1.89 (-30%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Lietuvos sūris</a> – €3.45 (-25%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Ekstra jogurtas</a> – €1.25 (-20%, Lidl)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Kiaušiniai</a> – €2.50 (-18%, Iki)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Bulvės</a> – €0.89 (-15%, Rimi)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Morkos</a> – €1.15 (-12%, Maxima)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Svogūnai</a> – €0.95 (-10%, Norfa)</li>
-<li><a href=\"https://superakcijos.lt/akcijos/product\">Obuoliai</a> – €1.45 (-8%, Lidl)</li>
-</ul>
-</div>
-
-<h3>Nuolaidų paskirstymas</h3>
-<div class=\"discount-distribution\">
-<ul>
-<li><strong>10% ir mažiau:</strong> 13 produktų</li>
-<li><strong>10–20%:</strong> 31 produktas</li>
-<li><strong>20–30%:</strong> 117 produktų</li>
-<li><strong>30–50%:</strong> 130 produktų</li>
-<li><strong>Daugiau nei 50%:</strong> 14 produktų</li>
-</ul>
-</div>
-
-<h3>Kodėl verta rinktis [Store Name]?</h3>
-<p>[Store Name] – tai patogumas ir šviežumas viename. Šaldyti patiekalai puikiai tinka greitai vakarienei, o ledai – saldžiam atokvėpiui. Dauguma produktų tinka ilgalaikiam saugojimui, todėl galite juos įsigyti iš anksto ir mėgautis, kai tik panorėsite.</p>
-
-<h3>Dažniausiai užduodami klausimai</h3>
-<div class=\"faq\">
-<h4>Kokie produktai turi didžiausias nuolaidas?</h4>
-<p>Šiuo metu geriausios nuolaidos taikomos įvairiems produktams šioje kategorijoje.</p>
-
-<h4>Kiek galima sutaupyti?</h4>
-<p>Vidutiniškai galite sutaupyti iki €127, o kai kurie produktai siūlomi net su 60% nuolaida.</p>
-
-<h4>Kuriose parduotuvėse rasite geriausias kainas?</h4>
-<p>Populiariausi pasiūlymai pasiekiami [Store Name] tinkle.</p>
-</div>
-
-OUTPUT: Return only the description text with HTML formatting and links included.";
+OUTPUT RULES:
+- Language: Lithuanian.
+- Use data fields exactly as provided from JSON.
+- Remove any leading '@' from URLs.
+- Always include <main> wrapper and the exact section sequence with <hr> separators.
+- Never invent stores; use [store_name].
+- Numbers: format money as €[value] with two decimals; thousands separator as space; decimals with dot. Percent as [value]%. Do not round integers. For totals like total_savings, use two decimals.
+- For top products, list exactly 6 items if available; if fewer exist, list available.
+- Do not use <strong> tags anywhere; rely on Tailwind classes for emphasis.
+- Ensure all headings follow sentence case (only the first word capitalized).
+- Keep tone promotional but natural; avoid repeating the same phrase.
+";
     }
 
     private function getCategorySystemPrompt(): string

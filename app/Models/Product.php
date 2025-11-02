@@ -41,17 +41,4 @@ class Product extends Model
     {
         return $this->hasMany(Discount::class);
     }
-
-    protected static function booted()
-    {
-        static::updated(function ($product) {
-            $cacheKey = "product_slug_{$product->slug}";
-            Cache::forget($cacheKey);
-        });
-
-        static::deleted(function ($product) {
-            $cacheKey = "product_slug_{$product->slug}";
-            Cache::forget($cacheKey);
-        });
-    }
 }

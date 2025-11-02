@@ -15,19 +15,15 @@ use App\Rules\StoreRules\MaximaRules;
 use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
 use Illuminate\Console\Command;
-use App\Services\ProductNameNormalizer;
 
 class ProcessDiscounts extends Command
 {
     protected $signature = 'discounts:process';
     protected $description = 'Process new discounts from discount_temp table';
 
-    private ProductNameNormalizer $normalizer;
-
-    public function __construct(ProductNameNormalizer $normalizer)
+    public function __construct()
     {
         parent::__construct();
-        $this->normalizer = $normalizer;
     }
 
     public function handle()
@@ -125,7 +121,7 @@ class ProcessDiscounts extends Command
                 continue;
             }
 
-            $normalizedProductName = $this->normalizer->normalize($tempDiscount->name);
+            $normalizedProductName = $tempDiscount->name;
             $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand, $store->name);
 
             $product = Product::firstOrCreate(
