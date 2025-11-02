@@ -193,9 +193,10 @@ class DescriptionGenerationService
             'avg_discount_percent' => round($activeDiscounts->avg('discount_percent'), 1),
             'max_discount_percent' => min($activeDiscounts->max('discount_percent'), 100),
             'min_discount_percent' => max($activeDiscounts->min('discount_percent'), 0),
-            'total_savings' => $activeDiscounts->sum(function($d) {
+            'total_savings' => ($totalSavings = $activeDiscounts->sum(function($d) {
                 return $d->original_price - $d->discounted_price;
-            }),
+            })),
+            'avg_savings_per_product' => $activeDiscounts->count() > 0 ? round($totalSavings / $activeDiscounts->count(), 2) : 0,
             'avg_original_price' => round($activeDiscounts->avg('original_price'), 2),
             'avg_discounted_price' => round($activeDiscounts->avg('discounted_price'), 2),
             'products_with_conditions' => $activeDiscounts->whereNotNull('condition')->count(),
@@ -291,9 +292,10 @@ class DescriptionGenerationService
             'avg_discount_percent' => round($activeDiscounts->avg('discount_percent'), 1),
             'max_discount_percent' => min($activeDiscounts->max('discount_percent'), 100),
             'min_discount_percent' => max($activeDiscounts->min('discount_percent'), 0),
-            'total_savings' => $activeDiscounts->sum(function($d) {
+            'total_savings' => ($totalSavings = $activeDiscounts->sum(function($d) {
                 return $d->original_price - $d->discounted_price;
-            }),
+            })),
+            'avg_savings_per_product' => $activeDiscounts->count() > 0 ? round($totalSavings / $activeDiscounts->count(), 2) : 0,
             'avg_original_price' => round($activeDiscounts->avg('original_price'), 2),
             'avg_discounted_price' => round($activeDiscounts->avg('discounted_price'), 2),
             'products_with_conditions' => $activeDiscounts->whereNotNull('condition')->count(),
@@ -341,7 +343,7 @@ Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use
   Dates format: YYYY-MM-DD. Sentence case only.
 
 2) INTRO PARAGRAPHS
-- Two <p class=\"leading-relaxed\"> paragraphs describing the store benefits and scope using natural Lithuanian. Include '[total_active_discounts] aktyvių akcijų', 'bendras galimas taupymas €[total_savings]' (two decimals, space as thousands separator, dot as decimal). Mention main product areas using category context from data. Provide validity window as: if valid_date_range.earliest_end and latest_end are both present and different, write: 'Akcijos galioja nuo [earliest_end] iki [latest_end]'. If they are equal or only one is present, write: 'Akcijos galioja iki [date]'. Dates format YYYY-MM-DD.
+- Two <p class=\"leading-relaxed\"> paragraphs describing the store benefits and scope using natural Lithuanian. Include '[total_active_discounts] aktyvių akcijų', 'vidutinė sutaupyta suma už prekę €[avg_savings_per_product]' (two decimals, space as thousands separator, dot as decimal). Mention main product areas using category context from data. Provide validity window as: if valid_date_range.earliest_end and latest_end are both present and different, write: 'Akcijos galioja nuo [earliest_end] iki [latest_end]'. If they are equal or only one is present, write: 'Akcijos galioja iki [date]'. Dates format YYYY-MM-DD.
 
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
@@ -358,7 +360,7 @@ Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use
   Include exactly these rows in order:
   - Aktyvių nuolaidų skaičius = [total_active_discounts]
   - Vidutinė nuolaida = [avg_discount_percent]%
-  - Bendras galimas taupymas = €[total_savings]
+  - Vidutinė sutaupyta suma už prekę = €[avg_savings_per_product]
   - Nuolaidų dydis = nuo [min_discount_percent]% iki [max_discount_percent]%
   - Akcijos galioja = either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
 
@@ -376,7 +378,7 @@ Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using cate
 5) DISCOUNT DISTRIBUTION
 - <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Nuolaidų paskirstymas kategorijose'
 - A <p class=\"leading-relaxed\"> summarizing where most discounts are (use category_statistics and discount_distribution buckets).
-- A <ul class=\"list-disc pl-5 space-y-1\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
+- A <ul class=\"list-disc pl-5 space-y-1 py-2\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
 
 <hr class=\"my-8 border-gray-200 mt-3\">
 
@@ -393,7 +395,7 @@ OUTPUT RULES:
 - Remove any leading '@' from URLs.
 - Always include <main> wrapper and the exact section sequence with <hr> separators.
 - Never invent stores; use [store_name].
-- Numbers: format money as €[value] with two decimals; thousands separator as space; decimals with dot. Percent as [value]%. Do not round integers. For totals like total_savings, use two decimals.
+- Numbers: format money as €[value] with two decimals; thousands separator as space; decimals with dot. Percent as [value]%. Do not round integers. For money values like avg_savings_per_product, use two decimals.
 - For top products, list exactly 6 items if available; if fewer exist, list available.
 - Do not use <strong> tags anywhere; rely on Tailwind classes for emphasis.
 - Ensure all headings follow sentence case (only the first word capitalized).
