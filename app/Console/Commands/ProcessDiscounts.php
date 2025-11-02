@@ -99,6 +99,10 @@ class ProcessDiscounts extends Command
                 $discountPercent = null;
             }
 
+            if ($discountPercent < 0 || $discountPercent >= 100) {
+                $discountPercent = 0;
+            }
+
             $startAt = $tempDiscount->start_at && strtotime($tempDiscount->start_at) ? $tempDiscount->start_at : null;
             $endAt = $tempDiscount->end_at && strtotime($tempDiscount->end_at) ? $tempDiscount->end_at : null;
 

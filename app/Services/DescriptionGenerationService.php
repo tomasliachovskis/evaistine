@@ -191,8 +191,8 @@ class DescriptionGenerationService
             'total_products' => $activeDiscounts->unique('product_id')->count(),
             'total_categories' => $activeDiscounts->unique('product.category_id')->count(),
             'avg_discount_percent' => round($activeDiscounts->avg('discount_percent'), 1),
-            'max_discount_percent' => $activeDiscounts->max('discount_percent'),
-            'min_discount_percent' => $activeDiscounts->min('discount_percent'),
+            'max_discount_percent' => min($activeDiscounts->max('discount_percent'), 100),
+            'min_discount_percent' => max($activeDiscounts->min('discount_percent'), 0),
             'total_savings' => $activeDiscounts->sum(function($d) {
                 return $d->original_price - $d->discounted_price;
             }),
@@ -289,8 +289,8 @@ class DescriptionGenerationService
             'total_products' => $activeDiscounts->unique('product_id')->count(),
             'total_stores' => $activeDiscounts->unique('store_id')->count(),
             'avg_discount_percent' => round($activeDiscounts->avg('discount_percent'), 1),
-            'max_discount_percent' => $activeDiscounts->max('discount_percent'),
-            'min_discount_percent' => $activeDiscounts->min('discount_percent'),
+            'max_discount_percent' => min($activeDiscounts->max('discount_percent'), 100),
+            'min_discount_percent' => max($activeDiscounts->min('discount_percent'), 0),
             'total_savings' => $activeDiscounts->sum(function($d) {
                 return $d->original_price - $d->discounted_price;
             }),
@@ -333,7 +333,7 @@ STRICT OUTPUT FORMAT:
 Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use only the tags shown here. Do not use <strong> tags.
 
 1) HEADER
-- <h2 class=\"text-2xl md:text-3xl font-semibold\"> with EXACT title format:
+- <h2 class=\"text-2xl md:text-3xl font-semibold leading-tight mb-3\"> with EXACT title format:
   '[store_name] akcijos: šios savaitės pasiūlymai – iki [max_discount_percent]% nuolaidos! Akcijos galioja [VALIDITY]'
   Where [VALIDITY] is:
    - 'nuo [earliest_end] iki [latest_end]' if both are present and different,
@@ -346,7 +346,7 @@ Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
 3) STATS SECTION
-- <h3 class=\"text-xl md:text-2xl font-semibold\"> 'Aktualūs [store_name] akcijų skaičiai: vidutinė nuolaida [avg_discount_percent]%'
+- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Aktualūs [store_name] akcijų skaičiai: vidutinė nuolaida [avg_discount_percent]%'
 - A <table class=\"w-full border-collapse text-sm md:text-base rounded-lg overflow-hidden\"> with styled header/body:
   - <thead>
     - <tr>
@@ -356,33 +356,33 @@ Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use
       - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\">
       - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\">
   Include exactly these rows in order:
-  - Aktyvių Nuolaidų Skaičius = [total_active_discounts]
-  - Vidutinė Nuolaida = [avg_discount_percent]%
-  - Bendras Galimas Taupymas = €[total_savings]
-  - Nuolaidų Amplitudė = nuo [min_discount_percent]% iki [max_discount_percent]%
-  - Akcijos Galioja = either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
+  - Aktyvių nuolaidų skaičius = [total_active_discounts]
+  - Vidutinė nuolaida = [avg_discount_percent]%
+  - Bendras galimas taupymas = €[total_savings]
+  - Nuolaidų dydis = nuo [min_discount_percent]% iki [max_discount_percent]%
+  - Akcijos galioja = either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
 
-Then a <p class=\"leading-relaxed\"> noting strongest categories using category_statistics by picking 2-3 with highest 'count'. Include links to category urls.
+Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using category_statistics by picking 2-3 with highest 'count'. Include links to category urls.
 
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
 4) TOP PRODUCTS
-- <h3 class=\"text-xl md:text-2xl font-semibold\"> 'Populiariausi [store_name] produktai su didžiausia nuolaida (iki [max_discount_percent]%)'
+- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Populiariausi [store_name] produktai su didžiausia nuolaida (iki [max_discount_percent]%)'
 - A <p class=\"leading-relaxed\"> introducing the list.
 - A <ul class=\"list-disc pl-5 space-y-2\"> of exactly 6 <li> items taken from top_discounts, sorted by discount_percent desc. Each item must use a product link in this exact format: '<a href=\"[product_url]\">[name]</a> – €[discounted_price] ([discount_percent]% nuolaida). One short natural sentence with usage/benefit.' Ensure diversity already provided. Use space as thousands separator and dot as decimal, two decimals where applicable. Remove any leading '@' from URLs.
 
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
 5) DISCOUNT DISTRIBUTION
-- <h3 class=\"text-xl md:text-2xl font-semibold\"> 'Nuolaidų paskirstymas kategorijose'
+- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Nuolaidų paskirstymas kategorijose'
 - A <p class=\"leading-relaxed\"> summarizing where most discounts are (use category_statistics and discount_distribution buckets).
-- A <ul class=\"list-disc pl-5 space-y-1\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Stiprios nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
+- A <ul class=\"list-disc pl-5 space-y-1\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
 
-<hr class=\"my-8 border-gray-200\">
+<hr class=\"my-8 border-gray-200 mt-3\">
 
 6) FAQ
-- <h3 class=\"text-xl md:text-2xl font-semibold\"> 'Dažniausiai užduodami klausimai (DUK)'
-- A <div class=\"faq-section space-y-4\"> containing three Q/A blocks using <h4 class=\"font-semibold\"> and <p class=\"leading-relaxed\">:
+- <h3 class=\"text-xl md:text-2xl font-semibold mt-3 mb-3\"> 'Dažniausiai užduodami klausimai (DUK)'
+- A <div class=\"faq-section space-y-4\"> containing three Q/A blocks using <h4 class=\"font-semibold mb-2\"> and <p class=\"leading-relaxed\">:
   - Which categories have most offers? Link to 2 category urls.
   - How long are offers valid? Use the computed validity text.
   - How to save more? Mention card_discounts count if >0 and shopping tips.
