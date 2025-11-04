@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Models\DiscountTemp;
 use App\Models\Discount;
 use App\Services\DiscountResponseFormatter;
+use Carbon\Carbon;
 
 class ProductController extends Controller
 {
@@ -404,31 +405,34 @@ class ProductController extends Controller
                 $count = $this->getDiscountCountForCategory($entity);
                 $maxDiscount = $this->getMaxDiscountForCategory($entity);
                 $minDiscount = $this->getMinDiscountForCategory($entity);
+                $storeNames = $this->getStoreNamesForCategory($entity);
                 return [
                     'seo_title' => $entity->name . ' akcijos',
                     'seo_description' => $entity->description,
                     'meta_title' => $entity->name . " akcijos – iki {$maxDiscount}% nuolaidos " . $this->formatCount($count) . "+ prekėms",
-                    'meta_description' => "Peržiūrėkite naujausias " . mb_strtolower($entity->name) . " akcijas",
+                    'meta_description' => "Atraskite geriausias " . mb_strtolower($entity->name) . " akcijas – iki {$maxDiscount}% nuolaidos, " . $this->formatCount($count) . "+ pasiūlymų iš {$storeNames}. Sutaupykite šią savaitę!",
                 ];
             case 'store':
                 $count = $this->getDiscountCountForStore($entity);
                 $maxDiscount = $this->getMaxDiscountForStore($entity);
                 $minDiscount = $this->getMinDiscountForStore($entity);
+                $endDate = $this->getMaxEndAtForStore($entity);
                 return [
                     'seo_title' => $entity->name . ' akcijos',
                     'seo_description' => $entity->description,
                     'meta_title' => mb_strtoupper($entity->name) . " akcijos – iki {$maxDiscount}% nuolaidos " . $this->formatCount($count) . "+ prekėms",
-                    'meta_description' => "Peržiūrėkite naujausias" . $entity->name . " akcijas, savaitinius leidinius ir specialius pasiūlymus – sutaupykite su " . $entity->name . "! Galioja parduotuvėse ir internetu.",
+                    'meta_description' => "Peržiūrėkite naujausias " . $entity->name . " akcijas – daugiau nei " . $this->formatCount($count) . " prekių su nuolaidomis iki {$maxDiscount}%! Pasiūlymai galioja iki {$endDate} parduotuvėse ir internetu.",
                 ];
             case 'store_category':
                 $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);
                 $maxDiscount = $this->getMaxDiscountForStoreCategory($entity, $secondaryEntity);
                 $minDiscount = $this->getMinDiscountForStoreCategory($entity, $secondaryEntity);
+                $endDate = $this->getMaxEndAtForStoreCategory($entity, $secondaryEntity);
                 return [
                     'seo_title' => $entity->name . ' akcija ' . mb_strtolower($secondaryEntity->name),
                     'seo_description' => "",
                     'meta_title' => mb_strtoupper($entity->name) . ' akcijos: ' . mb_strtolower($secondaryEntity->name) . ' pigiau – iki ' . $maxDiscount . '% nuolaidos',
-                    'meta_description' => "Atraskite naujausias " . ucfirst($entity->name) . " akcijas " . mb_strtolower($secondaryEntity->name) . " – švieži, kokybiški produktai su puikiomis nuolaidomis. Pirkite pigiau šią savaitę!",
+                    'meta_description' => "Naujausios " . $entity->name . " " . mb_strtolower($secondaryEntity->name) . " akcijos – iki {$maxDiscount}% nuolaidos, " . $this->formatCount($count) . "+ prekių! Pasiūlymai galioja iki {$endDate} parduotuvėse ir internetu. Nepraleisk pigiau!",
                 ];
             case 'product':
                 return [
@@ -616,6 +620,41 @@ class ProductController extends Controller
         } else {
             return $count;
         }
+    }
+
+    private function getMaxEndAtForStore($store)
+    {
+        $endAt = Discount::where('store_id', $store->id)->max('end_at');
+        return $endAt ? Carbon::parse($endAt)->format('Y-m-d') : null;
+    }
+
+    private function getMaxEndAtForStoreCategory($store, $category)
+    {
+        $endAt = Discount::where('store_id', $store->id)
+            ->whereHas('product', function ($q) use ($category) {
+                $q->where('category_id', $category->id);
+            })->max('end_at');
+        return $endAt ? Carbon::parse($endAt)->format('Y-m-d') : null;
+    }
+
+    private function getStoreNamesForCategory($category)
+    {
+        $storeIds = Discount::whereHas('product', function ($q) use ($category) {
+            $q->where('category_id', $category->id);
+        })->distinct()->pluck('store_id');
+
+        $stores = \App\Models\Store::whereIn('id', $storeIds)->pluck('name')->toArray();
+
+        if (empty($stores)) {
+            return '';
+        }
+
+        if (count($stores) === 1) {
+            return $stores[0];
+        }
+
+        $lastStore = array_pop($stores);
+        return implode(', ', $stores) . ' ir ' . $lastStore;
     }
 }
 
