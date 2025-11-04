@@ -407,7 +407,7 @@ class ProductController extends Controller
                 return [
                     'seo_title' => $entity->name . ' akcijos',
                     'seo_description' => $entity->description,
-                    'meta_title' => $entity->name . " akcijos – " . $this->formatCount($count) . "+ prekių nuolaidos {$minDiscount}-{$maxDiscount}%",
+                    'meta_title' => $entity->name . " akcijos – iki {$maxDiscount}% nuolaidos " . $this->formatCount($count) . "+ prekėms",
                     'meta_description' => "Peržiūrėkite naujausias " . mb_strtolower($entity->name) . " akcijas",
                 ];
             case 'store':
@@ -417,7 +417,7 @@ class ProductController extends Controller
                 return [
                     'seo_title' => $entity->name . ' akcijos',
                     'seo_description' => $entity->description,
-                    'meta_title' => mb_strtoupper($entity->name) . " akcijos – " . $this->formatCount($count) . "+ prekių nuolaidos {$minDiscount}-{$maxDiscount}%",
+                    'meta_title' => mb_strtoupper($entity->name) . " akcijos – iki {$maxDiscount}% nuolaidos " . $this->formatCount($count) . "+ prekėms",
                     'meta_description' => "Peržiūrėkite naujausias" . $entity->name . " akcijas, savaitinius leidinius ir specialius pasiūlymus – sutaupykite su " . $entity->name . "! Galioja parduotuvėse ir internetu.",
                 ];
             case 'store_category':
@@ -427,7 +427,7 @@ class ProductController extends Controller
                 return [
                     'seo_title' => $entity->name . ' akcija ' . mb_strtolower($secondaryEntity->name),
                     'seo_description' => "",
-                    'meta_title' => mb_strtoupper($entity->name) . ' akcija ' . mb_strtolower($secondaryEntity->name) . " – " . $this->formatCount($count) . "+ prek. nuolaidos {$minDiscount}-{$maxDiscount}%",
+                    'meta_title' => mb_strtoupper($entity->name) . ' akcijos: ' . mb_strtolower($secondaryEntity->name) . ' pigiau – iki ' . $maxDiscount . '% nuolaidos',
                     'meta_description' => "Atraskite naujausias " . ucfirst($entity->name) . " akcijas " . mb_strtolower($secondaryEntity->name) . " – švieži, kokybiški produktai su puikiomis nuolaidomis. Pirkite pigiau šią savaitę!",
                 ];
             case 'product':
