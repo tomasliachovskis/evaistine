@@ -59,20 +59,7 @@ class DiscountResponseFormatter
                     ]
                 ];
             }),
-            'product' => [
-                'id' => $discount->product->id,
-                'name' => $discount->product->name,
-                'slug' => $discount->product->slug,
-                'brand' => $discount->product->brand,
-                'full_slug' => $discount->product->category->slug . '/' . $discount->product->slug,
-                'category_id' => $discount->product->category_id,
-                'image_url' => $discount->product->image_url,
-                'category' => [
-                    'id' => $discount->product->category->id,
-                    'name' => $discount->product->category->name,
-                    'slug' => $discount->product->category->slug,
-                ]
-            ],
+            'product' => $this->formatProductData($discount->product),
         ];
     }
 
@@ -97,20 +84,48 @@ class DiscountResponseFormatter
             'offers' => [],
             'offer_count' => $offerCount,
             'min_price' => (float) $minPrice,
-            'product' => [
-                'id' => $discount->product->id,
-                'name' => $discount->product->name,
-                'slug' => $discount->product->slug,
-                'brand' => $discount->product->brand,
-                'full_slug' => $discount->product->category->slug . '/' . $discount->product->slug,
-                'category_id' => $discount->product->category_id,
-                'image_url' => $discount->product->image_url,
-                'category' => [
-                    'id' => $discount->product->category->id,
-                    'name' => $discount->product->category->name,
-                    'slug' => $discount->product->category->slug,
-                ]
-            ],
+            'product' => $this->formatProductData($discount->product),
+        ];
+    }
+
+    public function formatProduct($product)
+    {
+        return collect([
+            [
+                'id' => null,
+                'store_id' => null,
+                'original_price' => null,
+                'discounted_price' => null,
+                'discount_percent' => null,
+                'condition' => null,
+                'info' => null,
+                'card' => null,
+                'from_date' => null,
+                'to_date' => null,
+                'valid_date' => null,
+                'offer_count' => 0,
+                'min_price' => 0,
+                'offers' => [],
+                'product' => $this->formatProductData($product),
+            ]
+        ]);
+    }
+
+    protected function formatProductData($product)
+    {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'brand' => $product->brand,
+            'full_slug' => $product->category ? $product->category->slug . '/' . $product->slug : $product->slug,
+            'category_id' => $product->category_id,
+            'image_url' => $product->image_url,
+            'category' => $product->category ? [
+                'id' => $product->category->id,
+                'name' => $product->category->name,
+                'slug' => $product->category->slug,
+            ] : null,
         ];
     }
 }

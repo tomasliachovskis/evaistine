@@ -297,7 +297,7 @@ class ProductController extends Controller
         $cachedResponse = Cache::tags($cacheTags)->get($cacheKey);
 
         if ($cachedResponse !== null) {
-            return response($cachedResponse, 200, ['Content-Type' => 'application/json']);
+//            return response($cachedResponse, 200, ['Content-Type' => 'application/json']);
         }
 
         $product = Product::where('slug', $slug)
@@ -315,8 +315,14 @@ class ProductController extends Controller
             ->limit(7)
             ->get();
 
+        if ($product->discounts->isEmpty()) {
+            $data = $this->formatter->formatProduct($product);
+        } else {
+            $data = $this->formatter->format($product->discounts);
+        }
+
         $responseData = [
-            'data' => $this->formatter->format($product->discounts),
+            'data' => $data,
             'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
             'seo' => $this->generateSeoData('product', $product),
             'similar' => $this->formatter->format($similarProducts)
