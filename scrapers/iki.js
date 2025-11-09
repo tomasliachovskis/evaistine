@@ -13,12 +13,12 @@ const __dirname = path.dirname(__filename);
 
 (async () => {
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: 'new',
+        executablePath: '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-blink-features=AutomationControlled'
-        ]
+        ],
     });
 
     const page = await browser.newPage();
@@ -203,8 +203,8 @@ const __dirname = path.dirname(__filename);
         console.error('Error posting products:', error.message);
     }
 
-    fs.writeFileSync('scrapers/iki.json', JSON.stringify(allProducts, null, 2));
-    console.log('Scraping completed. Data saved to iki.json');
+    // fs.writeFileSync('scrapers/iki.json', JSON.stringify(allProducts, null, 2));
+    console.log('Scraping completed.');
 
     await browser.close();
 })();

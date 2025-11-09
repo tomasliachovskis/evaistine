@@ -17,7 +17,7 @@ const REQUEST_DELAY = 300;
 const NAVIGATION_TIMEOUT = 10000;
 
 const saveProgress = (pageNumber) => {
-    fs.writeFileSync(progressFile, JSON.stringify({ currentPage: pageNumber }, null, 2));
+    // fs.writeFileSync(progressFile, JSON.stringify({ currentPage: pageNumber }, null, 2));
 };
 
 const loadProgress = () => {
@@ -30,9 +30,9 @@ const loadProgress = () => {
 };
 
 const clearProgress = () => {
-    if (fs.existsSync(progressFile)) {
-        fs.writeFileSync(progressFile, JSON.stringify({ currentPage: 1 }, null, 2));
-    }
+    // if (fs.existsSync(progressFile)) {
+    //     fs.writeFileSync(progressFile, JSON.stringify({ currentPage: 1 }, null, 2));
+    // }
 };
 
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
@@ -279,40 +279,12 @@ const postBatchToAPI = async (products) => {
 
 const runScraper = async () => {
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: 'new',
+        executablePath: '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome',
         protocolTimeout: 300000,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-blink-features=AutomationControlled',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-features=TranslateUI',
-            '--disable-ipc-flooding-protection',
-            '--disable-images',
-            '--disable-javascript-harmony-shipping',
-            '--disable-default-apps',
-            '--disable-extensions',
-            '--disable-plugins',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--memory-pressure-off',
-            '--max_old_space_size=8192',
-            '--disable-background-networking',
-            '--disable-sync',
-            '--disable-translate',
-            '--hide-scrollbars',
-            '--mute-audio',
-            '--no-default-browser-check',
-            '--no-pings',
-            '--disable-logging',
-            '--disable-permissions-api'
         ]
     });
 
@@ -475,21 +447,21 @@ const runScraper = async () => {
         }
 
         currentPage++;
-        saveProgress(currentPage);
+        // saveProgress(currentPage);
     }
 
     await mainPage.close();
     await browser.close();
 
-    fs.writeFileSync('rimi.json', JSON.stringify(allProducts, null, 2));
-    console.log('✅ Scraping completed. Data saved to rimi.json');
+    // fs.writeFileSync('rimi.json', JSON.stringify(allProducts, null, 2));
+    console.log('✅ Scraping completed.');
 };
 
 const startWithRetries = async (maxRetries = 3, delayBetweenRetries = 5000) => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         if (attempt === 1) {
-            console.log('🔄 First attempt – resetting progress...');
-            clearProgress();
+            console.log('🔄 First attempt...');
+            // clearProgress();
         }
 
         try {

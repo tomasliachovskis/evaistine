@@ -8,12 +8,12 @@ puppeteer.use(StealthPlugin());
 
 (async () => {
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: 'new',
+        executablePath: '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-blink-features=AutomationControlled'
-        ]
+        ],
     });
     const page = await browser.newPage();
 
@@ -144,8 +144,8 @@ puppeteer.use(StealthPlugin());
 
     console.log(`Scraped total ${allProducts.length} products from ${currentPage} pages`);
 
-    fs.writeFileSync('barbora.json', JSON.stringify(allProducts, null, 2));
-    console.log('Scraping completed. Data saved to barbora.json');
+    // fs.writeFileSync('barbora.json', JSON.stringify(allProducts, null, 2));
+    console.log('Scraping completed.');
 
     await browser.close();
 })();

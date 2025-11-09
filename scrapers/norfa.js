@@ -6,7 +6,15 @@ import axios from "axios";
 puppeteer.use(StealthPlugin());
 
 (async () => {
-    const browser = await puppeteer.launch({headless: true });
+    const browser = await puppeteer.launch({
+        headless: 'new',
+        executablePath: '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+        ],
+    });
+
     const page = await browser.newPage();
     const sleep = ms => new Promise(res => setTimeout(res, ms));
 
@@ -103,7 +111,7 @@ puppeteer.use(StealthPlugin());
     }
 
     // Save to JSON file
-    fs.writeFileSync('norfa.json', JSON.stringify(productBlocks, null, 2));
+    // fs.writeFileSync('norfa.json', JSON.stringify(productBlocks, null, 2));
 
     await browser.close();
 })();

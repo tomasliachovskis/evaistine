@@ -422,30 +422,33 @@ class ProductController extends Controller
                 $count = $this->getDiscountCountForStore($entity);
                 $maxDiscount = $this->getMaxDiscountForStore($entity);
                 $minDiscount = $this->getMinDiscountForStore($entity);
-                $endDate = $this->getMaxEndAtForStore($entity);
                 return [
                     'seo_title' => $entity->name . ' akcijos',
                     'seo_description' => $entity->description,
                     'meta_title' => mb_strtoupper($entity->name) . " akcijos – iki {$maxDiscount}% nuolaidos " . $this->formatCount($count) . "+ prekėms",
-                    'meta_description' => "Peržiūrėkite naujausias " . $entity->name . " akcijas – daugiau nei " . $this->formatCount($count) . " prekių su nuolaidomis iki {$maxDiscount}%! Pasiūlymai galioja iki {$endDate} parduotuvėse ir internetu.",
+                    'meta_description' => "Peržiūrėkite naujausias " . $entity->name . " akcijas – daugiau nei " . $this->formatCount($count) . " prekių su nuolaidomis iki {$maxDiscount}%! Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
                 ];
             case 'store_category':
                 $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);
                 $maxDiscount = $this->getMaxDiscountForStoreCategory($entity, $secondaryEntity);
                 $minDiscount = $this->getMinDiscountForStoreCategory($entity, $secondaryEntity);
-                $endDate = $this->getMaxEndAtForStoreCategory($entity, $secondaryEntity);
                 return [
                     'seo_title' => $entity->name . ' akcija ' . mb_strtolower($secondaryEntity->name),
                     'seo_description' => "",
                     'meta_title' => mb_strtoupper($entity->name) . ' akcijos: ' . mb_strtolower($secondaryEntity->name) . ' pigiau – iki ' . $maxDiscount . '% nuolaidos',
-                    'meta_description' => "Naujausios " . $entity->name . " " . mb_strtolower($secondaryEntity->name) . " akcijos – iki {$maxDiscount}% nuolaidos, " . $this->formatCount($count) . "+ prekių! Pasiūlymai galioja iki {$endDate} parduotuvėse ir internetu. Nepraleisk pigiau!",
+                    'meta_description' => "Naujausios " . $entity->name . " " . mb_strtolower($secondaryEntity->name) . " akcijos – iki {$maxDiscount}% nuolaidos, " . $this->formatCount($count) . "+ prekių! Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu. Nepraleisk pigiau!",
                 ];
             case 'product':
+                $minPrice = $entity->discounts->min('discounted_price');
+                $formattedPrice = $minPrice ? (floor($minPrice) == $minPrice ? number_format($minPrice, 0, '.', '') : number_format($minPrice, 2, '.', '')) : null;
+                $priceText = $formattedPrice ? $formattedPrice . ' Eur' : '';
+                $priceTextDesc = $formattedPrice ? $formattedPrice . ' €' : '';
+
                 return [
                     'seo_title' => $entity->name,
                     'seo_description' => $entity->description ?? '',
-                    'meta_title' => 'Akcija ' . mb_strtolower($entity->name),
-                    'meta_description' => "Atraskite akciją " . mb_strtolower($entity->name) . " – puiki proga įsigyti produktus už mažesnę kainą. Pasinaudokite specialiais pasiūlymais ir sutaupykite šiandien!“"
+                    'meta_title' => 'Akcija ' . mb_strtolower($entity->name) . ($priceText ? ' kaina nuo ' . $priceText : ''),
+                    'meta_description' => mb_ucfirst($entity->name) . ($priceTextDesc ? ' ✔ kaina nuo ' . $priceTextDesc . ' , rask geriausią kainą!' : '')
                 ];
             case 'search':
                 return [
