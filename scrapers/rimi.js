@@ -278,15 +278,21 @@ const postBatchToAPI = async (products) => {
 };
 
 const runScraper = async () => {
-    const browser = await puppeteer.launch({
+    const executablePath = '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
+    const launchOptions = {
         headless: 'new',
-        executablePath: '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome',
         protocolTimeout: 300000,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
         ]
-    });
+    };
+
+    if (fs.existsSync(executablePath)) {
+        launchOptions.executablePath = executablePath;
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
 
     const mainPage = await createPage(browser);
 
