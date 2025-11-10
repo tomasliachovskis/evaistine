@@ -56,12 +56,7 @@ class ProductDuplicateFilterService
         $normalizedName1 = $this->normalizeName($name1);
         $normalizedName2 = $this->normalizeName($name2);
 
-        if ($this->hasSameFirstWord($normalizedName1, $normalizedName2)) {
-            return true;
-        }
-
-        $similarity = $this->calculateSimilarity($normalizedName1, $normalizedName2);
-        return $similarity >= $this->similarityThreshold;
+        return $this->hasSameFirstWord($normalizedName1, $normalizedName2);
     }
 
     private function hasSameFirstWord(string $name1, string $name2): bool
