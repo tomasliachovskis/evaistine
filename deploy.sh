@@ -5,11 +5,24 @@
 SERVER="root@195.181.245.125"
 REMOTE_DIR="/var/www/api"
 
+# Check for private key
+SSH_KEY=""
+if [ -f "deploy_key" ]; then
+    chmod 600 deploy_key
+    SSH_KEY="-i deploy_key"
+fi
+
+# Build SSH options
+SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+if [ -n "$SSH_KEY" ]; then
+    SSH_OPTS="$SSH_KEY $SSH_OPTS"
+fi
+
 # Sync project files to the server
-rsync -avz --exclude='.env' --exclude='storage' --exclude='node_modules'  --exclude='.idea' --exclude='.git' . $SERVER:$REMOTE_DIR
+rsync -avz -e "ssh $SSH_OPTS" --exclude='.env' --exclude='storage' --exclude='node_modules'  --exclude='.idea' --exclude='.git' . $SERVER:$REMOTE_DIR
 
 # Run Laravel commands on the server
-ssh $SERVER << 'EOF'
+ssh $SSH_OPTS $SERVER << 'EOF'
     cd /var/www/api
     php artisan cache:clear
     php artisan route:clear

@@ -8,7 +8,7 @@ use Symfony\Component\Process\Process;
 
 class ProcessScrapingFlow extends Command
 {
-    protected $signature = 'scraping:process-all';
+    protected $signature = 'scraping:process-all {--skip-deploy : Skip deployment step}';
     protected $description = 'Process complete product scraping flow';
 
     private array $expectedStores = ['Rimi', 'Lidl', 'Iki', 'Maxima', 'Norfa'];
@@ -50,9 +50,12 @@ class ProcessScrapingFlow extends Command
             return 1;
         }
 
-        if (!$this->deploy()) {
-            $this->error('Deployment failed. Aborting.');
-            return 1;
+        if (!$this->option('skip-deploy')) {
+            if (!$this->deploy()) {
+                $this->warn('Deployment failed or skipped. Continuing...');
+            }
+        } else {
+            $this->info('Skipping deployment step (--skip-deploy flag set).');
         }
 
         $this->newLine();
@@ -186,6 +189,20 @@ class ProcessScrapingFlow extends Command
             return false;
         }
 
+        $deployKeyPath = base_path('deploy_key');
+        if (file_exists($deployKeyPath)) {
+            chmod($deployKeyPath, 0600);
+            $this->info('Using deploy_key for SSH authentication.');
+        } else {
+            $this->warn('deploy_key not found. Using default SSH authentication.');
+        }
+
+        if (env('APP_ENV') === 'local' || $this->isRunningInDocker()) {
+            if (!file_exists($deployKeyPath)) {
+                $this->warn('Running in Docker/local environment. Consider adding deploy_key for deployment.');
+            }
+        }
+
         $process = new Process(['bash', 'deploy.sh'], base_path());
         $process->setTimeout(600);
         $process->run(function ($type, $buffer) {
@@ -204,6 +221,12 @@ class ProcessScrapingFlow extends Command
         $this->info('✓ Deployment completed successfully.');
         $this->newLine();
         return true;
+    }
+
+    private function isRunningInDocker(): bool
+    {
+        return file_exists('/.dockerenv') || 
+               file_exists('/proc/self/cgroup') && strpos(file_get_contents('/proc/self/cgroup'), 'docker') !== false;
     }
 }
 
