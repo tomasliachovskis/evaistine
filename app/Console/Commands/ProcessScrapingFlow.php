@@ -156,52 +156,25 @@ class ProcessScrapingFlow extends Command
     {
         $this->info('Step 5: Generating descriptions...');
 
-        $sailCommand = $this->getSailCommand();
-
         $this->info('Generating descriptions for stores...');
-        $process = new Process([$sailCommand, 'artisan', 'descriptions:generate', 'store', '--all'], base_path());
-        $process->setTimeout(3600);
-        $process->run(function ($type, $buffer) {
-            if (Process::ERR === $type) {
-                $this->error($buffer);
-            } else {
-                $this->line($buffer);
-            }
-        });
+        $exitCode = $this->call('descriptions:generate', ['type' => 'store', '--all' => true]);
 
-        if (!$process->isSuccessful()) {
-            $this->error('descriptions:generate store --all failed with exit code: ' . $process->getExitCode());
+        if ($exitCode !== 0) {
+            $this->error('descriptions:generate store --all failed with exit code: ' . $exitCode);
             return false;
         }
 
         $this->info('Generating descriptions for categories...');
-        $process = new Process([$sailCommand, 'artisan', 'descriptions:generate', 'category', '--all'], base_path());
-        $process->setTimeout(3600);
-        $process->run(function ($type, $buffer) {
-            if (Process::ERR === $type) {
-                $this->error($buffer);
-            } else {
-                $this->line($buffer);
-            }
-        });
+        $exitCode = $this->call('descriptions:generate', ['type' => 'category', '--all' => true]);
 
-        if (!$process->isSuccessful()) {
-            $this->error('descriptions:generate category --all failed with exit code: ' . $process->getExitCode());
+        if ($exitCode !== 0) {
+            $this->error('descriptions:generate category --all failed with exit code: ' . $exitCode);
             return false;
         }
 
         $this->info('✓ Descriptions generated successfully.');
         $this->newLine();
         return true;
-    }
-
-    private function getSailCommand(): string
-    {
-        if (file_exists(base_path('vendor/bin/sail'))) {
-            return './vendor/bin/sail';
-        }
-
-        return 'sail';
     }
 
     private function deploy(): bool
