@@ -10,7 +10,8 @@ class ProductDuplicateFilterService
 {
     private int $minChunkSize = 20;
     private int $maxChunkSize = 30;
-    private float $similarityThreshold = 70.0;
+    private float $similarityThreshold = 85.0;
+    private array $ignoreWords = ['g', 'ml', 'kg', 'vnt', 'x', 'g.', 'ml.', 'kg.', 'vnt.', '%', 'rieb.', 'rieb'];
 
     public function findPotentialDuplicates(?int $categoryId = null): Collection
     {
@@ -47,31 +48,155 @@ class ProductDuplicateFilterService
                 return false;
             }
 
-            return $this->isSimilarName($product->name, $otherProduct->name);
+            return $this->isSimilarName(
+                $product->name,
+                $otherProduct->name,
+                $product->brand,
+                $otherProduct->brand
+            );
         });
     }
 
-    private function isSimilarName(string $name1, string $name2): bool
+    private function isSimilarName(string $name1, string $name2, ?string $brand1 = null, ?string $brand2 = null): bool
     {
+        if (!$this->brandsMatch($brand1, $brand2)) {
+            return false;
+        }
+
         $normalizedName1 = $this->normalizeName($name1);
         $normalizedName2 = $this->normalizeName($name2);
 
-        return $this->hasSameFirstWord($normalizedName1, $normalizedName2);
+        $keyWords1 = $this->extractKeyWords($normalizedName1);
+        $keyWords2 = $this->extractKeyWords($normalizedName2);
+
+        if ($this->hasMatchingKeyWords($keyWords1, $keyWords2)) {
+            return true;
+        }
+
+        if ($this->hasSameFirstWords($normalizedName1, $normalizedName2, 2)) {
+            return true;
+        }
+
+        $normalized1 = $this->removeNumbersAndSizes($normalizedName1);
+        $normalized2 = $this->removeNumbersAndSizes($normalizedName2);
+
+        $similarity = $this->calculateSimilarity($normalized1, $normalized2);
+        return $similarity >= $this->similarityThreshold;
     }
 
-    private function hasSameFirstWord(string $name1, string $name2): bool
+    private function brandsMatch(?string $brand1, ?string $brand2): bool
+    {
+        if (empty($brand1) && empty($brand2)) {
+            return true;
+        }
+
+        if (empty($brand1) || empty($brand2)) {
+            return false;
+        }
+
+        $normalizedBrand1 = $this->normalizeBrand($brand1);
+        $normalizedBrand2 = $this->normalizeBrand($brand2);
+
+        return $normalizedBrand1 === $normalizedBrand2;
+    }
+
+    private function normalizeBrand(?string $brand): string
+    {
+        if (empty($brand)) {
+            return '';
+        }
+
+        $brand = trim($brand);
+        $brand = mb_strtolower($brand);
+        $brand = preg_replace('/[^a-z0-9\s]/', '', $brand);
+        $brand = preg_replace('/\s+/', ' ', $brand);
+
+        return trim($brand);
+    }
+
+    private function extractKeyWords(string $name): array
+    {
+        $words = preg_split('/\s+/', trim($name));
+        $keyWords = [];
+
+        foreach ($words as $word) {
+            $word = mb_strtolower(trim($word, '.,;:!?'));
+            
+            if (empty($word)) {
+                continue;
+            }
+
+            if (in_array($word, $this->ignoreWords)) {
+                continue;
+            }
+
+            if (preg_match('/^\d+[.,]?\d*[gmlkgvnt%x]*$/', $word)) {
+                continue;
+            }
+
+            if (mb_strlen($word) < 2) {
+                continue;
+            }
+
+            $keyWords[] = $word;
+        }
+
+        return $keyWords;
+    }
+
+    private function hasMatchingKeyWords(array $keyWords1, array $keyWords2): bool
+    {
+        if (empty($keyWords1) || empty($keyWords2)) {
+            return false;
+        }
+
+        $minWords = min(count($keyWords1), count($keyWords2));
+        $matchingCount = 0;
+        $minMatchRequired = max(2, (int)($minWords * 0.6));
+
+        foreach ($keyWords1 as $word1) {
+            foreach ($keyWords2 as $word2) {
+                if ($word1 === $word2) {
+                    $matchingCount++;
+                    break;
+                }
+            }
+        }
+
+        return $matchingCount >= $minMatchRequired;
+    }
+
+    private function hasSameFirstWords(string $name1, string $name2, int $wordCount = 2): bool
     {
         $words1 = preg_split('/\s+/', trim($name1));
         $words2 = preg_split('/\s+/', trim($name2));
 
-        if (empty($words1[0]) || empty($words2[0])) {
+        if (count($words1) < $wordCount || count($words2) < $wordCount) {
             return false;
         }
 
-        $firstWord1 = mb_strtolower($words1[0]);
-        $firstWord2 = mb_strtolower($words2[0]);
+        for ($i = 0; $i < $wordCount; $i++) {
+            $word1 = mb_strtolower(trim($words1[$i], '.,;:!?'));
+            $word2 = mb_strtolower(trim($words2[$i], '.,;:!?'));
 
-        return $firstWord1 === $firstWord2;
+            if (in_array($word1, $this->ignoreWords) || in_array($word2, $this->ignoreWords)) {
+                continue;
+            }
+
+            if ($word1 !== $word2) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function removeNumbersAndSizes(string $name): string
+    {
+        $name = preg_replace('/\d+[.,]?\d*\s*[gmlkgvnt%x]+/i', '', $name);
+        $name = preg_replace('/\d+/', '', $name);
+        $name = preg_replace('/\s+/', ' ', $name);
+        return trim($name);
     }
 
     private function calculateSimilarity(string $name1, string $name2): float
@@ -163,4 +288,5 @@ class ProductDuplicateFilterService
         return $this;
     }
 }
+
 
