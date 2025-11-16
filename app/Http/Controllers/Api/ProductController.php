@@ -297,7 +297,7 @@ class ProductController extends Controller
         $cachedResponse = Cache::tags($cacheTags)->get($cacheKey);
 
         if ($cachedResponse !== null) {
-//            return response($cachedResponse, 200, ['Content-Type' => 'application/json']);
+            return response($cachedResponse, 200, ['Content-Type' => 'application/json']);
         }
 
         $product = Product::where('slug', $slug)
