@@ -64,12 +64,6 @@ class ProcessDiscounts extends Command
 
             $rules = $this->getStoreRules($store->name, $tempDiscount);
 
-            if (!$rules->validate()) {
-                $this->error("Invalid discount data for product: {$tempDiscount->id}");
-                $tempDiscount->update(['processed' => true]);
-                continue;
-            }
-
             $normalizedCondition = $this->normalizeCondition($tempDiscount->condition);
             $normalizedInfo = $tempDiscount->info;
             if (!empty($normalizedInfo)) {
@@ -80,19 +74,24 @@ class ProcessDiscounts extends Command
             $normalizedDiscountedPrice = $rules->normalizePrice($tempDiscount->discounted_price);
 
             $discountPercent = $tempDiscount->discount_percent;
+            $normalizedDiscount = $rules->normalizeDiscount($discountPercent);
+
             if (!empty($discountPercent)) {
-                $discountPercent = strtolower(trim($discountPercent));
-                $discountPercent = preg_replace('/[^0-9-]/', '', $discountPercent);
-                $discountPercent = str_replace('-', '', $discountPercent);
-                $discountPercent = !empty($discountPercent) ? (int)$discountPercent : null;
-                if ($discountPercent < 0) {
-                    $discountPercent = 0;
-                }
+//                $discountPercent = strtolower(trim($discountPercent));
+//                $discountPercent = preg_replace('/[^0-9-]/', '', $discountPercent);
+//                $discountPercent = str_replace('-', '', $discountPercent);
+//                $discountPercent = !empty($discountPercent) ? (int)$discountPercent : null;
+//                if ($discountPercent < 0) {
+//                    $discountPercent = 0;
+//                }
+
+                $discountPercent = $normalizedDiscount;
 
                 if ($normalizedOriginalPrice <= 0) {
                     $discountPercent = 0;
                 }
             }
+
             if (empty($discountPercent) && $normalizedOriginalPrice > 0 && $normalizedDiscountedPrice > 0) {
                 $discountPercent = round((($normalizedOriginalPrice - $normalizedDiscountedPrice) / $normalizedOriginalPrice) * 100);
             } else if (empty($discountPercent)) {
@@ -101,6 +100,16 @@ class ProcessDiscounts extends Command
 
             if ($discountPercent < 0 || $discountPercent >= 100) {
                 $discountPercent = 0;
+            }
+
+            if (empty($normalizedOriginalPrice) && empty($normalizedDiscountedPrice)) {
+                $discountPercent = $normalizedDiscount;
+            }
+
+            if (!$rules->validate()) {
+                $this->error("Invalid discount data for product: {$tempDiscount->id}");
+                $tempDiscount->update(['processed' => true]);
+                continue;
             }
 
             $startAt = $tempDiscount->start_at && strtotime($tempDiscount->start_at) ? $tempDiscount->start_at : null;

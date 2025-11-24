@@ -8,20 +8,21 @@ class DiscountResponseFormatter
     {
         if ($discounts instanceof \Illuminate\Pagination\LengthAwarePaginator) {
             $discounts->getCollection()->transform(function ($discount) {
-                return $this?->formatListDiscount($discount);
+                return $this->formatListDiscount($discount);
             });
 
             return $discounts;
         }
 
         return $discounts->map(function ($discount) {
-            return $this?->formatSingleDiscount($discount);
+            return $this->formatSingleDiscount($discount);
         });
     }
 
     protected function formatSingleDiscount($discount)
     {
         $productDiscounts = $discount->product->discounts()->with('store')->get();
+        $productDiscountHistories = $discount->product->discountHistories()->with('store')->orderBy('id', 'desc')->get();
         $offerCount = $productDiscounts->count();
         $minPrice = $productDiscounts->min('discounted_price');
 
@@ -34,32 +35,40 @@ class DiscountResponseFormatter
             'condition' => $discount->condition,
             'info' => $discount->info,
             'card' => $discount->card,
-            'from_date' => $discount->start_at?->format('Y-m-d'),
-            'to_date' => $discount->end_at?->format('Y-m-d'),
-            'valid_date' => $discount->start_at?->format('Y-m-d') . ' - ' . $discount->end_at?->format('Y-m-d'),
+            'from_date' => $discount->start_at ? $discount->start_at->format('Y-m-d') : null,
+            'to_date' => $discount->end_at ? $discount->end_at->format('Y-m-d') : null,
+            'valid_date' => ($discount->start_at ? $discount->start_at->format('Y-m-d') : '') . ' - ' . ($discount->end_at ? $discount->end_at->format('Y-m-d') : ''),
             'offer_count' => $offerCount,
             'min_price' => (float) $minPrice,
             'offers' => $productDiscounts->map(function($offer) {
-                return [
-                    'id' => $offer->id,
-                    'store_id' => $offer->store_id,
-                    'original_price' => $offer->original_price,
-                    'discounted_price' => $offer->discounted_price,
-                    'discount_percent' => $offer->discount_percent,
-                    'condition' => $offer->condition,
-                    'info' => $offer->info,
-                    'card' => $offer->card,
-                    'valid_date' => $offer->start_at?->format('Y-m-d') . ' - ' . $offer->end_at?->format('Y-m-d'),
-                    'from_date' => $offer->start_at?->format('Y-m-d'),
-                    'to_date' => $offer->end_at?->format('Y-m-d'),
-                    'store' => [
-                        'id' => $offer->store->id,
-                        'name' => $offer->store->name,
-                        'slug' => $offer->store->slug
-                    ]
-                ];
+                return $this->formatOfferItem($offer);
+            }),
+            'history' => $productDiscountHistories->map(function($history) {
+                return $this->formatOfferItem($history);
             }),
             'product' => $this->formatProductData($discount->product),
+        ];
+    }
+
+    protected function formatOfferItem($item)
+    {
+        return [
+            'id' => $item->id,
+            'store_id' => $item->store_id,
+            'original_price' => $item->original_price,
+            'discounted_price' => $item->discounted_price,
+            'discount_percent' => $item->discount_percent,
+            'condition' => $item->condition,
+            'info' => $item->info ?? null,
+            'card' => $item->card,
+            'valid_date' => ($item->start_at ? $item->start_at->format('Y-m-d') : '') . ' - ' . ($item->end_at ? $item->end_at->format('Y-m-d') : ''),
+            'from_date' => $item->start_at ? $item->start_at->format('Y-m-d') : null,
+            'to_date' => $item->end_at ? $item->end_at->format('Y-m-d') : null,
+            'store' => [
+                'id' => $item->store->id,
+                'name' => $item->store->name,
+                'slug' => $item->store->slug
+            ]
         ];
     }
 
@@ -78,9 +87,9 @@ class DiscountResponseFormatter
             'condition' => $discount->condition,
             'info' => $discount->info,
             'card' => $discount->card,
-            'valid_date' => $discount->start_at?->format('Y-m-d') . ' - ' . $discount->end_at?->format('Y-m-d'),
-            'from_date' => $discount->start_at?->format('Y-m-d'),
-            'to_date' => $discount->end_at?->format('Y-m-d'),
+            'valid_date' => ($discount->start_at ? $discount->start_at->format('Y-m-d') : '') . ' - ' . ($discount->end_at ? $discount->end_at->format('Y-m-d') : ''),
+            'from_date' => $discount->start_at ? $discount->start_at->format('Y-m-d') : null,
+            'to_date' => $discount->end_at ? $discount->end_at->format('Y-m-d') : null,
             'offers' => [],
             'offer_count' => $offerCount,
             'min_price' => (float) $minPrice,
@@ -90,6 +99,8 @@ class DiscountResponseFormatter
 
     public function formatProduct($product)
     {
+        $productDiscountHistories = $product->discountHistories()->with('store')->orderBy('id', 'desc')->get();
+
         return collect([
             [
                 'id' => null,
@@ -106,6 +117,9 @@ class DiscountResponseFormatter
                 'offer_count' => 0,
                 'min_price' => 0,
                 'offers' => [],
+                'history' => $productDiscountHistories->map(function($history) {
+                    return $this->formatOfferItem($history);
+                }),
                 'product' => $this->formatProductData($product),
             ]
         ]);

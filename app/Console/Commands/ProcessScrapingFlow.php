@@ -225,7 +225,7 @@ class ProcessScrapingFlow extends Command
 
     private function isRunningInDocker(): bool
     {
-        return file_exists('/.dockerenv') || 
+        return file_exists('/.dockerenv') ||
                file_exists('/proc/self/cgroup') && strpos(file_get_contents('/proc/self/cgroup'), 'docker') !== false;
     }
 }

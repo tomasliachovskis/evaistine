@@ -13,6 +13,19 @@ abstract class BaseStoreRules
         $this->tempDiscount = $tempDiscount;
     }
 
+    public function normalizeDiscount(?string $discountPercent)
+    {
+        $discountPercent = strtolower(trim($discountPercent));
+        $discountPercent = preg_replace('/[^0-9-]/', '', $discountPercent);
+        $discountPercent = str_replace('-', '', $discountPercent);
+        $discountPercent = !empty($discountPercent) ? (int)$discountPercent : null;
+        if ($discountPercent < 0) {
+            $discountPercent = 0;
+        }
+
+        return $discountPercent;
+    }
+
     public function normalizePrice(?string $price): ?float
     {
         if (empty($price)) {
@@ -31,5 +44,12 @@ abstract class BaseStoreRules
         return $discountTemp;
     }
 
-    abstract public function validate(): bool;
+    public function validate(): bool
+    {
+        return !empty($this->tempDiscount->name)
+            && ($this->normalizePrice($this->tempDiscount->original_price) > 0
+                || $this->normalizePrice($this->tempDiscount->discounted_price) > 0
+                || !empty($this->tempDiscount->discount_percent)
+            );
+    }
 }

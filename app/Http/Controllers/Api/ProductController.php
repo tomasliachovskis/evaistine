@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
 use App\Models\DiscountTemp;
 use App\Models\Discount;
+use App\Models\DiscountHistory;
 use App\Services\DiscountResponseFormatter;
 use Carbon\Carbon;
 
@@ -301,12 +302,12 @@ class ProductController extends Controller
         }
 
         $product = Product::where('slug', $slug)
-            ->with(['discounts.store', 'category'])
+            ->with(['discounts.store', 'discountHistories.store', 'category'])
             ->firstOrFail();
 
         $randomSeed = $this->generateRandomSeed($slug);
 
-        $similarProducts = Discount::whereHas('product', function ($query) use ($slug, $product) {
+        $similarDiscounts = Discount::whereHas('product', function ($query) use ($slug, $product) {
             $query->where('slug', '!=', $slug)
                 ->where('category_id', $product->category_id);
         })
@@ -325,7 +326,7 @@ class ProductController extends Controller
             'data' => $data,
             'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
             'seo' => $this->generateSeoData('product', $product),
-            'similar' => $this->formatter->format($similarProducts)
+            'similar' => $this->formatter->format($similarDiscounts)
         ];
 
         $jsonString = json_encode($responseData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
