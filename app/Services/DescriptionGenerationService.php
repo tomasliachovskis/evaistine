@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Store;
 use App\Models\Discount;
 use App\Models\Product;
+use App\Models\StoreCategoryDescription;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -656,5 +657,97 @@ OUTPUT RULES:
         // Clean up and return
         $productName = trim(preg_replace('/\s+/', ' ', $productName));
         return $productName ?: 'UNKNOWN';
+    }
+
+    public function generateTopProductsTable(Store $store, Category $category): ?string
+    {
+        $activeDiscounts = Discount::where('store_id', $store->id)
+            ->whereHas('product', function($query) use ($category) {
+                $query->where('category_id', $category->id);
+            })
+            ->where(function ($query) {
+                $query->where('end_at', '>=', now()->startOfDay())
+                    ->orWhereNull('end_at');
+            })
+            ->with(['product.category', 'store'])
+            ->get();
+
+        if ($activeDiscounts->isEmpty()) {
+            return null;
+        }
+
+        $topDiscounts = $this->getDiverseTopDiscounts($activeDiscounts, 6);
+        $maxDiscountPercent = min($activeDiscounts->max('discount_percent'), 100);
+
+        $earliestEnd = $activeDiscounts->min('end_at');
+        $latestEnd = $activeDiscounts->max('end_at');
+        $validityText = '';
+        if ($earliestEnd && $latestEnd && $earliestEnd->format('Y-m-d') !== $latestEnd->format('Y-m-d')) {
+            $validityText = 'Akcijos galioja nuo ' . $earliestEnd->format('Y-m-d') . ' iki ' . $latestEnd->format('Y-m-d');
+        } elseif ($earliestEnd || $latestEnd) {
+            $date = $earliestEnd ?: $latestEnd;
+            $validityText = 'Akcijos galioja iki ' . $date->format('Y-m-d');
+        }
+
+        $html = '<h2 class="text-xl md:text-2xl font-semibold mb-3">Geriausi pasiūlymai ' . htmlspecialchars($store->name) . ' ' . htmlspecialchars(mb_strtolower($category->name)) . ' produktai su didžiausia nuolaida (iki ' . $maxDiscountPercent . '%)</h2>';
+        $html .= '<table class="w-full border-collapse text-sm md:text-base mb-2">';
+        $html .= '<tbody>';
+
+        $rowIndex = 0;
+        foreach ($topDiscounts as $discount) {
+            $bgColor = ($rowIndex % 2 === 0) ? '#f9fafb' : '#ffffff';
+            $productUrl = str_replace('@', '', $discount->product->category->slug . '/' . $discount->product->slug);
+            $productUrl = '/akcijos/' . $productUrl;
+
+            $html .= '<tr style="background-color: ' . $bgColor . '">';
+            $html .= '<td class="px-4 py-2 text-gray-900 align-top border-b">';
+            $html .= '<a href="' . htmlspecialchars($productUrl) . '">' . htmlspecialchars($discount->product->name) . '</a>';
+            $html .= '</td>';
+            $html .= '<td class="px-4 py-2 text-gray-900 font-bold align-top border-b text-right">';
+            
+            if ($discount->original_price == 0 || $discount->discounted_price == 0) {
+                $html .= '<div><span style="color: #10b981; font-weight: bold; font-size: 1.1em;">' . $discount->discount_percent . '% nuolaida</span></div>';
+            } else {
+                $originalPrice = number_format($discount->original_price, 2, '.', ' ');
+                $discountedPrice = number_format($discount->discounted_price, 2, '.', ' ');
+                $html .= '<div><span style="color: #6b7280; text-decoration: line-through;">€' . $originalPrice . '</span></div>';
+                $html .= '<div><span style="color: #10b981; font-weight: bold; font-size: 1.1em;">€' . $discountedPrice . '</span></div>';
+            }
+            
+            $html .= '</td>';
+            $html .= '</tr>';
+
+            $rowIndex++;
+        }
+
+        $html .= '</tbody>';
+        $html .= '</table>';
+
+        if ($validityText) {
+            $html .= '<p class="leading-relaxed mt-3">' . htmlspecialchars($validityText) . '</p>';
+        }
+
+        return $html;
+    }
+
+    public function saveTopProductsTable(Store $store, Category $category): bool
+    {
+        $html = $this->generateTopProductsTable($store, $category);
+
+        if (!$html) {
+            return false;
+        }
+
+        StoreCategoryDescription::updateOrCreate(
+            [
+                'store_id' => $store->id,
+                'category_id' => $category->id,
+            ],
+            [
+                'top_products_html' => $html,
+            ]
+        );
+
+        return true;
     }
 }

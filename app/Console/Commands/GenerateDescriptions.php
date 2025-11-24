@@ -4,13 +4,14 @@ namespace App\Console\Commands;
 
 use App\Models\Store;
 use App\Models\Category;
+use App\Models\Discount;
 use App\Services\DescriptionGenerationService;
 use Illuminate\Console\Command;
 
 class GenerateDescriptions extends Command
 {
-    protected $signature = 'descriptions:generate {type : store or category} {--id= : Specific ID to generate description for} {--all : Generate for all stores/categories}';
-    protected $description = 'Generate descriptions for stores and categories using ChatGPT API';
+    protected $signature = 'descriptions:generate {type : store, category, or store-category} {--id= : Specific ID to generate description for} {--all : Generate for all stores/categories} {--store-category : Generate top products tables for store+category combinations}';
+    protected $description = 'Generate descriptions for stores and categories using ChatGPT API, or top products tables for store+category combinations';
 
     private DescriptionGenerationService $descriptionService;
 
@@ -35,6 +36,8 @@ class GenerateDescriptions extends Command
             $this->handleStores($id, $all);
         } elseif ($type === 'category') {
             $this->handleCategories($id, $all);
+        } elseif ($type === 'store-category') {
+            $this->handleStoreCategories($id, $all);
         } else {
             $this->handleStores($id, $all);
             $this->handleCategories($id, $all);
@@ -158,6 +161,63 @@ class GenerateDescriptions extends Command
             }
         } catch (\Exception $e) {
             $this->error("✗ Error generating description for {$category->name}: " . $e->getMessage());
+        }
+    }
+
+    private function handleStoreCategories(?string $id, bool $all): void
+    {
+        if ($all) {
+            $combinations = Discount::where(function ($query) {
+                    $query->where('end_at', '>=', now()->startOfDay())
+                        ->orWhereNull('end_at');
+                })
+                ->with(['store', 'product.category'])
+                ->get()
+                ->groupBy(function($discount) {
+                    return $discount->store_id . '-' . $discount->product->category_id;
+                })
+                ->map(function($discounts) {
+                    $first = $discounts->first();
+                    return [
+                        'store' => $first->store,
+                        'category' => $first->product->category,
+                    ];
+                })
+                ->filter(function($item) {
+                    return $item['store'] && $item['category'];
+                })
+                ->values();
+
+            $this->info("Generating top products tables for {$combinations->count()} store+category combinations...");
+
+            $bar = $this->output->createProgressBar($combinations->count());
+            $bar->start();
+
+            foreach ($combinations as $combination) {
+                $this->generateStoreCategoryTable($combination['store'], $combination['category']);
+                $bar->advance();
+            }
+
+            $bar->finish();
+            $this->newLine();
+            $this->info('Completed generating top products tables for all store+category combinations.');
+        } else {
+            $this->error('Please specify --all option for store-category type.');
+        }
+    }
+
+    private function generateStoreCategoryTable(Store $store, Category $category): void
+    {
+        try {
+            $success = $this->descriptionService->saveTopProductsTable($store, $category);
+
+            if ($success) {
+                $this->info("✓ Successfully generated table for {$store->name} + {$category->name}");
+            } else {
+                $this->warn("✗ No active discounts for {$store->name} + {$category->name}");
+            }
+        } catch (\Exception $e) {
+            $this->error("✗ Error generating table for {$store->name} + {$category->name}: " . $e->getMessage());
         }
     }
 }

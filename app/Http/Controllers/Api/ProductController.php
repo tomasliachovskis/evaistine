@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\StoreCategoryDescription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
@@ -433,12 +434,23 @@ class ProductController extends Controller
                 $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);
                 $maxDiscount = $this->getMaxDiscountForStoreCategory($entity, $secondaryEntity);
                 $minDiscount = $this->getMinDiscountForStoreCategory($entity, $secondaryEntity);
-                return [
+
+                $storeCategoryDescription = StoreCategoryDescription::where('store_id', $entity->id)
+                    ->where('category_id', $secondaryEntity->id)
+                    ->first();
+
+                $seoData = [
                     'seo_title' => $entity->name . ' akcija ' . mb_strtolower($secondaryEntity->name),
                     'seo_description' => "",
                     'meta_title' => mb_strtoupper($entity->name) . ' akcijos: ' . mb_strtolower($secondaryEntity->name) . ' pigiau – iki ' . $maxDiscount . '% nuolaidos',
                     'meta_description' => "Naujausios " . $entity->name . " " . mb_strtolower($secondaryEntity->name) . " akcijos – iki {$maxDiscount}% nuolaidos, " . $this->formatCount($count) . "+ prekių! Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu. Nepraleisk pigiau!",
                 ];
+
+                if ($storeCategoryDescription && $storeCategoryDescription->top_products_html) {
+                    $seoData['seo_description'] = $storeCategoryDescription->top_products_html;
+                }
+
+                return $seoData;
             case 'product':
                 $minPrice = $entity->discounts->min('discounted_price');
                 $formattedPrice = $minPrice ? (floor($minPrice) == $minPrice ? number_format($minPrice, 0, '.', '') : number_format($minPrice, 2, '.', '')) : null;
