@@ -184,6 +184,27 @@ class DescriptionGenerationService
             })
             ->toArray();
 
+        $storeCategoryLinks = $activeDiscounts
+            ->groupBy('product.category.id')
+            ->map(function($discounts) use ($store) {
+                $firstDiscount = $discounts->first();
+                $category = $firstDiscount->product->category;
+                if (!$category || !$category->slug) {
+                    return null;
+                }
+                return [
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'url' => "/akcijos/{$store->slug}/{$category->slug}",
+                    'count' => $discounts->count()
+                ];
+            })
+            ->filter()
+            ->sortByDesc('count')
+            ->take(3)
+            ->values()
+            ->toArray();
+
         return [
             'store_name' => $store->name,
             'store_url' => "@https://superakcijos.lt/akcijos/{$store->slug}",
@@ -203,6 +224,7 @@ class DescriptionGenerationService
             'card_discounts' => $activeDiscounts->where('card', true)->count(),
             'top_discounts' => $topDiscounts,
             'category_statistics' => $categoryStats,
+            'store_category_links' => $storeCategoryLinks,
             'valid_date_range' => [
                 'earliest_end' => ($earliest = $activeDiscounts->min('end_at')) ? $earliest->format('Y-m-d') : null,
                 'latest_end' => ($latest = $activeDiscounts->max('end_at')) ? $latest->format('Y-m-d') : null
@@ -282,7 +304,7 @@ class DescriptionGenerationService
                 ];
             })
             ->toArray();
-        
+
         return [
             'category_name' => $category->name,
             'category_url' => "@https://superakcijos.lt/akcijos/{$category->slug}",
@@ -343,7 +365,9 @@ Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use
   Dates format: YYYY-MM-DD. Sentence case only.
 
 2) INTRO PARAGRAPHS
-- Two <p class=\"leading-relaxed\"> paragraphs describing the store benefits and scope using natural Lithuanian. Include '[total_active_discounts] aktyvių akcijų', 'vidutinė sutaupyta suma už prekę €[avg_savings_per_product]' (two decimals, space as thousands separator, dot as decimal). Mention main product areas using category context from data. Provide validity window as: if valid_date_range.earliest_end and latest_end are both present and different, write: 'Akcijos galioja nuo [earliest_end] iki [latest_end]'. If they are equal or only one is present, write: 'Akcijos galioja iki [date]'. Dates format YYYY-MM-DD.
+- Two <p class=\"leading-relaxed\"> paragraphs describing the store benefits and scope using natural Lithuanian. Include '[total_active_discounts] aktyvių akcijų', 'vidutinė sutaupyta suma už prekę €[avg_savings_per_product]' (two decimals, space as thousands separator, dot as decimal). Mention main product areas using category context from data. Do NOT include validity window in these paragraphs.
+- In the second paragraph, include EXACTLY 1 store+category link from store_category_links array (use the first one from the array). Use format: '<a href=\"[url]\">[name]</a>' where url is from store_category_links.url and name is from store_category_links.name. Integrate this link naturally into the text about popular categories.
+- After the two paragraphs, add a separate <p class=\"leading-relaxed\"> on a new line with validity window: if valid_date_range.earliest_end and latest_end are both present and different, write: 'Akcijos galioja nuo [earliest_end] iki [latest_end]'. If they are equal or only one is present, write: 'Akcijos galioja iki [date]'. Dates format YYYY-MM-DD.
 
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
@@ -364,7 +388,7 @@ Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use
   - Nuolaidų dydis = nuo [min_discount_percent]% iki [max_discount_percent]%
   - Akcijos galioja = either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
 
-Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using category_statistics by picking 2-3 with highest 'count'. Include links to category urls.
+Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using category_statistics by picking 2-3 with highest 'count'. Include EXACTLY 3 category links from category_statistics using format '<a href=\"[url]\">[name]</a>' where url is from category_statistics.url (remove leading '@' if present) and name is from category_statistics.name. These are regular category links, NOT store+category links.
 
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
@@ -385,7 +409,7 @@ Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using cate
 6) FAQ
 - <h3 class=\"text-xl md:text-2xl font-semibold mt-3 mb-3\"> 'Dažniausiai užduodami klausimai (DUK)'
 - A <div class=\"faq-section space-y-4\"> containing three Q/A blocks using <h4 class=\"font-semibold mb-2\"> and <p class=\"leading-relaxed\">:
-  - Which categories have most offers? Link to 2 category urls.
+  - Which categories have most offers? Include EXACTLY 1 store+category link from store_category_links array (use the second one from the array if available, otherwise skip). Use format '<a href=\"[url]\">[name]</a>' where url is from store_category_links.url and name is from store_category_links.name. If store_category_links has only 1 link total, do NOT include it here (it was already used in intro). Also include EXACTLY 2 regular category links from category_statistics using format '<a href=\"[url]\">[name]</a>' where url is from category_statistics.url (remove leading '@' if present). IMPORTANT: Total links in entire description must be at least 8-10 links (1 store+category in intro, 3 category in stats, 1 store+category + 2 category in FAQ, plus 6 product links in top products section).
   - How long are offers valid? Use the computed validity text.
   - How to save more? Mention card_discounts count if >0 and shopping tips.
 
