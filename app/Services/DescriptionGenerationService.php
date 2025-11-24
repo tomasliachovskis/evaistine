@@ -394,10 +394,11 @@ Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using cate
 
 4) TOP PRODUCTS
 - <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Populiariausi [store_name] produktai su didžiausia nuolaida (iki [max_discount_percent]%)'
-- A <p class=\"leading-relaxed\"> introducing the list.
-- A <ul class=\"list-disc pl-5 space-y-2\"> of exactly 6 <li> items taken from top_discounts, sorted by discount_percent desc. Each item must use a product link in this exact format: '<a href=\"[product_url]\">[name]</a> – €[discounted_price] ([discount_percent]% nuolaida). One short natural sentence with usage/benefit.' Ensure diversity already provided. Use space as thousands separator and dot as decimal, two decimals where applicable. Remove any leading '@' from URLs.
-
-<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
+- A <table class=\"w-full border-collapse text-sm md:text-base mb-2\"> with styled rows:
+  - <tbody>
+    - Exactly 6 <tr class=\"odd:bg-white even:bg-gray-50\"> rows taken from top_discounts, sorted by discount_percent desc. Each row must have:
+      - First <td class=\"px-4 py-2 text-gray-900 align-top border-b\"> with product link in format: '<a href=\"[product_url]\">[name]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present) and name is from top_discounts.name.
+      - Second <td class=\"px-4 py-2 text-gray-900 font-bold align-top border-b text-right\"> with price: '€[discounted_price]' where discounted_price is from top_discounts.discounted_price. Use space as thousands separator and dot as decimal, two decimals. Also include discount info: '([discount_percent]%)' in smaller text or parentheses. Ensure diversity already provided.
 
 5) DISCOUNT DISTRIBUTION
 - <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Nuolaidų paskirstymas kategorijose'
