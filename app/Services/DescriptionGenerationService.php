@@ -378,15 +378,22 @@ Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use
     - <tr>
       - <th class=\"bg-gray-50 text-left font-medium text-gray-700 px-4 py-2 border-b\"> for both columns
   - <tbody>
-    - Each <tr class=\"odd:bg-white even:bg-gray-50\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\">
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\">
-  Include exactly these rows in order:
-  - Aktyvių nuolaidų skaičius = [total_active_discounts]
-  - Vidutinė nuolaida = [avg_discount_percent]%
-  - Vidutinė sutaupyta suma už prekę = €[avg_savings_per_product]
-  - Nuolaidų dydis = nuo [min_discount_percent]% iki [max_discount_percent]%
-  - Akcijos galioja = either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
+    - Include exactly these 5 rows in order, using alternating row colors with inline styles: first row use style=\"background-color: #f9fafb\", second row use style=\"background-color: #ffffff\", third row use style=\"background-color: #f9fafb\", fourth row use style=\"background-color: #ffffff\", fifth row use style=\"background-color: #f9fafb\" (gray-50 and white alternating, starting with gray):
+    - First <tr style=\"background-color: #f9fafb\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Aktyvių nuolaidų skaičius'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '[total_active_discounts]'
+    - Second <tr style=\"background-color: #ffffff\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Vidutinė nuolaida'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '[avg_discount_percent]%'
+    - Third <tr style=\"background-color: #f9fafb\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Vidutinė sutaupyta suma už prekę'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '€[avg_savings_per_product]'
+    - Fourth <tr style=\"background-color: #ffffff\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Nuolaidų dydis'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> 'nuo [min_discount_percent]% iki [max_discount_percent]%'
+    - Fifth <tr style=\"background-color: #f9fafb\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Akcijos galioja'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
 
 Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using category_statistics by picking top 3 with highest 'count'. Include EXACTLY 3 category links from category_statistics using format '<a href=\"[url]\">[name]</a>' where url is from category_statistics.url (remove leading '@' if present) and name is from category_statistics.name. These are regular category links, NOT store+category links. IMPORTANT: Remember which 3 categories you used here, as they must NOT be repeated in FAQ section.
 
@@ -396,9 +403,9 @@ Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using cate
 - <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Populiariausi [store_name] produktai su didžiausia nuolaida (iki [max_discount_percent]%)'
 - A <table class=\"w-full border-collapse text-sm md:text-base mb-2\"> with styled rows:
   - <tbody>
-    - Exactly 6 <tr class=\"odd:bg-white even:bg-gray-50\"> rows taken from top_discounts, sorted by discount_percent desc. Each row must have:
+    - Exactly 6 <tr> rows taken from top_discounts, sorted by discount_percent desc. Use alternating row colors with inline styles: first row use style=\"background-color: #f9fafb\", second row use style=\"background-color: #ffffff\", third row use style=\"background-color: #f9fafb\", fourth row use style=\"background-color: #ffffff\", fifth row use style=\"background-color: #f9fafb\", sixth row use style=\"background-color: #ffffff\" (gray-50 and white alternating, starting with gray). Each row must have:
       - First <td class=\"px-4 py-2 text-gray-900 align-top border-b\"> with product link in format: '<a href=\"[product_url]\">[name]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present) and name is from top_discounts.name.
-      - Second <td class=\"px-4 py-2 text-gray-900 font-bold align-top border-b text-right\"> with price: '€[discounted_price]' where discounted_price is from top_discounts.discounted_price. Use space as thousands separator and dot as decimal, two decimals. Also include discount info: '([discount_percent]%)' in smaller text or parentheses. Ensure diversity already provided.
+      - Second <td class=\"px-4 py-2 align-top border-b text-right\"> with price display: First show original price '<span style=\"color: #6b7280; text-decoration: line-through;\">€[original_price]</span>' where original_price is from top_discounts.original_price, then on a new line show discounted price '<span style=\"color: #10b981; font-weight: bold; font-size: 1.1em;\">€[discounted_price]</span>' where discounted_price is from top_discounts.discounted_price. Use space as thousands separator and dot as decimal, two decimals. Display them vertically (original price above, discounted price below). Ensure diversity already provided.
 
 5) DISCOUNT DISTRIBUTION
 - <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Nuolaidų paskirstymas kategorijose'
@@ -455,15 +462,22 @@ Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use
     - <tr>
       - <th class=\"bg-gray-50 text-left font-medium text-gray-700 px-4 py-2 border-b\"> for both columns
   - <tbody>
-    - Each <tr class=\"odd:bg-white even:bg-gray-50\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\">
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\">
-  Include exactly these rows in order:
-  - Aktyvių nuolaidų skaičius = [total_active_discounts]
-  - Vidutinė nuolaida = [avg_discount_percent]%
-  - Vidutinė sutaupyta suma už prekę = €[avg_savings_per_product]
-  - Nuolaidų dydis = nuo [min_discount_percent]% iki [max_discount_percent]%
-  - Akcijos galioja = either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
+    - Include exactly these 5 rows in order, using alternating row colors with inline styles: first row use style=\"background-color: #f9fafb\", second row use style=\"background-color: #ffffff\", third row use style=\"background-color: #f9fafb\", fourth row use style=\"background-color: #ffffff\", fifth row use style=\"background-color: #f9fafb\" (gray-50 and white alternating, starting with gray):
+    - First <tr style=\"background-color: #f9fafb\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Aktyvių nuolaidų skaičius'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '[total_active_discounts]'
+    - Second <tr style=\"background-color: #ffffff\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Vidutinė nuolaida'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '[avg_discount_percent]%'
+    - Third <tr style=\"background-color: #f9fafb\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Vidutinė sutaupyta suma už prekę'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '€[avg_savings_per_product]'
+    - Fourth <tr style=\"background-color: #ffffff\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Nuolaidų dydis'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> 'nuo [min_discount_percent]% iki [max_discount_percent]%'
+    - Fifth <tr style=\"background-color: #f9fafb\">
+      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Akcijos galioja'
+      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
 
 Then a <p class=\"leading-relaxed mt-3\"> noting strongest stores using store_statistics by picking 2-3 with highest 'count'. Include links to store urls.
 
