@@ -665,10 +665,6 @@ OUTPUT RULES:
             ->whereHas('product', function($query) use ($category) {
                 $query->where('category_id', $category->id);
             })
-            ->where(function ($query) {
-                $query->where('end_at', '>=', now()->startOfDay())
-                    ->orWhereNull('end_at');
-            })
             ->with(['product.category', 'store'])
             ->get();
 
@@ -676,7 +672,7 @@ OUTPUT RULES:
             return null;
         }
 
-        $topDiscounts = $this->getDiverseTopDiscounts($activeDiscounts, 6);
+        $topDiscounts = $activeDiscounts->sortByDesc('discount_percent')->take(5);
         $maxDiscountPercent = min($activeDiscounts->max('discount_percent'), 100);
 
         $earliestEnd = $activeDiscounts->min('end_at');
@@ -689,7 +685,7 @@ OUTPUT RULES:
             $validityText = 'Akcijos galioja iki ' . $date->format('Y-m-d');
         }
 
-        $html = '<h2 class="text-xl md:text-2xl font-semibold mb-3">Geriausi pasiūlymai ' . htmlspecialchars($store->name) . ' ' . htmlspecialchars(mb_strtolower($category->name)) . ' produktai su didžiausia nuolaida (iki ' . $maxDiscountPercent . '%)</h2>';
+        $html = '<h2 class="text-xl md:text-2xl font-semibold mb-3">Geriausi pasiūlymai ' . htmlspecialchars($store->name) . ' ' . htmlspecialchars(mb_strtolower($category->name)) . ' produktams, nuolaidos iki ' . $maxDiscountPercent . '%</h2>';
         $html .= '<table class="w-full border-collapse text-sm md:text-base mb-2">';
         $html .= '<tbody>';
 
@@ -701,19 +697,29 @@ OUTPUT RULES:
 
             $html .= '<tr style="background-color: ' . $bgColor . '">';
             $html .= '<td class="px-4 py-2 text-gray-900 align-top border-b">';
-            $html .= '<a href="' . htmlspecialchars($productUrl) . '">' . htmlspecialchars($discount->product->name) . '</a>';
+            $html .= '<a href="' . htmlspecialchars($productUrl) . '" style="font-size: 1.1em;">' . htmlspecialchars($discount->product->name) . '</a>';
             $html .= '</td>';
-            $html .= '<td class="px-4 py-2 text-gray-900 font-bold align-top border-b text-right">';
-            
-            if ($discount->original_price == 0 || $discount->discounted_price == 0) {
-                $html .= '<div><span style="color: #10b981; font-weight: bold; font-size: 1.1em;">' . $discount->discount_percent . '% nuolaida</span></div>';
-            } else {
-                $originalPrice = number_format($discount->original_price, 2, '.', ' ');
-                $discountedPrice = number_format($discount->discounted_price, 2, '.', ' ');
-                $html .= '<div><span style="color: #6b7280; text-decoration: line-through;">€' . $originalPrice . '</span></div>';
-                $html .= '<div><span style="color: #10b981; font-weight: bold; font-size: 1.1em;">€' . $discountedPrice . '</span></div>';
+
+            $hasOriginalPrice = $discount->original_price > 0;
+            $hasDiscountedPrice = $discount->discounted_price > 0;
+            $hasDiscount = $discount->discount_percent > 0;
+
+            $html .= '<td class="px-4 py-2 border-b text-center" style="vertical-align: middle;">';
+            if ($hasDiscount) {
+                $html .= '<span class="bg-[#ff002f] text-white text-[13px] sm:text-[14px] font-bold rounded-md px-2 py-0.5">' . $discount->discount_percent . '%</span>';
             }
-            
+            $html .= '</td>';
+
+            $html .= '<td class="px-4 py-2 border-b text-right" style="vertical-align: middle;">';
+            if ($hasOriginalPrice && $hasDiscountedPrice && $discount->original_price != $discount->discounted_price) {
+                $originalPrice = number_format($discount->original_price, 2, '.', '');
+                $discountedPrice = number_format($discount->discounted_price, 2, '.', '');
+                $html .= '<div><span style="color: #6b7280; text-decoration: line-through;">' . $originalPrice . '€</span></div>';
+                $html .= '<div><span style="color: #10b981; font-weight: bold; font-size: 1.1em;">' . $discountedPrice . '€</span></div>';
+            } elseif ($hasDiscountedPrice) {
+                $discountedPrice = number_format($discount->discounted_price, 2, '.', '');
+                $html .= '<span style="color: #10b981; font-weight: bold; font-size: 1.1em;">' . $discountedPrice . '€</span>';
+            }
             $html .= '</td>';
             $html .= '</tr>';
 

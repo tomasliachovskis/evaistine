@@ -167,10 +167,7 @@ class GenerateDescriptions extends Command
     private function handleStoreCategories(?string $id, bool $all): void
     {
         if ($all) {
-            $combinations = Discount::where(function ($query) {
-                    $query->where('end_at', '>=', now()->startOfDay())
-                        ->orWhereNull('end_at');
-                })
+            $combinations = Discount::where(function ($query) {})
                 ->with(['store', 'product.category'])
                 ->get()
                 ->groupBy(function($discount) {
