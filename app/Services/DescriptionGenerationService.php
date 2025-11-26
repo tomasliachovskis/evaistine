@@ -61,7 +61,7 @@ class DescriptionGenerationService
             if ($response->successful()) {
                 $content = $response->json('choices.0.message.content');
                 $gptContent = trim($content);
-                
+
                 $topProductsTable = $this->generateStoreTopProductsTable($store);
                 if ($topProductsTable) {
                     $discountDistributionHeading = '<h3 class="text-xl md:text-2xl font-semibold mb-3">Nuolaidų paskirstymas';
@@ -83,7 +83,7 @@ class DescriptionGenerationService
                         }
                     }
                 }
-                
+
                 return $gptContent;
             }
 
@@ -133,7 +133,7 @@ class DescriptionGenerationService
             if ($response->successful()) {
                 $content = $response->json('choices.0.message.content');
                 $gptContent = trim($content);
-                
+
                 $topProductsTable = $this->generateCategoryTopProductsTable($category);
                 if ($topProductsTable) {
                     $discountDistributionHeading = '<h3 class="text-xl md:text-2xl font-semibold mb-3">Nuolaidų paskirstymas';
@@ -155,7 +155,7 @@ class DescriptionGenerationService
                         }
                     }
                 }
-                
+
                 return $gptContent;
             }
 
@@ -445,13 +445,13 @@ Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using cate
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
 4) DISCOUNT DISTRIBUTION
-- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Nuolaidų paskirstymas kategorijose'
+- <h3 class=\"text-xl md:text-2xl font-semibold mt-3 mb-3\"> 'Nuolaidų paskirstymas kategorijose'
 - A <p class=\"leading-relaxed\"> summarizing where most discounts are (use category_statistics and discount_distribution buckets).
-- A <ul class=\"list-disc pl-5 space-y-1 py-2\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
+- A <ul style=\"padding-left: 1.25rem\" class=\"list-disc pl-5 space-y-1 py-2\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
 
 <hr class=\"my-8 border-gray-200 mt-3\">
 
-6) FAQ
+5) FAQ
 - <h3 class=\"text-xl md:text-2xl font-semibold mt-3 mb-3\"> 'Dažniausiai užduodami klausimai (DUK)'
 - A <div class=\"faq-section space-y-4\"> containing three Q/A blocks using <h4 class=\"font-semibold mb-2\"> and <p class=\"leading-relaxed\">:
   - Which categories have most offers? Include EXACTLY 1 store+category link from store_category_links array (use the second one from the array if available, otherwise skip). Use format '<a href=\"[url]\">[name]</a>' where url is from store_category_links.url and name is from store_category_links.name. If store_category_links has only 1 link total, do NOT include it here (it was already used in intro). Also include EXACTLY 2 regular category links from category_statistics using format '<a href=\"[url]\">[name]</a>' where url is from category_statistics.url (remove leading '@' if present). CRITICAL: These 2 category links MUST be different from the 3 categories used in stats section above. Use categories ranked 4th and 5th by 'count' in category_statistics, or any other categories that were NOT used in stats section. Do NOT repeat any categories. IMPORTANT: Total links in entire description must be at least 8-10 links (1 store+category in intro, 3 category in stats, 1 store+category + 2 category in FAQ, plus 6 product links in top products section).
@@ -465,7 +465,6 @@ OUTPUT RULES:
 - Always include <main> wrapper and the exact section sequence with <hr> separators.
 - Never invent stores; use [store_name].
 - Numbers: format money as €[value] with two decimals; thousands separator as space; decimals with dot. Percent as [value]%. Do not round integers. For money values like avg_savings_per_product, use two decimals.
-- For top products, list exactly 6 items if available; if fewer exist, list available.
 - Do not use <strong> tags anywhere; rely on Tailwind classes for emphasis.
 - Ensure all headings follow sentence case (only the first word capitalized).
 - Keep tone promotional but natural; avoid repeating the same phrase.
@@ -530,7 +529,7 @@ Then a <p class=\"leading-relaxed mt-3\"> noting strongest stores using store_st
 5) DISCOUNT DISTRIBUTION
 - <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Nuolaidų paskirstymas parduotuvėse'
 - A <p class=\"leading-relaxed\"> summarizing where most discounts are (use store_statistics and discount_distribution buckets).
-- A <ul class=\"list-disc pl-5 space-y-1 py-2\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
+- A <ul style=\"padding-left: 1.25rem\" class=\"list-disc pl-5 space-y-1 py-2\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
 
 <hr class=\"my-8 border-gray-200 mt-3\">
 

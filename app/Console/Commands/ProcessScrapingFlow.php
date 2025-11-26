@@ -175,6 +175,14 @@ class ProcessScrapingFlow extends Command
             return false;
         }
 
+        $this->info('Generating top products tables for store+category combinations...');
+        $exitCode = $this->call('descriptions:generate', ['type' => 'store-category', '--all' => true]);
+
+        if ($exitCode !== 0) {
+            $this->error('descriptions:generate store-category --all failed with exit code: ' . $exitCode);
+            return false;
+        }
+
         $this->info('✓ Descriptions generated successfully.');
         $this->newLine();
         return true;
