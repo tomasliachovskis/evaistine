@@ -487,7 +487,7 @@ Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use
   Dates format: YYYY-MM-DD. Sentence case only.
 
 2) INTRO PARAGRAPHS
-- Two <p class=\"leading-relaxed\"> paragraphs describing the category benefits and scope using natural Lithuanian. Include '[total_active_discounts] aktyvių akcijų', 'vidutinė sutaupyta suma už prekę €[avg_savings_per_product]' (two decimals, space as thousands separator, dot as decimal). Mention main stores using store_statistics context from data. Provide validity window as: if valid_date_range.earliest_end and latest_end are both present and different, write: 'Akcijos galioja nuo [earliest_end] iki [latest_end]'. If they are equal or only one is present, write: 'Akcijos galioja iki [date]'. Dates format YYYY-MM-DD.
+- Two <p class=\"leading-relaxed\"> paragraphs describing the category benefits and scope using natural Lithuanian. Include '[total_active_discounts] aktyvių akcijų', 'vidutinė sutaupyta suma už prekę €[avg_savings_per_product]' (two decimals, space as thousands separator, dot as decimal). Mention main stores using store_statistics context from data.
 
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
@@ -520,14 +520,14 @@ Then a <p class=\"leading-relaxed mt-3\"> noting strongest stores using store_st
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
 4) BEST STORES
-- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Geriausios [category_name] parduotuvės su didžiausia nuolaida (iki [max_discount_percent]%)'
+- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Geriausios [category_name] akcijos pagal parduotuves'
 - A <p class=\"leading-relaxed\"> introducing the list.
 - A <ul class=\"list-disc pl-5 space-y-2\"> containing ALL stores from store_statistics (up to 6 items). If store_statistics has fewer than 6 stores, list all available stores. If it has more than 6, list the top 6 sorted by max_discount desc (or avg_discount desc if max_discount equal). CRITICAL: Include ALL major stores that appear in store_statistics (Rimi, Iki, Maxima, Norfa, Lidl, etc.) - do not skip any stores. Each item must use a store link in this exact format: '<a href=\"[url]\">[name]</a> – vidutinė nuolaida [avg_discount]%, [count] produktų. One short natural sentence about store benefits.' Use space as thousands separator and dot as decimal, two decimals where applicable. Remove any leading '@' from URLs.
 
 <hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
 
 5) DISCOUNT DISTRIBUTION
-- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Nuolaidų paskirstymas parduotuvėse'
+- <h3 class=\"text-xl md:text-2xl font-semibold mb-3 mt-3\"> 'Nuolaidų paskirstymas parduotuvėse'
 - A <p class=\"leading-relaxed\"> summarizing where most discounts are (use store_statistics and discount_distribution buckets).
 - A <ul style=\"padding-left: 1.25rem\" class=\"list-disc pl-5 space-y-1 py-2\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
 
