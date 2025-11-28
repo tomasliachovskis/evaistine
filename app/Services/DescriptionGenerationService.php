@@ -333,6 +333,7 @@ class DescriptionGenerationService
                 return [
                     'name' => $firstDiscount->store->name,
                     'url' => "@https://superakcijos.lt/akcijos/{$firstDiscount->store->slug}",
+                    'slug' => $firstDiscount->store->slug,
                     'count' => $discounts->count(),
                     'avg_discount' => round($discounts->avg('discount_percent'), 1),
                     'min_price' => $discounts->min('discounted_price'),
@@ -350,8 +351,33 @@ class DescriptionGenerationService
             })
             ->toArray();
 
+        $storeCategoryLinks = $activeDiscounts
+            ->groupBy(function($discount) {
+                return $discount->store_id . '_' . $discount->product->category_id;
+            })
+            ->map(function($discounts) use ($category) {
+                $firstDiscount = $discounts->first();
+                $store = $firstDiscount->store;
+                if (!$store || !$store->slug) {
+                    return null;
+                }
+                return [
+                    'store_name' => $store->name,
+                    'store_slug' => $store->slug,
+                    'category_name' => $category->name,
+                    'url' => "/akcijos/{$store->slug}/{$category->slug}",
+                    'count' => $discounts->count()
+                ];
+            })
+            ->filter()
+            ->sortByDesc('count')
+            ->take(6)
+            ->values()
+            ->toArray();
+
         return [
             'category_name' => $category->name,
+            'category_slug' => $category->slug,
             'category_url' => "@https://superakcijos.lt/akcijos/{$category->slug}",
             'total_active_discounts' => $activeDiscounts->count(),
             'total_products' => $activeDiscounts->unique('product_id')->count(),
@@ -369,6 +395,7 @@ class DescriptionGenerationService
             'card_discounts' => $activeDiscounts->where('card', true)->count(),
             'top_discounts' => $topDiscounts,
             'store_statistics' => $storeStats,
+            'store_category_links' => $storeCategoryLinks,
             'valid_date_range' => [
                 'earliest_end' => ($earliest = $activeDiscounts->min('end_at')) ? $earliest->format('Y-m-d') : null,
                 'latest_end' => ($latest = $activeDiscounts->max('end_at')) ? $latest->format('Y-m-d') : null
@@ -484,8 +511,8 @@ Wrap everything in a single <div class=\"category-description-block p-4\"> eleme
   Note: Space before % sign. Sentence case only.
 
 2) INTRO PARAGRAPHS
-- First <p class=\"mb-4 text-gray-700\"> paragraph: Start with a question or engaging statement about the category. Use <strong> tags to emphasize category name and key discount percentage. Example: 'Ruošiate pietus, planuojate šventinį stalą ar tiesiog pildote šaldytuvą? Kategorija <strong>„[category_name]\"</strong> yra puiki vieta sutaupyti, neaukojant kokybės! Čia rasite... – viskas su akcijomis, siekiančiomis <strong>net [max_discount_percent] %!</strong>'
-- Second <p class=\"mb-6 text-gray-700\"> paragraph: Include '[total_active_discounts] aktyvių akcijų', 'Vidutinė nuolaida siekia <strong>[avg_discount_percent] %</strong>', and validity: 'Pasiūlymai galioja <strong>nuo [earliest_end] iki [latest_end]</strong>' if both dates are present and different, or 'Pasiūlymai galioja <strong>iki [date]</strong>' if dates are the same or only one is present. Dates format: YYYY-MM-DD.
+- First <p class=\"mb-4 text-gray-700\"> paragraph: Start with a question or engaging statement about the category. Use <strong> tags to emphasize category name and key discount percentage. CRITICAL: When mentioning specific product types, include product links from top_discounts. Match product names from top_discounts to mentioned product types and create links using format: '<a href=\"[product_url]\">[product_type]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present). Example: 'Ruošiate pietus, planuojate šventinį stalą ar tiesiog pildote šaldytuvą? Kategorija <strong>„[category_name]\"</strong> yra puiki vieta sutaupyti, neaukojant kokybės! Čia rasite... – viskas su akcijomis, siekiančiomis <strong>net [max_discount_percent] %!</strong>'
+- Second <p class=\"mb-6 text-gray-700\"> paragraph: Include '[total_active_discounts] aktyvių akcijų', 'Vidutinė nuolaida siekia <strong>[avg_discount_percent] %</strong>', and validity: 'Pasiūlymai galioja <strong>nuo [earliest_end] iki [latest_end]</strong>' if both dates are present and different, or 'Pasiūlymai galioja <strong>iki [date]</strong>' if dates are the same or only one is present. Dates format: YYYY-MM-DD. CRITICAL: Include product links from top_discounts when mentioning product types in this paragraph as well.
 
 <hr class=\"mb-6 border-gray-300\">
 
@@ -530,10 +557,10 @@ Wrap everything in a single <div class=\"category-description-block p-4\"> eleme
     - <tbody>
       - Include ALL stores from store_statistics (up to 6 items). If store_statistics has fewer than 6 stores, list all available stores. If it has more than 6, list the top 6 sorted by avg_discount desc. CRITICAL: Include ALL major stores that appear in store_statistics (Rimi, Iki, Maxima, Norfa, Lidl, etc.) - do not skip any stores.
       - For each store, create a <tr class=\"hover:bg-gray-50 border-t\"> with:
-        - First <td class=\"p-3 border-r border-gray-200\"> '<strong>[store_name]</strong>'
+        - First <td class=\"p-3 border-r border-gray-200\"> Find matching entry in store_category_links where store_category_links.store_slug matches store_statistics.slug. If found, use format: '<strong><a href=\"[url]\">[store_name]</a></strong>' where url is from store_category_links.url and store_name is from store_statistics.name. If not found in store_category_links, use format: '<strong><a href=\"/akcijos/[store_slug]/[category_slug]\">[store_name]</a></strong>' where store_slug is from store_statistics.slug and category_slug is from category_slug field.
         - Second <td class=\"p-3 border-r border-gray-200\"> '[avg_discount] %' (use <strong> tags if this store has the highest avg_discount)
         - Third <td class=\"p-3 border-r border-gray-200\"> '[count] produktai'
-        - Fourth <td class=\"p-3\"> A natural sentence describing the store's advantage. Use <strong> tags to emphasize key product types or benefits. If this store has the highest avg_discount, start with '<strong>Didžiausia vidutinė nuolaida!</strong>'. If it has the most products, mention '<strong>Didžiausias asortimentas!</strong>'. Include specific product types from the category context.
+        - Fourth <td class=\"p-3\"> A natural sentence describing the store's advantage. CRITICAL: Include as many product links as possible from top_discounts when mentioning product types. When you mention product types (e.g., 'avokadų', 'bulvių', 'kopūstų', 'mėsos gaminiams', 'dešroms', etc.), try to find matching products in top_discounts array where the product name contains those keywords. Create links using format: '<a href=\"[product_url]\">[keyword]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present). For example: 'Daug akcijų ant <a href=\"[url]\">avokadų</a>, <a href=\"[url]\">bulvių</a> ir <a href=\"[url]\">kopūstų</a>'. If multiple products match a keyword, use the one with highest discount_percent. Use <strong> tags to emphasize key product types or benefits. If this store has the highest avg_discount, start with '<strong>Didžiausia vidutinė nuolaida!</strong>'. If it has the most products, mention '<strong>Didžiausias asortimentas!</strong>'. Include specific product types from the category context with links whenever possible.
 
 <hr class=\"mb-6 border-gray-300\">
 
@@ -541,7 +568,7 @@ Wrap everything in a single <div class=\"category-description-block p-4\"> eleme
 - <h2 id=\"dazniausiai-uzduodami-klausimai-duk\" class=\"text-2xl font-semibold mb-4 text-gray-800\"> 'Dažniausiai užduodami klausimai (DUK)'
 - Three Q/A blocks:
   - First <h3 class=\"text-xl font-semibold mb-2 text-gray-700\"> '1. Kurioms [category_name] produktų grupėms taikomos didžiausios nuolaidos?'
-    - <p class=\"mb-4 text-gray-600\"> Answer mentioning product types that typically have highest discounts (30–50% and more). Include links to 2 store urls from store_statistics using format '<a href=\"[url]\">[name]</a>' where url is from store_statistics.url (remove leading '@' if present) and name is from store_statistics.name. Use <strong> tags for product group names.
+    - <p class=\"mb-4 text-gray-600\"> Answer mentioning product types that typically have highest discounts (30–50% and more). CRITICAL: Include as many product links as possible from top_discounts when mentioning product types. Match product names from top_discounts to mentioned product types and create links using format: '<a href=\"[product_url]\">[product_type]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present). Include links to 2 store urls from store_statistics using format '<a href=\"[url]\">[name]</a>' where url is from store_statistics.url (remove leading '@' if present) and name is from store_statistics.name. Use <strong> tags for product group names.
   - Second <h3 class=\"text-xl font-semibold mb-2 text-gray-700\"> '2. Iki kada galioja šios akcijos?'
     - <p class=\"mb-4 text-gray-600\"> Use the computed validity text: 'Visi nurodyti pasiūlymai galioja nuo [earliest_end] iki [latest_end]' or 'Visi nurodyti pasiūlymai galioja iki [date]'. Add a note about checking specific product validity.
   - Third <h3 class=\"text-xl font-semibold mb-2 text-gray-700\"> '3. Kaip sutaupyti dar daugiau?'
