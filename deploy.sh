@@ -29,7 +29,7 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     php artisan view:clear
     php artisan optimize
     php artisan config:clear
-    php artisan migrate
+    php artisan migrate --force
 EOF
 
 # Restart frontend

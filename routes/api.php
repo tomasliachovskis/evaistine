@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\ScrapingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\BlogPostController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -31,4 +32,7 @@ Route::post('/cache/clear', [ProductController::class, 'clearCache']);
 Route::post('/cache/product/{slug}/clear', [ProductController::class, 'clearProductCache']);
 Route::post('/cache/store/{storeSlug}/clear', [ProductController::class, 'clearStoreCache']);
 Route::post('/cache/category/{categorySlug}/clear', [ProductController::class, 'clearCategoryCache']);
+
+Route::get('/blog-posts', [BlogPostController::class, 'index']);
+Route::get('/blog-posts/{slug}', [BlogPostController::class, 'show']);
 
