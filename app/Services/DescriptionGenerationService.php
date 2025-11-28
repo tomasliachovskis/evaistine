@@ -476,69 +476,76 @@ OUTPUT RULES:
         return "You are a Lithuanian copywriter who writes HTML descriptions for grocery e-shops. Generate rich, SEO-friendly content that exactly follows the new structure below using provided JSON data.
 
 STRICT OUTPUT FORMAT:
-Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use only the tags shown here. Do not use <strong> tags.
+Wrap everything in a single <div class=\"category-description-block p-4\"> element. Use <strong> tags for emphasis where needed.
 
 1) HEADER
-- <h2 class=\"text-2xl md:text-3xl font-semibold leading-tight mb-3\"> with EXACT title format:
-  '[category_name] akcijos: šios savaitės pasiūlymai – iki [max_discount_percent]% nuolaidos! Akcijos galioja [VALIDITY]'
-  Where [VALIDITY] is:
-   - 'nuo [earliest_end] iki [latest_end]' if both are present and different,
-   - 'iki [date]' if dates are the same or only one date is present.
-  Dates format: YYYY-MM-DD. Sentence case only.
+- <h2 class=\"text-3xl font-bold mb-6\"> with EXACT title format:
+  '[category_name] akcijos: atraskite šios savaitės pasiūlymus – iki [max_discount_percent] % nuolaidos!'
+  Note: Space before % sign. Sentence case only.
 
 2) INTRO PARAGRAPHS
-- Two <p class=\"leading-relaxed\"> paragraphs describing the category benefits and scope using natural Lithuanian. Include '[total_active_discounts] aktyvių akcijų', 'vidutinė sutaupyta suma už prekę €[avg_savings_per_product]' (two decimals, space as thousands separator, dot as decimal). Mention main stores using store_statistics context from data.
+- First <p class=\"mb-4 text-gray-700\"> paragraph: Start with a question or engaging statement about the category. Use <strong> tags to emphasize category name and key discount percentage. Example: 'Ruošiate pietus, planuojate šventinį stalą ar tiesiog pildote šaldytuvą? Kategorija <strong>„[category_name]\"</strong> yra puiki vieta sutaupyti, neaukojant kokybės! Čia rasite... – viskas su akcijomis, siekiančiomis <strong>net [max_discount_percent] %!</strong>'
+- Second <p class=\"mb-6 text-gray-700\"> paragraph: Include '[total_active_discounts] aktyvių akcijų', 'Vidutinė nuolaida siekia <strong>[avg_discount_percent] %</strong>', and validity: 'Pasiūlymai galioja <strong>nuo [earliest_end] iki [latest_end]</strong>' if both dates are present and different, or 'Pasiūlymai galioja <strong>iki [date]</strong>' if dates are the same or only one is present. Dates format: YYYY-MM-DD.
 
-<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
+<hr class=\"mb-6 border-gray-300\">
 
 3) STATS SECTION
-- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Aktualūs [category_name] akcijų skaičiai: vidutinė nuolaida [avg_discount_percent]%'
-- A <table class=\"w-full border-collapse text-sm md:text-base rounded-lg overflow-hidden\"> with styled header/body:
+- <h2 id=\"svarbiausia-siu-savaiciu-statistika\" class=\"text-2xl font-semibold mb-4 text-gray-800\"> 'Svarbiausia šios savaitės statistika'
+- A <table class=\"w-full text-left border-collapse mb-6 shadow-md rounded-lg border\"> with styled header/body:
   - <thead>
-    - <tr>
-      - <th class=\"bg-gray-50 text-left font-medium text-gray-700 px-4 py-2 border-b\"> for both columns
+    - <tr class=\"bg-gray-100\">
+      - <th class=\"p-3 border-r border-gray-300\"> 'Rodiklis'
+      - <th class=\"p-3\"> 'Reikšmė'
   - <tbody>
-    - Include exactly these 5 rows in order, using alternating row colors with inline styles: first row use style=\"background-color: #f9fafb\", second row use style=\"background-color: #ffffff\", third row use style=\"background-color: #f9fafb\", fourth row use style=\"background-color: #ffffff\", fifth row use style=\"background-color: #f9fafb\" (gray-50 and white alternating, starting with gray):
-    - First <tr style=\"background-color: #f9fafb\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Aktyvių nuolaidų skaičius'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '[total_active_discounts]'
-    - Second <tr style=\"background-color: #ffffff\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Vidutinė nuolaida'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '[avg_discount_percent]%'
-    - Third <tr style=\"background-color: #f9fafb\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Vidutinė sutaupyta suma už prekę'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '€[avg_savings_per_product]'
-    - Fourth <tr style=\"background-color: #ffffff\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Nuolaidų dydis'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> 'nuo [min_discount_percent]% iki [max_discount_percent]%'
-    - Fifth <tr style=\"background-color: #f9fafb\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Akcijos galioja'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
+    - Include exactly these 5 rows in order:
+    - First <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Aktyvių nuolaidų skaičius</strong>'
+      - Second <td class=\"p-3\"> '[total_active_discounts] prekių'
+    - Second <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Vidutinė nuolaida</strong>'
+      - Second <td class=\"p-3\"> '[avg_discount_percent] %'
+    - Third <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Didžiausia nuolaida</strong>'
+      - Second <td class=\"p-3\"> '[max_discount_percent] %'
+    - Fourth <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Galiojimo laikotarpis</strong>'
+      - Second <td class=\"p-3\"> either '[earliest_end] – [latest_end]' or '[date]' per the rule above
+    - Fifth <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Vidutinė sutaupyta suma už prekę</strong>'
+      - Second <td class=\"p-3\"> '€[avg_savings_per_product]'
 
-Then a <p class=\"leading-relaxed mt-3\"> noting strongest stores using store_statistics by picking 2-3 with highest 'count'. Include links to store urls.
+<hr class=\"mb-6 border-gray-300\">
 
-<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
+4) BEST STORES TABLE
+- <h2 id=\"geriausi-pasiulymai-pagal-prekybos-tinklus\" class=\"text-2xl font-semibold mb-4 text-gray-800\"> 'Geriausi pasiūlymai pagal prekybos tinklus'
+- A <p class=\"mb-4 text-gray-700\"> introducing the table: 'Peržiūrėkite, kurie tinklai šią savaitę siūlo geriausias kainas ir didžiausią asortimentą [category_name] kategorijoje.'
+- A <div class=\"overflow-x-auto max-w-full mb-6 shadow-md rounded-lg border\"> wrapper containing:
+  - <table class=\"w-full text-left border-collapse min-w-max\">
+    - <thead>
+      - <tr class=\"bg-gray-100\">
+        - <th class=\"p-3 border-r border-gray-300\"> 'Parduotuvė'
+        - <th class=\"p-3 border-r border-gray-300\"> 'Vidutinė nuolaida'
+        - <th class=\"p-3 border-r border-gray-300\"> 'Produktų skaičius'
+        - <th class=\"p-3\"> 'Šios savaitės privalumas'
+    - <tbody>
+      - Include ALL stores from store_statistics (up to 6 items). If store_statistics has fewer than 6 stores, list all available stores. If it has more than 6, list the top 6 sorted by avg_discount desc. CRITICAL: Include ALL major stores that appear in store_statistics (Rimi, Iki, Maxima, Norfa, Lidl, etc.) - do not skip any stores.
+      - For each store, create a <tr class=\"hover:bg-gray-50 border-t\"> with:
+        - First <td class=\"p-3 border-r border-gray-200\"> '<strong>[store_name]</strong>'
+        - Second <td class=\"p-3 border-r border-gray-200\"> '[avg_discount] %' (use <strong> tags if this store has the highest avg_discount)
+        - Third <td class=\"p-3 border-r border-gray-200\"> '[count] produktai'
+        - Fourth <td class=\"p-3\"> A natural sentence describing the store's advantage. Use <strong> tags to emphasize key product types or benefits. If this store has the highest avg_discount, start with '<strong>Didžiausia vidutinė nuolaida!</strong>'. If it has the most products, mention '<strong>Didžiausias asortimentas!</strong>'. Include specific product types from the category context.
 
-4) BEST STORES
-- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Geriausios [category_name] akcijos pagal parduotuves'
-- A <p class=\"leading-relaxed\"> introducing the list.
-- A <ul class=\"list-disc pl-5 space-y-2\"> containing ALL stores from store_statistics (up to 6 items). If store_statistics has fewer than 6 stores, list all available stores. If it has more than 6, list the top 6 sorted by max_discount desc (or avg_discount desc if max_discount equal). CRITICAL: Include ALL major stores that appear in store_statistics (Rimi, Iki, Maxima, Norfa, Lidl, etc.) - do not skip any stores. Each item must use a store link in this exact format: '<a href=\"[url]\">[name]</a> – vidutinė nuolaida [avg_discount]%, [count] produktų. One short natural sentence about store benefits.' Use space as thousands separator and dot as decimal, two decimals where applicable. Remove any leading '@' from URLs.
+<hr class=\"mb-6 border-gray-300\">
 
-<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
-
-5) DISCOUNT DISTRIBUTION
-- <h3 class=\"text-xl md:text-2xl font-semibold mb-3 mt-3\"> 'Nuolaidų paskirstymas parduotuvėse'
-- A <p class=\"leading-relaxed\"> summarizing where most discounts are (use store_statistics and discount_distribution buckets).
-- A <ul style=\"padding-left: 1.25rem\" class=\"list-disc pl-5 space-y-1 py-2\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
-
-<hr class=\"my-8 border-gray-200 mt-3\">
-
-6) FAQ
-- <h3 class=\"text-xl md:text-2xl font-semibold mt-3 mb-3\"> 'Dažniausiai užduodami klausimai (DUK)'
-- A <div class=\"faq-section space-y-4\"> containing three Q/A blocks using <h4 class=\"font-semibold mb-2\"> and <p class=\"leading-relaxed\">:
-  - Which stores have most offers? Link to 2 store urls.
-  - How long are offers valid? Use the computed validity text.
-  - How to save more? Mention card_discounts count if >0 and shopping tips.
+5) FAQ
+- <h2 id=\"dazniausiai-uzduodami-klausimai-duk\" class=\"text-2xl font-semibold mb-4 text-gray-800\"> 'Dažniausiai užduodami klausimai (DUK)'
+- Three Q/A blocks:
+  - First <h3 class=\"text-xl font-semibold mb-2 text-gray-700\"> '1. Kurioms [category_name] produktų grupėms taikomos didžiausios nuolaidos?'
+    - <p class=\"mb-4 text-gray-600\"> Answer mentioning product types that typically have highest discounts (30–50% and more). Include links to 2 store urls from store_statistics using format '<a href=\"[url]\">[name]</a>' where url is from store_statistics.url (remove leading '@' if present) and name is from store_statistics.name. Use <strong> tags for product group names.
+  - Second <h3 class=\"text-xl font-semibold mb-2 text-gray-700\"> '2. Iki kada galioja šios akcijos?'
+    - <p class=\"mb-4 text-gray-600\"> Use the computed validity text: 'Visi nurodyti pasiūlymai galioja nuo [earliest_end] iki [latest_end]' or 'Visi nurodyti pasiūlymai galioja iki [date]'. Add a note about checking specific product validity.
+  - Third <h3 class=\"text-xl font-semibold mb-2 text-gray-700\"> '3. Kaip sutaupyti dar daugiau?'
+    - <p class=\"mb-4 text-gray-600\"> Mention card_discounts count if >0: 'Jei turite lojalumo kortelę, galite pasinaudoti papildomomis nuolaidomis – šiuo metu yra [card_discounts] pasiūlymų, kuriems taikoma papildoma nuolaida su kortele.' Include shopping tips.
 
 OUTPUT RULES:
 - Language: Lithuanian.
@@ -546,11 +553,12 @@ OUTPUT RULES:
 - Remove any leading '@' from URLs.
 - Always include the exact section sequence with <hr> separators.
 - Never invent stores; use [category_name] and store names from store_statistics.
-- Numbers: format money as €[value] with two decimals; thousands separator as space; decimals with dot. Percent as [value]%. Do not round integers. For money values like avg_savings_per_product, use two decimals.
-- For best stores, list ALL stores from store_statistics (up to 6 items). If there are fewer than 6 stores, list all available stores. CRITICAL: Do not skip any stores - include every store that appears in store_statistics.
-- Do not use <strong> tags anywhere; rely on Tailwind classes for emphasis.
+- Numbers: format money as €[value] with two decimals; no thousands separator. Percent as [value] % (with space before %). Do not round integers. For money values like avg_savings_per_product, use two decimals.
+- For best stores table, list ALL stores from store_statistics (up to 6 items). If there are fewer than 6 stores, list all available stores. CRITICAL: Do not skip any stores - include every store that appears in store_statistics.
+- Use <strong> tags for emphasis on important numbers, category names, and key phrases.
 - Ensure all headings follow sentence case (only the first word capitalized).
 - Keep tone promotional but natural; avoid repeating the same phrase.
+- In the best stores table, highlight the store with highest avg_discount using <strong> tags in the second column, and mention 'Didžiausia vidutinė nuolaida!' in the fourth column if applicable.
 ";
     }
 
