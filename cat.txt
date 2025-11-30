@@ -1,0 +1,108 @@
+=== STORES ===
++----+--------+--------+----------------------------------------+
+| ID | Name   | Slug   | URL                                    |
++----+--------+--------+----------------------------------------+
+| 1  | Maxima | maxima | https://superakcijos.lt/akcijos/maxima |
+| 2  | Iki    | iki    | https://superakcijos.lt/akcijos/iki    |
+| 3  | Lidl   | lidl   | https://superakcijos.lt/akcijos/lidl   |
+| 4  | Norfa  | norfa  | https://superakcijos.lt/akcijos/norfa  |
+| 5  | Rimi   | rimi   | https://superakcijos.lt/akcijos/rimi   |
++----+--------+--------+----------------------------------------+
+=== CATEGORIES ===
++-----+----------------------------------------+----------------------------------------+------------------------------------------------------------------------+
+| ID  | Name                                   | Slug                                   | URL                                                                    |
++-----+----------------------------------------+----------------------------------------+------------------------------------------------------------------------+
+| 1   | Vaisiai ir daržovės                    | vaisiai-ir-darzoves                    | https://superakcijos.lt/akcijos/vaisiai-ir-darzoves                    |
+| 52  | Pieno produktai ir kiaušiniai          | pieno-produktai-ir-kiausiniai          | https://superakcijos.lt/akcijos/pieno-produktai-ir-kiausiniai          |
+| 101 | Duonos gaminiai                        | duonos-gaminiai                        | https://superakcijos.lt/akcijos/duonos-gaminiai                        |
+| 121 | Mėsa ir žuvis                          | mesa-ir-zuvis                          | https://superakcijos.lt/akcijos/mesa-ir-zuvis                          |
+| 166 | Šaldytas maistas ir ledai              | saldytas-maistas-ir-ledai              | https://superakcijos.lt/akcijos/saldytas-maistas-ir-ledai              |
+| 193 | Bakalėja                               | bakaleja                               | https://superakcijos.lt/akcijos/bakaleja                               |
+| 304 | Vaikų ir kūdikių prekės                | vaiku-ir-kudikiu-prekes                | https://superakcijos.lt/akcijos/vaiku-ir-kudikiu-prekes                |
+| 352 | Saldumynai ir užkandžiai               | saldumynai-ir-uzkandziai               | https://superakcijos.lt/akcijos/saldumynai-ir-uzkandziai               |
+| 380 | Gėrimai, kava, arbata                  | gerimai-kava-arbata                    | https://superakcijos.lt/akcijos/gerimai-kava-arbata                    |
+| 401 | Alkoholiniai ir nealkoholiniai gėrimai | alkoholiniai-ir-nealkoholiniai-gerimai | https://superakcijos.lt/akcijos/alkoholiniai-ir-nealkoholiniai-gerimai |
+| 432 | Kosmetika ir higiena                   | kosmetika-ir-higiena                   | https://superakcijos.lt/akcijos/kosmetika-ir-higiena                   |
+| 500 | Buitinė chemija, valymo priemonės      | buitine-chemija-valymo-priemones       | https://superakcijos.lt/akcijos/buitine-chemija-valymo-priemones       |
+| 535 | Namų ūkio ir laisvalaikio prekės       | namu-ukio-ir-laisvalaikio-prekes       | https://superakcijos.lt/akcijos/namu-ukio-ir-laisvalaikio-prekes       |
+| 619 | Gyvūnų prekės                          | gyvunu-prekes                          | https://superakcijos.lt/akcijos/gyvunu-prekes                          |
+| 620 | Augalai, gėlės                         | augalai-geles                          | https://superakcijos.lt/akcijos/augalai-geles                          |
++-----+----------------------------------------+----------------------------------------+------------------------------------------------------------------------+
+=== STORE-CATEGORY COMBINATIONS ===
++-----------------+---------------------------------------------------------------------------------+------------------------------------------------------------------------------+
+| Store           | Category                                                                        | URL                                                                          |
++-----------------+---------------------------------------------------------------------------------+------------------------------------------------------------------------------+
+| Maxima (maxima) | Vaisiai ir daržovės (vaisiai-ir-darzoves)                                       | https://superakcijos.lt/akcijos/maxima/vaisiai-ir-darzoves                   |
+| Maxima (maxima) | Pieno produktai ir kiaušiniai (pieno-produktai-ir-kiausiniai)                   | https://superakcijos.lt/akcijos/maxima/pieno-produktai-ir-kiausiniai         |
+| Maxima (maxima) | Duonos gaminiai  (duonos-gaminiai)                                              | https://superakcijos.lt/akcijos/maxima/duonos-gaminiai                       |
+| Maxima (maxima) | Mėsa ir žuvis  (mesa-ir-zuvis)                                                  | https://superakcijos.lt/akcijos/maxima/mesa-ir-zuvis                         |
+| Maxima (maxima) | Šaldytas maistas ir ledai (saldytas-maistas-ir-ledai)                           | https://superakcijos.lt/akcijos/maxima/saldytas-maistas-ir-ledai             |
+| Maxima (maxima) | Bakalėja (bakaleja)                                                             | https://superakcijos.lt/akcijos/maxima/bakaleja                              |
+| Maxima (maxima) | Vaikų ir kūdikių prekės (vaiku-ir-kudikiu-prekes)                               | https://superakcijos.lt/akcijos/maxima/vaiku-ir-kudikiu-prekes               |
+| Maxima (maxima) | Saldumynai ir užkandžiai (saldumynai-ir-uzkandziai)                             | https://superakcijos.lt/akcijos/maxima/saldumynai-ir-uzkandziai              |
+| Maxima (maxima) | Gėrimai, kava, arbata (gerimai-kava-arbata)                                     | https://superakcijos.lt/akcijos/maxima/gerimai-kava-arbata                   |
+| Maxima (maxima) | Kosmetika ir higiena (kosmetika-ir-higiena)                                     | https://superakcijos.lt/akcijos/maxima/kosmetika-ir-higiena                  |
+| Maxima (maxima) | Buitinė chemija, valymo priemonės (buitine-chemija-valymo-priemones)            | https://superakcijos.lt/akcijos/maxima/buitine-chemija-valymo-priemones      |
+| Maxima (maxima) | Namų ūkio ir laisvalaikio prekės (namu-ukio-ir-laisvalaikio-prekes)             | https://superakcijos.lt/akcijos/maxima/namu-ukio-ir-laisvalaikio-prekes      |
+| Maxima (maxima) | Gyvūnų prekės (gyvunu-prekes)                                                   | https://superakcijos.lt/akcijos/maxima/gyvunu-prekes                         |
+| Maxima (maxima) | Augalai, gėlės (augalai-geles)                                                  | https://superakcijos.lt/akcijos/maxima/augalai-geles                         |
+| Iki (iki)       | Vaisiai ir daržovės (vaisiai-ir-darzoves)                                       | https://superakcijos.lt/akcijos/iki/vaisiai-ir-darzoves                      |
+| Iki (iki)       | Pieno produktai ir kiaušiniai (pieno-produktai-ir-kiausiniai)                   | https://superakcijos.lt/akcijos/iki/pieno-produktai-ir-kiausiniai            |
+| Iki (iki)       | Duonos gaminiai  (duonos-gaminiai)                                              | https://superakcijos.lt/akcijos/iki/duonos-gaminiai                          |
+| Iki (iki)       | Mėsa ir žuvis  (mesa-ir-zuvis)                                                  | https://superakcijos.lt/akcijos/iki/mesa-ir-zuvis                            |
+| Iki (iki)       | Šaldytas maistas ir ledai (saldytas-maistas-ir-ledai)                           | https://superakcijos.lt/akcijos/iki/saldytas-maistas-ir-ledai                |
+| Iki (iki)       | Bakalėja (bakaleja)                                                             | https://superakcijos.lt/akcijos/iki/bakaleja                                 |
+| Iki (iki)       | Vaikų ir kūdikių prekės (vaiku-ir-kudikiu-prekes)                               | https://superakcijos.lt/akcijos/iki/vaiku-ir-kudikiu-prekes                  |
+| Iki (iki)       | Saldumynai ir užkandžiai (saldumynai-ir-uzkandziai)                             | https://superakcijos.lt/akcijos/iki/saldumynai-ir-uzkandziai                 |
+| Iki (iki)       | Gėrimai, kava, arbata (gerimai-kava-arbata)                                     | https://superakcijos.lt/akcijos/iki/gerimai-kava-arbata                      |
+| Iki (iki)       | Kosmetika ir higiena (kosmetika-ir-higiena)                                     | https://superakcijos.lt/akcijos/iki/kosmetika-ir-higiena                     |
+| Iki (iki)       | Namų ūkio ir laisvalaikio prekės (namu-ukio-ir-laisvalaikio-prekes)             | https://superakcijos.lt/akcijos/iki/namu-ukio-ir-laisvalaikio-prekes         |
+| Iki (iki)       | Gyvūnų prekės (gyvunu-prekes)                                                   | https://superakcijos.lt/akcijos/iki/gyvunu-prekes                            |
+| Iki (iki)       | Augalai, gėlės (augalai-geles)                                                  | https://superakcijos.lt/akcijos/iki/augalai-geles                            |
+| Lidl (lidl)     | Vaisiai ir daržovės (vaisiai-ir-darzoves)                                       | https://superakcijos.lt/akcijos/lidl/vaisiai-ir-darzoves                     |
+| Lidl (lidl)     | Pieno produktai ir kiaušiniai (pieno-produktai-ir-kiausiniai)                   | https://superakcijos.lt/akcijos/lidl/pieno-produktai-ir-kiausiniai           |
+| Lidl (lidl)     | Duonos gaminiai  (duonos-gaminiai)                                              | https://superakcijos.lt/akcijos/lidl/duonos-gaminiai                         |
+| Lidl (lidl)     | Mėsa ir žuvis  (mesa-ir-zuvis)                                                  | https://superakcijos.lt/akcijos/lidl/mesa-ir-zuvis                           |
+| Lidl (lidl)     | Šaldytas maistas ir ledai (saldytas-maistas-ir-ledai)                           | https://superakcijos.lt/akcijos/lidl/saldytas-maistas-ir-ledai               |
+| Lidl (lidl)     | Bakalėja (bakaleja)                                                             | https://superakcijos.lt/akcijos/lidl/bakaleja                                |
+| Lidl (lidl)     | Vaikų ir kūdikių prekės (vaiku-ir-kudikiu-prekes)                               | https://superakcijos.lt/akcijos/lidl/vaiku-ir-kudikiu-prekes                 |
+| Lidl (lidl)     | Saldumynai ir užkandžiai (saldumynai-ir-uzkandziai)                             | https://superakcijos.lt/akcijos/lidl/saldumynai-ir-uzkandziai                |
+| Lidl (lidl)     | Gėrimai, kava, arbata (gerimai-kava-arbata)                                     | https://superakcijos.lt/akcijos/lidl/gerimai-kava-arbata                     |
+| Lidl (lidl)     | Kosmetika ir higiena (kosmetika-ir-higiena)                                     | https://superakcijos.lt/akcijos/lidl/kosmetika-ir-higiena                    |
+| Lidl (lidl)     | Buitinė chemija, valymo priemonės (buitine-chemija-valymo-priemones)            | https://superakcijos.lt/akcijos/lidl/buitine-chemija-valymo-priemones        |
+| Lidl (lidl)     | Namų ūkio ir laisvalaikio prekės (namu-ukio-ir-laisvalaikio-prekes)             | https://superakcijos.lt/akcijos/lidl/namu-ukio-ir-laisvalaikio-prekes        |
+| Norfa (norfa)   | Vaisiai ir daržovės (vaisiai-ir-darzoves)                                       | https://superakcijos.lt/akcijos/norfa/vaisiai-ir-darzoves                    |
+| Norfa (norfa)   | Pieno produktai ir kiaušiniai (pieno-produktai-ir-kiausiniai)                   | https://superakcijos.lt/akcijos/norfa/pieno-produktai-ir-kiausiniai          |
+| Norfa (norfa)   | Duonos gaminiai  (duonos-gaminiai)                                              | https://superakcijos.lt/akcijos/norfa/duonos-gaminiai                        |
+| Norfa (norfa)   | Mėsa ir žuvis  (mesa-ir-zuvis)                                                  | https://superakcijos.lt/akcijos/norfa/mesa-ir-zuvis                          |
+| Norfa (norfa)   | Šaldytas maistas ir ledai (saldytas-maistas-ir-ledai)                           | https://superakcijos.lt/akcijos/norfa/saldytas-maistas-ir-ledai              |
+| Norfa (norfa)   | Bakalėja (bakaleja)                                                             | https://superakcijos.lt/akcijos/norfa/bakaleja                               |
+| Norfa (norfa)   | Vaikų ir kūdikių prekės (vaiku-ir-kudikiu-prekes)                               | https://superakcijos.lt/akcijos/norfa/vaiku-ir-kudikiu-prekes                |
+| Norfa (norfa)   | Saldumynai ir užkandžiai (saldumynai-ir-uzkandziai)                             | https://superakcijos.lt/akcijos/norfa/saldumynai-ir-uzkandziai               |
+| Norfa (norfa)   | Gėrimai, kava, arbata (gerimai-kava-arbata)                                     | https://superakcijos.lt/akcijos/norfa/gerimai-kava-arbata                    |
+| Norfa (norfa)   | Alkoholiniai ir nealkoholiniai gėrimai (alkoholiniai-ir-nealkoholiniai-gerimai) | https://superakcijos.lt/akcijos/norfa/alkoholiniai-ir-nealkoholiniai-gerimai |
+| Norfa (norfa)   | Kosmetika ir higiena (kosmetika-ir-higiena)                                     | https://superakcijos.lt/akcijos/norfa/kosmetika-ir-higiena                   |
+| Norfa (norfa)   | Buitinė chemija, valymo priemonės (buitine-chemija-valymo-priemones)            | https://superakcijos.lt/akcijos/norfa/buitine-chemija-valymo-priemones       |
+| Norfa (norfa)   | Namų ūkio ir laisvalaikio prekės (namu-ukio-ir-laisvalaikio-prekes)             | https://superakcijos.lt/akcijos/norfa/namu-ukio-ir-laisvalaikio-prekes       |
+| Norfa (norfa)   | Gyvūnų prekės (gyvunu-prekes)                                                   | https://superakcijos.lt/akcijos/norfa/gyvunu-prekes                          |
+| Norfa (norfa)   | Augalai, gėlės (augalai-geles)                                                  | https://superakcijos.lt/akcijos/norfa/augalai-geles                          |
+| Rimi (rimi)     | Vaisiai ir daržovės (vaisiai-ir-darzoves)                                       | https://superakcijos.lt/akcijos/rimi/vaisiai-ir-darzoves                     |
+| Rimi (rimi)     | Pieno produktai ir kiaušiniai (pieno-produktai-ir-kiausiniai)                   | https://superakcijos.lt/akcijos/rimi/pieno-produktai-ir-kiausiniai           |
+| Rimi (rimi)     | Duonos gaminiai  (duonos-gaminiai)                                              | https://superakcijos.lt/akcijos/rimi/duonos-gaminiai                         |
+| Rimi (rimi)     | Mėsa ir žuvis  (mesa-ir-zuvis)                                                  | https://superakcijos.lt/akcijos/rimi/mesa-ir-zuvis                           |
+| Rimi (rimi)     | Šaldytas maistas ir ledai (saldytas-maistas-ir-ledai)                           | https://superakcijos.lt/akcijos/rimi/saldytas-maistas-ir-ledai               |
+| Rimi (rimi)     | Bakalėja (bakaleja)                                                             | https://superakcijos.lt/akcijos/rimi/bakaleja                                |
+| Rimi (rimi)     | Vaikų ir kūdikių prekės (vaiku-ir-kudikiu-prekes)                               | https://superakcijos.lt/akcijos/rimi/vaiku-ir-kudikiu-prekes                 |
+| Rimi (rimi)     | Saldumynai ir užkandžiai (saldumynai-ir-uzkandziai)                             | https://superakcijos.lt/akcijos/rimi/saldumynai-ir-uzkandziai                |
+| Rimi (rimi)     | Gėrimai, kava, arbata (gerimai-kava-arbata)                                     | https://superakcijos.lt/akcijos/rimi/gerimai-kava-arbata                     |
+| Rimi (rimi)     | Alkoholiniai ir nealkoholiniai gėrimai (alkoholiniai-ir-nealkoholiniai-gerimai) | https://superakcijos.lt/akcijos/rimi/alkoholiniai-ir-nealkoholiniai-gerimai  |
+| Rimi (rimi)     | Kosmetika ir higiena (kosmetika-ir-higiena)                                     | https://superakcijos.lt/akcijos/rimi/kosmetika-ir-higiena                    |
+| Rimi (rimi)     | Buitinė chemija, valymo priemonės (buitine-chemija-valymo-priemones)            | https://superakcijos.lt/akcijos/rimi/buitine-chemija-valymo-priemones        |
+| Rimi (rimi)     | Namų ūkio ir laisvalaikio prekės (namu-ukio-ir-laisvalaikio-prekes)             | https://superakcijos.lt/akcijos/rimi/namu-ukio-ir-laisvalaikio-prekes        |
+| Rimi (rimi)     | Gyvūnų prekės (gyvunu-prekes)                                                   | https://superakcijos.lt/akcijos/rimi/gyvunu-prekes                           |
+| Rimi (rimi)     | Augalai, gėlės (augalai-geles)                                                  | https://superakcijos.lt/akcijos/rimi/augalai-geles                           |
++-----------------+---------------------------------------------------------------------------------+------------------------------------------------------------------------------+
+=== SUMMARY ===
+Total Stores: 5
+Total Categories: 15
+Total Store-Category Combinations: 69
