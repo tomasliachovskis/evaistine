@@ -503,7 +503,7 @@ OUTPUT RULES:
         return "You are a Lithuanian copywriter who writes HTML descriptions for grocery e-shops. Generate rich, SEO-friendly content that exactly follows the new structure below using provided JSON data.
 
 STRICT OUTPUT FORMAT:
-Wrap everything in a single <div class=\"category-description-block p-4\"> element. Use <strong> tags for emphasis where needed.
+Wrap everything in a single <div class=\"category-description-block p-0 lg:p-4\"> element. Use <strong> tags for emphasis where needed.
 
 1) HEADER
 - <h2 class=\"text-3xl font-bold mb-6\"> with EXACT title format:
@@ -518,28 +518,29 @@ Wrap everything in a single <div class=\"category-description-block p-4\"> eleme
 
 3) STATS SECTION
 - <h2 id=\"svarbiausia-siu-savaiciu-statistika\" class=\"text-2xl font-semibold mb-4 text-gray-800\"> 'Svarbiausia šios savaitės statistika'
-- A <table class=\"w-full text-left border-collapse mb-6 shadow-md rounded-lg border\"> with styled header/body:
-  - <thead>
-    - <tr class=\"bg-gray-100\">
-      - <th class=\"p-3 border-r border-gray-300\"> 'Rodiklis'
-      - <th class=\"p-3\"> 'Reikšmė'
-  - <tbody>
-    - Include exactly these 5 rows in order:
-    - First <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Aktyvių nuolaidų skaičius</strong>'
-      - Second <td class=\"p-3\"> '[total_active_discounts] prekių'
-    - Second <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Vidutinė nuolaida</strong>'
-      - Second <td class=\"p-3\"> '[avg_discount_percent] %'
-    - Third <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Didžiausia nuolaida</strong>'
-      - Second <td class=\"p-3\"> '[max_discount_percent] %'
-    - Fourth <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Galiojimo laikotarpis</strong>'
-      - Second <td class=\"p-3\"> either '[earliest_end] – [latest_end]' or '[date]' per the rule above
-    - Fifth <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-      - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Vidutinė sutaupyta suma už prekę</strong>'
-      - Second <td class=\"p-3\"> '€[avg_savings_per_product]'
+- A <div class=\"max-w-full mb-6 shadow-md rounded-lg border\">
+    - A <table class=\"w-full text-left border-collapse\"> with styled header/body:
+      - <thead>
+        - <tr class=\"bg-gray-100\">
+          - <th class=\"p-3 border-r border-gray-300\"> 'Rodiklis'
+          - <th class=\"p-3\"> 'Reikšmė'
+      - <tbody>
+        - Include exactly these 5 rows in order:
+        - First <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Aktyvių nuolaidų skaičius</strong>'
+          - Second <td class=\"p-3\"> '[total_active_discounts] prekių'
+        - Second <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Vidutinė nuolaida</strong>'
+          - Second <td class=\"p-3\"> '[avg_discount_percent] %'
+        - Third <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Didžiausia nuolaida</strong>'
+          - Second <td class=\"p-3\"> '[max_discount_percent] %'
+        - Fourth <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Galiojimo laikotarpis</strong>'
+          - Second <td class=\"p-3\"> either '[earliest_end] – [latest_end]' or '[date]' per the rule above
+        - Fifth <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
+          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Vidutinė sutaupyta suma už prekę</strong>'
+          - Second <td class=\"p-3\"> '€[avg_savings_per_product]'
 
 <hr class=\"mb-6 border-gray-300\">
 

@@ -98,7 +98,7 @@ class ProcessScrapingFlow extends Command
         $this->info('Step 2: Validating all stores have data from last 2 hours...');
 
         $storesWithData = DiscountTemp::where('processed', false)
-            ->where('created_at', '>=', now()->subHours(2))
+            ->where('created_at', '>=', now()->subHours(3))
             ->distinct()
             ->pluck('store')
             ->filter()
