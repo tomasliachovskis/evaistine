@@ -129,3 +129,5 @@ class GetCategoriesStoresForArticles extends Command
         $this->line("Total Store-Category Combinations: {$data['summary']['total_store_category_combinations']}");
     }
 }
+
+

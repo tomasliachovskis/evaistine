@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use App\Services\MeilisearchService;
 
 class Discount extends Model
 {
@@ -34,6 +35,33 @@ class Discount extends Model
         'end_at' => 'datetime',
         'start_at' => 'datetime',
     ];
+
+    protected static function booted()
+    {
+        static::created(function ($discount) {
+            static::syncToMeilisearch($discount);
+        });
+
+        static::updated(function ($discount) {
+            static::syncToMeilisearch($discount);
+        });
+
+        static::deleted(function ($discount) {
+            try {
+                app(MeilisearchService::class)->deleteDiscount($discount->id);
+            } catch (\Exception $e) {
+            }
+        });
+    }
+
+    protected static function syncToMeilisearch($discount)
+    {
+        try {
+            $discount->load(['product.category', 'store']);
+            app(MeilisearchService::class)->indexDiscount($discount);
+        } catch (\Exception $e) {
+        }
+    }
 
     public function product()
     {

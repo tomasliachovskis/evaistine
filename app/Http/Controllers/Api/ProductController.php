@@ -12,15 +12,18 @@ use App\Models\DiscountTemp;
 use App\Models\Discount;
 use App\Models\DiscountHistory;
 use App\Services\DiscountResponseFormatter;
+use App\Services\MeilisearchService;
 use Carbon\Carbon;
 
 class ProductController extends Controller
 {
     protected $formatter;
+    protected $meilisearchService;
 
-    public function __construct(DiscountResponseFormatter $formatter)
+    public function __construct(DiscountResponseFormatter $formatter, MeilisearchService $meilisearchService)
     {
         $this->formatter = $formatter;
+        $this->meilisearchService = $meilisearchService;
     }
 
     public function getDiscounts($storeOrCategory, $category = null)
@@ -185,21 +188,90 @@ class ProductController extends Controller
     public function search(Request $request, $query)
     {
         $filters = $this->getFilters();
-        $cacheKey = "search_" . md5($query . serialize($filters));
+//        $cacheKey = "search_" . md5($query . serialize($filters));
+        $cacheKey = time();
 
         return Cache::tags(['discounts', 'search'])
             ->remember($cacheKey, 1800, function () use ($query, $filters) {
-                $queryQb = Discount::searchByProductName($query)
-                    ->with(['product', 'store']);
+                try {
+                    $page = $filters['page'] ?? 1;
+                    $perPage = 25;
 
-                $discounts = $this->buildDiscountQuery($queryQb, $filters)->paginate(25);
+                    $meilisearchFilters = [];
+                    if ($filters['card']) {
+                        $meilisearchFilters['card'] = true;
+                    }
+                    if ($filters['plus']) {
+                        $meilisearchFilters['plus'] = true;
+                    }
+                    if ($filters['store']) {
+                        $storeSlugs = explode(',', $filters['store']);
+                        $storeIds = \App\Models\Store::whereIn('slug', $storeSlugs)->pluck('id')->toArray();
+                        if (!empty($storeIds)) {
+                            $meilisearchFilters['store_ids'] = $storeIds;
+                        }
+                    }
 
-                return response()->json([
-                    'data' => $this->formatter->format($discounts),
-                    'breadcrumbs' => $this->generateBreadcrumbs('search', $query, '-'),
-                    'seo' => $this->generateSeoData('search', $query, '-')
-                ]);
+                    $sort = $this->getMeilisearchSort($filters['order']);
+
+                    $searchResults = $this->meilisearchService->search($query, $meilisearchFilters, $sort, $page, $perPage);
+
+                    if (empty($searchResults['hits'])) {
+                        $discounts = collect();
+                    } else {
+                        $discountIds = collect($searchResults['hits'])->pluck('id')->toArray();
+                        $discounts = Discount::whereIn('id', $discountIds)
+                            ->with(['product.category', 'store'])
+                            ->get()
+                            ->sortBy(function ($discount) use ($discountIds) {
+                                return array_search($discount->id, $discountIds);
+                            })
+                            ->values();
+                    }
+
+                    $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                        $discounts,
+                        $searchResults['total'],
+                        $perPage,
+                        $page,
+                        ['path' => request()->url(), 'query' => request()->query()]
+                    );
+
+                    return response()->json([
+                        'data' => $this->formatter->format($paginator),
+                        'breadcrumbs' => $this->generateBreadcrumbs('search', $query, '-'),
+                        'seo' => $this->generateSeoData('search', $query, '-')
+                    ]);
+                } catch (\Exception $e) {
+                    $queryQb = Discount::searchByProductName($query)
+                        ->with(['product', 'store']);
+
+                    $discounts = $this->buildDiscountQuery($queryQb, $filters)->paginate(25);
+
+                    return response()->json([
+                        'data' => $this->formatter->format($discounts),
+                        'breadcrumbs' => $this->generateBreadcrumbs('search', $query, '-'),
+                        'seo' => $this->generateSeoData('search', $query, '-')
+                    ]);
+                }
             });
+    }
+
+    private function getMeilisearchSort($order)
+    {
+        switch ($order) {
+            case 'price_min':
+                return ['discounted_price:asc'];
+            case 'price_max':
+                return ['discounted_price:desc'];
+            case 'price_discount_proc_max':
+                return ['discount_percent:desc'];
+            case 'price_discount_max':
+                return ['savings_amount:desc'];
+            case 'popular':
+            default:
+                return [];
+        }
     }
 
     public function getFavoriteProduct($slug)
