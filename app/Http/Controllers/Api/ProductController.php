@@ -188,8 +188,7 @@ class ProductController extends Controller
     public function search(Request $request, $query)
     {
         $filters = $this->getFilters();
-//        $cacheKey = "search_" . md5($query . serialize($filters));
-        $cacheKey = time();
+        $cacheKey = "search_" . md5($query . serialize($filters));
 
         return Cache::tags(['discounts', 'search'])
             ->remember($cacheKey, 1800, function () use ($query, $filters) {
