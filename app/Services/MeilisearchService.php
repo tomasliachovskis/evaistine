@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Discount;
 use Meilisearch\Client;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 
 class MeilisearchService
 {
@@ -26,8 +27,6 @@ class MeilisearchService
             $index->updateSearchableAttributes([
                 'product_name',
                 'product_brand',
-                'category_name',
-                'store_name',
             ]);
 
             $index->updateFilterableAttributes([
@@ -58,6 +57,7 @@ class MeilisearchService
                 'exactness',
             ]);
         } catch (\Exception $e) {
+            Log::error('Meilisearch index configuration failed: ' . $e->getMessage());
         }
     }
 
@@ -68,9 +68,28 @@ class MeilisearchService
             return;
         }
 
-        $document = $this->transformDiscount($discount);
-        $index = $this->client->index($this->indexName);
-        $index->addDocuments([$document]);
+        try {
+            $document = $this->transformDiscount($discount);
+            $index = $this->client->index($this->indexName);
+            $task = $index->addDocuments([$document], 'id');
+
+            $taskUid = null;
+            if (is_array($task)) {
+                $taskUid = $task['taskUid'] ?? $task['uid'] ?? null;
+            } elseif (is_object($task)) {
+                $taskUid = $task->taskUid ?? $task->uid ?? (method_exists($task, 'getTaskUid') ? $task->getTaskUid() : null);
+            }
+
+            if ($taskUid) {
+                try {
+                    $index->waitForTask($taskUid);
+                } catch (\Exception $e) {
+                    Log::warning('Meilisearch waitForTask failed in indexDiscount: ' . $e->getMessage());
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Meilisearch indexDiscount failed: ' . $e->getMessage());
+        }
     }
 
     public function deleteDiscount(int $discountId)
@@ -79,75 +98,219 @@ class MeilisearchService
         try {
             $index->deleteDocument($discountId);
         } catch (\Exception $e) {
+            Log::error('Meilisearch deleteDiscount failed: ' . $e->getMessage());
         }
     }
 
     public function search(string $query, array $filters = [], array $sort = [], int $page = 1, int $perPage = 25)
     {
-        $index = $this->client->index($this->indexName);
+        try {
+            $index = $this->client->index($this->indexName);
 
-        $searchParams = [
-            'limit' => $perPage,
-            'offset' => ($page - 1) * $perPage,
-        ];
+            $searchParams = [
+                'limit' => $perPage,
+                'offset' => ($page - 1) * $perPage,
+            ];
 
-        $filterString = $this->buildFilterString($filters);
-        if ($filterString) {
-            $searchParams['filter'] = $filterString;
+            $filterString = $this->buildFilterString($filters);
+            if ($filterString) {
+                $searchParams['filter'] = $filterString;
+            }
+
+            if (!empty($sort)) {
+                $searchParams['sort'] = $sort;
+            }
+
+            if (empty(trim($query))) {
+                $query = null;
+            }
+
+            $response = $index->search($query ?? '', $searchParams);
+
+            return [
+                'hits' => $response->getHits(),
+                'total' => $response->getEstimatedTotalHits(),
+                'page' => $page,
+                'perPage' => $perPage,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Meilisearch search failed', [
+                'query' => $query,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
         }
-
-        if (!empty($sort)) {
-            $searchParams['sort'] = $sort;
-        }
-
-        $response = $index->search($query, $searchParams);
-
-        if (method_exists($response, 'getHits')) {
-            $hits = $response->getHits();
-            $total = $response->getEstimatedTotalHits();
-        } elseif (method_exists($response, 'toArray')) {
-            $data = $response->toArray();
-            $hits = $data['hits'] ?? [];
-            $total = $data['estimatedTotalHits'] ?? 0;
-        } elseif (isset($response->hits)) {
-            $hits = $response->hits;
-            $total = $response->estimatedTotalHits ?? 0;
-        } else {
-            $hits = [];
-            $total = 0;
-        }
-
-        return [
-            'hits' => $hits,
-            'total' => $total,
-            'page' => $page,
-            'perPage' => $perPage,
-        ];
     }
 
     public function indexAllActiveDiscounts()
     {
-        $index = $this->client->index($this->indexName);
-
         try {
-            $index->deleteAllDocuments();
+            $index = $this->client->index($this->indexName);
+
+            try {
+                $index->deleteAllDocuments();
+            } catch (\Exception $e) {
+                Log::warning('Meilisearch deleteAllDocuments failed (index might be empty): ' . $e->getMessage());
+            }
+
+            $this->configureIndex();
+
+            $discounts = Discount::with(['product.category', 'store'])
+                ->where(function ($query) {
+                    $query->where('end_at', '>=', now())
+                        ->orWhereNull('end_at');
+                })
+                ->get();
+
+            Log::info('Meilisearch indexing discounts', ['count' => $discounts->count()]);
+
+            if ($discounts->isEmpty()) {
+                Log::warning('No active discounts found to index');
+                return 0;
+            }
+
+            $documents = [];
+            foreach ($discounts as $discount) {
+                try {
+                    $doc = $this->transformDiscount($discount);
+                    if (!empty($doc['id'])) {
+                        $documents[] = $doc;
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to transform discount', [
+                        'discount_id' => $discount->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            Log::info('Meilisearch documents prepared', ['count' => count($documents)]);
+
+            if (empty($documents)) {
+                Log::warning('No valid documents to index after transformation');
+                return 0;
+            }
+
+            if (count($documents) > 0) {
+                Log::debug('Sample document structure', ['sample' => $documents[0]]);
+            }
+
+            try {
+                $task = $index->addDocuments($documents, 'id');
+
+                Log::info('Meilisearch addDocuments called', [
+                    'documents_count' => count($documents),
+                    'task_type' => gettype($task),
+                    'task' => is_object($task) ? get_class($task) : $task,
+                ]);
+
+                $taskUid = null;
+                if (is_array($task)) {
+                    $taskUid = $task['taskUid'] ?? $task['uid'] ?? $task['taskUid'] ?? null;
+                } elseif (is_object($task)) {
+                    $taskUid = $task->taskUid ?? $task->uid ?? (method_exists($task, 'getTaskUid') ? $task->getTaskUid() : null);
+                    if (!$taskUid && method_exists($task, 'toArray')) {
+                        $taskArray = $task->toArray();
+                        $taskUid = $taskArray['taskUid'] ?? $taskArray['uid'] ?? null;
+                    }
+                }
+
+                Log::info('Meilisearch task info', ['task_uid' => $taskUid]);
+
+                if ($taskUid) {
+                    try {
+                        $maxWaitTime = 300;
+                        $startTime = time();
+                        $pollInterval = 1;
+                        $lastStatus = null;
+
+                        Log::info('Meilisearch starting task polling', ['task_uid' => $taskUid]);
+
+                        while (true) {
+                            $currentTask = $index->getTask($taskUid);
+
+                            $taskData = is_array($currentTask) ? $currentTask : (method_exists($currentTask, 'toArray') ? $currentTask->toArray() : get_object_vars($currentTask));
+                            $status = $taskData['status'] ?? null;
+
+                            if ($status !== $lastStatus) {
+                                Log::info('Meilisearch task status changed', [
+                                    'task_uid' => $taskUid,
+                                    'status' => $status,
+                                    'elapsed' => time() - $startTime,
+                                    'task_data' => $taskData,
+                                ]);
+                                $lastStatus = $status;
+                            }
+
+                            if ($status === 'succeeded') {
+                                Log::info('Meilisearch task succeeded', [
+                                    'task_uid' => $taskUid,
+                                    'elapsed' => time() - $startTime,
+                                ]);
+                                break;
+                            }
+
+                            if ($status === 'failed') {
+                                $error = $taskData['error'] ?? 'Unknown error';
+                                Log::error('Meilisearch task failed', [
+                                    'task_uid' => $taskUid,
+                                    'error' => $error,
+                                    'task_data' => $taskData,
+                                ]);
+                                throw new \Exception('Meilisearch indexing task failed: ' . json_encode($error));
+                            }
+
+                            if ((time() - $startTime) > $maxWaitTime) {
+                                Log::warning('Meilisearch task timeout', [
+                                    'task_uid' => $taskUid,
+                                    'current_status' => $status,
+                                    'elapsed' => time() - $startTime,
+                                ]);
+                                break;
+                            }
+
+                            sleep($pollInterval);
+                        }
+
+                        Log::info('Meilisearch indexing task polling completed', ['task_uid' => $taskUid]);
+                    } catch (\Exception $e) {
+                        Log::error('Meilisearch task polling failed', [
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString(),
+                        ]);
+                        throw $e;
+                    }
+                } else {
+                    sleep(2);
+                }
+            } catch (\Exception $e) {
+                Log::error('Meilisearch addDocuments failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                throw $e;
+            }
+
+            $stats = $index->stats();
+            Log::info('Meilisearch index stats', ['stats' => $stats]);
+
+            return count($documents);
         } catch (\Exception $e) {
+            Log::error('Meilisearch indexAllActiveDiscounts failed: ' . $e->getMessage());
+            throw $e;
         }
+    }
 
-        $this->configureIndex();
-
-        $discounts = Discount::with(['product.category', 'store'])->get();
-
-        $documents = [];
-        foreach ($discounts as $discount) {
-            $documents[] = $this->transformDiscount($discount);
+    public function getIndexStats()
+    {
+        try {
+            $index = $this->client->index($this->indexName);
+            return $index->stats();
+        } catch (\Exception $e) {
+            Log::error('Meilisearch getIndexStats failed: ' . $e->getMessage());
+            return null;
         }
-
-        if (!empty($documents)) {
-            $index->addDocuments($documents);
-        }
-
-        return count($documents);
     }
 
     protected function transformDiscount(Discount $discount)
@@ -212,4 +375,3 @@ class MeilisearchService
         return $discount->end_at === null || $discount->end_at >= now();
     }
 }
-

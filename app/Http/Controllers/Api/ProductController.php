@@ -217,6 +217,11 @@ class ProductController extends Controller
                     $searchResults = $this->meilisearchService->search($query, $meilisearchFilters, $sort, $page, $perPage);
 
                     if (empty($searchResults['hits'])) {
+                        \Log::warning('Meilisearch returned 0 results', [
+                            'query' => $query,
+                            'filters' => $meilisearchFilters,
+                            'sort' => $sort,
+                        ]);
                         $discounts = collect();
                     } else {
                         $discountIds = collect($searchResults['hits'])->pluck('id')->toArray();

@@ -25,9 +25,16 @@ class IndexDiscountsToMeilisearch extends Command
         try {
             $count = $this->meilisearchService->indexAllActiveDiscounts();
             $this->info("Successfully indexed {$count} active discounts to Meilisearch.");
+            
+            $stats = $this->meilisearchService->getIndexStats();
+            if ($stats) {
+                $this->info("Index now contains {$stats['numberOfDocuments']} documents.");
+            }
+            
             return 0;
         } catch (\Exception $e) {
             $this->error('Failed to index discounts: ' . $e->getMessage());
+            $this->error($e->getTraceAsString());
             return 1;
         }
     }
