@@ -15,6 +15,7 @@ use App\Rules\StoreRules\MaximaRules;
 use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class ProcessDiscounts extends Command
 {
@@ -31,6 +32,16 @@ class ProcessDiscounts extends Command
         $this->info('Starting bulk category mapping...');
         $this->call('categories:bulk-map');
         $this->info('Bulk category mapping completed.');
+
+        DB::update("
+            UPDATE discount_temp
+            SET end_at = DATE_ADD(end_at, INTERVAL 1 YEAR)
+            WHERE
+                processed = 0
+                AND end_at IS NOT NULL
+                AND end_at != ''
+                AND DATEDIFF(CURDATE(), end_at) > 90
+        ");
 
         $duplicates = DiscountTemp::whereNotNull('product_url')
             ->where('processed', false)

@@ -19,7 +19,9 @@ class ArchiveExpiredDiscounts extends Command
         $expiredDiscounts = Discount::where(function ($query) {
             $query->where(function ($subQuery) {
                 $subQuery->whereRaw('DATE(end_at) < DATE(?)', [now()])
-                         ->whereNotNull('end_at');
+                    ->whereNotNull('end_at')
+                    ->where('store_id', '!=', 4) //Norfa
+                ;
             })->orWhere('updated_at', '<', now()->subHours(36));
         })->get();
 

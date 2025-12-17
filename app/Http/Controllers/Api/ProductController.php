@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Models\DiscountTemp;
 use App\Models\Discount;
 use App\Models\DiscountHistory;
+use App\Models\SearchResult;
 use App\Services\DiscountResponseFormatter;
 use App\Services\MeilisearchService;
 use Carbon\Carbon;
@@ -241,12 +242,30 @@ class ProductController extends Controller
                         ['path' => request()->url(), 'query' => request()->query()]
                     );
 
+                    try {
+                        SearchResult::create([
+                            'query' => $query,
+                            'total_results' => $searchResults['total'],
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::warning('Failed to store search result: ' . $e->getMessage());
+                    }
+
                     return response()->json([
                         'data' => $this->formatter->format($paginator),
                         'breadcrumbs' => $this->generateBreadcrumbs('search', $query, '-'),
                         'seo' => $this->generateSeoData('search', $query, '-')
                     ]);
                 } catch (\Exception $e) {
+                    try {
+                        SearchResult::create([
+                            'query' => $query,
+                            'total_results' => 0,
+                        ]);
+                    } catch (\Exception $saveException) {
+                        \Log::warning('Failed to store search result: ' . $saveException->getMessage());
+                    }
+                    
                     $queryQb = Discount::searchByProductName($query)
                         ->with(['product', 'store']);
 

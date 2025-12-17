@@ -45,6 +45,11 @@ class ProcessScrapingFlow extends Command
             return 1;
         }
 
+        if (!$this->reindexMeilisearch()) {
+            $this->error('Reindexing Meilisearch failed. Aborting.');
+            return 1;
+        }
+
         if (!$this->generateDescriptions()) {
             $this->error('Generating descriptions failed. Aborting.');
             return 1;
@@ -155,9 +160,59 @@ class ProcessScrapingFlow extends Command
         return true;
     }
 
+    private function reindexMeilisearch(): bool
+    {
+        $this->info('Step 5: Reindexing Meilisearch...');
+
+        $deployKeyPath = base_path('deploy_key');
+        if (!file_exists($deployKeyPath)) {
+            $this->error('deploy_key not found. Cannot establish SSH tunnel to Meilisearch.');
+            return false;
+        }
+
+        chmod($deployKeyPath, 0600);
+
+        $this->info('Establishing SSH tunnel to Meilisearch server...');
+        $sshCommand = [
+            'ssh',
+            '-i', $deployKeyPath,
+            '-L', '127.0.0.1:7700:127.0.0.1:7700',
+            '-N',
+            '-f',
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-o', 'LogLevel=ERROR',
+            'root@tnor.l.dedikuoti.lt'
+        ];
+
+        $sshProcess = new Process($sshCommand, base_path());
+        $sshProcess->setTimeout(10);
+        $sshProcess->run();
+
+        if (!$sshProcess->isSuccessful()) {
+            $this->warn('SSH tunnel command exited with code: ' . $sshProcess->getExitCode());
+            $this->warn('Tunnel might already be established. Continuing...');
+        } else {
+            $this->info('✓ SSH tunnel established.');
+        }
+
+        sleep(2);
+
+        $exitCode = $this->call('discounts:index-meilisearch');
+
+        if ($exitCode !== 0) {
+            $this->error('discounts:index-meilisearch failed with exit code: ' . $exitCode);
+            return false;
+        }
+
+        $this->info('✓ Meilisearch reindexed successfully.');
+        $this->newLine();
+        return true;
+    }
+
     private function generateDescriptions(): bool
     {
-        $this->info('Step 5: Generating descriptions...');
+        $this->info('Step 6: Generating descriptions...');
 
         $this->info('Generating descriptions for stores...');
         $exitCode = $this->call('descriptions:generate', ['type' => 'store', '--all' => true]);
@@ -190,7 +245,7 @@ class ProcessScrapingFlow extends Command
 
     private function deploy(): bool
     {
-        $this->info('Step 6: Deploying...');
+        $this->info('Step 7: Deploying...');
 
         if (!file_exists(base_path('deploy.sh'))) {
             $this->error('deploy.sh not found.');

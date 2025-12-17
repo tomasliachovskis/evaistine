@@ -157,10 +157,10 @@ class MeilisearchService
             $this->configureIndex();
 
             $discounts = Discount::with(['product.category', 'store'])
-                ->where(function ($query) {
-                    $query->where('end_at', '>=', now())
-                        ->orWhereNull('end_at');
-                })
+//                ->where(function ($query) {
+//                    $query->where('end_at', '>=', now())
+//                        ->orWhereNull('end_at');
+//                })
                 ->get();
 
             Log::info('Meilisearch indexing discounts', ['count' => $discounts->count()]);
