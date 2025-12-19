@@ -76,7 +76,7 @@ class ProcessScrapingFlow extends Command
             $this->info("Running scraper: {$scraper}");
 
             $process = new Process(['node', "scrapers/{$scraper}"], base_path());
-            $process->setTimeout(5400);
+            $process->setTimeout(10800);
             $process->run(function ($type, $buffer) {
                 if (Process::ERR === $type) {
                     $this->error($buffer);
