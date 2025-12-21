@@ -33,15 +33,15 @@ class ProcessDiscounts extends Command
         $this->call('categories:bulk-map');
         $this->info('Bulk category mapping completed.');
 
-        DB::update("
-            UPDATE discount_temp
-            SET end_at = DATE_ADD(end_at, INTERVAL 1 YEAR)
-            WHERE
-                processed = 0
-                AND end_at IS NOT NULL
-                AND end_at != ''
-                AND DATEDIFF(CURDATE(), end_at) > 90
-        ");
+        DB::update("UPDATE discount_temp
+SET end_at = DATE_FORMAT(
+    DATE_ADD(STR_TO_DATE(end_at, '%Y-%m-%d'), INTERVAL 1 YEAR),
+    '%Y-%m-%d'
+)
+WHERE
+    processed = 0
+    AND end_at REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+    AND DATEDIFF(CURDATE(), STR_TO_DATE(end_at, '%Y-%m-%d')) > 90");
 
         $duplicates = DiscountTemp::whereNotNull('product_url')
             ->where('processed', false)
