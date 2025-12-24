@@ -17,12 +17,17 @@ class ArchiveExpiredDiscounts extends Command
         $this->info('Starting to archive expired discounts...');
 
         $expiredDiscounts = Discount::where(function ($query) {
-            $query->where(function ($subQuery) {
-                $subQuery->whereRaw('DATE(end_at) < DATE(?)', [now()])
-                    ->whereNotNull('end_at')
-                    ->where('store_id', '!=', 4) //Norfa
-                ;
-            })->orWhere('updated_at', '<', now()->subHours(36));
+            $query
+                ->where(function ($subQuery) {
+                    $subQuery
+                        ->whereNotNull('end_at')
+                        ->whereRaw('DATE(end_at) < DATE(?)', [now()]);
+                })
+                ->orWhere(function ($subQuery) {
+                    $subQuery
+                        ->where('updated_at', '<', now()->subHours(36))
+                        ->where('store_id', '!=', 4); // Norfa
+                });
         })->get();
 
         if ($expiredDiscounts->isEmpty()) {
