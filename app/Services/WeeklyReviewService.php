@@ -197,7 +197,7 @@ class WeeklyReviewService
         $storeStats = $this->getStoreStatistics($discounts);
         $categoryStats = $this->getCategoryStatistics($discounts);
         $categoryComparisons = $this->getCategoryPriceComparisons($discounts);
-        
+
         return [
             'week_period' => [
                 'start' => $weekStart->format('Y-m-d'),
@@ -410,7 +410,8 @@ HTML MARKUP RULES:
 
 CONTENT STRUCTURE (700-1000+ words):
 
-1) INTRODUCTION (H2: \"Savaitės akcijos: geriausios nuolaidos ir pasiūlymai\")
+1) INTRODUCTION (H2 class=\"mt-0\": \"Savaitės akcijos: geriausios nuolaidos ir pasiūlymai\")
+- Use <h2 class=\"mt-0\"> for the introduction heading
 - Engaging paragraph about the week's deals (include \"savaitės akcijos\" keyword)
 - Mention total_discounts, total_stores, avg_discount_percent from summary
 - Include 2-3 store links naturally in text
@@ -506,7 +507,13 @@ OUTPUT RULES:
 
     private function generateSlug(string $title): string
     {
-        $slug = mb_strtolower($title);
+        $lithuanianToLatin = [
+            'ą' => 'a', 'č' => 'c', 'ę' => 'e', 'ė' => 'e', 'į' => 'i', 'š' => 's', 'ų' => 'u', 'ū' => 'u', 'ž' => 'z',
+            'Ą' => 'A', 'Č' => 'C', 'Ę' => 'E', 'Ė' => 'E', 'Į' => 'I', 'Š' => 'S', 'Ų' => 'U', 'Ū' => 'U', 'Ž' => 'Z'
+        ];
+
+        $slug = strtr($title, $lithuanianToLatin);
+        $slug = mb_strtolower($slug);
         $slug = preg_replace('/[^a-z0-9\s-]/u', '', $slug);
         $slug = preg_replace('/[\s-]+/', '-', $slug);
         $slug = trim($slug, '-');
