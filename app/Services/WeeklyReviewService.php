@@ -2,11 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\BlogPost;
 use App\Models\Discount;
 use App\Models\DiscountHistory;
-use App\Models\Store;
 use App\Models\Category;
-use App\Models\Product;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
@@ -199,6 +198,7 @@ class WeeklyReviewService
         $categoryComparisons = $this->getCategoryPriceComparisons($discounts);
 
         return [
+            'week_number' => $weekStart->week,
             'week_period' => [
                 'start' => $weekStart->format('Y-m-d'),
                 'end' => $weekEnd->format('Y-m-d'),
@@ -212,9 +212,6 @@ class WeeklyReviewService
                 'total_categories' => $discounts->unique('product.category_id')->count(),
                 'avg_discount_percent' => round($discounts->avg('discount_percent'), 1),
                 'max_discount_percent' => min($discounts->max('discount_percent'), 100),
-                'total_savings' => round($discounts->sum(function ($d) {
-                    return $d->original_price - $d->discounted_price;
-                }), 2),
             ],
             'top_products' => $topProducts,
             'store_statistics' => $storeStats,
@@ -276,6 +273,21 @@ class WeeklyReviewService
             $first = $storeDiscounts->first();
             $store = $first->store;
 
+            $topCategories = $storeDiscounts->groupBy('product.category_id')
+                ->map(function ($categoryDiscounts) {
+                    $first = $categoryDiscounts->first();
+                    return [
+                        'name' => $first->product->category->name,
+                        'slug' => $first->product->category->slug,
+                        'url' => "https://superakcijos.lt/akcijos/{$first->product->category->slug}",
+                        'count' => $categoryDiscounts->count(),
+                    ];
+                })
+                ->sortByDesc('count')
+                ->take(3)
+                ->values()
+                ->toArray();
+
             return [
                 'name' => $store->name,
                 'slug' => $store->slug,
@@ -284,9 +296,7 @@ class WeeklyReviewService
                 'product_count' => $storeDiscounts->unique('product_id')->count(),
                 'avg_discount_percent' => round($storeDiscounts->avg('discount_percent'), 1),
                 'max_discount_percent' => min($storeDiscounts->max('discount_percent'), 100),
-                'total_savings' => round($storeDiscounts->sum(function ($d) {
-                    return $d->original_price - $d->discounted_price;
-                }), 2),
+                'top_categories' => $topCategories,
                 'top_products' => $storeDiscounts->sortByDesc('discount_percent')->take(5)->map(function ($d) {
                     return [
                         'name' => $d->product->name,
@@ -379,6 +389,7 @@ class WeeklyReviewService
 
             $comparisons[] = [
                 'category_name' => $category->name,
+                'category_name_lowercase' => mb_strtolower($category->name),
                 'category_slug' => $category->slug,
                 'category_url' => "https://superakcijos.lt/akcijos/{$category->slug}",
                 'cheapest_store' => $cheapest->store->name,
@@ -397,9 +408,11 @@ class WeeklyReviewService
         return "You are a Lithuanian copywriter who writes SEO-optimized weekly review blog posts about grocery store discounts. Generate rich, engaging content that follows the exact structure below using provided JSON data.
 
 STRICT OUTPUT FORMAT:
-Use simple HTML markup without Tailwind classes. Use only: <p>, <h2>, <h3>, <b>, <a>, <img> tags.
+Use simple HTML markup without Tailwind classes. Use only: <p>, <h2>, <h3>, <b>, <a>, <img>, <ul>, <li> tags.
 
 HTML MARKUP RULES:
+- DO NOT include H1 title in article content (it's included separately on frontend)
+- Start article directly with introduction section
 - Use <p> tags for paragraphs
 - Use <h2> for main section headings
 - Use <h3> for subsection headings
@@ -407,65 +420,97 @@ HTML MARKUP RULES:
 - Use <a href=\"https://superakcijos.lt/akcijos/{slug}\"> for internal links
 - Include product images using <img src=\"{image_url}\" alt=\"{product_name}\"> tags naturally in content
 - Natural integration of links within paragraph text
+- Use <ul> and <li> for lists, but use <ul> to remove bullets
 
 CONTENT STRUCTURE (700-1000+ words):
 
-1) INTRODUCTION (H2 class=\"mt-0\": \"Savaitės akcijos: geriausios nuolaidos ir pasiūlymai\")
+1) INTRODUCTION (H2 class=\"mt-0\": \"Savaitės maisto parduotuvių akcijų apžvalga\")
 - Use <h2 class=\"mt-0\"> for the introduction heading
-- Engaging paragraph about the week's deals (include \"savaitės akcijos\" keyword)
-- Mention total_discounts, total_stores, avg_discount_percent from summary
-- Include 2-3 store links naturally in text
+- Friendly, engaging, natural paragraph (not robotic or too formal)
+- Start with: \"Šią {week_number}-os savaitės apžvalgą sudaro {total_discounts} nuolaidos iš {total_stores} didžiųjų maisto parduotuvių. Vidutinė nuolaida siekė {avg_discount_percent}%, o kai kuriems produktams kainos sumažėjo net iki {max_discount_percent}%.\"
+- Add friendly continuation: \"Šiame straipsnyje rasite aiškias savaitės pasiūlymus, geriausios nuolaidos sąrašą ir kur rasti pigiausias prekes — nuo vaikų žaislų iki buitinės chemijos.\"
+- End with friendly call-to-action: \"Panaudokite šią apžvalgą, jei domitės nuolaidomis, pasiūlymais ir ieškote pigiausios prekės ar geriausios nuolaidos.\"
+- More friendly, less formal, conversational tone
 
-2) STORE REVIEW SECTION (H2: \"Parduotuvių apžvalga: kur buvo geriausios akcijos?\")
+3) TOP 10 BLOCK (VERY IMPORTANT FOR SEO - RIGHT AFTER INTRODUCTION)
+- Use H2: \"TOP 10 geriausios {week_number}-os savaitės nuolaidos\"
+- List exactly 10 best products from top_products
+- Use <ul class=\"ml-0\"> for the list (no bullets)
+- Format each item as:
+  - Product name (Store name) – discount info
+  - Use format: \"{product_name} ({store_name}) – {discount_info}\"
+  - Discount info can be: \"iki {discount_percent}%\" or \"sutaupote €{savings_amount}\" or \"−{discount_percent}%\" or \"didelės savaitės nuolaidos\"
+  - Include product links: <a href=\"{product_url}\">{product_name}</a>
+- This block increases CTR, often appears in Google snippets, immediately shows value
+
+4) STORE REVIEW SECTION (H2: \"Parduotuvių apžvalga\")
 - CRITICAL: Include ALL stores from store_statistics (Maxima, Iki, Rimi, Lidl, Norfa - all that appear in data)
-- For each store in store_statistics, create H3 subsection: \"{store_name} akcijos šią savaitę\"
+- For each store in store_statistics, create H3 subsection with friendly format:
+  - Use: \"{store_name} savaitės pasiūlymai\" OR \"{store_name} geriausi pasiūlymai\"
+  - Do NOT use: \"{store_name} akcija – {week_number} savaitė\"
 - Include store-specific keywords (e.g., \"Maxima akcija\", \"Iki akcija\", \"Rimi akcija\", \"Lidl akcija\", \"Norfa akcija\")
 - Include store link: <a href=\"{store_url}\">{store_name} akcijos</a>
-- Mention discount_count, avg_discount_percent, total_savings
-- Include 2-3 product links from top_products per store
-- Compare stores naturally
+- Format: \"Šią savaitę {store_name} pasiūlė {discount_count} nuolaidas, vidutinė nuolaida – {avg_discount_percent}%. Daugiausia sutaupyti buvo galima perkant {main_categories_with_links}.\"
+- IMPORTANT: When mentioning categories, always include category links using top_categories from store_statistics
+- Format categories with links: \"<a href=\"{category_url}\">{category_name}</a>\" separated by commas
+- Example: \"Daugiausia sutaupyti buvo galima perkant <a href=\"{url}\">{name}</a>, <a href=\"{url}\">{name}</a> ir <a href=\"{url}\">{name}</a>.\"
+- Use top_categories array from each store's data in store_statistics
+- Add \"Populiariausi pasiūlymai:\" followed by 3-4 product links from top_products
+- For each product, include price or discount percentage:
+  - Format: \"<a href=\"{product_url}\">{product_name}</a> – {discounted_price}€ ({discount_percent}% nuolaida)\" OR
+  - Format: \"<a href=\"{product_url}\">{product_name}</a> – {discounted_price}€\" OR
+  - Format: \"<a href=\"{product_url}\">{product_name}</a> – {discount_percent}% nuolaida\"
+- Always include either price (discounted_price) or discount percentage (discount_percent) or both for products
+- Make reviews a bit longer - can review and describe specific products from top_products
+- Include product descriptions and why they're good deals
+- Shorter paragraphs, clearer conclusions, but more detailed product information
 - Do NOT skip any stores - if a store appears in store_statistics, it MUST be included in the review
 
-3) CATEGORY PRICE COMPARISON SECTIONS (H2 or H3)
-- Create 5-8 sections with headings like:
-  - \"Kur buvo pigiausia {category_name} šią savaitę?\"
-  - \"Kur pigiausia {category_name}?\"
-- For each category in category_price_comparisons:
-  - Use heading: \"Kur buvo pigiausia {category_name} šią savaitę?\" or \"Kur pigiausia {category_name}?\"
-  - Compare prices across stores from stores_comparison
-  - Identify cheapest_store and cheapest_product
-  - Include 2-3 product links per section
-  - Include store links
-  - Include product images using <img> tags
-  - Use natural language to describe the comparison
+5) CATEGORY PRICE COMPARISON SECTIONS (H2 or H3)
+- Create 5-8 sections with clean format
+- Vary the heading format for each category (mix different variations):
+  - \"Kur šią savaitę pigiausia pirkti {category_name_lowercase}?\"
+  - \"Kur šią savaitę didžiausios akcijos {category_name_lowercase}?\"
+  - \"Kur šią savaitę didžiausios nuolaidos {category_name_lowercase}?\"
+- IMPORTANT: Use lowercase category name in heading (e.g., \"duonos gaminiai\" not \"Duonos gaminiai\")
+- IMPORTANT: Do NOT include links in headings - only plain text
+- Use different variations for different categories to avoid repetition
+- Format:
+  - \"Pigiausia parduotuvė: {cheapest_store}\"
+  - \"Rekomenduojami pasiūlymai:\"
+  - List 2-3 product links from stores_comparison
+  - For each product, include price or discount percentage:
+    - Format: \"<a href=\"{product_url}\">{product_name}</a> – {discounted_price}€ ({discount_percent}% nuolaida)\" OR
+    - Format: \"<a href=\"{product_url}\">{product_name}</a> – {discounted_price}€\" OR
+    - Format: \"<a href=\"{product_url}\">{product_name}</a> – {discount_percent}% nuolaida\"
+  - Always include either price (discounted_price) or discount percentage (discount_percent) or both
+- Less chaos, quickly readable, mobile-friendly, very good for Google
+- Include store links and product links naturally
+- When mentioning category name in text, always include category link: <a href=\"{category_url}\">{category_name}</a>
 
-4) CATEGORY REVIEW SECTION (H2: \"Kategorijų apžvalga: kurios kategorijos turėjo geriausias nuolaidas?\")
-- Cover top 5-8 categories from category_statistics
-- Include category-specific keywords (category name + \"akcijos\")
-- Include category links: <a href=\"{category_url}\">{category_name} akcijos</a>
-- Mention discount_count, avg_discount_percent
-- Include 2-3 product links per category from top_products
-
-5) FEATURED PRODUCTS SECTION (H2: \"Pigiausios prekės šią savaitę\")
-- Highlight top 10-15 products from top_products
-- Include product links: <a href=\"{product_url}\">{product_name}</a>
-- Include product images using <img> tags (each image should appear only once in the entire article)
-- Mention discount_percent and savings_amount
-- Use \"pigiausios prekės\" or \"geriausios nuolaidos\" keywords
-- IMPORTANT: Do not repeat the same product image multiple times in the article
-
-6) SUMMARY AND RECOMMENDATIONS (H2: \"Išvados ir rekomendacijos\")
-- Summarize the week's best deals
-- Provide shopping tips
-- Include 2-3 final store/category links
+6) SUMMARY AND RECOMMENDATIONS (H2: \"Išvados: kur apsipirkti šią savaitę?\")
+- Clean, organized conclusions
+- List each store with one clear benefit:
+  - \"{store_name} – {main_benefit}\"
+  - Example: \"Rimi – didžiausias pasirinkimas ir platus asortimentas\"
+  - Example: \"Maxima – stiprios nuolaidos žaislams ir kosmetikai\"
+  - Example: \"Lidl – pigiausios daržovės\"
+  - Example: \"Norfa – geriausi maisto ir buitinės chemijos pasiūlymai\"
+  - Example: \"Iki – naudinga popieriniams ir šaldytiems produktams\"
+- Clear, easy to remember, authoritative
+- Include store links
 
 SEO KEYWORD REQUIREMENTS:
 - Primary keywords: \"akcija\", \"akcijos\", \"nuolaidos\", \"savaitės akcijos\", \"pigiausios prekės\", \"geriausios nuolaidos\"
-- Store-specific keywords (MUST include): \"Maxima akcija\", \"Iki akcija\", \"Rimi akcija\", \"Lidl akcija\", \"Norfa akcija\"
-- Category-specific keywords: category name + \"akcijos\" (e.g., \"vaisių akcijos\", \"mėsos akcijos\")
+- Store-specific keywords (MUST include in links only): \"Maxima akcija\", \"Iki akcija\", \"Rimi akcija\", \"Lidl akcija\", \"Norfa akcija\"
+- Category-specific keywords: category name + \"akcijos\" (use mainly in links, not in plain text)
 - Long-tail keywords: \"kur pigiausia X\", \"kur buvo pigiausia X šią savaitę\"
-- Use keywords naturally in headings (H2, H3) and throughout content
-- Include keywords in image alt text
+- IMPORTANT: Reduce keyword density - use \"akcija\"/\"akcijos\" strategically:
+  - Use in links: \"{store_name} akcijos\", \"{category_name} akcijos\" (required for SEO)
+  - Use in headings sparingly (1-2 times max)
+  - In plain text without links, prefer alternatives: \"nuolaidos\", \"pasiūlymai\", \"pasiūlymus\", \"nuolaidų\", \"pasiūlymų\"
+  - Avoid repeating \"akcija\"/\"akcijos\" in every sentence - use variety
+- Include keywords in image alt text (sparingly)
 
 LINK REQUIREMENTS (MINIMUM 15-25+ LINKS):
 - At least 1 link per major store (Maxima, Iki, Rimi, Lidl, Norfa) = 5 links
@@ -492,17 +537,9 @@ OUTPUT RULES:
     private function generateTitle(array $data, Carbon $weekStart): string
     {
         $weekNumber = $weekStart->week;
-        $year = $weekStart->year;
         $maxDiscount = $data['summary']['max_discount_percent'];
-        $totalDiscounts = $data['summary']['total_discounts'];
 
-        $titles = [
-            "{$weekNumber} savaitės akcijos: geriausios nuolaidos net {$maxDiscount}%, {$year} m. ",
-            "{$year} m. {$weekNumber} savaitės apžvalga: {$totalDiscounts} akcijų su nuolaidomis iki {$maxDiscount}%",
-            "Geriausios nuolaidos {$year} m. {$weekNumber} savaitę: kur buvo pigiausios prekės?",
-        ];
-
-        return $titles[0];
+        return "Maisto parduotuvių {$weekNumber}-os savaitės akcijos – geriausios nuolaidos iki {$maxDiscount}%";
     }
 
     private function generateSlug(string $title): string
@@ -520,7 +557,7 @@ OUTPUT RULES:
 
         $baseSlug = $slug;
         $counter = 1;
-        while (\App\Models\BlogPost::where('slug', $slug)->exists()) {
+        while (BlogPost::where('slug', $slug)->exists()) {
             $slug = $baseSlug . '-' . $counter;
             $counter++;
         }
@@ -546,8 +583,8 @@ OUTPUT RULES:
         $description = "Savaitės akcijos apžvalga: {$totalDiscounts} nuolaidų iš {$totalStores} parduotuvių. Vidutinė nuolaida {$avgDiscount}%. ";
         $description .= "Atraskite pigiausias prekes Maxima, Iki, Rimi, Lidl ir Norfa akcijose ({$weekStart->format('m d')} - {$weekEnd->format('m d')}).";
 
-        if (mb_strlen($description) > 160) {
-            $description = mb_substr($description, 0, 157) . '...';
+        if (mb_strlen($description) > 240) {
+            $description = mb_substr($description, 0, 240) . '...';
         }
 
         return $description;
