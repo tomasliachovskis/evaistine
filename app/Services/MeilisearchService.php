@@ -29,9 +29,10 @@ class MeilisearchService
                 'product_brand',
             ]);
 
-            $index->updateFilterableAttributes([
+            $task = $index->updateFilterableAttributes([
                 'store_id',
                 'category_id',
+                'category_name',
                 'card',
                 'condition',
                 'discount_percent',
@@ -39,6 +40,8 @@ class MeilisearchService
                 'original_price',
                 'end_at_timestamp',
             ]);
+
+            $this->waitForTask($index, $task);
 
             $index->updateSortableAttributes([
                 'discounted_price',
@@ -49,15 +52,34 @@ class MeilisearchService
             ]);
 
             $index->updateRankingRules([
+                'exactness',
                 'words',
                 'typo',
                 'proximity',
                 'attribute',
                 'sort',
-                'exactness',
             ]);
+
         } catch (\Exception $e) {
             Log::error('Meilisearch index configuration failed: ' . $e->getMessage());
+        }
+    }
+
+    protected function waitForTask($index, $task, int $maxWaitTime = 10)
+    {
+        $taskUid = null;
+        if (is_array($task)) {
+            $taskUid = $task['taskUid'] ?? $task['uid'] ?? null;
+        } elseif (is_object($task)) {
+            $taskUid = $task->taskUid ?? $task->uid ?? (method_exists($task, 'getTaskUid') ? $task->getTaskUid() : null);
+        }
+
+        if ($taskUid) {
+            try {
+                $index->waitForTask($taskUid, $maxWaitTime * 1000);
+            } catch (\Exception $e) {
+                Log::warning('Meilisearch waitForTask failed in configureIndex: ' . $e->getMessage());
+            }
         }
     }
 
@@ -110,6 +132,7 @@ class MeilisearchService
             $searchParams = [
                 'limit' => $perPage,
                 'offset' => ($page - 1) * $perPage,
+                'showRankingScore' => true,
             ];
 
             $filterString = $this->buildFilterString($filters);
@@ -157,10 +180,6 @@ class MeilisearchService
             $this->configureIndex();
 
             $discounts = Discount::with(['product.category', 'store'])
-//                ->where(function ($query) {
-//                    $query->where('end_at', '>=', now())
-//                        ->orWhereNull('end_at');
-//                })
                 ->get();
 
             Log::info('Meilisearch indexing discounts', ['count' => $discounts->count()]);
@@ -365,6 +384,20 @@ class MeilisearchService
 
         if (isset($filters['category_id'])) {
             $filterParts[] = 'category_id = ' . intval($filters['category_id']);
+        }
+
+        if (isset($filters['category_name']) && !empty($filters['category_name'])) {
+            $categoryName = addslashes($filters['category_name']);
+            $filterParts[] = "category_name = \"{$categoryName}\"";
+        }
+
+        if (isset($filters['end_at_timestamp']) && is_array($filters['end_at_timestamp'])) {
+            if (isset($filters['end_at_timestamp']['>='])) {
+                $filterParts[] = 'end_at_timestamp >= ' . intval($filters['end_at_timestamp']['>=']);
+            }
+            if (isset($filters['end_at_timestamp']['<='])) {
+                $filterParts[] = 'end_at_timestamp <= ' . intval($filters['end_at_timestamp']['<=']);
+            }
         }
 
         return !empty($filterParts) ? implode(' AND ', $filterParts) : null;

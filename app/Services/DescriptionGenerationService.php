@@ -330,6 +330,22 @@ class DescriptionGenerationService
             ->groupBy('store.name')
             ->map(function($discounts) {
                 $firstDiscount = $discounts->first();
+                
+                $topProducts = $discounts
+                    ->sortByDesc('discount_percent')
+                    ->take(10)
+                    ->map(function($discount) {
+                        return [
+                            'name' => $discount->product->name,
+                            'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                            'discount_percent' => $discount->discount_percent,
+                            'discounted_price' => $discount->discounted_price,
+                            'original_price' => $discount->original_price,
+                        ];
+                    })
+                    ->values()
+                    ->toArray();
+                
                 return [
                     'name' => $firstDiscount->store->name,
                     'url' => "@https://superakcijos.lt/akcijos/{$firstDiscount->store->slug}",
@@ -346,7 +362,8 @@ class DescriptionGenerationService
                     'avg_original_price' => round($discounts->avg('original_price'), 2),
                     'avg_discounted_price' => round($discounts->avg('discounted_price'), 2),
                     'products_with_conditions' => $discounts->whereNotNull('condition')->count(),
-                    'card_discounts' => $discounts->where('card', true)->count()
+                    'card_discounts' => $discounts->where('card', true)->count(),
+                    'top_products' => $topProducts
                 ];
             })
             ->toArray();
@@ -506,7 +523,7 @@ STRICT OUTPUT FORMAT:
 Wrap everything in a single <div class=\"category-description-block p-0 lg:p-4\"> element. Use <strong> tags for emphasis where needed.
 
 1) HEADER
-- <h2 class=\"text-3xl font-bold mb-6\"> with EXACT title format:
+- <h2 class=\"text-3xl font-bold mb-6 leading-tight\"> with EXACT title format:
   '[category_name] akcijos: atraskite šios savaitės pasiūlymus – iki [max_discount_percent] % nuolaidos!'
   Note: Space before % sign. Sentence case only.
 
@@ -561,7 +578,7 @@ Wrap everything in a single <div class=\"category-description-block p-0 lg:p-4\"
         - First <td class=\"p-3 border-r border-gray-200\"> Find matching entry in store_category_links where store_category_links.store_slug matches store_statistics.slug. If found, use format: '<strong><a href=\"[url]\">[store_name]</a></strong>' where url is from store_category_links.url and store_name is from store_statistics.name. If not found in store_category_links, use format: '<strong><a href=\"/akcijos/[store_slug]/[category_slug]\">[store_name]</a></strong>' where store_slug is from store_statistics.slug and category_slug is from category_slug field.
         - Second <td class=\"p-3 border-r border-gray-200\"> '[avg_discount] %' (use <strong> tags if this store has the highest avg_discount)
         - Third <td class=\"p-3 border-r border-gray-200\"> '[count] produktai'
-        - Fourth <td class=\"p-3\"> A natural sentence describing the store's advantage. CRITICAL: Include as many product links as possible from top_discounts when mentioning product types. When you mention product types (e.g., 'avokadų', 'bulvių', 'kopūstų', 'mėsos gaminiams', 'dešroms', etc.), try to find matching products in top_discounts array where the product name contains those keywords. Create links using format: '<a href=\"[product_url]\">[keyword]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present). For example: 'Daug akcijų ant <a href=\"[url]\">avokadų</a>, <a href=\"[url]\">bulvių</a> ir <a href=\"[url]\">kopūstų</a>'. If multiple products match a keyword, use the one with highest discount_percent. Use <strong> tags to emphasize key product types or benefits. If this store has the highest avg_discount, start with '<strong>Didžiausia vidutinė nuolaida!</strong>'. If it has the most products, mention '<strong>Didžiausias asortimentas!</strong>'. Include specific product types from the category context with links whenever possible.
+        - Fourth <td class=\"p-3\"> A natural sentence describing the store's advantage. CRITICAL: Include as many product links as possible from this specific store's top_products array (store_statistics[store_index].top_products) when mentioning product types. When you mention product types (e.g., 'avokadų', 'bulvių', 'kopūstų', 'mėsos gaminiams', 'dešroms', etc.), try to find matching products ONLY in this store's top_products array where the product name contains those keywords. Create links using format: '<a href=\"[product_url]\">[keyword]</a>' where product_url is from top_products.product_url (remove leading '@' if present). For example: 'Daug akcijų ant <a href=\"[url]\">avokadų</a>, <a href=\"[url]\">bulvių</a> ir <a href=\"[url]\">kopūstų</a>'. If multiple products match a keyword, use the one with highest discount_percent. IMPORTANT: Only use products from this store's top_products array - do NOT use products from other stores or from the global top_discounts array. Use <strong> tags to emphasize key product types or benefits. If this store has the highest avg_discount, start with '<strong>Didžiausia vidutinė nuolaida!</strong>'. If it has the most products, mention '<strong>Didžiausias asortimentas!</strong>'. Include specific product types from the category context with links whenever possible.
 
 <hr class=\"mb-6 border-gray-300\">
 
