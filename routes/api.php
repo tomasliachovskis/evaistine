@@ -25,21 +25,17 @@ Route::get('/discount', [ProductController::class, 'getAllDiscounts']);
 Route::get('/discount/{storeOrCategory}', [ProductController::class, 'getDiscounts']);
 Route::get('/discount/{storeOrCategory}/{category}', [ProductController::class, 'getDiscounts']);
 
-Route::get('/product/{slug}', [ProductController::class, 'getProductBySlug']);
+//Route::get('/product/{slug}', [ProductController::class, 'getProductBySlug']);
 Route::get('/product/{slug}/with-similar', [ProductController::class, 'getProductWithSimilar']);
+Route::get('/search/{query}', [ProductController::class, 'search']);
 
 Route::get('/categories', [ProductController::class, 'getCategories']);
 Route::get('/stores', [ProductController::class, 'getStores']);
-Route::get('/search/{query}', [ProductController::class, 'search']);
 Route::get('/favorite/product/{slug}', [ProductController::class, 'getFavoriteProduct']);
 Route::get('/favorite/category/{id}', [ProductController::class, 'getFavoriteCategory']);
 Route::get('/favorite/home', [ProductController::class, 'getFavoriteHome']);
 Route::middleware('auth:sanctum')->post('/favorite/product', [ProductController::class, 'toggleFavorite']);
-
-Route::post('/cache/clear', [ProductController::class, 'clearCache']);
-Route::post('/cache/product/{slug}/clear', [ProductController::class, 'clearProductCache']);
-Route::post('/cache/store/{storeSlug}/clear', [ProductController::class, 'clearStoreCache']);
-Route::post('/cache/category/{categorySlug}/clear', [ProductController::class, 'clearCategoryCache']);
+Route::middleware('auth:sanctum')->get('/favorite/list', [ProductController::class, 'getFavorites']);
 
 Route::get('/blog-posts', [BlogPostController::class, 'index']);
 Route::get('/blog-posts/{slug}', [BlogPostController::class, 'show']);

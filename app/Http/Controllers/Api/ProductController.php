@@ -8,9 +8,7 @@ use App\Models\StoreCategoryDescription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
-use App\Models\DiscountTemp;
 use App\Models\Discount;
-use App\Models\DiscountHistory;
 use App\Models\SearchResult;
 use App\Models\ProductFavorite;
 use App\Services\DiscountResponseFormatter;
@@ -266,7 +264,7 @@ class ProductController extends Controller
                     } catch (\Exception $saveException) {
                         \Log::warning('Failed to store search result: ' . $saveException->getMessage());
                     }
-                    
+
                     $queryQb = Discount::searchByProductName($query)
                         ->with(['product', 'store']);
 
@@ -636,34 +634,6 @@ class ProductController extends Controller
         return $key;
     }
 
-    public function clearCache()
-    {
-        Cache::tags(['discounts'])->flush();
-
-        return response()->json(['message' => 'Cache cleared successfully']);
-    }
-
-    public function clearProductCache($slug)
-    {
-        Cache::tags(['discounts', 'product', $slug])->flush();
-
-        return response()->json(['message' => "Product cache cleared for {$slug}"]);
-    }
-
-    public function clearStoreCache($storeSlug)
-    {
-        Cache::tags(['discounts', $storeSlug])->flush();
-
-        return response()->json(['message' => "Store cache cleared for {$storeSlug}"]);
-    }
-
-    public function clearCategoryCache($categorySlug)
-    {
-        Cache::tags(['discounts', $categorySlug])->flush();
-
-        return response()->json(['message' => "Category cache cleared for {$categorySlug}"]);
-    }
-
     public function toggleFavorite(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -686,21 +656,32 @@ class ProductController extends Controller
 
         if ($favorite) {
             $favorite->delete();
-            return response()->json([
-                'status' => 'removed',
-                'message' => 'Product removed from favorites'
-            ]);
         } else {
-            $favorite = ProductFavorite::create([
+            ProductFavorite::create([
                 'user_id' => $user->id,
                 'product_id' => $productId,
             ]);
-            return response()->json([
-                'status' => 'added',
-                'message' => 'Product added to favorites',
-                'favorite' => $favorite
-            ], 201);
         }
+
+        $productIds = ProductFavorite::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->pluck('product_id');
+
+        return response()->json([
+            'status' => $favorite ? 'removed' : 'added',
+            'favorites' => $productIds
+        ]);
+    }
+
+    public function getFavorites(Request $request)
+    {
+        $user = $request->user();
+
+        $productIds = ProductFavorite::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->pluck('product_id');
+
+        return response()->json($productIds);
     }
 
     private function generateRandomSeed($slug)
