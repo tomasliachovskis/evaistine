@@ -12,6 +12,7 @@ use App\Models\DiscountTemp;
 use App\Models\Discount;
 use App\Models\DiscountHistory;
 use App\Models\SearchResult;
+use App\Models\ProductFavorite;
 use App\Services\DiscountResponseFormatter;
 use App\Services\MeilisearchService;
 use Carbon\Carbon;
@@ -661,6 +662,45 @@ class ProductController extends Controller
         Cache::tags(['discounts', $categorySlug])->flush();
 
         return response()->json(['message' => "Category cache cleared for {$categorySlug}"]);
+    }
+
+    public function toggleFavorite(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'product_id' => 'required|integer|exists:products,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'messages' => $validator->errors()
+            ], 422);
+        }
+
+        $user = $request->user();
+        $productId = $request->input('product_id');
+
+        $favorite = ProductFavorite::where('user_id', $user->id)
+            ->where('product_id', $productId)
+            ->first();
+
+        if ($favorite) {
+            $favorite->delete();
+            return response()->json([
+                'status' => 'removed',
+                'message' => 'Product removed from favorites'
+            ]);
+        } else {
+            $favorite = ProductFavorite::create([
+                'user_id' => $user->id,
+                'product_id' => $productId,
+            ]);
+            return response()->json([
+                'status' => 'added',
+                'message' => 'Product added to favorites',
+                'favorite' => $favorite
+            ], 201);
+        }
     }
 
     private function generateRandomSeed($slug)

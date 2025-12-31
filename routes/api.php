@@ -6,6 +6,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\BlogPostController;
 use App\Http\Controllers\Api\ProductAssistantController;
+use App\Http\Controllers\Api\AuthController;
+
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/oauth', [AuthController::class, 'oauth']);
+Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -28,6 +34,7 @@ Route::get('/search/{query}', [ProductController::class, 'search']);
 Route::get('/favorite/product/{slug}', [ProductController::class, 'getFavoriteProduct']);
 Route::get('/favorite/category/{id}', [ProductController::class, 'getFavoriteCategory']);
 Route::get('/favorite/home', [ProductController::class, 'getFavoriteHome']);
+Route::middleware('auth:sanctum')->post('/favorite/product', [ProductController::class, 'toggleFavorite']);
 
 Route::post('/cache/clear', [ProductController::class, 'clearCache']);
 Route::post('/cache/product/{slug}/clear', [ProductController::class, 'clearProductCache']);
