@@ -36,6 +36,7 @@ Route::get('/favorite/category/{id}', [ProductController::class, 'getFavoriteCat
 Route::get('/favorite/home', [ProductController::class, 'getFavoriteHome']);
 Route::middleware('auth:sanctum')->post('/favorite/product', [ProductController::class, 'toggleFavorite']);
 Route::middleware('auth:sanctum')->get('/favorite/list', [ProductController::class, 'getFavorites']);
+Route::middleware('auth:sanctum')->get('/favorite/products', [ProductController::class, 'getFavoriteProducts']);
 
 Route::get('/blog-posts', [BlogPostController::class, 'index']);
 Route::get('/blog-posts/{slug}', [BlogPostController::class, 'show']);

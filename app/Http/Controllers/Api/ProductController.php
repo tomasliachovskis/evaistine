@@ -684,6 +684,75 @@ class ProductController extends Controller
         return response()->json($productIds);
     }
 
+    public function getFavoriteProducts(Request $request)
+    {
+        $user = $request->user();
+
+        $productIds = ProductFavorite::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->pluck('product_id');
+
+        if ($productIds->isEmpty()) {
+            return response()->json([
+                'products' => [],
+                'store_totals' => []
+            ]);
+        }
+
+        $discounts = Discount::whereIn('product_id', $productIds)
+            ->with(['product.category', 'store'])
+            ->get();
+
+        $formattedProducts = $this->formatter->format($discounts);
+
+        $storeTotals = $this->calculateStoreTotals($productIds, $discounts);
+
+        return response()->json([
+            'products' => $formattedProducts,
+            'store_totals' => $storeTotals
+        ]);
+    }
+
+    private function calculateStoreTotals($productIds, $discounts)
+    {
+        $storeTotals = [];
+        $storeInfo = [];
+
+        foreach ($productIds as $productId) {
+            $productDiscounts = $discounts->where('product_id', $productId);
+            
+            $storePrices = [];
+            foreach ($productDiscounts as $discount) {
+                $storeId = $discount->store_id;
+                
+                if (!isset($storeInfo[$storeId])) {
+                    $storeInfo[$storeId] = $discount->store;
+                }
+                
+                if (!isset($storePrices[$storeId])) {
+                    $storePrices[$storeId] = $discount->discounted_price;
+                } else {
+                    $storePrices[$storeId] = min($storePrices[$storeId], $discount->discounted_price);
+                }
+            }
+
+            foreach ($storePrices as $storeId => $price) {
+                if (!isset($storeTotals[$storeId])) {
+                    $storeTotals[$storeId] = [
+                        'store_id' => $storeId,
+                        'store_name' => $storeInfo[$storeId]->name,
+                        'total_price' => 0,
+                        'product_count' => 0
+                    ];
+                }
+                $storeTotals[$storeId]['total_price'] += $price;
+                $storeTotals[$storeId]['product_count']++;
+            }
+        }
+
+        return array_values($storeTotals);
+    }
+
     private function generateRandomSeed($slug)
     {
         return crc32($slug . date('Y-m-d'));
