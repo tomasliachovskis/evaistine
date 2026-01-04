@@ -36,7 +36,7 @@ puppeteer.use(StealthPlugin());
     await sleep(2000);
 
     const offers = await page.evaluate(() => {
-        const elements = document.querySelectorAll('a.ABaseContentTile__content');
+        const elements = document.querySelectorAll('a.ACategoryOverviewSlider__Link');
         const texts = Array.from(elements).map(offer => offer.href);
         return [...new Set(texts)];
     });
@@ -51,20 +51,14 @@ puppeteer.use(StealthPlugin());
 
         await sleep(2000);
 
-        // Scroll by little bits incrementally
-        await page.evaluate(async () => {
-            const distance = 200;
-            const scrollDelay = 200;
-
-            let scrollHeight = document.body.scrollHeight;
-            let scrollPosition = 0;
-
-            while (scrollPosition < scrollHeight) {
-                window.scrollTo(0, scrollPosition);
-                scrollPosition += distance;
-                await new Promise(resolve => setTimeout(resolve, scrollDelay));
-            }
-        });
+        // Scroll to .s-load-more__text before checking for products
+        let loadMoreTextElement = await page.$('.s-load-more__text');
+        if (loadMoreTextElement) {
+            await page.evaluate((element) => {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, loadMoreTextElement);
+            await sleep(1000);
+        }
 
         try {
             await page.waitForSelector('div.product-grid-box', { timeout: 5000 });
@@ -73,81 +67,127 @@ puppeteer.use(StealthPlugin());
             continue;
         }
 
-        // Extract product details
-        const productBlocks = await page.$$eval('.odsc-tile--label-.product-grid-box', blocks => {
-            function parseDate(dateStr) {
-                const [month, day] = dateStr.split(' ').map(Number);
-                const year = new Date().getFullYear();
-                return new Date(year, month - 1, day).toLocaleDateString('en-CA');
-            }
+        // Function to extract product details
+        const extractProducts = async () => {
+            return await page.$$eval('.odsc-tile--label-.product-grid-box, .odsc-tile--label-red.product-grid-box', blocks => {
+                function parseDate(dateStr) {
+                    const [month, day] = dateStr.split(' ').map(Number);
+                    const year = new Date().getFullYear();
+                    return new Date(year, month - 1, day).toLocaleDateString('en-CA');
+                }
 
-            function extractCategory(block) {
-                try {
-                    const impressionData = block.getAttribute('data-gridbox-impression');
-                    if (impressionData) {
-                        const decodedData = decodeURIComponent(impressionData);
-                        const parsedData = JSON.parse(decodedData);
-                        return parsedData.wonCategoryPrimary || '';
+                function extractCategory(block) {
+                    try {
+                        const impressionData = block.getAttribute('data-gridbox-impression');
+                        if (impressionData) {
+                            const decodedData = decodeURIComponent(impressionData);
+                            const parsedData = JSON.parse(decodedData);
+                            return parsedData.wonCategoryPrimary || '';
+                        }
+                    } catch (error) {
+                        console.log('Error parsing category data:', error);
                     }
-                } catch (error) {
-                    console.log('Error parsing category data:', error);
+                    return '';
                 }
-                return '';
+
+                return blocks.map(block => {
+                    const brand = block.querySelector('.product-grid-box__brand')?.textContent.trim() ?? '';
+                    let name = block.querySelector('.odsc-tile__link')?.textContent.trim();
+                    const discounted_price = block.querySelector('.ods-price__value')?.textContent.trim();
+                    const original_price = block.querySelector('.ods-price__stroke-price')?.textContent.trim();
+                    const info = block.querySelector('.ods-price__footer')?.textContent.trim();
+                    const valid = block.querySelector('.product-grid-box__availabilities')?.textContent.trim();
+                    let discount_percent = block.querySelector('.ods-price__box-content-text-el')?.textContent.trim() ?? '';
+                    if (discount_percent && discount_percent.includes('x')) {
+                        discount_percent = '';
+                    }
+                    const product_url = block.querySelector('a')?.href;
+                    const image_url = block.querySelector('.odsc-image-gallery__image')?.src;
+                    const card = block.querySelector('.seal .seal__badge') !== null;
+                    const category = extractCategory(block);
+
+                    let { start_atStr, end_atStr } = { start_atStr: '', end_atStr: '' };
+                    let start_at = '';
+                    let end_at = '';
+
+                    if (valid && typeof valid === 'string' && valid.includes(' - ')) {
+                        [start_atStr, end_atStr] = valid.split(' - ');
+                        start_at = parseDate(start_atStr);
+                        end_at = parseDate(end_atStr);
+                    } else if (typeof valid === 'string' && valid.includes('Nuo ')) {
+                        start_atStr = valid.replace('Nuo ', '');
+                        start_at = parseDate(start_atStr);
+                    } else {
+                        start_at = valid;
+                        end_at = null;
+                    }
+
+                    return {
+                        name,
+                        brand,
+                        discounted_price,
+                        original_price,
+                        info,
+                        discount_percent,
+                        start_at,
+                        end_at,
+                        card,
+                        product_url,
+                        image_url,
+                        category
+                    };
+                });
+            });
+        };
+
+        // Scrape products and click load more button until it's no longer available
+        while (true) {
+            const productBlocks = await extractProducts();
+            console.log(`Found ${productBlocks.length} products on ${offerLink}`);
+
+            // Store unique products based on "name + price + valid"
+            for (const product of productBlocks) {
+                const uniqueKey = `${product.name}-${product.discounted_price}-${product.start_at}-${product.end_at}`;
+                if (!allProducts.has(uniqueKey)) {
+                    allProducts.set(uniqueKey, product);
+                }
             }
 
-            return blocks.map(block => {
-                const brand = block.querySelector('.product-grid-box__brand')?.textContent.trim() ?? '';
-                let name = block.querySelector('.odsc-tile__link')?.textContent.trim();
-                const discounted_price = block.querySelector('.ods-price__value')?.textContent.trim();
-                const original_price = block.querySelector('.ods-price__stroke-price')?.textContent.trim();
-                const info = block.querySelector('.ods-price__footer')?.textContent.trim();
-                const valid = block.querySelector('.product-grid-box__availabilities')?.textContent.trim();
-                let discount_percent = block.querySelector('.ods-price__box-content-text-el')?.textContent.trim() ?? '';
-                if (discount_percent && discount_percent.includes('x')) {
-                    discount_percent = '';
-                }
-                const product_url = block.querySelector('a')?.href;
-                const image_url = block.querySelector('.odsc-image-gallery__image')?.src;
-                const card = block.querySelector('.seal .seal__badge') !== null;
-                const category = extractCategory(block);
+            const loadMoreButton = await page.$('.s-load-more__button.s-load-more__button');
+            if (!loadMoreButton) {
+                break;
+            }
 
-                let { start_atStr, end_atStr } = { start_atStr: '', end_atStr: '' };
-                let start_at = '';
-                let end_at = '';
+            // Scroll to button and click it
+            await page.evaluate((button) => {
+                button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, loadMoreButton);
 
-                if (valid && typeof valid === 'string' && valid.includes(' - ')) {
-                    [start_atStr, end_atStr] = valid.split(' - ');
-                    start_at = parseDate(start_atStr);
-                    end_at = parseDate(end_atStr);
-                } else if (typeof valid === 'string' && valid.includes('Nuo ')) {
-                    start_atStr = valid.replace('Nuo ', '');
-                    start_at = parseDate(start_atStr);
-                } else {
-                    start_at = valid;
-                    end_at = null;
-                }
+            await sleep(500);
 
-                return {
-                    name,
-                    brand,
-                    discounted_price,
-                    original_price,
-                    info,
-                    discount_percent,
-                    start_at,
-                    end_at,
-                    card,
-                    product_url,
-                    image_url,
-                    category
-                };
-            });
-        });
+            try {
+                await loadMoreButton.click();
+                await sleep(1000);
+            } catch (error) {
+                console.log('Error clicking load more button:', error.message);
+                break;
+            }
+        }
 
-        console.log(`Found ${productBlocks.length} products on ${offerLink}`);
+        // When load button is no longer available, scroll to .s-load-more__text and scrape all products
+        const loadMoreText = await page.$('.s-load-more__text');
+        if (loadMoreText) {
+            await page.evaluate((element) => {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, loadMoreText);
+            await sleep(1000);
+        }
 
-        // Store unique products based on "name + price + valid"
-        for (const product of productBlocks) {
+        const finalProductBlocks = await extractProducts();
+        console.log(`Found ${finalProductBlocks.length} products on final scrape for ${offerLink}`);
+
+        // Store unique products from final scrape
+        for (const product of finalProductBlocks) {
             const uniqueKey = `${product.name}-${product.discounted_price}-${product.start_at}-${product.end_at}`;
             if (!allProducts.has(uniqueKey)) {
                 allProducts.set(uniqueKey, product);
