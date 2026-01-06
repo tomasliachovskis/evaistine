@@ -37,6 +37,7 @@ FRONTEND_SERVER="deploy@84.247.186.143"
 ssh $SSH_OPTS $FRONTEND_SERVER << 'EOF'
     cd /var/www/nuolaidos-front/
     pm2 restart all
+    ./scripts/production-deploy.sh revalidate
 EOF
 
 echo "Deployment completed successfully!"

@@ -24,6 +24,14 @@ class ScrapingController extends Controller
 
         $discountTemps = [];
         foreach ($request->all() as $product) {
+            if (!empty($product['start_at']) &&
+                (\DateTime::createFromFormat('Y-m-d', $product['start_at'])) !== false &&
+                new \DateTime($product['start_at']) > (new \DateTime())->modify('+10 months')
+            ) {
+                $product['start_at'] = (new \DateTime($product['start_at']))
+                    ->modify('-1 year')
+                    ->format('Y-m-d');
+            }
             $discountTemps[] = DiscountTemp::create($product);
         }
 
