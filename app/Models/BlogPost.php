@@ -17,6 +17,7 @@ class BlogPost extends Model
         'meta_title',
         'meta_description',
         'status',
+        'review_image',
     ];
 
     protected $casts = [

@@ -18,10 +18,10 @@ class CacheWarmingService
 
     public function warmCriticalCaches()
     {
-        $this->warmAllDiscountsCache();
         $this->warmStoreCaches();
         $this->warmCategoryCaches();
         $this->warmPopularProductsCache();
+        $this->warmAllDiscountsCache();
     }
 
     public function warmAllDiscountsCache()

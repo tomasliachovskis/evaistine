@@ -8,6 +8,7 @@ use App\Models\DiscountHistory;
 use App\Models\Category;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Collection;
 use Carbon\Carbon;
 
@@ -112,7 +113,7 @@ class WeeklyReviewService
         return $lastWeek->startOfWeek();
     }
 
-    private function getDiscountsForWeek(Carbon $weekStart, Carbon $weekEnd): Collection
+    public function getDiscountsForWeek(Carbon $weekStart, Carbon $weekEnd): Collection
     {
         $excludedCategoryNames = ['Namų ūkio ir laisvalaikio prekės'];
         $excludedCategoryIds = Category::whereIn('name', $excludedCategoryNames)->pluck('id')->toArray();
@@ -588,6 +589,115 @@ OUTPUT RULES:
         }
 
         return $description;
+    }
+
+    public function generateReviewImage(Carbon $weekStart, Collection $discounts): ?string
+    {
+        if (!$this->isConfigured()) {
+            Log::warning('WeeklyReviewService is not configured for image generation');
+            return null;
+        }
+
+        try {
+            $weekNumber = $weekStart->week;
+            $topProducts = $this->getTopProducts($discounts, 10);
+
+            if (empty($topProducts)) {
+                Log::warning('No products available for image generation');
+                return null;
+            }
+
+            $selectedProducts = array_slice($topProducts, 0, 4);
+            $productNames = array_map(function ($product) {
+                return '"' . $product['name'] . '"';
+            }, $selectedProducts);
+
+            $discountPercentages = array_map(function ($product) {
+                return '-' . round($product['discount_percent']) . '%';
+            }, $selectedProducts);
+
+            $maxDiscount = max(array_map(function ($product) {
+                return round($product['discount_percent']);
+            }, $selectedProducts));
+
+            $productList = implode(', ', $productNames);
+            $discountList = implode(', ', $discountPercentages);
+
+            $prompt = "Minimalistinė, moderni maisto prekių parduotuvės akcijų iliustracija, skirta naujienų portalo arba blogo viršeliui. Vaizdas – realistiškas, europietiško stiliaus prekybos centro interjeras, su lengvai išblurintu fonu ir subtiliu apšvietimu.
+
+                Centre – tvarkingas, 2D dizaino baneris su aiškiu lietuvišku užrašu:
+                \"{$weekNumber} savaitė\".
+                Tipografija paprasta, moderni, be 3D efektų.
+
+                Aplink subtiliai išdėstyti keli akcijų produktai: {$productList}, be perteklinių detalių.
+                Ant produktų – nedidelės, tvarkingos raudonos kainų etiketės su tekstu: {$discountList}.
+                Papildomas tekstas: \"Nuolaidos iki {$maxDiscount}%\" – be šauktukų.
+
+                Spalvų paletė – švelni ir profesionali: balta, pilka, šviesiai raudona, šiek tiek geltonos akcentams.
+                Be skraidančių monetų, be banknotų, be agresyvios reklamos elementų.
+
+                Stilius – švarus, ramus, europietiškas, tinkamas patikimam naujienų portalui.
+                Aukšta raiška, fotorealistinė, horizontali kompozicija (16:9).
+
+                IMPORTANT: All visible text must be in Lithuanian language only. No English words.";
+
+            dump($prompt);
+            dd();
+
+            $response = Http::timeout(120)
+                ->retry(2, 1000)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post('https://api.openai.com/v1/images/generations', [
+                    'model' => 'dall-e-3',
+                    'prompt' => $prompt,
+                    'size' => '1792x1024',
+                    'quality' => 'standard',
+                    'n' => 1,
+                ]);
+
+            if (!$response->successful()) {
+                Log::error('DALL-E API request failed for review image', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                return null;
+            }
+
+            $imageUrl = $response->json('data.0.url');
+
+            if (!$imageUrl) {
+                Log::error('No image URL in DALL-E response');
+                return null;
+            }
+
+            $imageResponse = Http::timeout(60)->get($imageUrl);
+
+            if (!$imageResponse->successful()) {
+                Log::error('Failed to download image from DALL-E');
+                return null;
+            }
+
+            $directory = 'blog-images';
+            if (!Storage::disk('public')->exists($directory)) {
+                Storage::disk('public')->makeDirectory($directory);
+            }
+
+            $filename = 'review-' . $weekStart->format('Y-m-d') . '.png';
+            $path = $directory . '/' . $filename;
+
+            Storage::disk('public')->put($path, $imageResponse->body());
+
+            return $path;
+
+        } catch (\Exception $e) {
+            Log::error('Error generating review image', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
     }
 }
 

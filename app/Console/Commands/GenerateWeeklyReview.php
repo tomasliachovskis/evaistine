@@ -63,11 +63,24 @@ class GenerateWeeklyReview extends Command
         $this->newLine();
 
         try {
+            $discounts = $this->reviewService->getDiscountsForWeek($weekStart, $weekEnd);
+//            $reviewImage = $this->reviewService->generateReviewImage($weekStart, $discounts);
+            $reviewImage = '';
+
             $result = $this->reviewService->generateWeeklyReview($weekStart);
 
             if (!$result) {
                 $this->error('Failed to generate weekly review. Check logs for details.');
                 return 1;
+            }
+
+            $this->info('Generating review image...');
+            $reviewImage = $this->reviewService->generateReviewImage($weekStart, $discounts);
+
+            if ($reviewImage) {
+                $this->info("Review image generated: {$reviewImage}");
+            } else {
+                $this->warn('Review image generation failed, but continuing...');
             }
 
             $status = $this->option('draft') ? 'draft' : 'published';
@@ -80,6 +93,7 @@ class GenerateWeeklyReview extends Command
                 'meta_description' => $result['meta_description'],
                 'status' => $status,
                 'published_at' => $status === 'published' ? $result['published_at'] : null,
+                'review_image' => $reviewImage,
             ]);
 
             $this->newLine();
@@ -94,6 +108,7 @@ class GenerateWeeklyReview extends Command
                     ['Status', $blogPost->status],
                     ['Published At', $blogPost->published_at ? $blogPost->published_at->format('Y-m-d H:i:s') : 'Not published'],
                     ['Content Length', mb_strlen(strip_tags($blogPost->content)) . ' characters'],
+                    ['Review Image', $blogPost->review_image ? $blogPost->review_image : 'Not generated'],
                 ]
             );
 
