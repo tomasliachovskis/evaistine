@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\StoreCategoryDescription;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Discount;
@@ -160,6 +161,7 @@ class ProductController extends Controller
         }
     }
 
+
     public function getCategories()
     {
         $categories = \App\Models\Category::whereNull('parent_id')
@@ -218,16 +220,11 @@ class ProductController extends Controller
                         $discounts = collect();
                     } else {
                         $discountIds = collect($searchResults['hits'])->pluck('id')->toArray();
-                        $discounts = Discount::whereIn('id', $discountIds)
-                            ->with(['product.category', 'store'])
-                            ->get()
-                            ->sortBy(function ($discount) use ($discountIds) {
-                                return array_search($discount->id, $discountIds);
-                            })
-                            ->values();
+                        $query = Discount::whereIn('id', $discountIds);
+                        $discounts = $this->buildDiscountQuery($query, $filters)->get();
                     }
 
-                    $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $paginator = new LengthAwarePaginator(
                         $discounts,
                         $searchResults['total'],
                         $perPage,
