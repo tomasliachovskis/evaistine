@@ -142,8 +142,7 @@ class ProductController extends Controller
     private function applySorting($query, $order)
     {
         $query = $query->leftJoin('products', 'discounts.product_id', '=', 'products.id')
-            ->select('discounts.*')
-            ->orderByRaw('CASE WHEN products.category_id IN (1, 52, 121, 352, 380) THEN 0 ELSE 1 END');
+            ->select('discounts.*');
 
         switch ($order) {
             case 'price_min':
@@ -155,6 +154,7 @@ class ProductController extends Controller
             case 'price_discount_proc_max':
                 return $query->orderByRaw('discount_percent DESC');
             case 'popular':
+                return $query->orderByRaw('CASE WHEN products.category_id IN (1, 52, 121, 352, 380) THEN 0 ELSE 1 END');
             default:
                 return $query;
         }
@@ -197,12 +197,6 @@ class ProductController extends Controller
                     $perPage = 25;
 
                     $meilisearchFilters = [];
-                    if ($filters['card']) {
-                        $meilisearchFilters['card'] = true;
-                    }
-                    if ($filters['plus']) {
-                        $meilisearchFilters['plus'] = true;
-                    }
                     if ($filters['store']) {
                         $storeSlugs = explode(',', $filters['store']);
                         $storeIds = \App\Models\Store::whereIn('slug', $storeSlugs)->pluck('id')->toArray();
@@ -720,15 +714,15 @@ class ProductController extends Controller
 
         foreach ($productIds as $productId) {
             $productDiscounts = $discounts->where('product_id', $productId);
-            
+
             $storePrices = [];
             foreach ($productDiscounts as $discount) {
                 $storeId = $discount->store_id;
-                
+
                 if (!isset($storeInfo[$storeId])) {
                     $storeInfo[$storeId] = $discount->store;
                 }
-                
+
                 if (!isset($storePrices[$storeId])) {
                     $storePrices[$storeId] = $discount->discounted_price;
                 } else {

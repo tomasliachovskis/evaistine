@@ -75,7 +75,7 @@ class GenerateWeeklyReview extends Command
             }
 
             $this->info('Generating review image...');
-            $reviewImage = $this->reviewService->generateReviewImage($weekStart, $discounts);
+//            $reviewImage = $this->reviewService->generateReviewImage($weekStart, $discounts);
 
             if ($reviewImage) {
                 $this->info("Review image generated: {$reviewImage}");
