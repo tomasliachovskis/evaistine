@@ -133,6 +133,7 @@ class MeilisearchService
                 'limit' => $perPage,
                 'offset' => ($page - 1) * $perPage,
                 'showRankingScore' => true,
+//                'matchingStrategy' => 'last',
             ];
 
             $filterString = $this->buildFilterString($filters);

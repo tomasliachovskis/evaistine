@@ -220,8 +220,8 @@ class ProductController extends Controller
                         $discounts = collect();
                     } else {
                         $discountIds = collect($searchResults['hits'])->pluck('id')->toArray();
-                        $query = Discount::whereIn('id', $discountIds);
-                        $discounts = $this->buildDiscountQuery($query, $filters)->get();
+                        $discountQuery = Discount::whereIn('discounts.id', $discountIds);
+                        $discounts = $this->buildDiscountQuery($discountQuery, $filters)->get();
                     }
 
                     $paginator = new LengthAwarePaginator(
