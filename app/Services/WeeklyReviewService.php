@@ -420,6 +420,9 @@ HTML MARKUP RULES:
 - Use <b> tags (not <strong>) for bold emphasis
 - Use <a href=\"https://superakcijos.lt/akcijos/{slug}\"> for internal links
 - Include product images using <img src=\"{image_url}\" alt=\"{product_name}\"> tags naturally in content
+- CRITICAL: You MUST include minimum 5 and maximum 7 product images throughout the article
+- Images must be distributed across different sections, not all in one place
+- Use images from top_products array that have image_url field
 - Natural integration of links within paragraph text
 - Use <ul> and <li> for lists, but use <ul> to remove bullets
 
@@ -530,17 +533,168 @@ OUTPUT RULES:
 - Never invent stores or categories; use only provided data
 - Numbers: format money as €{value} with two decimals; percent as {value}%
 - Ensure 700-1000+ words total
-- Include product images naturally in content sections
+- CRITICAL IMAGE REQUIREMENT: Include exactly 5-7 product images distributed throughout the article
+- Images should appear in different sections: introduction, store reviews, category comparisons
+- Each image must have proper alt text with product name
 - Keywords should appear in first paragraph and throughout content
 - Avoid keyword stuffing - use naturally in context";
     }
 
     private function generateTitle(array $data, Carbon $weekStart): string
     {
+        $templates = $this->getTitleTemplates();
+        $topProduct = $this->getTopProductForTitle($data);
+        $templateData = $this->prepareTemplateData($data, $weekStart, $topProduct);
+
+        shuffle($templates);
+
+        foreach ($templates as $template) {
+            $title = $this->fillTemplate($template, $templateData);
+
+            if ($title && $this->isTitleUnique($title)) {
+                return $title;
+            }
+        }
+
         $weekNumber = $weekStart->week;
         $maxDiscount = $data['summary']['max_discount_percent'];
+        $counter = 1;
+        $fallbackTitle = "Maisto parduotuvių {$weekNumber}-os savaitės akcijos – geriausios nuolaidos iki {$maxDiscount}%";
 
-        return "Maisto parduotuvių {$weekNumber}-os savaitės akcijos – geriausios nuolaidos iki {$maxDiscount}%";
+        while (!$this->isTitleUnique($fallbackTitle)) {
+            $fallbackTitle = "Maisto parduotuvių {$weekNumber}-os savaitės akcijos – geriausios nuolaidos iki {$maxDiscount}% ({$counter})";
+            $counter++;
+        }
+
+        return $fallbackTitle;
+    }
+
+    private function getTitleTemplates(): array
+    {
+        return [
+            'Kur šią {week}-ą savaitę didžiausios akcijos? {total_discounts}+ nuolaidų!',
+            '{top_store} dominuoja: iki {max}% nuolaidos {week}-ai savaitėje',
+            '{total_discounts} akcijų šią {week}-ą savaitę: geriausios nuolaidos iki {max}%',
+            'TOP {week} savaitė: kur pigiausia? {top_category} nuolaidos iki {max}%',
+            'Sutaupykite iki {max}%: {total_products}+ produktų akcijos šią {week}-ą savaitę',
+            '{top_product} – {top_discount}% nuolaida šią {week}-ą savaitę!',
+            'Neleiskite praleisti: {top_product} tik {top_price}€ ({top_discount}% nuolaida) – {week} savaitė',
+            '{week}-os savaitės hitas: {top_product} su {top_discount}% nuolaida',
+            'Kur rasti {top_product}? {top_store} siūlo {top_discount}% nuolaidą {week}-ai savaitėje',
+            'Šią {week}-ą savaitę {total_discounts} akcijų: nuo {top_product} iki {max}% nuolaidų',
+            'TOP 5: {top_store} geriausios {week}-os savaitės akcijos iki {max}%',
+            'Sutaupykite {avg}% vidutiniškai: {total_products} produktų akcijos šią {week}-ą savaitę',
+            'Kur pigiausia {top_category}? {week}-os savaitės palyginimas',
+            'Neįtikėtina: {top_product} su {top_discount}% nuolaida {top_store} – {week} savaitės akcijų apžvalga',
+            'Akcijų karas: {week} savaitė – kur didžiausios nuolaidos?',
+            '{week}-os savaitės TOP pasiūlymai: {total_discounts} akcijų iki {max}%',
+            'Kur šią {week}-ą savaitę didžiausios nuolaidos? {top_store} siūlo iki {max}%',
+            '{total_products}+ produktų akcijos: {week} savaitės geriausios nuolaidos',
+            'Nepraleiskite: {top_product} su {top_discount}% nuolaida šią {week}-ą savaitę',
+            'Kur pigiausia šią {week}-ą savaitę? {total_discounts} akcijų palyginimas',
+            '{top_store} vs kitos: kur didžiausios {week}-os savaitės nuolaidos?',
+            'Sutaupykite iki {max}%: {week} savaitės TOP {total_products} produktų',
+            'Kur rasti geriausias akcijas? {week}-os savaitės apžvalga su {total_discounts} nuolaidomis',
+            'Neįtikėtina sutaupyta: {top_product} tik {top_price}€ ({top_discount}% nuolaida) – {week} savaitės nuolaidų apžvalga',
+            '{week} savaitė: kur didžiausios akcijos? {top_category} nuolaidos iki {max}%',
+        ];
+    }
+
+    private function getTopProductForTitle(array $data): ?array
+    {
+        $excludedCategoryName = 'Namų ūkio ir laisvalaikio prekės';
+
+        if (empty($data['top_products'])) {
+            return null;
+        }
+
+        $top10Products = array_slice($data['top_products'], 0, 10);
+        $eligibleProducts = [];
+
+        foreach ($top10Products as $product) {
+            if ($product['category'] !== $excludedCategoryName
+                && !empty($product['image_url'])
+                && !empty($product['name'])
+                && $product['discount_percent'] > 0) {
+                $eligibleProducts[] = $product;
+            }
+        }
+
+        if (empty($eligibleProducts)) {
+            return null;
+        }
+
+        return $eligibleProducts[array_rand($eligibleProducts)];
+    }
+
+    private function prepareTemplateData(array $data, Carbon $weekStart, ?array $topProduct): array
+    {
+        $weekNumber = $weekStart->week;
+        $summary = $data['summary'];
+        $topStore = !empty($data['store_statistics']) ? $data['store_statistics'][0]['name'] : 'parduotuvės';
+        $topCategory = !empty($data['category_statistics']) ? $data['category_statistics'][0]['name'] : 'produktai';
+
+        $templateData = [
+            'week' => $weekNumber,
+            'week_ordinal' => $this->getOrdinalWeek($weekNumber),
+            'total_discounts' => number_format($summary['total_discounts'], 0, ',', ' '),
+            'total_products' => number_format($summary['total_products'], 0, ',', ' '),
+            'total_stores' => $summary['total_stores'],
+            'max' => round($summary['max_discount_percent']),
+            'avg' => round($summary['avg_discount_percent'], 1),
+            'top_store' => $topStore,
+            'top_category' => $topCategory,
+        ];
+
+        if ($topProduct) {
+            $templateData['top_product'] = $topProduct['name'];
+            $templateData['top_discount'] = round($topProduct['discount_percent']);
+            $templateData['top_price'] = number_format($topProduct['discounted_price'], 2, ',', ' ');
+            $templateData['top_store_product'] = $topProduct['store'];
+        } else {
+            $templateData['top_product'] = '';
+            $templateData['top_discount'] = '';
+            $templateData['top_price'] = '';
+            $templateData['top_store_product'] = '';
+        }
+
+        return $templateData;
+    }
+
+    private function getOrdinalWeek(int $weekNumber): string
+    {
+        $suffixes = ['', '-os', '-os', '-ios', '-os', '-os', '-os', '-os', '-os', '-os'];
+        if ($weekNumber >= 10 && $weekNumber < 20) {
+            return $weekNumber . '-os';
+        }
+        $lastDigit = $weekNumber % 10;
+        return $weekNumber . ($suffixes[$lastDigit] ?? '-os');
+    }
+
+    private function fillTemplate(string $template, array $data): ?string
+    {
+        $title = $template;
+
+        foreach ($data as $key => $value) {
+            if ($value === '' || $value === null) {
+                if (strpos($template, '{' . $key . '}') !== false) {
+                    return null;
+                }
+                continue;
+            }
+            $title = str_replace('{' . $key . '}', $value, $title);
+        }
+
+        if (preg_match('/\{[^}]+\}/', $title)) {
+            return null;
+        }
+
+        return $title;
+    }
+
+    private function isTitleUnique(string $title): bool
+    {
+        return !BlogPost::where('title', $title)->exists();
     }
 
     private function generateSlug(string $title): string
@@ -576,19 +730,106 @@ OUTPUT RULES:
 
     private function generateMetaDescription(array $data, Carbon $weekStart): string
     {
+        $templates = $this->getMetaDescriptionTemplates();
+        $topProduct = $this->getTopProductForTitle($data);
+        $templateData = $this->prepareMetaDescriptionTemplateData($data, $weekStart, $topProduct);
+
+        shuffle($templates);
+
+        foreach ($templates as $template) {
+            $description = $this->fillTemplate($template, $templateData);
+
+            if (!$description) {
+                continue;
+            }
+
+            if (mb_strlen($description) > 240) {
+                $description = mb_substr($description, 0, 237) . '...';
+            }
+
+            if ($this->isMetaDescriptionUnique($description)) {
+                return $description;
+            }
+        }
+
         $weekEnd = (clone $weekStart)->endOfWeek();
         $totalDiscounts = $data['summary']['total_discounts'];
         $avgDiscount = $data['summary']['avg_discount_percent'];
         $totalStores = $data['summary']['total_stores'];
 
-        $description = "Savaitės akcijos apžvalga: {$totalDiscounts} nuolaidų iš {$totalStores} parduotuvių. Vidutinė nuolaida {$avgDiscount}%. ";
-        $description .= "Atraskite pigiausias prekes Maxima, Iki, Rimi, Lidl ir Norfa akcijose ({$weekStart->format('m d')} - {$weekEnd->format('m d')}).";
+        $fallbackDescription = "Savaitės akcijos apžvalga: {$totalDiscounts} nuolaidų iš {$totalStores} parduotuvių. Vidutinė nuolaida {$avgDiscount}%. ";
+        $fallbackDescription .= "Atraskite pigiausias prekes Maxima, Iki, Rimi, Lidl ir Norfa akcijose ({$weekStart->format('m d')} - {$weekEnd->format('m d')}).";
 
-        if (mb_strlen($description) > 240) {
-            $description = mb_substr($description, 0, 240) . '...';
+        $counter = 1;
+        while (!$this->isMetaDescriptionUnique($fallbackDescription) && $counter < 10) {
+            $fallbackDescription = "Savaitės akcijos apžvalga: {$totalDiscounts} nuolaidų iš {$totalStores} parduotuvių. Vidutinė nuolaida {$avgDiscount}%. ";
+            $fallbackDescription .= "Atraskite pigiausias prekes ({$weekStart->format('m d')} - {$weekEnd->format('m d')}).";
+            $counter++;
         }
 
-        return $description;
+        if (mb_strlen($fallbackDescription) > 240) {
+            $fallbackDescription = mb_substr($fallbackDescription, 0, 237) . '...';
+        }
+
+        return $fallbackDescription;
+    }
+
+    private function getMetaDescriptionTemplates(): array
+    {
+        return [
+            'Atraskite {total_discounts} akcijų iš {total_stores} parduotuvių. Vidutinė nuolaida {avg}%, didžiausia iki {max}%. {top_store} siūlo geriausias pasiūlymas.',
+            'Šią {week_ordinal} savaitę {top_product} su {top_discount}% nuolaida {top_store_product}. {total_discounts} akcijų, vidutinė nuolaida {avg}%.',
+            'Kur pigiausia šią {week_ordinal} savaitę? {total_products} produktų akcijos, nuolaidos iki {max}%. Palyginkite kainas {total_stores} parduotuvėse.',
+            '{week_ordinal} savaitės TOP akcijos: {total_discounts} nuolaidų, vidutinė nuolaida {avg}%. {top_store} dominuoja su didžiausiomis nuolaidomis.',
+            'Neįtikėtina: {top_product} su {top_discount}% nuolaida {top_store_product}. {total_discounts} akcijų šią {week_ordinal} savaitę, nuolaidos iki {max}%.',
+            'Kur rasti geriausias akcijas {week_ordinal} savaitę? {total_products} produktų nuolaidos iš {total_stores} parduotuvių. Vidutinė nuolaida {avg}%, didžiausia iki {max}%.',
+            'Šią {week_ordinal} savaitę {top_store} siūlo {total_discounts} akcijų. Vidutinė nuolaida {avg}%, TOP pasiūlymas: {top_product} su {top_discount}% nuolaida.',
+            'Sutaupykite iki {max}%: {week_ordinal} savaitės apžvalga su {total_discounts} akcijų iš {total_stores} parduotuvių. Vidutinė nuolaida {avg}%.',
+            'Kur pigiausia {top_category}? {week_ordinal} savaitės palyginimas su {total_discounts} akcijų. {top_store} siūlo didžiausias nuolaidas.',
+            '{total_products} produktų akcijos šią {week_ordinal} savaitę: nuolaidos iki {max}%, vidutinė nuolaida {avg}%. Palyginkite kainas {total_stores} parduotuvėse.',
+            'TOP {week_ordinal} savaitės pasiūlymai: {top_product} su {top_discount}% nuolaida. {total_discounts} akcijų, vidutinė nuolaida {avg}%.',
+            'Neleiskite praleisti: {top_product} tik {top_price}€ ({top_discount}% nuolaida). {total_discounts} akcijų šią {week_ordinal} savaitę iš {total_stores} parduotuvių.',
+        ];
+    }
+
+    private function prepareMetaDescriptionTemplateData(array $data, Carbon $weekStart, ?array $topProduct): array
+    {
+        $weekNumber = $weekStart->week;
+        $weekEnd = (clone $weekStart)->endOfWeek();
+        $summary = $data['summary'];
+        $topStore = !empty($data['store_statistics']) ? $data['store_statistics'][0]['name'] : 'Parduotuvės';
+        $topCategory = !empty($data['category_statistics']) ? $data['category_statistics'][0]['name'] : 'produktai';
+
+        $templateData = [
+            'week_ordinal' => $this->getOrdinalWeek($weekNumber),
+            'total_discounts' => number_format($summary['total_discounts'], 0, ',', ' '),
+            'total_products' => number_format($summary['total_products'], 0, ',', ' '),
+            'total_stores' => $summary['total_stores'],
+            'max' => round($summary['max_discount_percent']),
+            'avg' => round($summary['avg_discount_percent'], 1),
+            'top_store' => $topStore,
+            'top_category' => $topCategory,
+            'date_range' => $weekStart->format('m d') . ' - ' . $weekEnd->format('m d'),
+        ];
+
+        if ($topProduct) {
+            $templateData['top_product'] = $topProduct['name'];
+            $templateData['top_discount'] = round($topProduct['discount_percent']);
+            $templateData['top_price'] = number_format($topProduct['discounted_price'], 2, ',', ' ');
+            $templateData['top_store_product'] = $topProduct['store'];
+        } else {
+            $templateData['top_product'] = '';
+            $templateData['top_discount'] = '';
+            $templateData['top_price'] = '';
+            $templateData['top_store_product'] = '';
+        }
+
+        return $templateData;
+    }
+
+    private function isMetaDescriptionUnique(string $description): bool
+    {
+        return !BlogPost::where('meta_description', $description)->exists();
     }
 
     public function generateReviewImage(Carbon $weekStart, Collection $discounts): ?string
