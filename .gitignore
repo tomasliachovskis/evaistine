@@ -16,3 +16,4 @@ yarn-error.log
 deploy_key
 /flyers/*
 !/flyers/.gitkeep
+.DS_Store

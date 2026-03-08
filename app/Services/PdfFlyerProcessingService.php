@@ -7,6 +7,8 @@ use App\Models\Store;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 use Spatie\PdfToImage\Pdf;
 
 class PdfFlyerProcessingService
@@ -32,7 +34,7 @@ class PdfFlyerProcessingService
     {
         $processId = uniqid('pdf_' . time() . '_', true);
         Log::info('Starting PDF processing', ['pdf' => $pdfPath, 'store' => $store->name, 'process_id' => $processId]);
-        
+
         if (!$this->isConfigured()) {
             Log::error('OpenAI API key not configured');
             throw new \Exception('OpenAI API key not configured');
@@ -46,19 +48,19 @@ class PdfFlyerProcessingService
         Log::info('Converting PDF to images...', ['pdf' => $pdfPath, 'process_id' => $processId]);
         $images = $this->convertPdfToImages($pdfPath, $processId);
         Log::info('PDF conversion completed', ['total_pages' => count($images), 'process_id' => $processId]);
-        
+
         $validityDates = null;
         $pageNumber = 0;
         $totalSavedCount = 0;
         $totalExtractedCount = 0;
 
-        foreach ($images as $imagePath) {
+        foreach ($images as $imageUrl) {
             $pageNumber++;
-            Log::info("Processing page {$pageNumber} of " . count($images), ['image' => $imagePath]);
-            
+            Log::info("Processing page {$pageNumber} of " . count($images), ['image_url' => $imageUrl]);
+
             try {
-                $result = $this->extractDiscountsFromImage($imagePath, $store, $validityDates, $pageNumber);
-                
+                $result = $this->extractDiscountsFromImage($imageUrl, $store, $validityDates, $pageNumber);
+
                 if ($result && isset($result['validity_dates'])) {
                     if (!$validityDates) {
                         $validityDates = $result['validity_dates'];
@@ -70,7 +72,7 @@ class PdfFlyerProcessingService
                     $discountCount = count($result['discounts']);
                     $totalExtractedCount += $discountCount;
                     Log::info("Extracted {$discountCount} discounts from page {$pageNumber}");
-                    
+
                     if ($discountCount > 0) {
                         Log::info("Saving discounts from page {$pageNumber} to database...", ['count' => $discountCount]);
                         $savedCount = $this->saveToDiscountTemp($result['discounts'], $store, $validityDates);
@@ -82,7 +84,7 @@ class PdfFlyerProcessingService
                 }
             } catch (\Exception $e) {
                 Log::error('Error extracting discounts from image', [
-                    'image' => $imagePath,
+                    'image_url' => $imageUrl,
                     'page' => $pageNumber,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
@@ -99,10 +101,10 @@ class PdfFlyerProcessingService
 
         if ($totalSavedCount === 0) {
             Log::warning('No discounts saved from PDF', ['process_id' => $processId]);
-            Log::info('Image files preserved for debugging', [
+            Log::info('Image URLs preserved for debugging', [
                 'process_id' => $processId,
                 'image_count' => count($images),
-                'images' => $images
+                'image_urls' => $images
             ]);
             return [
                 'success' => false,
@@ -111,10 +113,10 @@ class PdfFlyerProcessingService
             ];
         }
 
-        Log::info('Processing completed successfully. Image files preserved for potential reprocessing.', [
+        Log::info('Processing completed successfully. Image URLs preserved for potential reprocessing.', [
             'process_id' => $processId,
             'image_count' => count($images),
-            'image_paths' => $images
+            'image_urls' => $images
         ]);
 
         return [
@@ -128,58 +130,103 @@ class PdfFlyerProcessingService
 
     private function convertPdfToImages(string $pdfPath, string $processId): array
     {
+        $storageDir = 'flyers';
+        Log::info('Setting up public storage directory', ['dir' => $storageDir, 'process_id' => $processId]);
+
+        if (!Storage::disk('public')->exists($storageDir)) {
+            Storage::disk('public')->makeDirectory($storageDir);
+            Log::info('Created public storage directory', ['dir' => $storageDir]);
+        }
+
         $tempDir = storage_path('app/temp/flyers');
-        Log::info('Setting up temp directory', ['dir' => $tempDir, 'process_id' => $processId]);
-        
         if (!is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
-            Log::info('Created temp directory', ['dir' => $tempDir]);
         }
 
         try {
             Log::info('Initializing PDF object', ['path' => $pdfPath, 'process_id' => $processId]);
             $pdf = new Pdf($pdfPath);
-            
+
             Log::info('Getting number of pages...', ['process_id' => $processId]);
             $numberOfPages = $pdf->getNumberOfPages();
             Log::info('PDF has pages', ['total_pages' => $numberOfPages, 'process_id' => $processId]);
-            
-            $images = [];
+
+            $imageUrls = [];
 
             for ($pageNumber = 1; $pageNumber <= $numberOfPages; $pageNumber++) {
                 $uniqueFilename = $processId . '_page_' . $pageNumber . '.png';
-                $imagePath = $tempDir . '/' . $uniqueFilename;
+                $tempImagePath = $tempDir . '/' . $uniqueFilename;
                 Log::info("Converting page {$pageNumber}/{$numberOfPages} to image...", [
-                    'output' => $imagePath,
+                    'output' => $tempImagePath,
                     'process_id' => $processId,
-                    'unique_filename' => $uniqueFilename
+                    'unique_filename' => $uniqueFilename,
+                    'dpi' => 300
                 ]);
-                
-                $pdf->setPage($pageNumber)->saveImage($imagePath);
-                
-                if (file_exists($imagePath)) {
-                    $fileSize = filesize($imagePath);
+
+                try {
+                    if (method_exists($pdf, 'setResolution')) {
+                        $pdf->setPage($pageNumber)
+                            ->setResolution(300)
+                            ->saveImage($tempImagePath);
+                        Log::info("Page {$pageNumber} converted with 300 DPI");
+                    } elseif (method_exists($pdf, 'resolution')) {
+                        $pdf->setPage($pageNumber)
+                            ->setResolution(300)
+                            ->saveImage($tempImagePath);
+                        Log::info("Page {$pageNumber} converted with 300 DPI (using resolution method)");
+                    } else {
+                        $pdf->setPage($pageNumber)->saveImage($tempImagePath);
+                        Log::info("Page {$pageNumber} converted with default quality (resolution method not available)");
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to set resolution, trying default quality', [
+                        'error' => $e->getMessage(),
+                        'page' => $pageNumber
+                    ]);
+                    $pdf->setPage($pageNumber)->saveImage($tempImagePath);
+                }
+
+                if (file_exists($tempImagePath)) {
+                    $fileSize = filesize($tempImagePath);
                     Log::info("Page {$pageNumber} converted successfully", [
                         'size' => $fileSize,
-                        'path' => $imagePath,
+                        'path' => $tempImagePath,
                         'process_id' => $processId
                     ]);
-                    $images[] = $imagePath;
+
+                    $processedImagePath = $this->preprocessImage($tempImagePath, $processId, $pageNumber);
+                    $storagePath = $storageDir . '/' . $uniqueFilename;
+                    Storage::disk('public')->put($storagePath, file_get_contents($processedImagePath));
+                    
+                    $imageUrl = Storage::disk('public')->url($storagePath);
+                    $imageUrls[] = $imageUrl;
+                    
+                    Log::info("Page {$pageNumber} preprocessed and saved to public storage", [
+                        'url' => $imageUrl,
+                        'process_id' => $processId
+                    ]);
+
+                    if (file_exists($tempImagePath)) {
+                        unlink($tempImagePath);
+                    }
+                    if (file_exists($processedImagePath) && $processedImagePath !== $tempImagePath) {
+                        unlink($processedImagePath);
+                    }
                 } else {
                     Log::error("Failed to create image for page {$pageNumber}", [
-                        'expected_path' => $imagePath,
+                        'expected_path' => $tempImagePath,
                         'process_id' => $processId
                     ]);
                 }
             }
 
-            if (empty($images)) {
+            if (empty($imageUrls)) {
                 Log::error('No images were created from PDF');
                 throw new \Exception('Failed to convert PDF to images. Make sure pdftoppm or pdftocairo is installed.');
             }
 
-            Log::info('PDF to images conversion completed', ['images_count' => count($images)]);
-            return $images;
+            Log::info('PDF to images conversion completed', ['images_count' => count($imageUrls)]);
+            return $imageUrls;
         } catch (\Exception $e) {
             Log::error('Error converting PDF to images', [
                 'error' => $e->getMessage(),
@@ -190,31 +237,44 @@ class PdfFlyerProcessingService
         }
     }
 
-    private function extractDiscountsFromImage(string $imagePath, Store $store, ?array $validityDates, int $pageNumber = 0): ?array
+    private function preprocessImage(string $imagePath, string $processId, int $pageNumber): string
     {
-        Log::info("Starting extraction from image", ['image' => $imagePath, 'page' => $pageNumber]);
+        $outputPath = storage_path('app/temp/flyers/' . $processId . '_page_' . $pageNumber . '_processed.png');
         
-        if (!file_exists($imagePath)) {
-            Log::error('Image file does not exist', ['path' => $imagePath]);
-            return null;
+        try {
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($imagePath);
+            
+            $image->contrast(5);
+            $image->brightness(2);
+            $image->sharpen(3);
+            
+            $image->save($outputPath);
+            
+            Log::info("Image preprocessed successfully", [
+                'original' => $imagePath,
+                'processed' => $outputPath,
+                'page' => $pageNumber
+            ]);
+            
+            return $outputPath;
+        } catch (\Exception $e) {
+            Log::warning('Image preprocessing failed, using original', [
+                'error' => $e->getMessage(),
+                'image' => $imagePath
+            ]);
+            return $imagePath;
         }
+    }
 
-        $fileSize = filesize($imagePath);
-        Log::info('Reading image file', ['size' => $fileSize, 'path' => $imagePath]);
-        
-        $imageData = file_get_contents($imagePath);
-        $imageSizeBytes = strlen($imageData);
-        Log::info('Image file read', ['bytes' => $imageSizeBytes]);
-        
-        Log::info('Encoding image to base64...');
-        $base64Image = base64_encode($imageData);
-        $base64Size = strlen($base64Image);
-        Log::info('Image encoded to base64', ['base64_length' => $base64Size]);
+    private function extractDiscountsFromImage(string $imageUrl, Store $store, ?array $validityDates, int $pageNumber = 0): ?array
+    {
+        Log::info("Starting extraction from image", ['image_url' => $imageUrl, 'page' => $pageNumber]);
 
         $userPrompt = $this->getUserPrompt($store, $validityDates);
         Log::info('Preparing OpenAI API request', [
             'model' => 'gpt-4o',
-            'image_size' => $base64Size,
+            'image_url' => $imageUrl,
             'prompt_length' => strlen($userPrompt)
         ]);
 
@@ -233,192 +293,174 @@ class PdfFlyerProcessingService
                     [
                         'type' => 'image_url',
                         'image_url' => [
-                            'url' => 'data:image/png;base64,' . $base64Image
+                            'url' => $imageUrl
                         ]
                     ]
                 ]
             ]
         ];
 
-        try {
-            Log::info('Sending request to OpenAI Vision API...', ['url' => $this->apiUrl]);
-            $startTime = microtime(true);
-            
-            $response = Http::timeout(120)
-                ->retry(3, 1000)
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
-                    'Content-Type' => 'application/json',
-                ])->post($this->apiUrl, [
-                    'model' => 'gpt-4o',
-                    'messages' => $messages,
-                    'response_format' => ['type' => 'json_object']
-                ]);
+        $maxAttempts = 3;
+        $attempt = 0;
 
-            $endTime = microtime(true);
-            $duration = round($endTime - $startTime, 2);
-            Log::info('OpenAI API response received', [
-                'status' => $response->status(),
-                'duration_seconds' => $duration
-            ]);
+        while ($attempt < $maxAttempts) {
+            $attempt++;
+            Log::info("OpenAI API attempt {$attempt}/{$maxAttempts}", ['image_url' => $imageUrl]);
 
-            if ($response->successful()) {
-                Log::info('Processing successful response...');
-                $content = $response->json('choices.0.message.content');
-                
-                if (!$content) {
-                    Log::error('No content in OpenAI response', ['response' => $response->json()]);
-                    return null;
-                }
+            try {
+                $startTime = microtime(true);
 
-                Log::info('Parsing JSON response', ['content_length' => strlen($content)]);
-                $data = json_decode($content, true);
-                
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    Log::error('Invalid JSON in OpenAI response', [
-                        'content_preview' => substr($content, 0, 500),
-                        'error' => json_last_error_msg(),
-                        'json_error_code' => json_last_error()
+                $response = Http::timeout(120)
+                    ->withHeaders([
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Content-Type' => 'application/json',
+                    ])->post($this->apiUrl, [
+                        'model' => 'gpt-4o',
+                        'messages' => $messages,
+                        'response_format' => ['type' => 'json_object'],
+                        'temperature' => 0
                     ]);
-                    return null;
-                }
 
-                $discountCount = isset($data['discounts']) && is_array($data['discounts']) ? count($data['discounts']) : 0;
-                Log::info('Successfully extracted data', [
-                    'discounts_count' => $discountCount,
-                    'has_validity_dates' => isset($data['validity_dates'])
+                $endTime = microtime(true);
+                $duration = round($endTime - $startTime, 2);
+                Log::info('OpenAI API response received', [
+                    'status' => $response->status(),
+                    'duration_seconds' => $duration,
+                    'attempt' => $attempt
                 ]);
 
-                return $data;
+                if ($response->successful()) {
+                    $content = $response->json('choices.0.message.content');
+
+                    if (!$content) {
+                        Log::error('No content in OpenAI response', [
+                            'response' => $response->json(),
+                            'attempt' => $attempt
+                        ]);
+                        if ($attempt < $maxAttempts) {
+                            continue;
+                        }
+                        return null;
+                    }
+
+                    Log::info('Parsing JSON response', [
+                        'content_length' => strlen($content),
+                        'attempt' => $attempt
+                    ]);
+
+                    $data = json_decode($content, true);
+
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        Log::warning('Invalid JSON in OpenAI response', [
+                            'content_preview' => substr($content, 0, 500),
+                            'error' => json_last_error_msg(),
+                            'json_error_code' => json_last_error(),
+                            'attempt' => $attempt
+                        ]);
+
+                        if ($attempt < $maxAttempts) {
+                            Log::info("Retrying due to invalid JSON...");
+                            continue;
+                        }
+
+                        Log::error('Failed to get valid JSON after all attempts', [
+                            'attempts' => $attempt
+                        ]);
+                        return null;
+                    }
+
+                    $discountCount = isset($data['discounts']) && is_array($data['discounts']) ? count($data['discounts']) : 0;
+                    Log::info('Successfully extracted data', [
+                        'discounts_count' => $discountCount,
+                        'has_validity_dates' => isset($data['validity_dates']),
+                        'attempt' => $attempt
+                    ]);
+
+                    return $data;
+                }
+
+                Log::error('OpenAI API request failed', [
+                    'status' => $response->status(),
+                    'response_preview' => substr($response->body(), 0, 500),
+                    'headers' => $response->headers(),
+                    'attempt' => $attempt
+                ]);
+
+                if ($attempt < $maxAttempts) {
+                    continue;
+                }
+
+            } catch (\Exception $e) {
+                Log::error('Error calling OpenAI Vision API', [
+                    'error' => $e->getMessage(),
+                    'error_class' => get_class($e),
+                    'attempt' => $attempt,
+                    'trace' => $e->getTraceAsString()
+                ]);
+
+                if ($attempt < $maxAttempts) {
+                    continue;
+                }
             }
-
-            Log::error('OpenAI API request failed', [
-                'status' => $response->status(),
-                'response_preview' => substr($response->body(), 0, 500),
-                'headers' => $response->headers()
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error calling OpenAI Vision API', [
-                'error' => $e->getMessage(),
-                'error_class' => get_class($e),
-                'trace' => $e->getTraceAsString()
-            ]);
         }
+
+        Log::error('Failed to extract discounts after all attempts', [
+            'max_attempts' => $maxAttempts,
+            'image_url' => $imageUrl
+        ]);
 
         return null;
     }
 
     private function getExtractionPrompt(): string
     {
-        return "You are an expert at extracting discount information from Lithuanian grocery store flyers. Your task is to analyze the flyer image and extract all discount information in a structured JSON format.
+        return "Extract discount data from Lithuanian supermarket flyer images. Return ONLY valid JSON.
 
-CRITICAL: Return ONLY valid JSON without any markdown formatting, code blocks, or explanatory text.
+RULES:
+- Extract ONLY visible data. Use null for unclear fields. Accuracy over completeness.
+- Extract text exactly as shown. Read Lithuanian characters (ą, č, ę, ė, į, š, ų, ū, ž) accurately.
+- Skip partially cut off or unreadable products.
 
-STRICT EXTRACTION RULES - READ CAREFULLY:
-- ONLY extract information that is ACTUALLY VISIBLE in the image
-- DO NOT infer, guess, or invent any information
-- DO NOT use your general knowledge to fill in missing data
-- DO NOT assume or estimate values that are not clearly visible
-- If text is blurry, unclear, or partially cut off, use null for that field
-- If a field is not visible on the image, use null - DO NOT make up values
-- Extract text EXACTLY as it appears - do not translate, correct, or modify it
-- If you cannot clearly see a value, use null - accuracy is more important than completeness
+FIELDS:
+- name: Product name (required, skip if unclear)
+- brand, description, weight, condition, info: null if not visible
+- original_price, discounted_price, price_per_kg: decimal numbers, null if not visible
+- discount_percent: integer, calculate if prices visible: round(((original - discounted) / original) * 100)
+- card: true if loyalty card required, else false
+- exclusion_markers: array of visible markers, empty if none
+- start_at, end_at: YYYY-MM-DD if shown in product block, else null
 
-EXTRACT THE FOLLOWING INFORMATION:
+VALIDITY DATES:
+- Extract global start_at/end_at from header/footer (YYYY-MM-DD). null if not visible.
+- Product-specific dates override global dates if shown.
 
-1. Validity dates: Look for date ranges in the header or footer (e.g., 'Kainos galioja 2026 m. kovo 4-24 d.'). Extract start_at and end_at dates in YYYY-MM-DD format.
-   - If dates are not visible or unclear, use null for both start_at and end_at
-   - DO NOT guess dates based on context or current date
+FORMAT: Prices as decimals, discount_percent as integer, dates as YYYY-MM-DD.
 
-2. For each product discount, extract ONLY what is visible:
-   - name: Full product name in Lithuanian EXACTLY as shown (e.g., 'Smulkinta kiauliena', 'Viščiukų broilerių filė')
-     * If product name is not clearly visible, DO NOT include this product
-   - brand: Brand name ONLY if clearly visible on the image (e.g., 'BIOVELA', 'Vyniaus Paukštynas')
-     * If brand is not visible, use null - DO NOT infer brand from product name
-   - description: Full product description ONLY if visible (e.g., 'Chilled minced pork, 450 g')
-     * If description is not visible, use null
-   - weight: Weight or quantity ONLY if clearly specified and visible (e.g., '450 g', '1 kg', '800 g')
-     * If weight is not visible, use null - DO NOT estimate weight
-   - original_price: Original price as decimal number ONLY if clearly visible (e.g., 2.85, 5.40)
-     * If original price is not visible, use null - DO NOT estimate or calculate
-   - discounted_price: Discounted price as decimal number ONLY if clearly visible (e.g., 1.89, 4.09)
-     * If discounted price is not visible, use null - DO NOT estimate
-   - price_per_kg: Price per kilogram ONLY if explicitly shown (e.g., 4.20, 10.23)
-     * If price per kg is not visible, use null - DO NOT calculate from other prices
-   - discount_percent: Discount percentage ONLY if clearly visible as integer (e.g., 33, 25, 20)
-     * If discount percent is visible, use the exact number shown
-     * If discount percent is NOT visible but both original_price and discounted_price are visible, calculate: ((original_price - discounted_price) / original_price) * 100
-     * If discount percent is not visible and prices are missing, use null
-   - condition: Special conditions ONLY if clearly visible (e.g., '1+1', 'Pirk 2 už')
-     * If no conditions are visible, use null - DO NOT assume conditions
-   - card: Boolean indicating if discount requires loyalty card
-     * Use false by default unless you can clearly see text indicating card requirement (e.g., 'su kortele', 'lojalumo kortelė')
-     * DO NOT assume card requirement
-   - info: Additional information ONLY if clearly visible (e.g., 'be antibiotikų', 'a. r.')
-     * If no additional info is visible, use null - DO NOT add information
-   - exclusion_markers: Array of markers ONLY if clearly visible (e.g., ['*'] or ['**'])
-     * If no markers are visible, use empty array []
-     * DO NOT assume markers exist
-
-IMPORTANT RULES:
-- All prices should be decimal numbers (e.g., 2.85, not '2.85€')
-- Discount percent should be integer (e.g., 33, not '33%')
-- Dates must be in YYYY-MM-DD format
-- Product names must be EXACTLY as shown on the flyer - do not modify, translate, or correct
-- If a field is not available or not clearly visible, use null
-- Extract ALL products that are clearly visible on the page
-- If a product section is partially cut off or unclear, skip that product entirely
-- When in doubt, use null - it's better to have incomplete data than incorrect data
-
-OUTPUT FORMAT:
-{
-  \"validity_dates\": {
-    \"start_at\": \"2026-03-04\",
-    \"end_at\": \"2026-03-24\"
-  },
-  \"discounts\": [
-    {
-      \"name\": \"Product name\",
-      \"brand\": \"Brand name or null\",
-      \"description\": \"Full description\",
-      \"weight\": \"450 g or null\",
-      \"original_price\": 2.85,
-      \"discounted_price\": 1.89,
-      \"price_per_kg\": 4.20,
-      \"discount_percent\": 33,
-      \"condition\": null,
-      \"card\": false,
-      \"info\": \"Additional info or null\",
-      \"exclusion_markers\": []
-    }
-  ]
-}";
+OUTPUT:
+{\"validity_dates\": {\"start_at\": \"YYYY-MM-DD\", \"end_at\": \"YYYY-MM-DD\"}, \"discounts\": [{\"name\": \"\", \"brand\": null, \"description\": null, \"weight\": null, \"original_price\": null, \"discounted_price\": null, \"price_per_kg\": null, \"discount_percent\": null, \"condition\": null, \"card\": false, \"info\": null, \"exclusion_markers\": [], \"start_at\": null, \"end_at\": null}]}";
     }
 
     private function getUserPrompt(Store $store, ?array $validityDates): string
     {
-        $prompt = "Extract all discount information from this {$store->name} store flyer page. ";
-        
+        $prompt = "Store: {$store->name}. ";
+
         if ($validityDates) {
-            $prompt .= "The validity dates have already been extracted: from {$validityDates['start_at']} to {$validityDates['end_at']}. ";
+            $prompt .= "Validity dates already known: {$validityDates['start_at']} to {$validityDates['end_at']}. ";
         } else {
-            $prompt .= "Extract the validity dates from the flyer header or footer ONLY if clearly visible. ";
+            $prompt .= "Extract validity dates if visible. ";
         }
-        
-        $prompt .= "Extract all products with discounts that are clearly visible on this page. ";
-        $prompt .= "CRITICAL: Only extract information that you can clearly see in the image. ";
-        $prompt .= "DO NOT invent, infer, or guess any values. ";
-        $prompt .= "If something is not visible or unclear, use null for that field. ";
-        $prompt .= "Return the data in the exact JSON format specified.";
-        
+
+        $prompt .= "Extract all visible discounts from this flyer page. Only extract what you can see — use null for anything unclear. ";
+        $prompt .= "Read Lithuanian characters accurately (ą, č, ę, ė, į, š, ų, ū, ž). Include all text: descriptions and small print below product names. ";
+        $prompt .= "Return valid JSON only.";
+
         return $prompt;
     }
 
     private function saveToDiscountTemp(array $discounts, Store $store, ?array $validityDates): int
     {
         Log::info('Starting to save discounts to database', ['total' => count($discounts)]);
-        
+
         $savedCount = 0;
         $skippedCount = 0;
         $errorCount = 0;
@@ -438,10 +480,10 @@ OUTPUT FORMAT:
             Log::info("Processing discount {$discountNumber}/" . count($discounts), [
                 'name' => $discountData['name'] ?? 'N/A'
             ]);
-            
+
             try {
                 $validated = $this->validateDiscountData($discountData);
-                
+
                 if (!$validated) {
                     $skippedCount++;
                     Log::warning('Invalid discount data skipped', [
@@ -470,12 +512,16 @@ OUTPUT FORMAT:
                     'discounted_price' => $validated['discounted_price'] ?? 0
                 ]);
 
+                // Use product-level dates if available, otherwise fall back to global validity dates
+                $productStartAt = !empty($discountData['start_at']) ? $discountData['start_at'] : $startAt;
+                $productEndAt = !empty($discountData['end_at']) ? $discountData['end_at'] : $endAt;
+
                 DiscountTemp::create([
                     'name' => $validated['name'],
                     'brand' => $validated['brand'] ?? null,
                     'category' => '',
                     'image_url' => null,
-                    'product_url' => $this->generateProductUrl($validated['name']),
+                    'product_url' => '',
                     'store' => $store->name,
                     'original_price' => $validated['original_price'] ?? 0,
                     'discounted_price' => $validated['discounted_price'] ?? 0,
@@ -483,8 +529,8 @@ OUTPUT FORMAT:
                     'condition' => $validated['condition'] ?? null,
                     'card' => $validated['card'] ?? false,
                     'info' => $validated['info'] ?? null,
-                    'start_at' => $startAt ? date('Y-m-d H:i:s', strtotime($startAt)) : now(),
-                    'end_at' => $endAt ? date('Y-m-d H:i:s', strtotime($endAt)) : now()->addDays(7),
+                    'start_at' => $productStartAt ? date('Y-m-d H:i:s', strtotime($productStartAt)) : now(),
+                    'end_at' => $productEndAt ? date('Y-m-d H:i:s', strtotime($productEndAt)) : now()->addDays(7),
                     'processed' => false,
                 ]);
 
@@ -568,11 +614,4 @@ OUTPUT FORMAT:
         return 0.0;
     }
 
-    private function generateProductUrl(string $productName): string
-    {
-        $slug = strtolower($productName);
-        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
-        $slug = trim($slug, '-');
-        return 'https://superakcijos.lt/akcijos/' . $slug;
-    }
 }
