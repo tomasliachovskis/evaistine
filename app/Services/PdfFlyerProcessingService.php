@@ -15,6 +15,8 @@ class PdfFlyerProcessingService
 {
     private ?string $apiKey;
     private string $apiUrl = 'https://api.openai.com/v1/chat/completions';
+    private ?string $geminiApiKey;
+    private string $geminiApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
     public function __construct()
     {
@@ -23,6 +25,12 @@ class PdfFlyerProcessingService
         if (empty($this->apiKey)) {
             Log::warning('OpenAI API key not configured in PdfFlyerProcessingService');
         }
+
+        $this->geminiApiKey = config('services.gemini.api_key');
+
+        if (empty($this->geminiApiKey)) {
+            Log::warning('Gemini API key not configured in PdfFlyerProcessingService');
+        }
     }
 
     public function isConfigured(): bool
@@ -30,14 +38,19 @@ class PdfFlyerProcessingService
         return !empty($this->apiKey);
     }
 
-    public function processPdf(string $pdfPath, Store $store): array
+    public function isGeminiConfigured(): bool
+    {
+        return !empty($this->geminiApiKey);
+    }
+
+    public function processPdf(string $pdfPath, Store $store, ?int $pageNumber = null): array
     {
         $processId = uniqid('pdf_' . time() . '_', true);
         Log::info('Starting PDF processing', ['pdf' => $pdfPath, 'store' => $store->name, 'process_id' => $processId]);
 
-        if (!$this->isConfigured()) {
-            Log::error('OpenAI API key not configured');
-            throw new \Exception('OpenAI API key not configured');
+        if (!$this->isGeminiConfigured()) {
+            Log::error('Gemini API key not configured');
+            throw new \Exception('Gemini API key not configured');
         }
 
         if (!file_exists($pdfPath)) {
@@ -46,20 +59,29 @@ class PdfFlyerProcessingService
         }
 
         Log::info('Converting PDF to images...', ['pdf' => $pdfPath, 'process_id' => $processId]);
-        $images = $this->convertPdfToImages($pdfPath, $processId);
-        Log::info('PDF conversion completed', ['total_pages' => count($images), 'process_id' => $processId]);
+        $images = $this->convertPdfToImages($pdfPath, $processId, $pageNumber);
+        Log::info('PDF conversion completed',
+            ['total_pages' => count($images), 'process_id' => $processId, 'target_page' => $pageNumber]);
 
         $validityDates = null;
-        $pageNumber = 0;
+        $currentPageNumber = 0;
         $totalSavedCount = 0;
         $totalExtractedCount = 0;
 
-        foreach ($images as $imageUrl) {
-            $pageNumber++;
-            Log::info("Processing page {$pageNumber} of " . count($images), ['image_url' => $imageUrl]);
+        foreach ($images as $imageData) {
+            $currentPageNumber++;
+            $processedImageUrl = $imageData['processed_url'];
+            $originalImagePath = $imageData['original_path'];
+            $pageNum = $imageData['page_number'];
+
+            Log::info("Processing page {$currentPageNumber} of " . count($images), [
+                'processed_url' => $processedImageUrl,
+                'original_path' => $originalImagePath,
+                'page_number' => $pageNum
+            ]);
 
             try {
-                $result = $this->extractDiscountsFromImage($imageUrl, $store, $validityDates, $pageNumber);
+                $result = $this->extractDiscountsFromImageGemini($processedImageUrl, $store, $validityDates, $pageNum);
 
                 if ($result && isset($result['validity_dates'])) {
                     if (!$validityDates) {
@@ -71,21 +93,25 @@ class PdfFlyerProcessingService
                 if ($result && isset($result['discounts']) && is_array($result['discounts'])) {
                     $discountCount = count($result['discounts']);
                     $totalExtractedCount += $discountCount;
-                    Log::info("Extracted {$discountCount} discounts from page {$pageNumber}");
+                    Log::info("Extracted {$discountCount} discounts from page {$pageNum}");
 
                     if ($discountCount > 0) {
-                        Log::info("Saving discounts from page {$pageNumber} to database...", ['count' => $discountCount]);
-                        $savedCount = $this->saveToDiscountTemp($result['discounts'], $store, $validityDates);
+                        Log::info("Saving discounts from page {$currentPageNumber} to database...",
+                            ['count' => $discountCount]);
+                        $savedCount = $this->saveToDiscountTemp($result['discounts'], $store, $validityDates,
+                            $originalImagePath);
                         $totalSavedCount += $savedCount;
-                        Log::info("Page {$pageNumber} discounts saved", ['saved' => $savedCount, 'extracted' => $discountCount]);
+                        Log::info("Page {$currentPageNumber} discounts saved",
+                            ['saved' => $savedCount, 'extracted' => $discountCount]);
                     }
                 } else {
-                    Log::warning("No discounts found on page {$pageNumber}", ['result' => $result]);
+                    Log::warning("No discounts found on page {$currentPageNumber}", ['result' => $result]);
                 }
             } catch (\Exception $e) {
                 Log::error('Error extracting discounts from image', [
-                    'image_url' => $imageUrl,
-                    'page' => $pageNumber,
+                    'processed_url' => $processedImageUrl,
+                    'original_path' => $originalImagePath,
+                    'page' => $currentPageNumber,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
@@ -128,14 +154,20 @@ class PdfFlyerProcessingService
         ];
     }
 
-    private function convertPdfToImages(string $pdfPath, string $processId): array
+    private function convertPdfToImages(string $pdfPath, string $processId, ?int $targetPage = null): array
     {
         $storageDir = 'flyers';
+        $originalStorageDir = 'flyers/originals';
         Log::info('Setting up public storage directory', ['dir' => $storageDir, 'process_id' => $processId]);
 
         if (!Storage::disk('public')->exists($storageDir)) {
             Storage::disk('public')->makeDirectory($storageDir);
             Log::info('Created public storage directory', ['dir' => $storageDir]);
+        }
+
+        if (!Storage::disk('public')->exists($originalStorageDir)) {
+            Storage::disk('public')->makeDirectory($originalStorageDir);
+            Log::info('Created original images storage directory', ['dir' => $originalStorageDir]);
         }
 
         $tempDir = storage_path('app/temp/flyers');
@@ -149,11 +181,17 @@ class PdfFlyerProcessingService
 
             Log::info('Getting number of pages...', ['process_id' => $processId]);
             $numberOfPages = $pdf->getNumberOfPages();
-            Log::info('PDF has pages', ['total_pages' => $numberOfPages, 'process_id' => $processId]);
+            Log::info('PDF has pages',
+                ['total_pages' => $numberOfPages, 'process_id' => $processId, 'target_page' => $targetPage]);
 
-            $imageUrls = [];
+            if ($targetPage !== null && ($targetPage < 1 || $targetPage > $numberOfPages)) {
+                throw new \Exception("Target page {$targetPage} is out of range. PDF has {$numberOfPages} pages.");
+            }
 
-            for ($pageNumber = 1; $pageNumber <= $numberOfPages; $pageNumber++) {
+            $imageData = [];
+            $pagesToProcess = $targetPage !== null ? [$targetPage] : range(1, $numberOfPages);
+
+            foreach ($pagesToProcess as $pageNumber) {
                 $uniqueFilename = $processId . '_page_' . $pageNumber . '.png';
                 $tempImagePath = $tempDir . '/' . $uniqueFilename;
                 Log::info("Converting page {$pageNumber}/{$numberOfPages} to image...", [
@@ -194,15 +232,29 @@ class PdfFlyerProcessingService
                         'process_id' => $processId
                     ]);
 
+                    $originalStoragePath = $originalStorageDir . '/' . $uniqueFilename;
+                    Storage::disk('public')->put($originalStoragePath, file_get_contents($tempImagePath));
+                    $originalImagePath = $originalStoragePath;
+
+                    Log::info("Page {$pageNumber} original image saved", [
+                        'path' => $originalImagePath,
+                        'process_id' => $processId
+                    ]);
+
                     $processedImagePath = $this->preprocessImage($tempImagePath, $processId, $pageNumber);
                     $storagePath = $storageDir . '/' . $uniqueFilename;
                     Storage::disk('public')->put($storagePath, file_get_contents($processedImagePath));
-                    
+
                     $imageUrl = Storage::disk('public')->url($storagePath);
-                    $imageUrls[] = $imageUrl;
-                    
+                    $imageData[] = [
+                        'processed_url' => $imageUrl,
+                        'original_path' => $originalImagePath,
+                        'page_number' => $pageNumber
+                    ];
+
                     Log::info("Page {$pageNumber} preprocessed and saved to public storage", [
                         'url' => $imageUrl,
+                        'original_path' => $originalImagePath,
                         'process_id' => $processId
                     ]);
 
@@ -220,13 +272,13 @@ class PdfFlyerProcessingService
                 }
             }
 
-            if (empty($imageUrls)) {
+            if (empty($imageData)) {
                 Log::error('No images were created from PDF');
                 throw new \Exception('Failed to convert PDF to images. Make sure pdftoppm or pdftocairo is installed.');
             }
 
-            Log::info('PDF to images conversion completed', ['images_count' => count($imageUrls)]);
-            return $imageUrls;
+            Log::info('PDF to images conversion completed', ['images_count' => count($imageData)]);
+            return $imageData;
         } catch (\Exception $e) {
             Log::error('Error converting PDF to images', [
                 'error' => $e->getMessage(),
@@ -240,23 +292,26 @@ class PdfFlyerProcessingService
     private function preprocessImage(string $imagePath, string $processId, int $pageNumber): string
     {
         $outputPath = storage_path('app/temp/flyers/' . $processId . '_page_' . $pageNumber . '_processed.png');
-        
+
         try {
             $manager = new ImageManager(new Driver());
             $image = $manager->read($imagePath);
-            
-            $image->contrast(5);
-            $image->brightness(2);
-            $image->sharpen(3);
-            
+
+//            $image->scale($image->width() * 2);
+
+            $image->greyscale();
+            $image->contrast(20);
+            $image->brightness(4);
+            $image->sharpen(10);
+
             $image->save($outputPath);
-            
+
             Log::info("Image preprocessed successfully", [
                 'original' => $imagePath,
                 'processed' => $outputPath,
                 'page' => $pageNumber
             ]);
-            
+
             return $outputPath;
         } catch (\Exception $e) {
             Log::warning('Image preprocessing failed, using original', [
@@ -267,177 +322,552 @@ class PdfFlyerProcessingService
         }
     }
 
-    private function extractDiscountsFromImage(string $imageUrl, Store $store, ?array $validityDates, int $pageNumber = 0): ?array
-    {
-        Log::info("Starting extraction from image", ['image_url' => $imageUrl, 'page' => $pageNumber]);
+    private function extractDiscountsFromImageGemini(
+        string $imageUrl,
+        Store $store,
+        ?array $validityDates,
+        int $pageNumber = 0
+    ): ?array {
+        Log::info("Starting Gemini extraction from image", ['image_url' => $imageUrl, 'page' => $pageNumber]);
 
-        $userPrompt = $this->getUserPrompt($store, $validityDates);
-        Log::info('Preparing OpenAI API request', [
-            'model' => 'gpt-4o',
-            'image_url' => $imageUrl,
-            'prompt_length' => strlen($userPrompt)
-        ]);
-
-        $messages = [
-            [
-                'role' => 'system',
-                'content' => $this->getExtractionPrompt()
-            ],
-            [
-                'role' => 'user',
-                'content' => [
-                    [
-                        'type' => 'text',
-                        'text' => $userPrompt
-                    ],
-                    [
-                        'type' => 'image_url',
-                        'image_url' => [
-                            'url' => $imageUrl
-                        ]
-                    ]
-                ]
-            ]
-        ];
-
-        $maxAttempts = 3;
-        $attempt = 0;
-
-        while ($attempt < $maxAttempts) {
-            $attempt++;
-            Log::info("OpenAI API attempt {$attempt}/{$maxAttempts}", ['image_url' => $imageUrl]);
-
-            try {
-                $startTime = microtime(true);
-
-                $response = Http::timeout(120)
-                    ->withHeaders([
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
-                    ])->post($this->apiUrl, [
-                        'model' => 'gpt-4o',
-                        'messages' => $messages,
-                        'response_format' => ['type' => 'json_object'],
-                        'temperature' => 0
-                    ]);
-
-                $endTime = microtime(true);
-                $duration = round($endTime - $startTime, 2);
-                Log::info('OpenAI API response received', [
-                    'status' => $response->status(),
-                    'duration_seconds' => $duration,
-                    'attempt' => $attempt
-                ]);
-
-                if ($response->successful()) {
-                    $content = $response->json('choices.0.message.content');
-
-                    if (!$content) {
-                        Log::error('No content in OpenAI response', [
-                            'response' => $response->json(),
-                            'attempt' => $attempt
-                        ]);
-                        if ($attempt < $maxAttempts) {
-                            continue;
-                        }
-                        return null;
-                    }
-
-                    Log::info('Parsing JSON response', [
-                        'content_length' => strlen($content),
-                        'attempt' => $attempt
-                    ]);
-
-                    $data = json_decode($content, true);
-
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        Log::warning('Invalid JSON in OpenAI response', [
-                            'content_preview' => substr($content, 0, 500),
-                            'error' => json_last_error_msg(),
-                            'json_error_code' => json_last_error(),
-                            'attempt' => $attempt
-                        ]);
-
-                        if ($attempt < $maxAttempts) {
-                            Log::info("Retrying due to invalid JSON...");
-                            continue;
-                        }
-
-                        Log::error('Failed to get valid JSON after all attempts', [
-                            'attempts' => $attempt
-                        ]);
-                        return null;
-                    }
-
-                    $discountCount = isset($data['discounts']) && is_array($data['discounts']) ? count($data['discounts']) : 0;
-                    Log::info('Successfully extracted data', [
-                        'discounts_count' => $discountCount,
-                        'has_validity_dates' => isset($data['validity_dates']),
-                        'attempt' => $attempt
-                    ]);
-
-                    return $data;
-                }
-
-                Log::error('OpenAI API request failed', [
-                    'status' => $response->status(),
-                    'response_preview' => substr($response->body(), 0, 500),
-                    'headers' => $response->headers(),
-                    'attempt' => $attempt
-                ]);
-
-                if ($attempt < $maxAttempts) {
-                    continue;
-                }
-
-            } catch (\Exception $e) {
-                Log::error('Error calling OpenAI Vision API', [
-                    'error' => $e->getMessage(),
-                    'error_class' => get_class($e),
-                    'attempt' => $attempt,
-                    'trace' => $e->getTraceAsString()
-                ]);
-
-                if ($attempt < $maxAttempts) {
-                    continue;
-                }
-            }
+        if (empty($this->geminiApiKey)) {
+            Log::error('Gemini API key not configured');
+            return null;
         }
 
-        Log::error('Failed to extract discounts after all attempts', [
-            'max_attempts' => $maxAttempts,
-            'image_url' => $imageUrl
-        ]);
+        $userPrompt = $this->getUserPrompt($store, $validityDates);
+        $systemPrompt = $this->getExtractionPromptStatic();
+        $fullPrompt = $systemPrompt . "\n\n" . $userPrompt;
+
+        try {
+            $imagePath = $this->getImagePathFromUrl($imageUrl);
+            if (!$imagePath) {
+                Log::error('Failed to extract path from image URL', ['image_url' => $imageUrl]);
+                return null;
+            }
+
+            if (!Storage::disk('public')->exists($imagePath)) {
+                Log::error('Image file not found in storage', ['path' => $imagePath, 'image_url' => $imageUrl]);
+                return null;
+            }
+
+            $imageContent = Storage::disk('public')->get($imagePath);
+            if ($imageContent === false) {
+                Log::error('Failed to read image from storage', ['path' => $imagePath]);
+                return null;
+            }
+
+            $imageBase64 = base64_encode($imageContent);
+            $mimeType = 'image/png';
+
+            $estimatedPromptTokens = (int)(strlen($fullPrompt) / 4);
+            $imageWidth = 0;
+            $imageHeight = 0;
+            try {
+                $imageInfo = getimagesize(storage_path('app/public/' . $imagePath));
+                if ($imageInfo) {
+                    $imageWidth = $imageInfo[0];
+                    $imageHeight = $imageInfo[1];
+                }
+            } catch (\Exception $e) {
+            }
+
+            $estimatedImageTokens = 0;
+            if ($imageWidth > 0 && $imageHeight > 0) {
+                $tilesX = (int)ceil($imageWidth / 512);
+                $tilesY = (int)ceil($imageHeight / 512);
+                $estimatedImageTokens = $tilesX * $tilesY * 256 + 85;
+            }
+
+            $estimatedInputTokens = $estimatedPromptTokens + $estimatedImageTokens;
+            $estimatedMaxOutputTokens = 8192;
+            $estimatedInputCost = ($estimatedInputTokens / 1000000) * 1.25;
+            $estimatedOutputCost = ($estimatedMaxOutputTokens / 1000000) * 5.00;
+            $estimatedTotalCost = $estimatedInputCost + $estimatedOutputCost;
+
+            Log::info('Preparing Gemini API request', [
+                'model' => 'gemini-2.5-flash',
+                'image_url' => $imageUrl,
+                'prompt_length' => strlen($fullPrompt),
+                'image_size' => strlen($imageContent),
+                'image_dimensions' => $imageWidth > 0 ? "{$imageWidth}x{$imageHeight}" : 'unknown',
+                'estimated_tokens' => [
+                    'prompt' => $estimatedPromptTokens,
+                    'image' => $estimatedImageTokens,
+                    'input_total' => $estimatedInputTokens,
+                    'output_max' => $estimatedMaxOutputTokens
+                ],
+                'estimated_cost_usd' => [
+                    'input' => round($estimatedInputCost, 6),
+                    'output' => round($estimatedOutputCost, 6),
+                    'total' => round($estimatedTotalCost, 6)
+                ],
+                'estimated_cost_eur' => [
+                    'total' => round($estimatedTotalCost * 0.92, 6)
+                ]
+            ]);
+
+            $maxAttempts = 3;
+            $attempt = 0;
+
+            while ($attempt < $maxAttempts) {
+                $attempt++;
+                Log::info("Gemini API attempt {$attempt}/{$maxAttempts}", ['image_url' => $imageUrl]);
+
+                try {
+                    $startTime = microtime(true);
+
+                    $requestPayload = [
+                        'contents' => [
+                            [
+                                'parts' => [
+                                    [
+                                        'text' => $fullPrompt
+                                    ],
+                                    [
+                                        'inline_data' => [
+                                            'mime_type' => $mimeType,
+                                            'data' => $imageBase64
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ],
+                        'generationConfig' => [
+                            'temperature' => 0,
+//                            "topP" => 0.95,
+                            'maxOutputTokens' => 10000,
+                            'responseMimeType' => 'application/json',
+                        ],
+                    ];
+
+                    $requestPayloadForLog = $requestPayload;
+                    if (isset($requestPayloadForLog['contents'][0]['parts'])) {
+                        foreach ($requestPayloadForLog['contents'][0]['parts'] as $key => &$part) {
+                            if (isset($part['inline_data'])) {
+                                unset($requestPayloadForLog['contents'][0]['parts'][$key]);
+                            }
+                        }
+                        unset($part);
+                        $requestPayloadForLog['contents'][0]['parts'] = array_values($requestPayloadForLog['contents'][0]['parts']);
+                    }
+
+                    $requestForLog = [
+                        'url' => $this->geminiApiUrl,
+                        'headers' => [
+                            'X-goog-api-key' => substr($this->geminiApiKey, 0, 10) . '...',
+                            'Content-Type' => 'application/json',
+                        ],
+                        'payload' => $requestPayloadForLog
+                    ];
+
+                    Log::info('Gemini API request', [
+                        'request' => json_encode($requestForLog,
+                            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        'attempt' => $attempt
+                    ]);
+
+                    $response = Http::timeout(120)
+                        ->withHeaders([
+                            'X-goog-api-key' => $this->geminiApiKey,
+                            'Content-Type' => 'application/json',
+                        ])->post($this->geminiApiUrl, $requestPayload);
+
+                    $endTime = microtime(true);
+                    $duration = round($endTime - $startTime, 2);
+
+                    $finishReason = $response->json('candidates.0.finishReason');
+                    $usageMetadata = $response->json('usageMetadata');
+                    $promptTokenCount = $usageMetadata['promptTokenCount'] ?? 0;
+                    $candidatesTokenCount = $usageMetadata['candidatesTokenCount'] ?? 0;
+                    $totalTokenCount = $usageMetadata['totalTokenCount'] ?? 0;
+
+                    $inputCost = ($promptTokenCount / 1000000) * 1.25;
+                    $outputCost = ($candidatesTokenCount / 1000000) * 5.00;
+                    $totalCost = $inputCost + $outputCost;
+
+                    Log::info('Gemini API response received', [
+                        'status' => $response->status(),
+                        'duration_seconds' => $duration,
+                        'finish_reason' => $finishReason,
+                        'tokens' => [
+                            'prompt' => $promptTokenCount,
+                            'candidates' => $candidatesTokenCount,
+                            'total' => $totalTokenCount
+                        ],
+                        'cost_usd' => [
+                            'input' => round($inputCost, 6),
+                            'output' => round($outputCost, 6),
+                            'total' => round($totalCost, 6)
+                        ],
+                        'cost_eur' => [
+                            'total' => round($totalCost * 0.92, 6)
+                        ],
+                        'attempt' => $attempt
+                    ]);
+
+                    if ($finishReason === 'MAX_TOKENS' || $finishReason === 'OTHER') {
+                        Log::warning('Gemini response was truncated', [
+                            'finish_reason' => $finishReason,
+//                            'max_tokens' => 16000,
+                            'page' => $pageNumber,
+                            'attempt' => $attempt
+                        ]);
+                    }
+
+                    if ($response->successful()) {
+                        $rawResponse = $response->json();
+
+                        Log::info('Gemini API raw response', [
+                            'raw_response' => json_encode($rawResponse,
+                                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                            'attempt' => $attempt
+                        ]);
+
+                        $content = $response->json('candidates.0.content.parts.0.text');
+
+                        if (!$content) {
+                            Log::error('No content in Gemini response', [
+                                'response' => $rawResponse,
+                                'attempt' => $attempt
+                            ]);
+                            if ($attempt < $maxAttempts) {
+                                continue;
+                            }
+                            return null;
+                        }
+
+                        Log::info('Parsing JSON response from Gemini', [
+                            'content_length' => strlen($content),
+                            'raw_content' => $content,
+                            'attempt' => $attempt
+                        ]);
+
+                        $cleanedContent = $this->cleanJsonContent($content);
+                        $data = json_decode($cleanedContent, true);
+
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            Log::warning('Invalid JSON in Gemini response', [
+                                'content_length' => strlen($content),
+                                'content_preview' => substr($content, 0, 1000),
+                                'cleaned_preview' => substr($cleanedContent, 0, 1000),
+                                'error' => json_last_error_msg(),
+                                'json_error_code' => json_last_error(),
+                                'finish_reason' => $finishReason,
+                                'attempt' => $attempt
+                            ]);
+
+                            if ($finishReason === 'MAX_TOKENS' || $finishReason === 'OTHER') {
+                                Log::error('Response truncated - increase maxOutputTokens or split into smaller requests',
+                                    [
+                                        'current_max_tokens' => 16000,
+                                        'content_length' => strlen($content)
+                                    ]);
+                            }
+
+                            if ($attempt < $maxAttempts) {
+                                Log::info("Retrying due to invalid JSON...");
+                                continue;
+                            }
+
+                            Log::error('Failed to get valid JSON after all attempts', [
+                                'attempts' => $attempt
+                            ]);
+                            return null;
+                        }
+
+                        Log::info('Raw JSON data before mapping', [
+                            'has_vd' => isset($data['vd']),
+                            'has_d' => isset($data['d']),
+                            'd_count' => isset($data['d']) && is_array($data['d']) ? count($data['d']) : 0,
+                            'raw_data' => json_encode($data,
+                                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                        ]);
+
+                        $data = $this->mapShortFieldsToLong($data);
+
+                        $discountCount = isset($data['discounts']) && is_array($data['discounts']) ? count($data['discounts']) : 0;
+
+                        Log::info('Gemini API response (formatted)', [
+                            'response' => json_encode($data,
+                                JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                            'discounts_count' => $discountCount,
+                            'has_validity_dates' => isset($data['validity_dates']),
+                            'attempt' => $attempt
+                        ]);
+
+                        Log::info('Successfully extracted data from Gemini', [
+                            'discounts_count' => $discountCount,
+                            'has_validity_dates' => isset($data['validity_dates']),
+                            'attempt' => $attempt
+                        ]);
+
+                        return $data;
+                    }
+
+                    Log::error('Gemini API request failed', [
+                        'status' => $response->status(),
+                        'response_preview' => substr($response->body(), 0, 500),
+                        'headers' => $response->headers(),
+                        'attempt' => $attempt
+                    ]);
+
+                    if ($attempt < $maxAttempts) {
+                        continue;
+                    }
+
+                } catch (\Exception $e) {
+                    Log::error('Error calling Gemini API', [
+                        'error' => $e->getMessage(),
+                        'error_class' => get_class($e),
+                        'attempt' => $attempt,
+                        'trace' => $e->getTraceAsString()
+                    ]);
+
+                    if ($attempt < $maxAttempts) {
+                        continue;
+                    }
+                }
+            }
+
+            Log::error('Failed to extract discounts from Gemini after all attempts', [
+                'max_attempts' => $maxAttempts,
+                'image_url' => $imageUrl
+            ]);
+
+            return null;
+
+        } catch (\Exception $e) {
+            Log::error('Error in Gemini extraction', [
+                'error' => $e->getMessage(),
+                'error_class' => get_class($e),
+                'image_url' => $imageUrl,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
+    }
+
+    private function getImagePathFromUrl(string $imageUrl): ?string
+    {
+        $storageUrl = Storage::disk('public')->url('');
+        $urlPath = parse_url($imageUrl, PHP_URL_PATH);
+
+        if (!$urlPath) {
+            return null;
+        }
+
+        if (strpos($urlPath, '/storage/') !== false) {
+            $path = str_replace('/storage/', '', $urlPath);
+            return ltrim($path, '/');
+        }
 
         return null;
     }
 
-    private function getExtractionPrompt(): string
+    private function cleanJsonContent(string $content): string
     {
-        return "Extract discount data from Lithuanian supermarket flyer images. Return ONLY valid JSON.
+        $content = trim($content);
 
-RULES:
-- Extract ONLY visible data. Use null for unclear fields. Accuracy over completeness.
-- Extract text exactly as shown. Read Lithuanian characters (ą, č, ę, ė, į, š, ų, ū, ž) accurately.
-- Skip partially cut off or unreadable products.
+        if (preg_match('/```(?:json)?\s*(\{.*\})\s*```/s', $content, $matches)) {
+            $content = $matches[1];
+        } elseif (preg_match('/(\{[\s\S]*\})/s', $content, $matches)) {
+            $content = $matches[1];
+        }
 
-FIELDS:
-- name: Product name (required, skip if unclear)
-- brand, description, weight, condition, info: null if not visible
-- original_price, discounted_price, price_per_kg: decimal numbers, null if not visible
-- discount_percent: integer, calculate if prices visible: round(((original - discounted) / original) * 100)
-- card: true if loyalty card required, else false
-- exclusion_markers: array of visible markers, empty if none
-- start_at, end_at: YYYY-MM-DD if shown in product block, else null
+        $content = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $content);
 
-VALIDITY DATES:
-- Extract global start_at/end_at from header/footer (YYYY-MM-DD). null if not visible.
-- Product-specific dates override global dates if shown.
+        $content = trim($content);
 
-FORMAT: Prices as decimals, discount_percent as integer, dates as YYYY-MM-DD.
+        $content = $this->fixTruncatedJson($content);
 
-OUTPUT:
-{\"validity_dates\": {\"start_at\": \"YYYY-MM-DD\", \"end_at\": \"YYYY-MM-DD\"}, \"discounts\": [{\"name\": \"\", \"brand\": null, \"description\": null, \"weight\": null, \"original_price\": null, \"discounted_price\": null, \"price_per_kg\": null, \"discount_percent\": null, \"condition\": null, \"card\": false, \"info\": null, \"exclusion_markers\": [], \"start_at\": null, \"end_at\": null}]}";
+        return $content;
+    }
+
+    private function fixTruncatedJson(string $json): string
+    {
+        $json = rtrim($json);
+
+        if (preg_match('/,\s*$/', $json)) {
+            $json = preg_replace('/,\s*$/', '', $json);
+        }
+
+        $inString = false;
+        $escapeNext = false;
+        $lastQuotePos = -1;
+
+        for ($i = strlen($json) - 1; $i >= 0; $i--) {
+            $char = $json[$i];
+
+            if ($escapeNext) {
+                $escapeNext = false;
+                continue;
+            }
+
+            if ($char === '\\') {
+                $escapeNext = true;
+                continue;
+            }
+
+            if ($char === '"') {
+                if (!$inString) {
+                    $lastQuotePos = $i;
+                    $inString = true;
+                } else {
+                    $inString = false;
+                }
+            }
+        }
+
+        if ($inString && $lastQuotePos >= 0) {
+            $json = substr($json, 0, $lastQuotePos + 1);
+        } elseif ($inString) {
+            $json .= '"';
+        }
+
+        $openBraces = substr_count($json, '{') - substr_count($json, '}');
+        $openBrackets = substr_count($json, '[') - substr_count($json, ']');
+
+        if ($openBrackets > 0) {
+            $json .= str_repeat(']', $openBrackets);
+        }
+
+        if ($openBraces > 0) {
+            $json .= str_repeat('}', $openBraces);
+        }
+
+        return $json;
+    }
+
+    private function mapShortFieldsToLong(array $data): array
+    {
+        $mapped = [];
+
+        if (isset($data['vd'])) {
+            $mapped['validity_dates'] = [
+                'start_at' => $data['vd']['sa'] ?? null,
+                'end_at' => $data['vd']['ea'] ?? null,
+            ];
+        }
+
+        if (isset($data['d']) && is_array($data['d'])) {
+            $mapped['discounts'] = [];
+            foreach ($data['d'] as $discount) {
+                $mappedDiscount = [
+                    'name' => $discount['n'] ?? null,
+                    'brand' => $discount['b'] ?? null,
+                    'description' => $discount['desc'] ?? null,
+                    'original_price' => $discount['op'] ?? null,
+                    'discounted_price' => $discount['dp'] ?? null,
+                    'discount_percent' => $discount['dpct'] ?? null,
+                    'condition' => $discount['c'] ?? null,
+                    'card' => $discount['card'] ?? false,
+                    'info' => $discount['info'] ?? null,
+                    'exclusion_markers' => $discount['em'] ?? [],
+                    'start_at' => $discount['sa'] ?? null,
+                    'end_at' => $discount['ea'] ?? null,
+                    'box' => $discount['box'] ?? null,
+                ];
+                $mapped['discounts'][] = $mappedDiscount;
+            }
+        }
+
+        return $mapped;
+    }
+
+    private function getExtractionPromptStatic(): string
+    {
+        return '
+        SYSTEM INSTRUCTION:
+NO THOUGHTS. NO REASONING. NO INTERNAL ANALYSIS.
+Output ONLY the final JSON starting with { and ending with }.
+Do not generate any text, explanations, or thinking blocks before or after the JSON.
+
+        Extract discount data from Lithuanian grocery flyer images.
+Return ONLY valid JSON using SHORT field names.
+
+### FIELD MAP
+
+* vd = validity_dates object
+* d = discounts array
+* n = product name (required)
+* box = bounding box [ymin, xmin, ymax, xmax] (normalized 0-1000)
+* b = brand
+* desc = short description
+* info = small descriptive text after product name (weight, fat %, packaging, type, price/kg). Separate items with commas.
+* op = original_price
+* dp = discounted_price
+* dpct = discount_percent
+* c = promotion condition
+* card = loyalty card required
+* em = exclusion markers
+* sa = start_at
+* ea = end_at
+
+### IGNORE
+Ignore banners, decorative text, store slogans and section titles such as: TOP PREKĖS, AKCIJA, SUPER KAINA.
+
+### PRODUCT BLOCK DETECTION & COORDINATES
+Flyer pages often contain multiple products arranged in grid layouts.
+A product block usually contains: product image, product text, and price area.
+Treat each product name as a separate product block.
+If two product names appear in the same grid cell, split them into two separate products.
+
+COORDINATE RULE:
+For every product, provide a box [ymin, xmin, ymax, xmax] using normalized coordinates (0-1000).
+- 0,0 is top-left; 1000,1000 is bottom-right.
+- The box must encompass the entire product area: image, name, info, and price.
+
+### STRICT PRODUCT NAME RULE
+1. The product name (n) MUST include ALL text that identifies the product.
+2. Start the name from the VERY FIRST word of the text block, even if it is a brand (e.g., "VIČI", "Bocmano").
+3. If a comma (,) exists: text BEFORE it is "n", text AFTER is "info".
+   - Example: "Lašišų filė VIČI, su oda, 160 g" -> n: "Lašišų filė VIČI", info: "su oda, 160 g".
+4. If there is no comma, but a line break separates the name from details (like weight), everything on the top line(s) is the name.
+5. DO NOT shorten or simplify the name. If you see "BOCMANO silkių filė", the name is "BOCMANO silkių filė", not just "silkių filė".
+
+### BRAND RULE
+* Brand (b): Extract the brand name if it is part of the product name or shown as a logo/label.
+* IMPORTANT: Even if you extract the brand into the "b" field, it MUST also remain in the "n" (name) field if it is written as part of the text.
+
+### PRICE EXTRACTION RULES
+* dp (discounted_price): Large prominent price.
+* op (original_price): Price with a strikethrough.
+* dpct: Extract ONLY if "%" symbol is visible. Do NOT calculate.
+* c (promotion condition): Extract text like "1+1", "2 už", "Antras pigiau" exactly as shown.
+
+### GENERAL RULES
+* Accuracy: Read Lithuanian characters accurately (ą č ę ė į š ų ū ž).
+* Text Extraction: Extract text EXACTLY as shown. Do NOT correct spelling or translate.
+* Dates: Use ISO format (YYYY-MM-DD). If a product has its own dates (e.g., "KOVO 4–6 d."), use them for sa and ea to override global dates.
+* No Guessing: If a word is unclear, return the visible part only. If unsure about the product name, skip it.
+* No Math: Do NOT perform any mathematical operations or price calculations.
+
+1. COMPLETENESS: It is mandatory to return ALL visible products. Do not truncate the list.
+
+### STRICT OUTPUT FORMAT
+Return ONLY valid JSON. No explanations. No markdown.
+
+{
+ "vd": {"sa": "YYYY-MM-DD", "ea": "YYYY-MM-DD"},
+ "d": [
+   {
+     "n": "Product Name",
+     "box": [ymin, xmin, ymax, xmax],
+     "b": null,
+     "desc": null,
+     "info": null,
+     "op": null,
+     "dp": null,
+     "dpct": null,
+     "c": null,
+     "card": false,
+     "em": [],
+     "sa": null,
+     "ea": null
+   }
+ ]
+}';
     }
 
     private function getUserPrompt(Store $store, ?array $validityDates): string
@@ -457,9 +887,14 @@ OUTPUT:
         return $prompt;
     }
 
-    private function saveToDiscountTemp(array $discounts, Store $store, ?array $validityDates): int
-    {
-        Log::info('Starting to save discounts to database', ['total' => count($discounts)]);
+    private function saveToDiscountTemp(
+        array $discounts,
+        Store $store,
+        ?array $validityDates,
+        ?string $pageImagePath = null
+    ): int {
+        Log::info('Starting to save discounts to database',
+            ['total' => count($discounts), 'page_image_path' => $pageImagePath]);
 
         $savedCount = 0;
         $skippedCount = 0;
@@ -516,6 +951,11 @@ OUTPUT:
                 $productStartAt = !empty($discountData['start_at']) ? $discountData['start_at'] : $startAt;
                 $productEndAt = !empty($discountData['end_at']) ? $discountData['end_at'] : $endAt;
 
+                $boxData = null;
+                if (isset($validated['box']) && is_array($validated['box'])) {
+                    $boxData = json_encode($validated['box']);
+                }
+
                 DiscountTemp::create([
                     'name' => $validated['name'],
                     'brand' => $validated['brand'] ?? null,
@@ -532,6 +972,8 @@ OUTPUT:
                     'start_at' => $productStartAt ? date('Y-m-d H:i:s', strtotime($productStartAt)) : now(),
                     'end_at' => $productEndAt ? date('Y-m-d H:i:s', strtotime($productEndAt)) : now()->addDays(7),
                     'processed' => false,
+                    'box' => $boxData,
+                    'page_image_path' => $pageImagePath,
                 ]);
 
                 $savedCount++;
@@ -564,6 +1006,21 @@ OUTPUT:
             return null;
         }
 
+        $box = null;
+        if (isset($data['box']) && is_array($data['box']) && count($data['box']) === 4) {
+            $boxValues = array_values($data['box']);
+            $allNumeric = true;
+            foreach ($boxValues as $value) {
+                if (!is_numeric($value)) {
+                    $allNumeric = false;
+                    break;
+                }
+            }
+            if ($allNumeric) {
+                $box = $data['box'];
+            }
+        }
+
         $validated = [
             'name' => trim($data['name']),
             'brand' => isset($data['brand']) && !empty($data['brand']) ? trim($data['brand']) : null,
@@ -573,6 +1030,7 @@ OUTPUT:
             'condition' => isset($data['condition']) && !empty($data['condition']) ? trim($data['condition']) : null,
             'card' => isset($data['card']) ? (bool)$data['card'] : false,
             'info' => isset($data['info']) && !empty($data['info']) ? trim($data['info']) : null,
+            'box' => $box,
         ];
 
         $hasPrices = $validated['original_price'] > 0 || $validated['discounted_price'] > 0;

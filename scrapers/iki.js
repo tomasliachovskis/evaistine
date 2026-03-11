@@ -12,7 +12,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 (async () => {
-    const executablePath = '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
+    const chromiumPath = '/usr/bin/chromium-browser';
+    const chromePath = '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
     const launchOptions = {
         headless: 'new',
         args: [
@@ -21,8 +22,10 @@ const __dirname = path.dirname(__filename);
         ],
     };
 
-    if (fs.existsSync(executablePath)) {
-        launchOptions.executablePath = executablePath;
+    if (fs.existsSync(chromiumPath)) {
+        launchOptions.executablePath = chromiumPath;
+    } else if (fs.existsSync(chromePath)) {
+        launchOptions.executablePath = chromePath;
     }
 
     const browser = await puppeteer.launch(launchOptions);

@@ -27,5 +27,7 @@ class DiscountTemp extends Model
         'info',
         'brand',
         'processed',
+        'box',
+        'page_image_path',
     ];
 }

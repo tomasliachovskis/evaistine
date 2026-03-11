@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class ProcessPdfFlyer extends Command
 {
-    protected $signature = 'flyers:process-pdf {pdf : Path to PDF file} {--store= : Store name (e.g., ŠILAS)}';
+    protected $signature = 'flyers:process-pdf {pdf : Path to PDF file} {--store= : Store name (e.g., ŠILAS)} {--page= : Process only specific page number (e.g., --page=3)}';
     protected $description = 'Process discount flyer PDF and extract discount information using OpenAI Vision API';
 
     private PdfFlyerProcessingService $processingService;
@@ -47,14 +47,19 @@ class ProcessPdfFlyer extends Command
             return 1;
         }
 
+        $pageNumber = $this->option('page') ? (int)$this->option('page') : null;
+
         $this->info("Processing PDF flyer for store: {$store->name}");
         $this->info("PDF file: {$pdfPath}");
+        if ($pageNumber) {
+            $this->info("Processing only page: {$pageNumber}");
+        }
         $this->info("Note: Detailed progress is logged. Check logs with: tail -f storage/logs/laravel.log");
         $this->newLine();
 
         try {
             $this->info("Starting PDF processing...");
-            $result = $this->processingService->processPdf($pdfPath, $store);
+            $result = $this->processingService->processPdf($pdfPath, $store, $pageNumber);
 
             if ($result['success']) {
                 $this->info("Successfully processed PDF flyer!");

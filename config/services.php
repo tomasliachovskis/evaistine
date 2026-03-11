@@ -35,6 +35,10 @@ return [
         'model' => env('OPENAI_MODEL', 'gpt-5-mini'),
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
     'meilisearch' => [
         'host' => env('MEILISEARCH_HOST', 'http://127.0.0.1:7700'),
         'key' => env('MEILISEARCH_KEY'),

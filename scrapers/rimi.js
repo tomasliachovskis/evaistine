@@ -278,7 +278,8 @@ const postBatchToAPI = async (products) => {
 };
 
 const runScraper = async () => {
-    const executablePath = '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
+    const chromiumPath = '/usr/bin/chromium-browser';
+    const chromePath = '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
     const launchOptions = {
         headless: 'new',
         protocolTimeout: 300000,
@@ -288,8 +289,10 @@ const runScraper = async () => {
         ]
     };
 
-    if (fs.existsSync(executablePath)) {
-        launchOptions.executablePath = executablePath;
+    if (fs.existsSync(chromiumPath)) {
+        launchOptions.executablePath = chromiumPath;
+    } else if (fs.existsSync(chromePath)) {
+        launchOptions.executablePath = chromePath;
     }
 
     const browser = await puppeteer.launch(launchOptions);
