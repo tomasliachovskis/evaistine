@@ -14,7 +14,6 @@ use Spatie\PdfToImage\Pdf;
 class PdfFlyerProcessingService
 {
     private ?string $apiKey;
-    private string $apiUrl = 'https://api.openai.com/v1/chat/completions';
     private ?string $geminiApiKey;
     private string $geminiApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
@@ -813,11 +812,14 @@ A product block usually contains: product image, product text, and price area.
 Treat each product name as a separate product block.
 If two product names appear in the same grid cell, split them into two separate products.
 
-COORDINATE RULE:
-For every product, provide a box [ymin, xmin, ymax, xmax] using normalized coordinates (0-1000).
-- 0,0 is top-left; 1000,1000 is bottom-right.
-- The box must encompass the entire product area: image, name, info, and price.
+### COORDINATE RULE:
+1. Provide a box [ymin, xmin, ymax, xmax] using normalized coordinates (0-1000).
+2. BOUNDING BOX STRATEGY: The box must be a "minimal encompassing rectangle." It must include both the product image and the price tag even if they are separated by white space.
+3. SPATIAL AGGREGATION: If the product image is on the right and the price tag is on the left, the xmin must start at the left-most edge of the price tag, and xmax must end at the right-most edge of the product image. The box must cover the full horizontal and vertical span required to touch all these elements.
+4. NO TEXT-ONLY BIAS: Do not define the box size based on the text description location. The text is secondary; the image and the price are the primary "anchors" for the box dimensions.
 
+OVER-EXTEND IF UNSURE: If the product area is non-rectangular or fragmented, err on the side of making the box larger to ensure both the product visual and the price are fully contained inside.
+SAFETY MARGIN: If unsure, use a wider margin to ensure no part of any product or price is cut off. The goal is to provide a complete, uncropped view of the grid area.
 ### STRICT PRODUCT NAME RULE
 1. The product name (n) MUST include ALL text that identifies the product.
 2. Start the name from the VERY FIRST word of the text block, even if it is a brand (e.g., "VIČI", "Bocmano").
@@ -961,7 +963,6 @@ Return ONLY valid JSON. No explanations. No markdown.
                     'brand' => $validated['brand'] ?? null,
                     'category' => '',
                     'image_url' => null,
-                    'product_url' => '',
                     'store' => $store->name,
                     'original_price' => $validated['original_price'] ?? 0,
                     'discounted_price' => $validated['discounted_price'] ?? 0,

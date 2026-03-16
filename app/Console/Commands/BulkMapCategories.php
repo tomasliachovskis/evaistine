@@ -31,6 +31,10 @@ class BulkMapCategories extends Command
             $this->mapStore('Rimi');
             $this->mapStore('Maxima');
             $this->mapStore('Iki');
+            $this->mapStore('Silas');
+            $this->mapStore('Aibe');
+            $this->mapStore('Gruste');
+            $this->mapStore('Cia');
         }
     }
 

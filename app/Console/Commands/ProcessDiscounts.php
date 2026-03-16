@@ -9,13 +9,21 @@ use App\Models\DiscountHistory;
 use App\Models\DiscountTemp;
 use App\Models\Product;
 use App\Models\Store;
+use App\Rules\StoreRules\AibeRules;
+use App\Rules\StoreRules\CiaRules;
+use App\Rules\StoreRules\GrusteRules;
 use App\Rules\StoreRules\IkiRules;
 use App\Rules\StoreRules\LidlRules;
 use App\Rules\StoreRules\MaximaRules;
 use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
+use App\Rules\StoreRules\SilasRules;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ProcessDiscounts extends Command
 {
@@ -150,6 +158,14 @@ class ProcessDiscounts extends Command
                 ]
             );
 
+            if ($product->wasRecentlyCreated && !empty($tempDiscount->box) && !empty($tempDiscount->page_image_path) && empty($product->image_url)) {
+                $croppedImageUrl = $this->cropProductImage($tempDiscount, $product);
+                if ($croppedImageUrl) {
+                    $product->image_url = $croppedImageUrl;
+                    $product->save();
+                }
+            }
+
             $existingMainDiscount = Discount::where('product_id', $product->id)
                 ->where('store_id', $store->id)
                 ->where('start_at', $startAt)
@@ -193,6 +209,14 @@ class ProcessDiscounts extends Command
                 return new NorfaRules($tempDiscount);
             case 'Iki':
                 return new IkiRules($tempDiscount);
+            case 'Silas':
+                return new SilasRules($tempDiscount);
+            case 'Aibe':
+                return new AibeRules($tempDiscount);
+            case 'Gruste':
+                return new GrusteRules($tempDiscount);
+            case 'Cia':
+                return new CiaRules($tempDiscount);
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
         }
@@ -351,6 +375,168 @@ class ProcessDiscounts extends Command
 
         return trim($text, '-');
     }
+
+    private function cropProductImage(DiscountTemp $tempDiscount, Product $product): ?string
+    {
+        if (empty($tempDiscount->box) || empty($tempDiscount->page_image_path)) {
+            return null;
+        }
+
+        try {
+            $box = json_decode($tempDiscount->box, true);
+            if (!is_array($box) || count($box) !== 4) {
+                return null;
+            }
+
+            $pageImagePath = storage_path('app/public/' . $tempDiscount->page_image_path);
+            if (!file_exists($pageImagePath)) return null;
+
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($pageImagePath);
+
+            $imageWidth = $image->width();
+            $imageHeight = $image->height();
+
+            list($ymin, $xmin, $ymax, $xmax) = $box;
+
+            $currentWidth = $xmax - $xmin;
+            $currentHeight = $ymax - $ymin;
+
+            // --- ADAPTYVI LOGIKA ---
+            // Jei produktas mažas (pvz., < 200), didiname 50 vienetų (saugiau).
+            // Jei produktas didelis (> 200), didiname tik 10 vienetų (minimaliai).
+            $paddingX = ($currentWidth < 200) ? 50 : 10;
+            $paddingY = ($currentHeight < 200) ? 50 : 10;
+
+            $xmin = max(0, $xmin - $paddingX);
+            $xmax = min(1000, $xmax + $paddingX);
+            $ymin = max(0, $ymin - $paddingY);
+            $ymax = min(1000, $ymax + $paddingY);
+            // -----------------------
+
+            $x1 = (int)($xmin * $imageWidth / 1000);
+            $y1 = (int)($ymin * $imageHeight / 1000);
+            $x2 = (int)($xmax * $imageWidth / 1000);
+            $y2 = (int)($ymax * $imageHeight / 1000);
+
+            $cropWidth = max(1, $x2 - $x1);
+            $cropHeight = max(1, $y2 - $y1);
+
+            $croppedImage = $image->crop($cropWidth, $cropHeight, $x1, $y1);
+
+            // ... toliau tavo saugojimo logika ...
+            // (Rekomenduoju naudoti tą pačią failų saugojimo sistemą kaip ir anksčiau)
+
+            $productsDir = 'products';
+            if (!Storage::disk('public')->exists($productsDir)) Storage::disk('public')->makeDirectory($productsDir);
+
+            $filename = $product->slug . '-' . time() . '.png';
+            $storagePath = $productsDir . '/' . $filename;
+            $tempPath = storage_path('app/temp/products');
+            if (!is_dir($tempPath)) mkdir($tempPath, 0755, true);
+
+            $tempFilePath = $tempPath . '/' . $filename;
+            $croppedImage->save($tempFilePath);
+            Storage::disk('public')->put($storagePath, file_get_contents($tempFilePath));
+
+            if (file_exists($tempFilePath)) unlink($tempFilePath);
+
+            return Storage::disk('public')->url($storagePath);
+
+        } catch (\Exception $e) {
+            Log::error('Error cropping product image', ['product_id' => $product->id, 'error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+//    private function cropProductImage(DiscountTemp $tempDiscount, Product $product): ?string
+//    {
+//        if (empty($tempDiscount->box) || empty($tempDiscount->page_image_path)) {
+//            return null;
+//        }
+//
+//        try {
+//            $box = json_decode($tempDiscount->box, true);
+//            if (!is_array($box) || count($box) !== 4) {
+//                Log::warning('Invalid box coordinates', ['box' => $tempDiscount->box, 'product_id' => $product->id]);
+//                return null;
+//            }
+//
+//            $pageImagePath = storage_path('app/public/' . $tempDiscount->page_image_path);
+//            if (!file_exists($pageImagePath)) {
+//                Log::warning('Page image not found', ['path' => $pageImagePath, 'product_id' => $product->id]);
+//                return null;
+//            }
+//
+//            $manager = new ImageManager(new Driver());
+//            $image = $manager->read($pageImagePath);
+//
+//            $imageWidth = $image->width();
+//            $imageHeight = $image->height();
+//
+//            // Išskleidžiame į kintamuosius patogesniam valdymui
+//            list($ymin, $xmin, $ymax, $xmax) = $box;
+//
+//            // --- ŠVELNUS ATITRAUKIMAS (PADDING) ---
+//            // 50 vienetų (5% skalės) atitraukimas nuo kiekvieno krašto,
+//            // kad nupjovimas nebūtų „priliptas“ prie prekės kraštų.
+//            $padding = 50;
+//
+//            $xmin = max(0, $xmin - $padding);
+//            $xmax = min(1000, $xmax + $padding);
+//            $ymin = max(0, $ymin - $padding);
+//            $ymax = min(1000, $ymax + $padding);
+//
+//            // --- PIKSELIŲ SKAIČIAVIMAS ---
+//            $x1 = (int)($xmin * $imageWidth / 1000);
+//            $y1 = (int)($ymin * $imageHeight / 1000);
+//            $x2 = (int)($xmax * $imageWidth / 1000);
+//            $y2 = (int)($ymax * $imageHeight / 1000);
+//
+//            $cropWidth = $x2 - $x1;
+//            $cropHeight = $y2 - $y1;
+//
+//            if ($cropWidth <= 0 || $cropHeight <= 0) {
+//                Log::warning('Invalid crop dimensions after padding', ['product_id' => $product->id]);
+//                return null;
+//            }
+//
+//
+//
+//            $croppedImage = $image->crop($cropWidth, $cropHeight, $x1, $y1);
+//
+//            $productsDir = 'products';
+//            if (!Storage::disk('public')->exists($productsDir)) {
+//                Storage::disk('public')->makeDirectory($productsDir);
+//            }
+//
+//            $filename = $product->slug . '-' . time() . '.png';
+//            $storagePath = $productsDir . '/' . $filename;
+//
+//            $tempPath = storage_path('app/temp/products');
+//            if (!is_dir($tempPath)) {
+//                mkdir($tempPath, 0755, true);
+//            }
+//
+//            $tempFilePath = $tempPath . '/' . $filename;
+//            $croppedImage->save($tempFilePath);
+//
+//            Storage::disk('public')->put($storagePath, file_get_contents($tempFilePath));
+//
+//            if (file_exists($tempFilePath)) {
+//                unlink($tempFilePath);
+//            }
+//
+//            return Storage::disk('public')->url($storagePath);
+//
+//        } catch (\Exception $e) {
+//            Log::error('Error cropping product image', [
+//                'product_id' => $product->id,
+//                'error' => $e->getMessage()
+//            ]);
+//            return null;
+//        }
+//    }
 
     private function normalizeCondition(?string $condition): ?string
     {
