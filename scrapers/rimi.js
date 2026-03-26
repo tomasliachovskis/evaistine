@@ -301,7 +301,7 @@ const runScraper = async () => {
 
     const baseUrl = 'https://www.rimi.lt/';
     // let currentPage = loadProgress();
-    let currentPage = 45;
+    let currentPage = 1;
     let allProducts = [];
 
     if (currentPage === 1) {
