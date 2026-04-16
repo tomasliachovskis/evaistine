@@ -877,7 +877,7 @@ Return ONLY valid JSON. No explanations. No markdown.
         $prompt = "Store: {$store->name}. ";
 
         if ($validityDates) {
-            $prompt .= "Validity dates already known: {$validityDates['start_at']} to {$validityDates['end_at']}. ";
+            $prompt .= "Validity dates already known: {$validityDates['start_at']} to {$validityDates['end_at']}. If you see different validity dates on this page, replace them with the visible ones. ";
         } else {
             $prompt .= "Extract validity dates if visible. ";
         }
@@ -1022,15 +1022,17 @@ Return ONLY valid JSON. No explanations. No markdown.
             }
         }
 
+        $data['brand'] = !empty($data['brand']) && is_array($data['brand']) ? $data['brand'][0] : $data['brand'];
+
         $validated = [
             'name' => trim($data['name']),
-            'brand' => isset($data['brand']) && !empty($data['brand']) ? trim($data['brand']) : null,
+            'brand' => !empty($data['brand']) ? trim($data['brand']) : null,
             'original_price' => $this->parsePrice($data['original_price'] ?? null),
             'discounted_price' => $this->parsePrice($data['discounted_price'] ?? null),
             'discount_percent' => isset($data['discount_percent']) ? (int)$data['discount_percent'] : null,
             'condition' => isset($data['condition']) && !empty($data['condition']) ? trim($data['condition']) : null,
-            'card' => isset($data['card']) ? (bool)$data['card'] : false,
-            'info' => isset($data['info']) && !empty($data['info']) ? trim($data['info']) : null,
+            'card' => isset($data['card']) && (bool)$data['card'],
+            'info' => !empty($data['info']) ? trim($data['info']) : null,
             'box' => $box,
         ];
 

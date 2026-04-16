@@ -29,11 +29,6 @@ class ProcessPdfFlyer extends Command
             return 1;
         }
 
-        if (!$this->processingService->isConfigured()) {
-            $this->error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
-            return 1;
-        }
-
         if (!file_exists($pdfPath)) {
             $this->error("PDF file not found: {$pdfPath}");
             return 1;
