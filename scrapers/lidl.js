@@ -38,11 +38,22 @@ puppeteer.use(StealthPlugin());
     await page.click('#week-panel-0 > div > div > button'); // Click the button
     await sleep(2000);
 
-    const offers = await page.evaluate(() => {
-        const elements = document.querySelectorAll('a.ACategoryOverviewSlider__Link');
-        const texts = Array.from(elements).map(offer => offer.href);
-        return [...new Set(texts)];
-    });
+    // const offers = await page.evaluate(() => {
+    //     const elements = document.querySelectorAll('a.ACategoryOverviewSlider__Link');
+    //     const texts = Array.from(elements).map(offer => offer.href);
+    //     return [...new Set(texts)];
+    // });
+
+    const offers = [
+        'https://www.lidl.lt/q/search?q=&offset=10',
+        'https://www.lidl.lt/q/search?q=&offset=20',
+        'https://www.lidl.lt/q/search?q=&offset=30',
+        'https://www.lidl.lt/q/search?q=&offset=40',
+        'https://www.lidl.lt/q/search?q=&offset=50',
+        'https://www.lidl.lt/q/search?q=&offset=60',
+        'https://www.lidl.lt/q/search?q=&offset=70',
+        'https://www.lidl.lt/q/search?q=&offset=80',
+    ];
 
     console.log(offers);
     console.log(offers.length);
