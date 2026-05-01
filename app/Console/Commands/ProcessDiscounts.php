@@ -24,9 +24,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Interfaces\ImageInterface;
 
 class ProcessDiscounts extends Command
 {
+    private const PRODUCT_IMAGE_MAX_BYTES = 102400;
+
     protected $signature = 'discounts:process';
     protected $description = 'Process new discounts from discount_temp table';
 
@@ -433,22 +436,13 @@ class ProcessDiscounts extends Command
 
             $croppedImage = $image->crop($cropWidth, $cropHeight, $x1, $y1);
 
-            // ... toliau tavo saugojimo logika ...
-            // (Rekomenduoju naudoti tą pačią failų saugojimo sistemą kaip ir anksčiau)
-
             $productsDir = 'products';
             if (!Storage::disk('public')->exists($productsDir)) Storage::disk('public')->makeDirectory($productsDir);
 
-            $filename = $product->slug . '-' . time() . '.png';
+            $filename = $product->slug . '-' . time() . '.jpg';
             $storagePath = $productsDir . '/' . $filename;
-            $tempPath = storage_path('app/temp/products');
-            if (!is_dir($tempPath)) mkdir($tempPath, 0755, true);
-
-            $tempFilePath = $tempPath . '/' . $filename;
-            $croppedImage->save($tempFilePath);
-            Storage::disk('public')->put($storagePath, file_get_contents($tempFilePath));
-
-            if (file_exists($tempFilePath)) unlink($tempFilePath);
+            $binary = $this->encodeCroppedProductImage($croppedImage);
+            Storage::disk('public')->put($storagePath, $binary);
 
             return Storage::disk('public')->url($storagePath);
 
@@ -456,6 +450,32 @@ class ProcessDiscounts extends Command
             Log::error('Error cropping product image', ['product_id' => $product->id, 'error' => $e->getMessage()]);
             return null;
         }
+    }
+
+    private function encodeCroppedProductImage(ImageInterface $image): string
+    {
+        $image->blendTransparency('ffffff');
+
+        $quality = 84;
+        $binary = '';
+
+        while ($quality >= 58) {
+            $binary = $image->toJpeg(quality: $quality)->toString();
+            if (strlen($binary) <= self::PRODUCT_IMAGE_MAX_BYTES) {
+                return $binary;
+            }
+            $quality -= 8;
+        }
+
+        $image->scaleDown(720, 720);
+        $binary = $image->toJpeg(quality: 76)->toString();
+        if (strlen($binary) <= self::PRODUCT_IMAGE_MAX_BYTES) {
+            return $binary;
+        }
+
+        $image->scaleDown(480, 480);
+
+        return $image->toJpeg(quality: 70)->toString();
     }
 
     private function normalizeCondition(?string $condition): ?string
