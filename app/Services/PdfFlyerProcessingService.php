@@ -1074,5 +1074,4 @@ Return ONLY valid JSON. No explanations. No markdown.
 
         return 0.0;
     }
-
 }
