@@ -158,12 +158,21 @@ class ProcessDiscounts extends Command
                 ]
             );
 
-            if ($product->wasRecentlyCreated && !empty($tempDiscount->box) && !empty($tempDiscount->page_image_path) && empty($product->image_url)) {
-                $croppedImageUrl = $this->cropProductImage($tempDiscount, $product);
-                if ($croppedImageUrl) {
-                    $product->image_url = $croppedImageUrl;
-                    $product->save();
+            $isFlyerSource = !empty($tempDiscount->box) && !empty($tempDiscount->page_image_path);
+
+            if ($product->wasRecentlyCreated && $isFlyerSource) {
+                if (empty($product->image_url)) {
+                    $croppedImageUrl = $this->cropProductImage($tempDiscount, $product);
+                    if ($croppedImageUrl) {
+                        $product->image_url = $croppedImageUrl;
+                    }
                 }
+                $product->image_from_flyer = true;
+                $product->save();
+            } elseif (!$product->wasRecentlyCreated && $product->image_from_flyer && !empty($tempDiscount->image_url)) {
+                $product->image_url = $tempDiscount->image_url;
+                $product->image_from_flyer = false;
+                $product->save();
             }
 
             $existingMainDiscount = Discount::where('product_id', $product->id)

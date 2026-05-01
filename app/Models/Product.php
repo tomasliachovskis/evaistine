@@ -17,9 +17,14 @@ class Product extends Model
         'description',
         'category_id',
         'image_url',
+        'image_from_flyer',
         'seo_title',
         'meta_title',
         'meta_description',
+    ];
+
+    protected $casts = [
+        'image_from_flyer' => 'boolean',
     ];
 
     public function category()
