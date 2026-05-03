@@ -377,7 +377,7 @@ const runScraper = async () => {
                 let discount = block.querySelector('.m-price__label')?.textContent.trim() ?? '';
                 const link = block.querySelector('.card__url')?.href;
                 let imageSrc = block.querySelector('.card__image-wrapper img')?.src;
-                let info = block.querySelector('.card__price-per')?.textContent.trim();
+                let info = block.querySelector('.card__price-per [aria-hidden="true"]')?.textContent.trim();
                 let condition = block.querySelector('div.price-label__header.-red')?.textContent.trim();
                 info = info?.replace(/\s+/g, ' ').trim();
 

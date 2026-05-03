@@ -198,7 +198,7 @@ const __dirname = path.dirname(__filename);
             discounted_price: product.discounted_price,
             original_price: product.original_price,
             card: product.card,
-            info: JSON.stringify(product.info),
+            info: (product.info),
             discount_percent: product.discount_percent,
             start_at: product.start_at,
             end_at: product.end_at,
