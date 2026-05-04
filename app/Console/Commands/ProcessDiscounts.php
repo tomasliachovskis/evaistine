@@ -18,6 +18,7 @@ use App\Rules\StoreRules\MaximaRules;
 use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
 use App\Rules\StoreRules\SilasRules;
+use App\Support\ProductPackSizeExtractor;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -77,7 +78,10 @@ class ProcessDiscounts extends Command
             $rules = $this->getStoreRules($store->name, $tempDiscount);
 
             $normalizedCondition = $this->normalizeCondition($tempDiscount->condition);
-            $normalizedInfo = $tempDiscount->info;
+
+            $packResult = ProductPackSizeExtractor::extractAndStrip($tempDiscount->info);
+            $packSize = $packResult['size'];
+            $normalizedInfo = $packResult['info'];
             if (!empty($normalizedInfo)) {
                 $normalizedInfo = str_replace(['"', "'"], '', $normalizedInfo);
             }
@@ -146,7 +150,7 @@ class ProcessDiscounts extends Command
                 continue;
             }
 
-            $normalizedProductName = $tempDiscount->name;
+            $normalizedProductName = $this->composeDisplayName($tempDiscount->name, $packSize);
             $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand, $store->name);
 
             $product = Product::firstOrCreate(
@@ -346,6 +350,25 @@ class ProcessDiscounts extends Command
         ]);
 
         $this->info("Added unmapped category: {$storeCategory}");
+    }
+
+    private function composeDisplayName(string $rawName, ?string $infoPackSize): string
+    {
+        $nameResult = ProductPackSizeExtractor::extractAndStrip($rawName);
+        $nameSize = $nameResult['size'];
+        $strippedName = $nameResult['info'];
+
+        $baseName = ($strippedName !== null && trim($strippedName) !== '')
+            ? trim($strippedName)
+            : trim($rawName);
+
+        $finalSize = $nameSize ?? $infoPackSize;
+
+        if ($finalSize === null || $finalSize === '') {
+            return $baseName;
+        }
+
+        return $baseName . ', ' . $finalSize;
     }
 
     private function generateProductSlug(string $productName, ?string $brand, string $storeName): string
