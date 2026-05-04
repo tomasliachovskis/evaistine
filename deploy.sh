@@ -21,6 +21,12 @@ fi
 # Sync project files to the server
 rsync -avz -e "ssh $SSH_OPTS" --exclude='.env' --exclude='storage' --exclude='node_modules'  --exclude='.idea' --exclude='.git' . $SERVER:$REMOTE_DIR
 
+# Upload flyer images
+FRONTEND_SERVER="deploy@84.247.186.143"
+REMOTE_IMAGES_DIR="/var/www/images"
+ssh $SSH_OPTS $FRONTEND_SERVER "mkdir -p $REMOTE_IMAGES_DIR"
+rsync -avz --omit-dir-times -e "ssh $SSH_OPTS" storage/app/public/products/ $FRONTEND_SERVER:$REMOTE_IMAGES_DIR/
+
 # Run Laravel commands on the server
 ssh $SSH_OPTS $SERVER << 'EOF'
     cd /var/www/api
@@ -33,9 +39,10 @@ ssh $SSH_OPTS $SERVER << 'EOF'
 EOF
 
 # Restart frontend
-FRONTEND_SERVER="deploy@84.247.186.143"
 ssh $SSH_OPTS $FRONTEND_SERVER << 'EOF'
     cd /var/www/nuolaidos-front/
+    mkdir -p /var/www/nuolaidos-front/public/assets
+    ln -sfn /var/www/images /var/www/nuolaidos-front/public/assets/product
     pm2 restart all
     ./scripts/production-deploy.sh revalidate
 EOF

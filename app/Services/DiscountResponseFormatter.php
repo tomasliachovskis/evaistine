@@ -134,12 +134,32 @@ class DiscountResponseFormatter
             'brand' => $product->brand,
             'full_slug' => $product->category ? $product->category->slug . '/' . $product->slug : $product->slug,
             'category_id' => $product->category_id,
-            'image_url' => $product->image_url,
+            'image_url' => $this->resolveProductImageUrl($product),
             'category' => $product->category ? [
                 'id' => $product->category->id,
                 'name' => $product->category->name,
                 'slug' => $product->category->slug,
             ] : null,
         ];
+    }
+
+    protected function resolveProductImageUrl($product): ?string
+    {
+        if (empty($product->image_url)) {
+            return null;
+        }
+
+        if (!$product->image_from_flyer) {
+            return $product->image_url;
+        }
+
+        $path = parse_url($product->image_url, PHP_URL_PATH);
+        $filename = basename($path ?: $product->image_url);
+
+        if (empty($filename) || $filename === '.') {
+            return $product->image_url;
+        }
+
+        return '/assets/product/' . $filename;
     }
 }

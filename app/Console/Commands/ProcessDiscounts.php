@@ -225,13 +225,13 @@ class ProcessDiscounts extends Command
                 return new NorfaRules($tempDiscount);
             case 'Iki':
                 return new IkiRules($tempDiscount);
-            case 'Silas':
+            case 'Šilas':
                 return new SilasRules($tempDiscount);
-            case 'Aibe':
+            case 'Aibė':
                 return new AibeRules($tempDiscount);
             case 'Gruste':
                 return new GrusteRules($tempDiscount);
-            case 'Cia':
+            case 'Čia':
                 return new CiaRules($tempDiscount);
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
