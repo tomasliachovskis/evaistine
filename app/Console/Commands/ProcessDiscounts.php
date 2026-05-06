@@ -229,7 +229,7 @@ class ProcessDiscounts extends Command
                 return new SilasRules($tempDiscount);
             case 'Aibė':
                 return new AibeRules($tempDiscount);
-            case 'Gruste':
+            case 'Grustė':
                 return new GrusteRules($tempDiscount);
             case 'Čia':
                 return new CiaRules($tempDiscount);

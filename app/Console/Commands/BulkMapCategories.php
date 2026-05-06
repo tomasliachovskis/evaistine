@@ -33,7 +33,7 @@ class BulkMapCategories extends Command
             $this->mapStore('Iki');
             $this->mapStore('Šilas');
             $this->mapStore('Aibė');
-            $this->mapStore('Gruste');
+            $this->mapStore('Grustė');
             $this->mapStore('Čia');
         }
     }
