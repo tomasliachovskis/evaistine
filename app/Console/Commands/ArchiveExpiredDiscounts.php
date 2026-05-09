@@ -26,7 +26,7 @@ class ArchiveExpiredDiscounts extends Command
                 ->orWhere(function ($subQuery) {
                     $subQuery
                         ->where('updated_at', '<', now()->subHours(36))
-                        ->where('store_id', '!=', 4); // Norfa
+                        ->whereNull('end_at');
                 });
         })->get();
 
