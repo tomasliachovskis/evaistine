@@ -193,7 +193,7 @@ class WeeklyReviewService
 
     private function prepareReviewData(Collection $discounts, Carbon $weekStart, Carbon $weekEnd): array
     {
-        $topProducts = $this->getTopProducts($discounts, 25);
+        $topProducts = $this->getTopProducts($discounts, 24);
         $storeStats = $this->getStoreStatistics($discounts);
         $categoryStats = $this->getCategoryStatistics($discounts);
         $categoryComparisons = $this->getCategoryPriceComparisons($discounts);

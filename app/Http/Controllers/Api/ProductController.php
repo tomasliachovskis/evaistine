@@ -50,7 +50,7 @@ class ProductController extends Controller
         return Cache::tags(['discounts', 'all'])
             ->remember($cacheKey, 3600, function () use ($filters) {
                 $query = Discount::with(['product', 'store']);
-                $discounts = $this->buildDiscountQuery($query, $filters)->paginate(25);
+                $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
 
                 return response()->json([
                     'data' => $this->formatter->format($discounts),
@@ -79,7 +79,7 @@ class ProductController extends Controller
             return response()->json(['error' => 'Store or category not found'], 404);
         }
 
-        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(25);
+        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
 
         return response()->json([
             'data' => $this->formatter->format($discounts),
@@ -98,7 +98,7 @@ class ProductController extends Controller
                 $q->where('category_id', $category->id);
             });
 
-        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(25);
+        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
 
         return response()->json([
             'data' => $this->formatter->format($discounts),
@@ -196,7 +196,7 @@ class ProductController extends Controller
             ->remember($cacheKey, 1800, function () use ($query, $filters) {
                 try {
                     $page = $filters['page'] ?? 1;
-                    $perPage = 25;
+                    $perPage = 24;
 
                     $meilisearchFilters = [];
                     if ($filters['store']) {
@@ -259,7 +259,7 @@ class ProductController extends Controller
                     $queryQb = Discount::searchByProductName($query)
                         ->with(['product', 'store']);
 
-                    $discounts = $this->buildDiscountQuery($queryQb, $filters)->paginate(25);
+                    $discounts = $this->buildDiscountQuery($queryQb, $filters)->paginate(24);
 
                     return response()->json([
                         'data' => $this->formatter->format($discounts),

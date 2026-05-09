@@ -124,7 +124,7 @@ class MeilisearchService
         }
     }
 
-    public function search(string $query, array $filters = [], array $sort = [], int $page = 1, int $perPage = 25)
+    public function search(string $query, array $filters = [], array $sort = [], int $page = 1, int $perPage = 24)
     {
         try {
             $index = $this->client->index($this->indexName);
