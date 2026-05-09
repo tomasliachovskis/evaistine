@@ -5,11 +5,14 @@ namespace App\Console\Commands;
 use App\Models\Store;
 use App\Services\PdfFlyerProcessingService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class ProcessPdfFlyer extends Command
 {
-    protected $signature = 'flyers:process-pdf {pdf : Path to PDF file} {--store= : Store name (e.g., ŠILAS)} {--page= : Process only specific page number (e.g., --page=3)}';
-    protected $description = 'Process discount flyer PDF and extract discount information using OpenAI Vision API';
+    protected $signature = 'flyers:process-pdf';
+
+    protected $description = 'Process incoming flyer PDFs from storage/app/flyers-incoming; filename must start with the store slug (e.g. aibe-1.pdf); deletes each file after successful processing';
 
     private PdfFlyerProcessingService $processingService;
 
@@ -21,58 +24,91 @@ class ProcessPdfFlyer extends Command
 
     public function handle()
     {
-        $pdfPath = $this->argument('pdf');
-        $storeName = $this->option('store');
+        $incomingDir = storage_path('app/flyers-incoming');
 
-        if (!$storeName) {
-            $this->error('Store name is required. Use --store option (e.g., --store=ŠILAS)');
-            return 1;
+        if (!is_dir($incomingDir)) {
+            File::makeDirectory($incomingDir, 0755, true);
         }
 
-        if (!file_exists($pdfPath)) {
-            $this->error("PDF file not found: {$pdfPath}");
-            return 1;
+        $files = File::glob($incomingDir . DIRECTORY_SEPARATOR . '*.pdf');
+        if ($files === false || $files === []) {
+            $this->info('No PDF files in flyers-incoming.');
+            return 0;
         }
 
-        $store = Store::where('name', $storeName)->first();
+        sort($files, SORT_STRING);
 
-        if (!$store) {
-            $this->error("Store not found: {$storeName}");
-            $this->info('Available stores: ' . Store::pluck('name')->implode(', '));
-            return 1;
-        }
-
-        $pageNumber = $this->option('page') ? (int)$this->option('page') : null;
-
-        $this->info("Processing PDF flyer for store: {$store->name}");
-        $this->info("PDF file: {$pdfPath}");
-        if ($pageNumber) {
-            $this->info("Processing only page: {$pageNumber}");
-        }
-        $this->info("Note: Detailed progress is logged. Check logs with: tail -f storage/logs/laravel.log");
+        $this->info('Note: Flyer processing is logged to storage/logs/flyer-*.log (e.g. tail -f storage/logs/flyer-$(date +%F).log)');
         $this->newLine();
 
-        try {
-            $this->info("Starting PDF processing...");
-            $result = $this->processingService->processPdf($pdfPath, $store, $pageNumber);
+        $hadFailure = false;
 
-            if ($result['success']) {
-                $this->info("Successfully processed PDF flyer!");
-                $this->info("Extracted discounts: {$result['total_extracted']}");
-                $this->info("Saved to database: {$result['count']}");
-                $this->newLine();
-                $this->info('Next step: Run "php artisan discounts:process" to finalize the discounts.');
-                return 0;
-            } else {
-                $this->error("Failed to process PDF: {$result['message']}");
-                return 1;
+        foreach ($files as $pdfPath) {
+            $filename = basename($pdfPath);
+            $storeSlug = $this->extractStoreSlugFromPdfFilename($filename);
+
+            if ($storeSlug === '') {
+                $this->error("Cannot parse store slug from filename: {$filename}");
+                $hadFailure = true;
+                continue;
             }
-        } catch (\Exception $e) {
-            $this->error("Error processing PDF: {$e->getMessage()}");
+
+            $store = Store::where('slug', $storeSlug)->first();
+
+            if (!$store) {
+                $this->error("No store with slug \"{$storeSlug}\" for file: {$filename}");
+                $this->line('Known slugs: ' . Store::query()->orderBy('slug')->pluck('slug')->implode(', '));
+                $hadFailure = true;
+                continue;
+            }
+
+            $this->info("Processing {$filename} (slug \"{$store->slug}\" → {$store->name})");
+
+            try {
+                $result = $this->processingService->processPdf($pdfPath, $store, null);
+
+                if ($result['success']) {
+                    $this->info("OK — extracted: {$result['total_extracted']}, saved: {$result['count']}");
+                    if (!@unlink($pdfPath)) {
+                        Log::channel('flyer')->warning('Processed PDF could not be deleted', ['path' => $pdfPath]);
+                        $this->warn("Processed but could not delete file: {$pdfPath}");
+                    } else {
+                        $this->info("Deleted: {$filename}");
+                    }
+                    $this->newLine();
+                    $this->info('Next step: Run "sail artisan discounts:process" to finalize the discounts.');
+                } else {
+                    $this->error("Failed {$filename}: {$result['message']}");
+                    $hadFailure = true;
+                }
+            } catch (\Exception $e) {
+                $this->error("Error processing {$filename}: {$e->getMessage()}");
+                Log::channel('flyer')->error('flyers:process-pdf exception', [
+                    'file' => $pdfPath,
+                    'exception' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                $hadFailure = true;
+            }
+
             $this->newLine();
-            $this->error("Stack trace:");
-            $this->line($e->getTraceAsString());
-            return 1;
         }
+
+        return $hadFailure ? 1 : 0;
+    }
+
+    private function extractStoreSlugFromPdfFilename(string $filename): string
+    {
+        $basename = pathinfo($filename, PATHINFO_FILENAME);
+
+        if (preg_match('/^(.+)-(\d+)$/u', $basename, $m)) {
+            return strtolower($m[1]);
+        }
+
+        if (preg_match('/^([^-]+)-/u', $basename, $m)) {
+            return strtolower($m[1]);
+        }
+
+        return strtolower($basename);
     }
 }

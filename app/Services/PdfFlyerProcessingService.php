@@ -22,13 +22,13 @@ class PdfFlyerProcessingService
         $this->apiKey = config('services.openai.api_key');
 
         if (empty($this->apiKey)) {
-            Log::warning('OpenAI API key not configured in PdfFlyerProcessingService');
+            Log::channel('flyer')->warning('OpenAI API key not configured in PdfFlyerProcessingService');
         }
 
         $this->geminiApiKey = config('services.gemini.api_key');
 
         if (empty($this->geminiApiKey)) {
-            Log::warning('Gemini API key not configured in PdfFlyerProcessingService');
+            Log::channel('flyer')->warning('Gemini API key not configured in PdfFlyerProcessingService');
         }
     }
 
@@ -45,21 +45,21 @@ class PdfFlyerProcessingService
     public function processPdf(string $pdfPath, Store $store, ?int $pageNumber = null): array
     {
         $processId = uniqid('pdf_' . time() . '_', true);
-        Log::info('Starting PDF processing', ['pdf' => $pdfPath, 'store' => $store->name, 'process_id' => $processId]);
+        Log::channel('flyer')->info('Starting PDF processing', ['pdf' => $pdfPath, 'store' => $store->name, 'process_id' => $processId]);
 
         if (!$this->isGeminiConfigured()) {
-            Log::error('Gemini API key not configured');
+            Log::channel('flyer')->error('Gemini API key not configured');
             throw new \Exception('Gemini API key not configured');
         }
 
         if (!file_exists($pdfPath)) {
-            Log::error('PDF file not found', ['path' => $pdfPath]);
+            Log::channel('flyer')->error('PDF file not found', ['path' => $pdfPath]);
             throw new \Exception("PDF file not found: {$pdfPath}");
         }
 
-        Log::info('Converting PDF to images...', ['pdf' => $pdfPath, 'process_id' => $processId]);
+        Log::channel('flyer')->info('Converting PDF to images...', ['pdf' => $pdfPath, 'process_id' => $processId]);
         $images = $this->convertPdfToImages($pdfPath, $processId, $pageNumber);
-        Log::info('PDF conversion completed',
+        Log::channel('flyer')->info('PDF conversion completed',
             ['total_pages' => count($images), 'process_id' => $processId, 'target_page' => $pageNumber]);
 
         $validityDates = null;
@@ -73,7 +73,7 @@ class PdfFlyerProcessingService
             $originalImagePath = $imageData['original_path'];
             $pageNum = $imageData['page_number'];
 
-            Log::info("Processing page {$currentPageNumber} of " . count($images), [
+            Log::channel('flyer')->info("Processing page {$currentPageNumber} of " . count($images), [
                 'processed_url' => $processedImageUrl,
                 'original_path' => $originalImagePath,
                 'page_number' => $pageNum
@@ -85,29 +85,29 @@ class PdfFlyerProcessingService
                 if ($result && isset($result['validity_dates'])) {
                     if (!$validityDates) {
                         $validityDates = $result['validity_dates'];
-                        Log::info('Validity dates extracted', ['dates' => $validityDates]);
+                        Log::channel('flyer')->info('Validity dates extracted', ['dates' => $validityDates]);
                     }
                 }
 
                 if ($result && isset($result['discounts']) && is_array($result['discounts'])) {
                     $discountCount = count($result['discounts']);
                     $totalExtractedCount += $discountCount;
-                    Log::info("Extracted {$discountCount} discounts from page {$pageNum}");
+                    Log::channel('flyer')->info("Extracted {$discountCount} discounts from page {$pageNum}");
 
                     if ($discountCount > 0) {
-                        Log::info("Saving discounts from page {$currentPageNumber} to database...",
+                        Log::channel('flyer')->info("Saving discounts from page {$currentPageNumber} to database...",
                             ['count' => $discountCount]);
                         $savedCount = $this->saveToDiscountTemp($result['discounts'], $store, $validityDates,
                             $originalImagePath);
                         $totalSavedCount += $savedCount;
-                        Log::info("Page {$currentPageNumber} discounts saved",
+                        Log::channel('flyer')->info("Page {$currentPageNumber} discounts saved",
                             ['saved' => $savedCount, 'extracted' => $discountCount]);
                     }
                 } else {
-                    Log::warning("No discounts found on page {$currentPageNumber}", ['result' => $result]);
+                    Log::channel('flyer')->warning("No discounts found on page {$currentPageNumber}", ['result' => $result]);
                 }
             } catch (\Exception $e) {
-                Log::error('Error extracting discounts from image', [
+                Log::channel('flyer')->error('Error extracting discounts from image', [
                     'processed_url' => $processedImageUrl,
                     'original_path' => $originalImagePath,
                     'page' => $currentPageNumber,
@@ -117,7 +117,7 @@ class PdfFlyerProcessingService
             }
         }
 
-        Log::info('Finished processing all pages', [
+        Log::channel('flyer')->info('Finished processing all pages', [
             'total_pages' => count($images),
             'total_discounts_extracted' => $totalExtractedCount,
             'total_discounts_saved' => $totalSavedCount,
@@ -125,8 +125,8 @@ class PdfFlyerProcessingService
         ]);
 
         if ($totalSavedCount === 0) {
-            Log::warning('No discounts saved from PDF', ['process_id' => $processId]);
-            Log::info('Image URLs preserved for debugging', [
+            Log::channel('flyer')->warning('No discounts saved from PDF', ['process_id' => $processId]);
+            Log::channel('flyer')->info('Image URLs preserved for debugging', [
                 'process_id' => $processId,
                 'image_count' => count($images),
                 'image_urls' => $images
@@ -138,7 +138,7 @@ class PdfFlyerProcessingService
             ];
         }
 
-        Log::info('Processing completed successfully. Image URLs preserved for potential reprocessing.', [
+        Log::channel('flyer')->info('Processing completed successfully. Image URLs preserved for potential reprocessing.', [
             'process_id' => $processId,
             'image_count' => count($images),
             'image_urls' => $images
@@ -157,16 +157,16 @@ class PdfFlyerProcessingService
     {
         $storageDir = 'flyers';
         $originalStorageDir = 'flyers/originals';
-        Log::info('Setting up public storage directory', ['dir' => $storageDir, 'process_id' => $processId]);
+        Log::channel('flyer')->info('Setting up public storage directory', ['dir' => $storageDir, 'process_id' => $processId]);
 
         if (!Storage::disk('public')->exists($storageDir)) {
             Storage::disk('public')->makeDirectory($storageDir);
-            Log::info('Created public storage directory', ['dir' => $storageDir]);
+            Log::channel('flyer')->info('Created public storage directory', ['dir' => $storageDir]);
         }
 
         if (!Storage::disk('public')->exists($originalStorageDir)) {
             Storage::disk('public')->makeDirectory($originalStorageDir);
-            Log::info('Created original images storage directory', ['dir' => $originalStorageDir]);
+            Log::channel('flyer')->info('Created original images storage directory', ['dir' => $originalStorageDir]);
         }
 
         $tempDir = storage_path('app/temp/flyers');
@@ -175,12 +175,12 @@ class PdfFlyerProcessingService
         }
 
         try {
-            Log::info('Initializing PDF object', ['path' => $pdfPath, 'process_id' => $processId]);
+            Log::channel('flyer')->info('Initializing PDF object', ['path' => $pdfPath, 'process_id' => $processId]);
             $pdf = new Pdf($pdfPath);
 
-            Log::info('Getting number of pages...', ['process_id' => $processId]);
+            Log::channel('flyer')->info('Getting number of pages...', ['process_id' => $processId]);
             $numberOfPages = $pdf->getNumberOfPages();
-            Log::info('PDF has pages',
+            Log::channel('flyer')->info('PDF has pages',
                 ['total_pages' => $numberOfPages, 'process_id' => $processId, 'target_page' => $targetPage]);
 
             if ($targetPage !== null && ($targetPage < 1 || $targetPage > $numberOfPages)) {
@@ -193,7 +193,7 @@ class PdfFlyerProcessingService
             foreach ($pagesToProcess as $pageNumber) {
                 $uniqueFilename = $processId . '_page_' . $pageNumber . '.png';
                 $tempImagePath = $tempDir . '/' . $uniqueFilename;
-                Log::info("Converting page {$pageNumber}/{$numberOfPages} to image...", [
+                Log::channel('flyer')->info("Converting page {$pageNumber}/{$numberOfPages} to image...", [
                     'output' => $tempImagePath,
                     'process_id' => $processId,
                     'unique_filename' => $uniqueFilename,
@@ -205,18 +205,18 @@ class PdfFlyerProcessingService
                         $pdf->setPage($pageNumber)
                             ->setResolution(300)
                             ->saveImage($tempImagePath);
-                        Log::info("Page {$pageNumber} converted with 300 DPI");
+                        Log::channel('flyer')->info("Page {$pageNumber} converted with 300 DPI");
                     } elseif (method_exists($pdf, 'resolution')) {
                         $pdf->setPage($pageNumber)
                             ->setResolution(300)
                             ->saveImage($tempImagePath);
-                        Log::info("Page {$pageNumber} converted with 300 DPI (using resolution method)");
+                        Log::channel('flyer')->info("Page {$pageNumber} converted with 300 DPI (using resolution method)");
                     } else {
                         $pdf->setPage($pageNumber)->saveImage($tempImagePath);
-                        Log::info("Page {$pageNumber} converted with default quality (resolution method not available)");
+                        Log::channel('flyer')->info("Page {$pageNumber} converted with default quality (resolution method not available)");
                     }
                 } catch (\Exception $e) {
-                    Log::warning('Failed to set resolution, trying default quality', [
+                    Log::channel('flyer')->warning('Failed to set resolution, trying default quality', [
                         'error' => $e->getMessage(),
                         'page' => $pageNumber
                     ]);
@@ -225,7 +225,7 @@ class PdfFlyerProcessingService
 
                 if (file_exists($tempImagePath)) {
                     $fileSize = filesize($tempImagePath);
-                    Log::info("Page {$pageNumber} converted successfully", [
+                    Log::channel('flyer')->info("Page {$pageNumber} converted successfully", [
                         'size' => $fileSize,
                         'path' => $tempImagePath,
                         'process_id' => $processId
@@ -235,7 +235,7 @@ class PdfFlyerProcessingService
                     Storage::disk('public')->put($originalStoragePath, file_get_contents($tempImagePath));
                     $originalImagePath = $originalStoragePath;
 
-                    Log::info("Page {$pageNumber} original image saved", [
+                    Log::channel('flyer')->info("Page {$pageNumber} original image saved", [
                         'path' => $originalImagePath,
                         'process_id' => $processId
                     ]);
@@ -251,7 +251,7 @@ class PdfFlyerProcessingService
                         'page_number' => $pageNumber
                     ];
 
-                    Log::info("Page {$pageNumber} preprocessed and saved to public storage", [
+                    Log::channel('flyer')->info("Page {$pageNumber} preprocessed and saved to public storage", [
                         'url' => $imageUrl,
                         'original_path' => $originalImagePath,
                         'process_id' => $processId
@@ -264,7 +264,7 @@ class PdfFlyerProcessingService
                         unlink($processedImagePath);
                     }
                 } else {
-                    Log::error("Failed to create image for page {$pageNumber}", [
+                    Log::channel('flyer')->error("Failed to create image for page {$pageNumber}", [
                         'expected_path' => $tempImagePath,
                         'process_id' => $processId
                     ]);
@@ -272,14 +272,14 @@ class PdfFlyerProcessingService
             }
 
             if (empty($imageData)) {
-                Log::error('No images were created from PDF');
+                Log::channel('flyer')->error('No images were created from PDF');
                 throw new \Exception('Failed to convert PDF to images. Make sure pdftoppm or pdftocairo is installed.');
             }
 
-            Log::info('PDF to images conversion completed', ['images_count' => count($imageData)]);
+            Log::channel('flyer')->info('PDF to images conversion completed', ['images_count' => count($imageData)]);
             return $imageData;
         } catch (\Exception $e) {
-            Log::error('Error converting PDF to images', [
+            Log::channel('flyer')->error('Error converting PDF to images', [
                 'error' => $e->getMessage(),
                 'pdf_path' => $pdfPath,
                 'trace' => $e->getTraceAsString()
@@ -305,7 +305,7 @@ class PdfFlyerProcessingService
 
             $image->save($outputPath);
 
-            Log::info("Image preprocessed successfully", [
+            Log::channel('flyer')->info("Image preprocessed successfully", [
                 'original' => $imagePath,
                 'processed' => $outputPath,
                 'page' => $pageNumber
@@ -313,7 +313,7 @@ class PdfFlyerProcessingService
 
             return $outputPath;
         } catch (\Exception $e) {
-            Log::warning('Image preprocessing failed, using original', [
+            Log::channel('flyer')->warning('Image preprocessing failed, using original', [
                 'error' => $e->getMessage(),
                 'image' => $imagePath
             ]);
@@ -327,10 +327,10 @@ class PdfFlyerProcessingService
         ?array $validityDates,
         int $pageNumber = 0
     ): ?array {
-        Log::info("Starting Gemini extraction from image", ['image_url' => $imageUrl, 'page' => $pageNumber]);
+        Log::channel('flyer')->info("Starting Gemini extraction from image", ['image_url' => $imageUrl, 'page' => $pageNumber]);
 
         if (empty($this->geminiApiKey)) {
-            Log::error('Gemini API key not configured');
+            Log::channel('flyer')->error('Gemini API key not configured');
             return null;
         }
 
@@ -341,18 +341,18 @@ class PdfFlyerProcessingService
         try {
             $imagePath = $this->getImagePathFromUrl($imageUrl);
             if (!$imagePath) {
-                Log::error('Failed to extract path from image URL', ['image_url' => $imageUrl]);
+                Log::channel('flyer')->error('Failed to extract path from image URL', ['image_url' => $imageUrl]);
                 return null;
             }
 
             if (!Storage::disk('public')->exists($imagePath)) {
-                Log::error('Image file not found in storage', ['path' => $imagePath, 'image_url' => $imageUrl]);
+                Log::channel('flyer')->error('Image file not found in storage', ['path' => $imagePath, 'image_url' => $imageUrl]);
                 return null;
             }
 
             $imageContent = Storage::disk('public')->get($imagePath);
             if ($imageContent === false) {
-                Log::error('Failed to read image from storage', ['path' => $imagePath]);
+                Log::channel('flyer')->error('Failed to read image from storage', ['path' => $imagePath]);
                 return null;
             }
 
@@ -384,7 +384,7 @@ class PdfFlyerProcessingService
             $estimatedOutputCost = ($estimatedMaxOutputTokens / 1000000) * 5.00;
             $estimatedTotalCost = $estimatedInputCost + $estimatedOutputCost;
 
-            Log::info('Preparing Gemini API request', [
+            Log::channel('flyer')->info('Preparing Gemini API request', [
                 'model' => 'gemini-2.5-flash',
                 'image_url' => $imageUrl,
                 'prompt_length' => strlen($fullPrompt),
@@ -411,7 +411,7 @@ class PdfFlyerProcessingService
 
             while ($attempt < $maxAttempts) {
                 $attempt++;
-                Log::info("Gemini API attempt {$attempt}/{$maxAttempts}", ['image_url' => $imageUrl]);
+                Log::channel('flyer')->info("Gemini API attempt {$attempt}/{$maxAttempts}", ['image_url' => $imageUrl]);
 
                 try {
                     $startTime = microtime(true);
@@ -460,7 +460,7 @@ class PdfFlyerProcessingService
                         'payload' => $requestPayloadForLog
                     ];
 
-                    Log::info('Gemini API request', [
+                    Log::channel('flyer')->info('Gemini API request', [
                         'request' => json_encode($requestForLog,
                             JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                         'attempt' => $attempt
@@ -485,7 +485,7 @@ class PdfFlyerProcessingService
                     $outputCost = ($candidatesTokenCount / 1000000) * 5.00;
                     $totalCost = $inputCost + $outputCost;
 
-                    Log::info('Gemini API response received', [
+                    Log::channel('flyer')->info('Gemini API response received', [
                         'status' => $response->status(),
                         'duration_seconds' => $duration,
                         'finish_reason' => $finishReason,
@@ -506,7 +506,7 @@ class PdfFlyerProcessingService
                     ]);
 
                     if ($finishReason === 'MAX_TOKENS' || $finishReason === 'OTHER') {
-                        Log::warning('Gemini response was truncated', [
+                        Log::channel('flyer')->warning('Gemini response was truncated', [
                             'finish_reason' => $finishReason,
 //                            'max_tokens' => 16000,
                             'page' => $pageNumber,
@@ -517,7 +517,7 @@ class PdfFlyerProcessingService
                     if ($response->successful()) {
                         $rawResponse = $response->json();
 
-                        Log::info('Gemini API raw response', [
+                        Log::channel('flyer')->info('Gemini API raw response', [
                             'raw_response' => json_encode($rawResponse,
                                 JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                             'attempt' => $attempt
@@ -526,7 +526,7 @@ class PdfFlyerProcessingService
                         $content = $response->json('candidates.0.content.parts.0.text');
 
                         if (!$content) {
-                            Log::error('No content in Gemini response', [
+                            Log::channel('flyer')->error('No content in Gemini response', [
                                 'response' => $rawResponse,
                                 'attempt' => $attempt
                             ]);
@@ -536,7 +536,7 @@ class PdfFlyerProcessingService
                             return null;
                         }
 
-                        Log::info('Parsing JSON response from Gemini', [
+                        Log::channel('flyer')->info('Parsing JSON response from Gemini', [
                             'content_length' => strlen($content),
                             'raw_content' => $content,
                             'attempt' => $attempt
@@ -546,7 +546,7 @@ class PdfFlyerProcessingService
                         $data = json_decode($cleanedContent, true);
 
                         if (json_last_error() !== JSON_ERROR_NONE) {
-                            Log::warning('Invalid JSON in Gemini response', [
+                            Log::channel('flyer')->warning('Invalid JSON in Gemini response', [
                                 'content_length' => strlen($content),
                                 'content_preview' => substr($content, 0, 1000),
                                 'cleaned_preview' => substr($cleanedContent, 0, 1000),
@@ -557,7 +557,7 @@ class PdfFlyerProcessingService
                             ]);
 
                             if ($finishReason === 'MAX_TOKENS' || $finishReason === 'OTHER') {
-                                Log::error('Response truncated - increase maxOutputTokens or split into smaller requests',
+                                Log::channel('flyer')->error('Response truncated - increase maxOutputTokens or split into smaller requests',
                                     [
                                         'current_max_tokens' => 16000,
                                         'content_length' => strlen($content)
@@ -565,17 +565,17 @@ class PdfFlyerProcessingService
                             }
 
                             if ($attempt < $maxAttempts) {
-                                Log::info("Retrying due to invalid JSON...");
+                                Log::channel('flyer')->info("Retrying due to invalid JSON...");
                                 continue;
                             }
 
-                            Log::error('Failed to get valid JSON after all attempts', [
+                            Log::channel('flyer')->error('Failed to get valid JSON after all attempts', [
                                 'attempts' => $attempt
                             ]);
                             return null;
                         }
 
-                        Log::info('Raw JSON data before mapping', [
+                        Log::channel('flyer')->info('Raw JSON data before mapping', [
                             'has_vd' => isset($data['vd']),
                             'has_d' => isset($data['d']),
                             'd_count' => isset($data['d']) && is_array($data['d']) ? count($data['d']) : 0,
@@ -587,7 +587,7 @@ class PdfFlyerProcessingService
 
                         $discountCount = isset($data['discounts']) && is_array($data['discounts']) ? count($data['discounts']) : 0;
 
-                        Log::info('Gemini API response (formatted)', [
+                        Log::channel('flyer')->info('Gemini API response (formatted)', [
                             'response' => json_encode($data,
                                 JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                             'discounts_count' => $discountCount,
@@ -595,7 +595,7 @@ class PdfFlyerProcessingService
                             'attempt' => $attempt
                         ]);
 
-                        Log::info('Successfully extracted data from Gemini', [
+                        Log::channel('flyer')->info('Successfully extracted data from Gemini', [
                             'discounts_count' => $discountCount,
                             'has_validity_dates' => isset($data['validity_dates']),
                             'attempt' => $attempt
@@ -604,7 +604,7 @@ class PdfFlyerProcessingService
                         return $data;
                     }
 
-                    Log::error('Gemini API request failed', [
+                    Log::channel('flyer')->error('Gemini API request failed', [
                         'status' => $response->status(),
                         'response_preview' => substr($response->body(), 0, 500),
                         'headers' => $response->headers(),
@@ -616,7 +616,7 @@ class PdfFlyerProcessingService
                     }
 
                 } catch (\Exception $e) {
-                    Log::error('Error calling Gemini API', [
+                    Log::channel('flyer')->error('Error calling Gemini API', [
                         'error' => $e->getMessage(),
                         'error_class' => get_class($e),
                         'attempt' => $attempt,
@@ -629,7 +629,7 @@ class PdfFlyerProcessingService
                 }
             }
 
-            Log::error('Failed to extract discounts from Gemini after all attempts', [
+            Log::channel('flyer')->error('Failed to extract discounts from Gemini after all attempts', [
                 'max_attempts' => $maxAttempts,
                 'image_url' => $imageUrl
             ]);
@@ -637,7 +637,7 @@ class PdfFlyerProcessingService
             return null;
 
         } catch (\Exception $e) {
-            Log::error('Error in Gemini extraction', [
+            Log::channel('flyer')->error('Error in Gemini extraction', [
                 'error' => $e->getMessage(),
                 'error_class' => get_class($e),
                 'image_url' => $imageUrl,
@@ -895,7 +895,7 @@ Return ONLY valid JSON. No explanations. No markdown.
         ?array $validityDates,
         ?string $pageImagePath = null
     ): int {
-        Log::info('Starting to save discounts to database',
+        Log::channel('flyer')->info('Starting to save discounts to database',
             ['total' => count($discounts), 'page_image_path' => $pageImagePath]);
 
         $savedCount = 0;
@@ -907,14 +907,14 @@ Return ONLY valid JSON. No explanations. No markdown.
         if ($validityDates) {
             $startAt = $validityDates['start_at'] ?? null;
             $endAt = $validityDates['end_at'] ?? null;
-            Log::info('Using validity dates', ['start' => $startAt, 'end' => $endAt]);
+            Log::channel('flyer')->info('Using validity dates', ['start' => $startAt, 'end' => $endAt]);
         } else {
-            Log::warning('No validity dates provided, using defaults');
+            Log::channel('flyer')->warning('No validity dates provided, using defaults');
         }
 
         foreach ($discounts as $index => $discountData) {
             $discountNumber = $index + 1;
-            Log::info("Processing discount {$discountNumber}/" . count($discounts), [
+            Log::channel('flyer')->info("Processing discount {$discountNumber}/" . count($discounts), [
                 'name' => $discountData['name'] ?? 'N/A'
             ]);
 
@@ -923,7 +923,7 @@ Return ONLY valid JSON. No explanations. No markdown.
 
                 if (!$validated) {
                     $skippedCount++;
-                    Log::warning('Invalid discount data skipped', [
+                    Log::channel('flyer')->warning('Invalid discount data skipped', [
                         'discount_number' => $discountNumber,
                         'data' => $discountData
                     ]);
@@ -934,7 +934,7 @@ Return ONLY valid JSON. No explanations. No markdown.
                 if ($discountPercent === null && isset($validated['original_price']) && isset($validated['discounted_price'])) {
                     if ($validated['original_price'] > 0) {
                         $discountPercent = round((($validated['original_price'] - $validated['discounted_price']) / $validated['original_price']) * 100);
-                        Log::info('Calculated discount percent', [
+                        Log::channel('flyer')->info('Calculated discount percent', [
                             'original' => $validated['original_price'],
                             'discounted' => $validated['discounted_price'],
                             'percent' => $discountPercent
@@ -942,7 +942,7 @@ Return ONLY valid JSON. No explanations. No markdown.
                     }
                 }
 
-                Log::info('Creating discount record', [
+                Log::channel('flyer')->info('Creating discount record', [
                     'name' => $validated['name'],
                     'store' => $store->name,
                     'original_price' => $validated['original_price'] ?? 0,
@@ -978,10 +978,10 @@ Return ONLY valid JSON. No explanations. No markdown.
                 ]);
 
                 $savedCount++;
-                Log::info("Discount {$discountNumber} saved successfully", ['id' => $savedCount]);
+                Log::channel('flyer')->info("Discount {$discountNumber} saved successfully", ['id' => $savedCount]);
             } catch (\Exception $e) {
                 $errorCount++;
-                Log::error('Error saving discount to temp table', [
+                Log::channel('flyer')->error('Error saving discount to temp table', [
                     'discount_number' => $discountNumber,
                     'error' => $e->getMessage(),
                     'error_class' => get_class($e),
@@ -991,7 +991,7 @@ Return ONLY valid JSON. No explanations. No markdown.
             }
         }
 
-        Log::info('Finished saving discounts', [
+        Log::channel('flyer')->info('Finished saving discounts', [
             'total' => count($discounts),
             'saved' => $savedCount,
             'skipped' => $skippedCount,
@@ -1045,7 +1045,7 @@ Return ONLY valid JSON. No explanations. No markdown.
 
         if ($validated['original_price'] > 0 && $validated['discounted_price'] > 0) {
             if ($validated['discounted_price'] >= $validated['original_price']) {
-                Log::warning('Discounted price must be less than original price', [
+                Log::channel('flyer')->warning('Discounted price must be less than original price', [
                     'original' => $validated['original_price'],
                     'discounted' => $validated['discounted_price']
                 ]);
