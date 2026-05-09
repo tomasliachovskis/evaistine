@@ -52,7 +52,7 @@ const __dirname = path.dirname(__filename);
         console.log('No cookie popup detected or already accepted.');
     }
 
-    const categoryLinks = await page.$$eval('.row.m-n1.m-sm-n3 a.type.cursor-pointer', anchors =>
+    const categoryLinks = await page.$$eval(' div.offers-categories > div.items.d-flex.flex-column > a', anchors =>
         anchors.map(anchor => anchor.href)
     );
 
@@ -81,7 +81,7 @@ const __dirname = path.dirname(__filename);
         });
 
         try {
-            await page.waitForSelector('.akcija-loyalty', { timeout: 5000 });
+            await page.waitForSelector('div.product.border-radius-20', { timeout: 5000 });
         } catch (error) {
             console.log(`Failed to load products in ${fullUrl}, skipping.`);
             continue;
@@ -89,7 +89,7 @@ const __dirname = path.dirname(__filename);
 
         await sleep();
 
-        const productBlocks = await page.$$eval('.akcija-loyalty', (blocks, link) => {
+        const productBlocks = await page.$$eval('div.product.border-radius-20', (blocks, link) => {
             function parseDate(dateStr) {
                 const [month, day] = dateStr.split('.').map(Number);
                 const year = new Date().getFullYear();
@@ -102,7 +102,7 @@ const __dirname = path.dirname(__filename);
             };
 
             return blocks.map(block => {
-                const name = block.querySelector('.akcija_title')?.textContent.trim();
+                const name = block.querySelector('h2.font-family-proxima-soft-condensed.text-px-20')?.textContent.trim();
 
                 let price1 = block.querySelector('.card_tag .price_int')?.textContent.trim() ?? '';
                 let price2 = block.querySelector('.card_tag .sub')?.textContent.trim() ?? '';
@@ -149,10 +149,10 @@ const __dirname = path.dirname(__filename);
                     discounted_price = tmp;
                 }
 
-                const info = block.querySelector('.akcija_description')?.textContent.trim();
-                let valid = block.querySelector('.m-0.w-100.akcija_description.text-center')?.textContent.trim();
+                const info = block.querySelector('p.font-family-proxima-soft-condensed.text-px-16.text-dark-grey-new.line-height-100.fw-light.mt-1.m-0.max-w-75')?.textContent.trim();
+                let valid = block.querySelector('p.font-family-proxima-soft-condensed.text-px-14.text-dark-grey-new.line-height-100.fw-light.mt-2.m-0.max-w-75')?.textContent.trim();
                 const product_url = block.querySelector('a')?.href;
-                const image_url = block.querySelector('.card-img-top')?.src;
+                const image_url = block.querySelector('img.object-fit-cover.object-position-center.border-radius-20')?.src;
                 const card = block.querySelector('.card') !== null;
 
                 let start_at = '';
