@@ -5,14 +5,15 @@ namespace App\Console\Commands;
 use App\Models\Category;
 use App\Models\CategoryMapper;
 use App\Models\Discount;
-use App\Models\DiscountHistory;
 use App\Models\DiscountTemp;
 use App\Models\Product;
 use App\Models\Store;
 use App\Rules\StoreRules\AibeRules;
 use App\Rules\StoreRules\CiaRules;
+use App\Rules\StoreRules\ExpressMarketRules;
 use App\Rules\StoreRules\GrusteRules;
 use App\Rules\StoreRules\IkiRules;
+use App\Rules\StoreRules\KubasRules;
 use App\Rules\StoreRules\LidlRules;
 use App\Rules\StoreRules\MaximaRules;
 use App\Rules\StoreRules\NorfaRules;
@@ -20,7 +21,6 @@ use App\Rules\StoreRules\RimiRules;
 use App\Rules\StoreRules\SilasRules;
 use App\Support\ProductPackSizeExtractor;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Intervention\Image\ImageManager;
@@ -94,14 +94,6 @@ class ProcessDiscounts extends Command
             $normalizedDiscount = $rules->normalizeDiscount($discountPercent);
 
             if (!empty($discountPercent)) {
-//                $discountPercent = strtolower(trim($discountPercent));
-//                $discountPercent = preg_replace('/[^0-9-]/', '', $discountPercent);
-//                $discountPercent = str_replace('-', '', $discountPercent);
-//                $discountPercent = !empty($discountPercent) ? (int)$discountPercent : null;
-//                if ($discountPercent < 0) {
-//                    $discountPercent = 0;
-//                }
-
                 $discountPercent = $normalizedDiscount;
 
                 if ($normalizedOriginalPrice <= 0) {
@@ -234,6 +226,10 @@ class ProcessDiscounts extends Command
                 return new GrusteRules($tempDiscount);
             case 'Čia':
                 return new CiaRules($tempDiscount);
+            case 'Express Market':
+                return new ExpressMarketRules($tempDiscount);
+            case 'Kubas':
+                return new KubasRules($tempDiscount);
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
         }

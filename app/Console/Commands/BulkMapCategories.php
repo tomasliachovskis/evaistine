@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Product;
 use App\Services\CategoryMappingService;
 use Illuminate\Console\Command;
 
@@ -35,6 +34,8 @@ class BulkMapCategories extends Command
             $this->mapStore('Aibė');
             $this->mapStore('Grustė');
             $this->mapStore('Čia');
+            $this->mapStore('Express Market');
+            $this->mapStore('Kubas');
         }
     }
 
