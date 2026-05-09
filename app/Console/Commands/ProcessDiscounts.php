@@ -84,6 +84,7 @@ class ProcessDiscounts extends Command
             $normalizedInfo = $packResult['info'];
             if (!empty($normalizedInfo)) {
                 $normalizedInfo = str_replace(['"', "'"], '', $normalizedInfo);
+                $normalizedInfo = $this->stripAsterisks($normalizedInfo) ?: null;
             }
 
             $normalizedOriginalPrice = $rules->normalizePrice($tempDiscount->original_price);
@@ -364,11 +365,11 @@ class ProcessDiscounts extends Command
 
         $finalSize = $nameSize ?? $infoPackSize;
 
-        if ($finalSize === null || $finalSize === '') {
-            return $baseName;
-        }
+        $composed = ($finalSize === null || $finalSize === '')
+            ? $baseName
+            : $baseName . ', ' . $finalSize;
 
-        return $baseName . ', ' . $finalSize;
+        return $this->stripAsterisks($composed);
     }
 
     private function generateProductSlug(string $productName, ?string $brand, string $storeName): string
@@ -541,5 +542,12 @@ class ProcessDiscounts extends Command
         $condition = str_replace(['Įsidėk 2 už', 'Pirk 2 už'], '1+1', $condition);
 
         return $condition;
+    }
+
+    private function stripAsterisks(string $text): string
+    {
+        $text = str_replace('*', '', $text);
+
+        return trim(preg_replace('/\s+/u', ' ', $text));
     }
 }
