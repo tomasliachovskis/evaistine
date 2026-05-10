@@ -292,13 +292,13 @@ class ProductController extends Controller
         $filters = $this->getFilters();
         $cacheKey = $this->generateFavoriteProductCacheKey($slug, $filters);
 
+        if (! Product::where('slug', $slug)->exists()) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
+
         return Cache::tags(['discounts', 'favorites', 'product', $slug])
             ->remember($cacheKey, 7200, function () use ($slug, $filters) {
-                $product = \App\Models\Product::where('slug', $slug)->first();
-
-                if (!$product) {
-                    return response()->json(['error' => 'Product not found'], 404);
-                }
+                $product = Product::where('slug', $slug)->firstOrFail();
 
                 $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
                     $query->where('slug', '!=', $slug)
@@ -355,6 +355,10 @@ class ProductController extends Controller
 
     public function getProductBySlug($slug)
     {
+        if (! Product::where('slug', $slug)->exists()) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
+
         $cacheKey = "product_slug_{$slug}";
 
         return Cache::tags(['discounts', 'product', $slug])
@@ -389,7 +393,11 @@ class ProductController extends Controller
 
         $product = Product::where('slug', $slug)
             ->with(['discounts.store', 'discountHistories.store', 'category'])
-            ->firstOrFail();
+            ->first();
+
+        if (! $product) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
 
         $randomSeed = $this->generateRandomSeed($slug);
 
