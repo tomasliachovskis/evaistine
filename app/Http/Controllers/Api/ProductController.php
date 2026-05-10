@@ -115,6 +115,7 @@ class ProductController extends Controller
             'plus' => request()->get('plus'),
             'page' => request()->get('page'),
             'store' => request()->get('store'),
+            'category' => request()->get('category'),
         ];
     }
 
@@ -135,6 +136,20 @@ class ProductController extends Controller
             $query = $query->whereHas('store', function ($storeQuery) use ($storeSlugs) {
                 $storeQuery->whereIn('slug', $storeSlugs);
             });
+        }
+
+        if ($filters['category']) {
+            $categorySlugs = array_values(array_filter(array_map('trim', explode(',', $filters['category']))));
+            if (!empty($categorySlugs)) {
+                $categoryIds = \App\Models\Category::whereIn('slug', $categorySlugs)->pluck('id')->all();
+                if (empty($categoryIds)) {
+                    $query->whereRaw('1 = 0');
+                } else {
+                    $query->whereHas('product', function ($q) use ($categoryIds) {
+                        $q->whereIn('category_id', $categoryIds);
+                    });
+                }
+            }
         }
 
         return $this->applySorting($query, $filters['order']);
