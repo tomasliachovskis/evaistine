@@ -1,0 +1,203 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\DiscountTemp;
+use Illuminate\Console\Command;
+use Symfony\Component\Process\Process;
+
+class ProcessDiscountsFlow extends Command
+{
+    protected $signature = 'discounts:process-flow {--skip-photos : Skip photo sync to frontend}';
+
+    protected $description = 'Process discounts, archive, reindex Meilisearch, and sync product photos to frontend';
+
+    public function handle(): int
+    {
+        $this->info('Starting discounts processing flow...');
+        $this->newLine();
+
+        if (!$this->isDiscountTempReadyToProcess()) {
+            return 0;
+        }
+
+        if (!$this->processDiscounts()) {
+            $this->error('Processing discounts failed. Aborting.');
+            return 1;
+        }
+
+        if (!$this->archiveExpiredDiscounts()) {
+            $this->error('Archiving expired discounts failed. Aborting.');
+            return 1;
+        }
+
+        if (!$this->reindexMeilisearch()) {
+            $this->error('Reindexing Meilisearch failed. Aborting.');
+            return 1;
+        }
+
+        if (!$this->clearDiscountsCache()) {
+            $this->error('Clearing discounts cache failed. Aborting.');
+            return 1;
+        }
+
+        if (!$this->option('skip-photos')) {
+            if (!$this->syncPhotosToFrontend()) {
+                $this->warn('Photo sync failed or skipped. Continuing...');
+            }
+        } else {
+            $this->info('Skipping photo sync (--skip-photos flag set).');
+        }
+
+        $this->newLine();
+        $this->info('Discounts processing flow finished successfully!');
+
+        return 0;
+    }
+
+    private function isDiscountTempReadyToProcess(): bool
+    {
+        $this->info('Checking discount_temp for unprocessed records...');
+
+        $unprocessedCount = DiscountTemp::query()
+            ->where('processed', false)
+            ->count();
+
+        if ($unprocessedCount === 0) {
+            $this->warn('No unprocessed records in discount_temp. Skipping flow.');
+            return false;
+        }
+
+        $latest = DiscountTemp::query()
+            ->where('processed', false)
+            ->latest('created_at')
+            ->first();
+
+        if ($latest->created_at->gte(now()->subMinutes(30))) {
+            $this->warn(
+                'Found ' . $unprocessedCount . ' unprocessed record(s), but latest "' . $latest->name . '" was created at '
+                . $latest->created_at->format('Y-m-d H:i:s')
+                . ' Skipping flow.'
+            );
+            return false;
+        }
+
+        $this->info(
+            'Found ' . $unprocessedCount . ' unprocessed record(s). Latest "' . $latest->name . '" (' . $latest->store . ') from '
+            . $latest->created_at->format('Y-m-d H:i:s') . ' — ready to process.'
+        );
+        $this->newLine();
+
+        return true;
+    }
+
+    private function processDiscounts(): bool
+    {
+        $this->info('Step 1: Processing discounts...');
+
+        $exitCode = $this->call('discounts:process');
+
+        if ($exitCode !== 0) {
+            $this->error('discounts:process failed with exit code: ' . $exitCode);
+            return false;
+        }
+
+        $this->info('Discounts processed successfully.');
+        $this->newLine();
+
+        return true;
+    }
+
+    private function archiveExpiredDiscounts(): bool
+    {
+        $this->info('Step 2: Archiving expired discounts...');
+
+        $exitCode = $this->call('discounts:archive-expired');
+
+        if ($exitCode !== 0) {
+            $this->error('discounts:archive-expired failed with exit code: ' . $exitCode);
+            return false;
+        }
+
+        $this->info('Expired discounts archived successfully.');
+        $this->newLine();
+
+        return true;
+    }
+
+    private function reindexMeilisearch(): bool
+    {
+        $this->info('Step 3: Reindexing Meilisearch...');
+
+        $options = [];
+        if (!app()->environment('production')) {
+            $options['--with-ssh-tunnel'] = true;
+        }
+
+        $exitCode = $this->call('discounts:index-meilisearch', $options);
+
+        if ($exitCode !== 0) {
+            $this->error('discounts:index-meilisearch failed with exit code: ' . $exitCode);
+            return false;
+        }
+
+        $this->info('Meilisearch reindexed successfully.');
+        $this->newLine();
+
+        return true;
+    }
+
+    private function clearDiscountsCache(): bool
+    {
+        $this->info('Step 4: Clearing discounts cache...');
+
+        $exitCode = $this->call('cache:clear-discounts');
+
+        if ($exitCode !== 0) {
+            $this->error('cache:clear-discounts failed with exit code: ' . $exitCode);
+            return false;
+        }
+
+        $this->info('Discounts cache cleared successfully.');
+        $this->newLine();
+
+        return true;
+    }
+
+    private function syncPhotosToFrontend(): bool
+    {
+        $this->info('Step 5: Syncing product photos to frontend (deploy-photos.sh)...');
+
+        $deployScript = base_path('deploy-photos.sh');
+        if (!file_exists($deployScript)) {
+            $this->error('deploy-photos.sh not found.');
+            return false;
+        }
+
+        $deployKeyPath = base_path('deploy_key');
+        if (file_exists($deployKeyPath)) {
+            chmod($deployKeyPath, 0600);
+            $this->info('Using deploy_key for SSH authentication.');
+        }
+
+        $process = Process::fromShellCommandline('DEPLOY_PHOTOS_ON_SERVER=1 bash deploy-photos.sh', base_path());
+        $process->setTimeout(600);
+        $process->run(function ($type, $buffer) {
+            if (Process::ERR === $type) {
+                $this->error($buffer);
+            } else {
+                $this->line($buffer);
+            }
+        });
+
+        if (!$process->isSuccessful()) {
+            $this->error('Photo sync failed with exit code: ' . $process->getExitCode());
+            return false;
+        }
+
+        $this->info('Product photos synced to frontend successfully.');
+        $this->newLine();
+
+        return true;
+    }
+}

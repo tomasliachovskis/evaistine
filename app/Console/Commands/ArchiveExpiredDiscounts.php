@@ -3,65 +3,87 @@
 namespace App\Console\Commands;
 
 use App\Models\Discount;
-use App\Models\DiscountHistory;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class ArchiveExpiredDiscounts extends Command
 {
     protected $signature = 'discounts:archive-expired';
+
     protected $description = 'Archive expired discounts to discount_histories table';
 
-    public function handle()
+    public function handle(): int
     {
         $this->info('Starting to archive expired discounts...');
 
-        $expiredDiscounts = Discount::where(function ($query) {
+        $expiredQuery = $this->expiredDiscountsQuery();
+        $count = (clone $expiredQuery)->count();
+
+        if ($count === 0) {
+            $this->info('No expired discounts found.');
+            return 0;
+        }
+
+        $this->info("Found {$count} expired discounts to archive.");
+
+        DB::transaction(function () use ($expiredQuery, $count) {
+            DB::table('discount_histories')->insertUsing(
+                [
+                    'product_id',
+                    'product_url',
+                    'store_id',
+                    'original_price',
+                    'discounted_price',
+                    'discount_percent',
+                    'condition',
+                    'card',
+                    'start_at',
+                    'end_at',
+                    'created_at',
+                    'updated_at',
+                ],
+                (clone $expiredQuery)->select(
+                    'product_id',
+                    'product_url',
+                    'store_id',
+                    'original_price',
+                    'discounted_price',
+                    'discount_percent',
+                    'condition',
+                    'card',
+                    'start_at',
+                    'end_at',
+                    DB::raw('NOW() as created_at'),
+                    DB::raw('NOW() as updated_at'),
+                )
+            );
+
+            Discount::withoutEvents(function () use ($expiredQuery) {
+                (clone $expiredQuery)->delete();
+            });
+        });
+
+        $this->info("Successfully archived {$count} expired discounts.");
+        $this->info("Removed {$count} expired discounts from main table.");
+
+        return 0;
+    }
+
+    private function expiredDiscountsQuery(): Builder
+    {
+        return Discount::query()->where(function ($query) {
             $query
                 ->where(function ($subQuery) {
                     $subQuery
                         ->whereNotNull('end_at')
-                        ->whereRaw('DATE(end_at) < DATE(?)', [now()]);
+                        ->where('end_at', '<', now()->startOfDay());
                 })
                 ->orWhere(function ($subQuery) {
                     $subQuery
                         ->where('updated_at', '<', now()->subHours(36))
                         ->whereNull('end_at');
                 });
-        })->get();
-
-        if ($expiredDiscounts->isEmpty()) {
-            $this->info('No expired discounts found.');
-            return;
-        }
-
-        $this->info("Found {$expiredDiscounts->count()} expired discounts to archive.");
-
-        $archivedCount = 0;
-        $deletedCount = 0;
-
-        DB::transaction(function () use ($expiredDiscounts, &$archivedCount, &$deletedCount) {
-            foreach ($expiredDiscounts as $discount) {
-                DiscountHistory::create([
-                    'product_id' => $discount->product_id,
-                    'product_url' => $discount->product_url,
-                    'store_id' => $discount->store_id,
-                    'original_price' => $discount->original_price,
-                    'discounted_price' => $discount->discounted_price,
-                    'discount_percent' => $discount->discount_percent,
-                    'condition' => $discount->condition,
-                    'card' => $discount->card,
-                    'start_at' => $discount->start_at,
-                    'end_at' => $discount->end_at,
-                ]);
-
-                $discount->delete();
-                $archivedCount++;
-                $deletedCount++;
-            }
         });
-
-        $this->info("Successfully archived {$archivedCount} expired discounts.");
-        $this->info("Removed {$deletedCount} expired discounts from main table.");
     }
 }

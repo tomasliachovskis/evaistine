@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Jobs\ProcessPdfFlyerJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -16,6 +17,14 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('cache:clear-discounts')->hourly();
+
+        $schedule->job(new ProcessPdfFlyerJob)
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        $schedule->command('discounts:process-flow')
+            ->everyThirtyMinutes()
+            ->withoutOverlapping();
     }
 
     /**
