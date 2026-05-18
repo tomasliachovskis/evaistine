@@ -9,6 +9,8 @@ class ProductMapping extends Model
 {
     use HasFactory;
 
+    protected $table = 'product_mapping';
+
     protected $fillable = [
         'name',
         'product_id',

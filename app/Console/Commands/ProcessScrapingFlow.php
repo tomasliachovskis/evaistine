@@ -40,6 +40,11 @@ class ProcessScrapingFlow extends Command
             return 1;
         }
 
+        if (!$this->mergeDuplicateProducts()) {
+            $this->error('Merging duplicate products failed. Aborting.');
+            return 1;
+        }
+
         if (!$this->archiveExpiredDiscounts()) {
             $this->error('Archiving expired discounts failed. Aborting.');
             return 1;
@@ -144,9 +149,25 @@ class ProcessScrapingFlow extends Command
         return true;
     }
 
+    private function mergeDuplicateProducts(): bool
+    {
+        $this->info('Step 4: Merging duplicate products...');
+
+        $exitCode = $this->call('products:merge-duplicates');
+
+        if ($exitCode !== 0) {
+            $this->error('products:merge-duplicates failed with exit code: ' . $exitCode);
+            return false;
+        }
+
+        $this->info('✓ Duplicate products merged successfully.');
+        $this->newLine();
+        return true;
+    }
+
     private function archiveExpiredDiscounts(): bool
     {
-        $this->info('Step 4: Archiving expired discounts...');
+        $this->info('Step 5: Archiving expired discounts...');
 
         $exitCode = $this->call('discounts:archive-expired');
 
@@ -162,7 +183,7 @@ class ProcessScrapingFlow extends Command
 
     private function reindexMeilisearch(): bool
     {
-        $this->info('Step 5: Reindexing Meilisearch...');
+        $this->info('Step 6: Reindexing Meilisearch...');
 
         $exitCode = $this->call('discounts:index-meilisearch', ['--with-ssh-tunnel' => true]);
 
@@ -178,7 +199,7 @@ class ProcessScrapingFlow extends Command
 
     private function generateDescriptions(): bool
     {
-        $this->info('Step 6: Generating descriptions...');
+        $this->info('Step 7: Generating descriptions...');
 
         $this->info('Generating descriptions for stores...');
         $exitCode = $this->call('descriptions:generate', ['type' => 'store', '--all' => true]);
@@ -211,7 +232,7 @@ class ProcessScrapingFlow extends Command
 
     private function deploy(): bool
     {
-        $this->info('Step 7: Deploying...');
+        $this->info('Step 8: Deploying...');
 
         if (!file_exists(base_path('deploy.sh'))) {
             $this->error('deploy.sh not found.');

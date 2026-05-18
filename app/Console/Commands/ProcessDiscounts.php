@@ -7,6 +7,7 @@ use App\Models\CategoryMapper;
 use App\Models\Discount;
 use App\Models\DiscountTemp;
 use App\Models\Product;
+use App\Models\ProductMapping;
 use App\Models\Store;
 use App\Rules\StoreRules\AibeRules;
 use App\Rules\StoreRules\CiaRules;
@@ -147,17 +148,23 @@ class ProcessDiscounts extends Command
             $normalizedProductName = $this->composeDisplayName($tempDiscount->name, $packSize);
             $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand, $store->name);
 
-            $product = Product::firstOrCreate(
-                ['slug' => $productSlug],
-                [
-                    'name' => $normalizedProductName,
-                    'brand' => $tempDiscount->brand,
-                    'slug' => $productSlug,
-                    'description' => '',
-                    'category_id' => $categoryId,
-                    'image_url' => $tempDiscount->image_url,
-                ]
-            );
+            $mapping = ProductMapping::where('name', $normalizedProductName)->first();
+
+            if ($mapping) {
+                $product = Product::findOrFail($mapping->product_id);
+            } else {
+                $product = Product::firstOrCreate(
+                    ['slug' => $productSlug],
+                    [
+                        'name' => $normalizedProductName,
+                        'brand' => $tempDiscount->brand,
+                        'slug' => $productSlug,
+                        'description' => '',
+                        'category_id' => $categoryId,
+                        'image_url' => $tempDiscount->image_url,
+                    ]
+                );
+            }
 
             $isFlyerSource = !empty($tempDiscount->box) && !empty($tempDiscount->page_image_path);
 

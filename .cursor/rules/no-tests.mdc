@@ -1,0 +1,25 @@
+---
+description: Tests are forbidden — do not write, run, or suggest them
+alwaysApply: true
+---
+
+# No tests (forbidden)
+
+Tests are **not allowed** in this project unless the user explicitly asks for tests in the **current** message.
+
+## Forbidden
+
+- Create, edit, rename, or delete anything under `tests/`
+- Add or change PHPUnit, Pest, test factories, fixtures, or `*Test.php` files
+- Run `phpunit`, `pest`, `sail test`, `artisan test`, or any test filter/command
+- Add test scripts, CI test steps, or test-only dependencies
+- Propose, plan, or implement tests as part of a task (including “add tests”, “feature test”, “unit test”)
+
+## Instead
+
+- Verify with manual steps or non-test commands (`sail artisan ...`, SQL, browser checks)
+- If the only way forward is tests, say so and stop — do not write or run them without explicit user approval in that message
+
+## Exception
+
+Only when the user clearly writes in the current message that they want tests (e.g. “parašyk testą”, “run tests”) — then and only then work on or run `tests/`.
