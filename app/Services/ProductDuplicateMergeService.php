@@ -115,11 +115,19 @@ class ProductDuplicateMergeService
 
     private function extractBaseWords(string $name): array
     {
-        $commaPos = strpos($name, ',');
+        $commaPos = strrpos($name, ',');
         $base = $commaPos !== false ? trim(substr($name, 0, $commaPos)) : trim($name);
+        $base = $this->normalizeBaseForWords($base);
         $words = preg_split('/\s+/u', mb_strtolower($base), -1, PREG_SPLIT_NO_EMPTY);
 
         return $words ?: [];
+    }
+
+    private function normalizeBaseForWords(string $base): string
+    {
+        $normalized = str_replace(['.', ','], ' ', $base);
+
+        return trim(preg_replace('/\s+/u', ' ', $normalized));
     }
 
     private function getMismatchWords(array $words1, array $words2): array

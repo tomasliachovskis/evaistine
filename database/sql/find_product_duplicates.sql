@@ -4,15 +4,25 @@ WITH p AS (
         name,
         category_id,
         TRIM(SUBSTRING_INDEX(name, ',', -1)) AS suffix,
-        TRIM(SUBSTRING_INDEX(name, ',', 1)) AS base,
+        TRIM(SUBSTRING_INDEX(name, ',', CHAR_LENGTH(name) - CHAR_LENGTH(REPLACE(name, ',', '')))) AS base
+    FROM products
+    WHERE (CHAR_LENGTH(name) - CHAR_LENGTH(REPLACE(name, ',', ''))) BETWEEN 1 AND 2
+),
+p_filtered AS (
+    SELECT
+        id,
+        name,
+        category_id,
+        suffix,
+        base,
+        TRIM(REGEXP_REPLACE(REPLACE(REPLACE(base, '.', ' '), ',', ' '), '[[:space:]]+', ' ')) AS base_norm,
         (
-            CHAR_LENGTH(TRIM(SUBSTRING_INDEX(name, ',', 1)))
-            - CHAR_LENGTH(REPLACE(TRIM(SUBSTRING_INDEX(name, ',', 1)), ' ', ''))
+            CHAR_LENGTH(TRIM(REGEXP_REPLACE(REPLACE(REPLACE(base, '.', ' '), ',', ' '), '[[:space:]]+', ' ')))
+            - CHAR_LENGTH(REPLACE(TRIM(REGEXP_REPLACE(REPLACE(REPLACE(base, '.', ' '), ',', ' '), '[[:space:]]+', ' ')), ' ', ''))
             + 1
         ) AS wc
-    FROM products
-    WHERE (CHAR_LENGTH(name) - CHAR_LENGTH(REPLACE(name, ',', ''))) = 1
-      AND TRIM(SUBSTRING_INDEX(name, ',', 1)) NOT REGEXP '(^|[[:space:]])[^[:space:]]*[0-9][^[:space:]]*'
+    FROM p
+    WHERE base NOT REGEXP '(^|[[:space:]])[^[:space:]]*[0-9][^[:space:]]*'
 ),
 w AS (
     SELECT
@@ -22,17 +32,17 @@ w AS (
         suffix,
         base,
         wc,
-        LOWER(TRIM(SUBSTRING_INDEX(base, ' ', 1))) AS w1,
-        IF(wc >= 2, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base, ' ', 2), ' ', -1))), NULL) AS w2,
-        IF(wc >= 3, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base, ' ', 3), ' ', -1))), NULL) AS w3,
-        IF(wc >= 4, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base, ' ', 4), ' ', -1))), NULL) AS w4,
-        IF(wc >= 5, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base, ' ', 5), ' ', -1))), NULL) AS w5,
-        IF(wc >= 6, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base, ' ', 6), ' ', -1))), NULL) AS w6,
-        IF(wc >= 7, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base, ' ', 7), ' ', -1))), NULL) AS w7,
-        IF(wc >= 8, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base, ' ', 8), ' ', -1))), NULL) AS w8,
-        IF(wc >= 9, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base, ' ', 9), ' ', -1))), NULL) AS w9,
-        IF(wc >= 10, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base, ' ', 10), ' ', -1))), NULL) AS w10
-    FROM p
+        LOWER(TRIM(SUBSTRING_INDEX(base_norm, ' ', 1))) AS w1,
+        IF(wc >= 2, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 2), ' ', -1))), NULL) AS w2,
+        IF(wc >= 3, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 3), ' ', -1))), NULL) AS w3,
+        IF(wc >= 4, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 4), ' ', -1))), NULL) AS w4,
+        IF(wc >= 5, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 5), ' ', -1))), NULL) AS w5,
+        IF(wc >= 6, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 6), ' ', -1))), NULL) AS w6,
+        IF(wc >= 7, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 7), ' ', -1))), NULL) AS w7,
+        IF(wc >= 8, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 8), ' ', -1))), NULL) AS w8,
+        IF(wc >= 9, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 9), ' ', -1))), NULL) AS w9,
+        IF(wc >= 10, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 10), ' ', -1))), NULL) AS w10
+    FROM p_filtered
     WHERE wc BETWEEN 1 AND 10
 ),
 tokens AS (
