@@ -13,6 +13,7 @@ use App\Rules\StoreRules\CiaRules;
 use App\Rules\StoreRules\ExpressMarketRules;
 use App\Rules\StoreRules\GrusteRules;
 use App\Rules\StoreRules\IkiRules;
+use App\Rules\StoreRules\KoopsRules;
 use App\Rules\StoreRules\KubasRules;
 use App\Rules\StoreRules\LidlRules;
 use App\Rules\StoreRules\MaximaRules;
@@ -230,6 +231,8 @@ class ProcessDiscounts extends Command
                 return new ExpressMarketRules($tempDiscount);
             case 'Kubas':
                 return new KubasRules($tempDiscount);
+            case 'Koops':
+                return new KoopsRules($tempDiscount);
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
         }

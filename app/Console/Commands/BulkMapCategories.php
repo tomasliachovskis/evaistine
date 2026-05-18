@@ -36,6 +36,7 @@ class BulkMapCategories extends Command
             $this->mapStore('Čia');
             $this->mapStore('Express Market');
             $this->mapStore('Kubas');
+            $this->mapStore('Koops');
         }
     }
 

@@ -56,6 +56,15 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     chown -R www-data:www-data storage bootstrap/cache
     chmod -R ug+rwx storage bootstrap/cache
 
+    if [ -f deploy_key ]; then
+        chown www-data:www-data deploy_key
+        chmod 600 deploy_key
+    fi
+
+    if [ -d scripts ]; then
+        chown -R www-data:www-data scripts
+    fi
+
     sudo -u www-data php artisan migrate --force
     sudo -u www-data php artisan config:clear
     sudo -u www-data php artisan route:clear

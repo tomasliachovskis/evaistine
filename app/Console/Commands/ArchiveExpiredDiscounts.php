@@ -77,7 +77,7 @@ class ArchiveExpiredDiscounts extends Command
                 ->where(function ($subQuery) {
                     $subQuery
                         ->whereNotNull('end_at')
-                        ->where('end_at', '<', now()->startOfDay());
+                        ->where('end_at', '<', now()->endOfDay());
                 })
                 ->orWhere(function ($subQuery) {
                     $subQuery

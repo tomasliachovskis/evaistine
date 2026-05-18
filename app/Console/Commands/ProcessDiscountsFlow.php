@@ -181,7 +181,7 @@ class ProcessDiscountsFlow extends Command
         }
 
         $process = Process::fromShellCommandline('DEPLOY_PHOTOS_ON_SERVER=1 bash deploy-photos.sh', base_path());
-        $process->setTimeout(600);
+        $process->setTimeout(3600);
         $process->run(function ($type, $buffer) {
             if (Process::ERR === $type) {
                 $this->error($buffer);

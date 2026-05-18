@@ -5,8 +5,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "${DEPLOY_PHOTOS_ON_SERVER:-}" = "1" ]; then
-    chmod +x "$SCRIPT_DIR/scripts/sync-product-photos-to-frontend.sh"
-    exec "$SCRIPT_DIR/scripts/sync-product-photos-to-frontend.sh"
+    exec bash "$SCRIPT_DIR/scripts/sync-product-photos-to-frontend.sh"
 fi
 
 SERVER="root@195.181.245.125"
@@ -24,6 +23,6 @@ if [ -n "$SSH_KEY" ]; then
 fi
 
 echo "Running photo sync from API server ($SERVER) ..."
-ssh $SSH_OPTS $SERVER "cd $API_DIR && DEPLOY_PHOTOS_ON_SERVER=1 ./deploy-photos.sh"
+ssh $SSH_OPTS $SERVER "cd $API_DIR && DEPLOY_PHOTOS_ON_SERVER=1 bash deploy-photos.sh"
 
 echo "Photo deploy completed successfully!"
