@@ -28,8 +28,44 @@ class ProductDuplicateMergeService
                 return false;
             }
 
-            return !$this->pairHasSpecialCharInDifferingWord($first->name, $second->name);
+            if ($this->pairHasSpecialCharInDifferingWord($first->name, $second->name)) {
+                return false;
+            }
+
+            return !$this->pairHasConflictingSuffixSize($first->name, $second->name);
         })->values();
+    }
+
+    public function pairHasConflictingSuffixSize(string $name1, string $name2): bool
+    {
+        $suffix1 = $this->extractSuffix($name1);
+        $suffix2 = $this->extractSuffix($name2);
+
+        if ($this->suffixHasSizeRange($suffix1) || $this->suffixHasSizeRange($suffix2)) {
+            return $suffix1 !== $suffix2;
+        }
+
+        return false;
+    }
+
+    private function extractSuffix(string $name): string
+    {
+        $commaPos = strrpos($name, ',');
+
+        if ($commaPos === false) {
+            return trim($name);
+        }
+
+        return trim(substr($name, $commaPos + 1));
+    }
+
+    private function suffixHasSizeRange(string $suffix): bool
+    {
+        if (preg_match('/\d[^,]*[-–—][^,]*\d/u', $suffix)) {
+            return true;
+        }
+
+        return (bool) preg_match('/\d\s*[x×]\s*\d/ui', $suffix);
     }
 
     public function pairHasSpecialCharInDifferingWord(string $name1, string $name2): bool
@@ -204,6 +240,10 @@ class ProductDuplicateMergeService
                     $duplicate = Product::findOrFail($duplicateId);
 
                     if ($this->pairHasSpecialCharInDifferingWord($base->name, $duplicate->name)) {
+                        continue;
+                    }
+
+                    if ($this->pairHasConflictingSuffixSize($base->name, $duplicate->name)) {
                         continue;
                     }
 

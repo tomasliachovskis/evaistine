@@ -24,6 +24,44 @@ p_filtered AS (
     FROM p
     WHERE base NOT REGEXP '(^|[[:space:]])[^[:space:]]*[0-9][^[:space:]]*'
 ),
+p_with_size AS (
+    SELECT
+        pf.*,
+        TRIM(SUBSTRING_INDEX(TRIM(pf.suffix), ' ', 1)) AS size_num_raw,
+        LOWER(TRIM(SUBSTRING_INDEX(TRIM(pf.suffix), ' ', -1))) AS size_unit
+    FROM p_filtered pf
+),
+p_sized AS (
+    SELECT
+        p.*,
+        CASE
+            WHEN TRIM(p.suffix) REGEXP '[0-9][[:alnum:].,[:space:]]*[-–—][[:alnum:].,[:space:]]*[0-9]' THEN 1
+            WHEN TRIM(p.suffix) REGEXP '[0-9][[:space:]]*[x×][[:space:]]*[0-9]' THEN 1
+            ELSE 0
+        END AS suffix_has_range,
+        CASE
+            WHEN p.size_unit IN ('ml', 'l') THEN 'volume'
+            WHEN p.size_unit IN ('g', 'kg') THEN 'mass'
+            WHEN p.size_unit IN ('vnt', 'vnt.') THEN 'count'
+            ELSE NULL
+        END AS suffix_kind,
+        CASE
+            WHEN TRIM(p.suffix) REGEXP '[0-9][[:alnum:].,[:space:]]*[-–—][[:alnum:].,[:space:]]*[0-9]' THEN NULL
+            WHEN TRIM(p.suffix) REGEXP '[0-9][[:space:]]*[x×][[:space:]]*[0-9]' THEN NULL
+            WHEN p.size_unit = 'ml' AND p.size_num_raw REGEXP '^[0-9]'
+                THEN CAST(REPLACE(p.size_num_raw, ',', '.') AS DECIMAL(12, 4))
+            WHEN p.size_unit = 'l' AND p.size_num_raw REGEXP '^[0-9]'
+                THEN CAST(REPLACE(p.size_num_raw, ',', '.') AS DECIMAL(12, 4)) * 1000
+            WHEN p.size_unit = 'g' AND p.size_num_raw REGEXP '^[0-9]'
+                THEN CAST(REPLACE(p.size_num_raw, ',', '.') AS DECIMAL(12, 4))
+            WHEN p.size_unit = 'kg' AND p.size_num_raw REGEXP '^[0-9]'
+                THEN CAST(REPLACE(p.size_num_raw, ',', '.') AS DECIMAL(12, 4)) * 1000
+            WHEN p.size_unit IN ('vnt', 'vnt.') AND p.size_num_raw REGEXP '^[0-9]'
+                THEN CAST(REPLACE(p.size_num_raw, ',', '.') AS DECIMAL(12, 4))
+            ELSE NULL
+        END AS suffix_norm
+    FROM p_with_size p
+),
 w AS (
     SELECT
         id,
@@ -31,6 +69,8 @@ w AS (
         category_id,
         suffix,
         base,
+        suffix_kind,
+        suffix_norm,
         wc,
         LOWER(TRIM(SUBSTRING_INDEX(base_norm, ' ', 1))) AS w1,
         IF(wc >= 2, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 2), ' ', -1))), NULL) AS w2,
@@ -42,20 +82,20 @@ w AS (
         IF(wc >= 8, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 8), ' ', -1))), NULL) AS w8,
         IF(wc >= 9, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 9), ' ', -1))), NULL) AS w9,
         IF(wc >= 10, LOWER(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(base_norm, ' ', 10), ' ', -1))), NULL) AS w10
-    FROM p_filtered
+    FROM p_sized
     WHERE wc BETWEEN 1 AND 10
 ),
 tokens AS (
-    SELECT id, name, category_id, suffix, base, wc, w1 AS word FROM w WHERE w1 IS NOT NULL AND w1 <> ''
-    UNION ALL SELECT id, name, category_id, suffix, base, wc, w2 FROM w WHERE wc >= 2 AND w2 IS NOT NULL AND w2 <> ''
-    UNION ALL SELECT id, name, category_id, suffix, base, wc, w3 FROM w WHERE wc >= 3 AND w3 IS NOT NULL AND w3 <> ''
-    UNION ALL SELECT id, name, category_id, suffix, base, wc, w4 FROM w WHERE wc >= 4 AND w4 IS NOT NULL AND w4 <> ''
-    UNION ALL SELECT id, name, category_id, suffix, base, wc, w5 FROM w WHERE wc >= 5 AND w5 IS NOT NULL AND w5 <> ''
-    UNION ALL SELECT id, name, category_id, suffix, base, wc, w6 FROM w WHERE wc >= 6 AND w6 IS NOT NULL AND w6 <> ''
-    UNION ALL SELECT id, name, category_id, suffix, base, wc, w7 FROM w WHERE wc >= 7 AND w7 IS NOT NULL AND w7 <> ''
-    UNION ALL SELECT id, name, category_id, suffix, base, wc, w8 FROM w WHERE wc >= 8 AND w8 IS NOT NULL AND w8 <> ''
-    UNION ALL SELECT id, name, category_id, suffix, base, wc, w9 FROM w WHERE wc >= 9 AND w9 IS NOT NULL AND w9 <> ''
-    UNION ALL SELECT id, name, category_id, suffix, base, wc, w10 FROM w WHERE wc >= 10 AND w10 IS NOT NULL AND w10 <> ''
+    SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w1 AS word FROM w WHERE w1 IS NOT NULL AND w1 <> ''
+    UNION ALL SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w2 FROM w WHERE wc >= 2 AND w2 IS NOT NULL AND w2 <> ''
+    UNION ALL SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w3 FROM w WHERE wc >= 3 AND w3 IS NOT NULL AND w3 <> ''
+    UNION ALL SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w4 FROM w WHERE wc >= 4 AND w4 IS NOT NULL AND w4 <> ''
+    UNION ALL SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w5 FROM w WHERE wc >= 5 AND w5 IS NOT NULL AND w5 <> ''
+    UNION ALL SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w6 FROM w WHERE wc >= 6 AND w6 IS NOT NULL AND w6 <> ''
+    UNION ALL SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w7 FROM w WHERE wc >= 7 AND w7 IS NOT NULL AND w7 <> ''
+    UNION ALL SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w8 FROM w WHERE wc >= 8 AND w8 IS NOT NULL AND w8 <> ''
+    UNION ALL SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w9 FROM w WHERE wc >= 9 AND w9 IS NOT NULL AND w9 <> ''
+    UNION ALL SELECT id, name, category_id, suffix, base, suffix_kind, suffix_norm, wc, w10 FROM w WHERE wc >= 10 AND w10 IS NOT NULL AND w10 <> ''
 ),
 ranked AS (
     SELECT
@@ -64,6 +104,8 @@ ranked AS (
         category_id,
         suffix,
         base,
+        suffix_kind,
+        suffix_norm,
         wc,
         word,
         ROW_NUMBER() OVER (PARTITION BY id ORDER BY word) AS rn
@@ -76,6 +118,8 @@ s AS (
         w.category_id,
         w.suffix,
         w.base,
+        w.suffix_kind,
+        w.suffix_norm,
         w.wc,
         MAX(CASE WHEN r.rn = 1 THEN r.word END) AS s1,
         MAX(CASE WHEN r.rn = 2 THEN r.word END) AS s2,
@@ -89,7 +133,7 @@ s AS (
         MAX(CASE WHEN r.rn = 10 THEN r.word END) AS s10
     FROM w
     LEFT JOIN ranked r ON r.id = w.id
-    GROUP BY w.id, w.name, w.category_id, w.suffix, w.base, w.wc
+    GROUP BY w.id, w.name, w.category_id, w.suffix, w.base, w.suffix_kind, w.suffix_norm, w.wc
 )
 SELECT
     a.id AS id1,
@@ -97,7 +141,9 @@ SELECT
     a.name AS name1,
     b.name AS name2,
     a.category_id,
-    a.suffix,
+    a.suffix AS suffix1,
+    b.suffix AS suffix2,
+    a.suffix_norm,
     a.wc AS word_count,
     a.base AS base1,
     b.base AS base2
@@ -105,9 +151,24 @@ FROM s a
 JOIN s b
     ON a.id < b.id
     AND a.category_id = b.category_id
-    AND a.suffix = b.suffix
     AND a.wc = b.wc
-    AND LOWER(a.base) <> LOWER(b.base)
+    AND (
+        LOWER(a.base) <> LOWER(b.base)
+        OR (
+            LOWER(a.base) = LOWER(b.base)
+            AND a.suffix <> b.suffix
+            AND a.suffix_norm IS NOT NULL
+            AND b.suffix_norm IS NOT NULL
+            AND a.suffix_kind = b.suffix_kind
+            AND a.suffix_norm = b.suffix_norm
+        )
+    )
+    AND (
+        (a.suffix_norm IS NOT NULL AND b.suffix_norm IS NOT NULL
+            AND a.suffix_kind = b.suffix_kind AND a.suffix_norm = b.suffix_norm)
+        OR
+        (a.suffix_norm IS NULL AND b.suffix_norm IS NULL AND a.suffix = b.suffix)
+    )
     AND ((a.wc < 1) OR (
         (CHAR_LENGTH(a.s1) <= 3 AND a.s1 = b.s1)
         OR (CHAR_LENGTH(a.s1) > 3 AND ABS(CHAR_LENGTH(a.s1) - CHAR_LENGTH(b.s1)) <= 3
@@ -168,4 +229,4 @@ JOIN s b
             AND LEFT(a.s10, LEAST(CHAR_LENGTH(a.s10), CHAR_LENGTH(b.s10)) - 1)
               = LEFT(b.s10, LEAST(CHAR_LENGTH(a.s10), CHAR_LENGTH(b.s10)) - 1))
     ))
-ORDER BY a.category_id, a.suffix, a.wc, a.base
+ORDER BY a.category_id, a.suffix_norm, a.wc, a.base
