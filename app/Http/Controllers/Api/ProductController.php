@@ -119,7 +119,7 @@ class ProductController extends Controller
         ];
     }
 
-    private function buildDiscountQuery($query, $filters)
+    private function buildDiscountQuery($query, $filters, bool $applyOrder = true)
     {
         $query = $query->with(['product.category', 'store']);
 
@@ -152,7 +152,31 @@ class ProductController extends Controller
             }
         }
 
+        if (!$applyOrder) {
+            return $query;
+        }
+
         return $this->applySorting($query, $filters['order']);
+    }
+
+    private function orderDiscountsByMeilisearchIds($query, array $discountIds)
+    {
+        if (empty($discountIds)) {
+            return $query;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($discountIds), '?'));
+
+        return $query->orderByRaw('FIELD(discounts.id, ' . $placeholders . ')', $discountIds);
+    }
+
+    private function hasExplicitOrder(): bool
+    {
+        if (!request()->has('order')) {
+            return false;
+        }
+
+        return request()->get('order') !== 'popular';
     }
 
     private function applySorting($query, $order)
@@ -222,7 +246,8 @@ class ProductController extends Controller
                         }
                     }
 
-                    $sort = $this->getMeilisearchSort($filters['order']);
+                    $explicitOrder = $this->hasExplicitOrder();
+                    $sort = $explicitOrder ? $this->getMeilisearchSort($filters['order']) : [];
 
                     $searchResults = $this->meilisearchService->search($query, $meilisearchFilters, $sort, $page, $perPage);
 
@@ -236,7 +261,13 @@ class ProductController extends Controller
                     } else {
                         $discountIds = collect($searchResults['hits'])->pluck('id')->toArray();
                         $discountQuery = Discount::whereIn('discounts.id', $discountIds);
-                        $discounts = $this->buildDiscountQuery($discountQuery, $filters)->get();
+                        $discountQuery = $this->buildDiscountQuery($discountQuery, $filters, $explicitOrder);
+
+                        if (!$explicitOrder) {
+                            $discountQuery = $this->orderDiscountsByMeilisearchIds($discountQuery, $discountIds);
+                        }
+
+                        $discounts = $discountQuery->get();
                     }
 
                     $paginator = new LengthAwarePaginator(
@@ -271,10 +302,12 @@ class ProductController extends Controller
                         \Log::warning('Failed to store search result: ' . $saveException->getMessage());
                     }
 
+                    $explicitOrder = $this->hasExplicitOrder();
+
                     $queryQb = Discount::searchByProductName($query)
                         ->with(['product', 'store']);
 
-                    $discounts = $this->buildDiscountQuery($queryQb, $filters)->paginate(24);
+                    $discounts = $this->buildDiscountQuery($queryQb, $filters, $explicitOrder)->paginate(24);
 
                     return response()->json([
                         'data' => $this->formatter->format($discounts),
