@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use App\Services\MeilisearchService;
+use App\Support\NormalizesDiscountDates;
 
 class Discount extends Model
 {
-    use HasFactory;
+    use HasFactory, NormalizesDiscountDates;
 
     protected $fillable = [
         'product_id',

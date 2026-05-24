@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Support\NormalizesDiscountDates;
 
 class DiscountTemp extends Model
 {
-    use HasFactory;
+    use HasFactory, NormalizesDiscountDates;
 
     protected $table = 'discount_temp';
 
