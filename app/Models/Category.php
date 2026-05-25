@@ -21,6 +21,10 @@ class Category extends Model
         'meta_description',
     ];
 
+    protected $casts = [
+        'hide' => 'boolean',
+    ];
+
     public function products()
     {
         return $this->hasMany(Product::class);

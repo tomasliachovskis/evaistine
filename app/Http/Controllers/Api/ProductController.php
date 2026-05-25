@@ -13,18 +13,32 @@ use App\Models\Discount;
 use App\Models\SearchResult;
 use App\Models\ProductFavorite;
 use App\Services\DiscountResponseFormatter;
+use App\Services\HomePageMetaService;
+use App\Services\ListingPageMetaService;
 use App\Services\MeilisearchService;
+use App\Services\StoresPageMetaService;
 use Carbon\Carbon;
 
 class ProductController extends Controller
 {
     protected $formatter;
     protected $meilisearchService;
+    protected $listingPageMetaService;
+    protected $storesPageMetaService;
+    protected $homePageMetaService;
 
-    public function __construct(DiscountResponseFormatter $formatter, MeilisearchService $meilisearchService)
-    {
+    public function __construct(
+        DiscountResponseFormatter $formatter,
+        MeilisearchService $meilisearchService,
+        ListingPageMetaService $listingPageMetaService,
+        StoresPageMetaService $storesPageMetaService,
+        HomePageMetaService $homePageMetaService
+    ) {
         $this->formatter = $formatter;
         $this->meilisearchService = $meilisearchService;
+        $this->listingPageMetaService = $listingPageMetaService;
+        $this->storesPageMetaService = $storesPageMetaService;
+        $this->homePageMetaService = $homePageMetaService;
     }
 
     public function getDiscounts($storeOrCategory, $category = null)
@@ -81,11 +95,15 @@ class ProductController extends Controller
 
         $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
 
-        return response()->json([
+        $payload = [
             'data' => $this->formatter->format($discounts),
             'breadcrumbs' => $this->generateBreadcrumbs($entityType, $entity),
-            'seo' => $this->generateSeoData($entityType, $entity)
-        ]);
+            'seo' => $this->generateSeoData($entityType, $entity),
+        ];
+
+        $payload = $this->appendListingMeta($payload, $entityType, $entity, null, $filters);
+
+        return response()->json($payload);
     }
 
     private function getDiscountsByStoreAndCategory($store, $category, $filters)
@@ -100,11 +118,34 @@ class ProductController extends Controller
 
         $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
 
-        return response()->json([
+        $payload = [
             'data' => $this->formatter->format($discounts),
             'breadcrumbs' => $this->generateBreadcrumbs('store_category', $store, $category),
-            'seo' => $this->generateSeoData('store_category', $store, $category)
-        ]);
+            'seo' => $this->generateSeoData('store_category', $store, $category),
+        ];
+
+        $payload = $this->appendListingMeta($payload, 'store_category', $store, $category, $filters);
+
+        return response()->json($payload);
+    }
+
+    private function appendListingMeta(array $payload, string $entityType, $entity, $secondaryEntity, array $filters): array
+    {
+        $page = (int) ($filters['page'] ?? 1);
+
+        if ($page !== 1) {
+            return $payload;
+        }
+
+        if ($entityType === 'store') {
+            $payload['listing_meta'] = $this->listingPageMetaService->buildForStore($entity);
+        } elseif ($entityType === 'category') {
+            $payload['listing_meta'] = $this->listingPageMetaService->buildForCategory($entity);
+        } elseif ($entityType === 'store_category' && $secondaryEntity) {
+            $payload['listing_meta'] = $this->listingPageMetaService->buildForStoreCategory($entity, $secondaryEntity);
+        }
+
+        return $payload;
     }
 
     private function getFilters()
@@ -204,7 +245,7 @@ class ProductController extends Controller
     public function getCategories()
     {
         $categories = \App\Models\Category::whereNull('parent_id')
-            ->select('id', 'name', 'slug')
+            ->select('id', 'name', 'slug', 'description', 'hide')
             ->withCount([
                 'discounts' => function ($query) {
                     $query->select(\DB::raw('count(distinct discounts.id)'));
@@ -223,7 +264,10 @@ class ProductController extends Controller
                 }
             ])->get();
 
-        return response()->json($stores);
+        return response()->json([
+            'data' => $this->storesPageMetaService->formatStore($stores),
+            'page_meta' => $this->storesPageMetaService->buildPageMeta($stores),
+        ]);
     }
 
     public function search(Request $request, $query)
@@ -386,7 +430,7 @@ class ProductController extends Controller
     public function getFavoriteHome()
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateFavoriteHomeCacheKey($filters);
+        $cacheKey = $this->generateFavoriteHomeCacheKey($filters) . '_v2';
 
         return Cache::tags(['discounts', 'favorites', 'home'])
             ->remember($cacheKey, 7200, function () use ($filters) {
@@ -397,7 +441,10 @@ class ProductController extends Controller
                     ->limit(10)
                     ->get();
 
-                return response()->json($this->formatter->format($discounts));
+                return response()->json([
+                    'data' => $this->formatter->format($discounts),
+                    'page_meta' => $this->homePageMetaService->build(),
+                ]);
             });
     }
 
