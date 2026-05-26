@@ -8,6 +8,8 @@ use Symfony\Component\Process\Process;
 
 class ProcessDiscountsFlow extends Command
 {
+    private const PROCESS_SKIP_STORES = ['maxima', 'norfa', 'lidl', 'rimi', 'iki'];
+
     protected $signature = 'discounts:process-flow {--skip-photos : Skip photo sync to frontend}';
 
     protected $description = 'Process discounts, archive, reindex Meilisearch, and sync product photos to frontend';
@@ -100,7 +102,9 @@ class ProcessDiscountsFlow extends Command
     {
         $this->info('Step 1: Processing discounts...');
 
-        $exitCode = $this->call('discounts:process');
+        $exitCode = $this->call('discounts:process', [
+            '--skip-stores' => implode(',', self::PROCESS_SKIP_STORES),
+        ]);
 
         if ($exitCode !== 0) {
             $this->error('discounts:process failed with exit code: ' . $exitCode);

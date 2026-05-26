@@ -31,6 +31,7 @@ Route::get('/search/{query}', [ProductController::class, 'search']);
 
 Route::get('/categories', [ProductController::class, 'getCategories']);
 Route::get('/stores', [ProductController::class, 'getStores']);
+Route::get('/sitemap', [ProductController::class, 'getSitemap']);
 Route::get('/favorite/product/{slug}', [ProductController::class, 'getFavoriteProduct']);
 Route::get('/favorite/category/{id}', [ProductController::class, 'getFavoriteCategory']);
 Route::get('/favorite/home', [ProductController::class, 'getFavoriteHome']);

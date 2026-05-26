@@ -19,6 +19,7 @@ class HomePageMetaService
     public function build(): array
     {
         $stores = Store::query()->withCount('discounts')->get();
+
         $categories = Category::query()
             ->whereNull('parent_id')
             ->withCount([

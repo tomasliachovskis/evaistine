@@ -98,9 +98,9 @@ class StoresPageMetaService
             'freshness' => $freshness,
             'seo' => [
                 'h1' => 'Parduotuvių akcijos Lietuvoje',
-                'intro' => "Akcijos ir nuolaidos iš {$topNames} bei kitų Lietuvos tinklų. Pasirinkite parduotuvę žemiau.",
-                'meta_title' => 'Parduotuvių akcijos Lietuvoje – Maxima, Lidl, Iki, Rimi | SuperAkcijos.lt',
-                'meta_description' => "Akcijos {$storeCount} tinkluose: {$topNames}. Palyginkite savaitės nuolaidas vienoje vietoje.",
+                'intro' => "Akcijų leidiniai ir nuolaidos iš {$topNames} bei kitų Lietuvos prekybos tinklų. Pasirinkite parduotuvę žemiau.",
+                'meta_title' => 'Parduotuvių akcijos ir leidiniai Lietuvoje – Maxima, Lidl, Iki, Rimi | SuperAkcijos.lt',
+                'meta_description' => "Visų {$storeCount} prekybos tinklų akcijų leidiniai: {$topNames}. Palyginkite savaitės nuolaidas vienoje vietoje.",
             ],
             'best_offers' => [
                 'title' => 'Geriausi pasiūlymai pagal parduotuvę',

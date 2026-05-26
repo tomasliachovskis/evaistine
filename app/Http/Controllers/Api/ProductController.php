@@ -16,6 +16,7 @@ use App\Services\DiscountResponseFormatter;
 use App\Services\HomePageMetaService;
 use App\Services\ListingPageMetaService;
 use App\Services\MeilisearchService;
+use App\Services\PageFreshnessService;
 use App\Services\StoresPageMetaService;
 use Carbon\Carbon;
 
@@ -26,19 +27,22 @@ class ProductController extends Controller
     protected $listingPageMetaService;
     protected $storesPageMetaService;
     protected $homePageMetaService;
+    protected $pageFreshnessService;
 
     public function __construct(
         DiscountResponseFormatter $formatter,
         MeilisearchService $meilisearchService,
         ListingPageMetaService $listingPageMetaService,
         StoresPageMetaService $storesPageMetaService,
-        HomePageMetaService $homePageMetaService
+        HomePageMetaService $homePageMetaService,
+        PageFreshnessService $pageFreshnessService
     ) {
         $this->formatter = $formatter;
         $this->meilisearchService = $meilisearchService;
         $this->listingPageMetaService = $listingPageMetaService;
         $this->storesPageMetaService = $storesPageMetaService;
         $this->homePageMetaService = $homePageMetaService;
+        $this->pageFreshnessService = $pageFreshnessService;
     }
 
     public function getDiscounts($storeOrCategory, $category = null)
@@ -600,38 +604,48 @@ class ProductController extends Controller
             case 'category':
                 $count = $this->getDiscountCountForCategory($entity);
                 $maxDiscount = $this->getMaxDiscountForCategory($entity);
-                $minDiscount = $this->getMinDiscountForCategory($entity);
                 $storeNames = $this->getStoreNamesForCategory($entity);
+                $countLabel = $this->formatCount($count);
+                $lowerName = mb_strtolower($entity->name);
+
                 return [
-                    'seo_title' => $entity->name . ' akcijos',
+                    'seo_title' => $entity->name . ' akcijos prekybos centruose',
                     'seo_description' => $entity->description,
-                    'meta_title' => $entity->name . " akcijos – iki {$maxDiscount}% nuolaidos " . $this->formatCount($count) . "+ prekėms",
-                    'meta_description' => "Atraskite geriausias " . mb_strtolower($entity->name) . " akcijas – iki {$maxDiscount}% nuolaidos, " . $this->formatCount($count) . "+ pasiūlymų iš {$storeNames}. Sutaupykite šią savaitę!",
+                    'meta_title' => $entity->name . " akcijos – pigiausios kainos, iki {$maxDiscount}% nuolaidos",
+                    'meta_description' => "Palyginkite {$lowerName} akcijas prekybos centruose – {$countLabel}+ pasiūlymų iš {$storeNames}. Iki {$maxDiscount}% nuolaidos šią savaitę!",
                 ];
             case 'store':
                 $count = $this->getDiscountCountForStore($entity);
-                $maxDiscount = $this->getMaxDiscountForStore($entity);
-                $minDiscount = $this->getMinDiscountForStore($entity);
+                $countLabel = $this->formatCount($count);
+                $validity = $this->resolveStoreValidity($entity);
+                $validityLabel = $this->formatValidityRangeLabel($validity['valid_from'], $validity['valid_to']);
+                $words = $this->getStoreLeafletWords($entity->slug);
+                $storeUpper = mb_strtoupper($entity->name);
+                $validityLong = $this->pageFreshnessService->formatLtDate($validity['valid_from'], true)
+                    . ' – '
+                    . $this->pageFreshnessService->formatLtDate($validity['valid_to'], true);
+
                 return [
-                    'seo_title' => $entity->name . ' akcijos',
+                    'seo_title' => $entity->name . ' akcijos ir naujas ' . $words['nominative'],
                     'seo_description' => $entity->description,
-                    'meta_title' => mb_strtoupper($entity->name) . " akcijos – iki {$maxDiscount}% nuolaidos " . $this->formatCount($count) . "+ prekėms",
-                    'meta_description' => "Peržiūrėkite naujausias " . $entity->name . " akcijas – daugiau nei " . $this->formatCount($count) . " prekių su nuolaidomis iki {$maxDiscount}%! Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
+                    'meta_title' => "{$storeUpper} akcijos ir {$words['nominative']} {$validityLabel} – {$countLabel}+ pasiūlymų",
+                    'meta_description' => "Naujausias {$entity->name} akcijų {$words['nominative']} galioja {$validityLong}. {$countLabel}+ akcijų ir nuolaidų – peržiūrėkite katalogą, savaitės ir savaitgalio pasiūlymus.",
                 ];
             case 'store_category':
                 $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);
                 $maxDiscount = $this->getMaxDiscountForStoreCategory($entity, $secondaryEntity);
-                $minDiscount = $this->getMinDiscountForStoreCategory($entity, $secondaryEntity);
+                $countLabel = $this->formatCount($count);
+                $categoryLower = mb_strtolower($secondaryEntity->name);
 
                 $storeCategoryDescription = StoreCategoryDescription::where('store_id', $entity->id)
                     ->where('category_id', $secondaryEntity->id)
                     ->first();
 
                 $seoData = [
-                    'seo_title' => $entity->name . ' akcija ' . mb_strtolower($secondaryEntity->name),
+                    'seo_title' => $entity->name . ' akcija ' . $categoryLower,
                     'seo_description' => "",
-                    'meta_title' => mb_strtoupper($entity->name) . ' akcijos: ' . mb_strtolower($secondaryEntity->name) . ' pigiau – iki ' . $maxDiscount . '% nuolaidos',
-                    'meta_description' => "Naujausios " . $entity->name . " " . mb_strtolower($secondaryEntity->name) . " akcijos – iki {$maxDiscount}% nuolaidos, " . $this->formatCount($count) . "+ prekių! Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu. Nepraleisk pigiau!",
+                    'meta_title' => mb_strtoupper($entity->name) . ' akcija ' . $categoryLower . ' – iki ' . $maxDiscount . '% nuolaidos',
+                    'meta_description' => "Naujausios {$entity->name} {$categoryLower} akcijos – iki {$maxDiscount}% nuolaidos, {$countLabel}+ prekių. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
                 ];
 
                 if ($storeCategoryDescription && $storeCategoryDescription->top_products_html) {
@@ -642,14 +656,16 @@ class ProductController extends Controller
             case 'product':
                 $minPrice = $entity->discounts->min('discounted_price');
                 $formattedPrice = $minPrice ? (floor($minPrice) == $minPrice ? number_format($minPrice, 0, '.', '') : number_format($minPrice, 2, '.', '')) : null;
-                $priceText = $formattedPrice ? $formattedPrice . ' Eur' : '';
                 $priceTextDesc = $formattedPrice ? $formattedPrice . ' €' : '';
+                $storeNames = $this->getStoreNamesForProduct($entity);
+                $storeSuffix = $storeNames ? " ({$storeNames})" : '';
+                $productLower = mb_strtolower($entity->name);
 
                 return [
                     'seo_title' => $entity->name,
                     'seo_description' => $entity->description ?? '',
-                    'meta_title' => 'Akcija ' . mb_strtolower($entity->name) . ($priceText ? ' kaina nuo ' . $priceText : ''),
-                    'meta_description' => mb_ucfirst($entity->name) . ($priceTextDesc ? ' ✔ kaina nuo ' . $priceTextDesc . ' , rask geriausią kainą!' : '')
+                    'meta_title' => mb_ucfirst($productLower) . ' akcija' . ($priceTextDesc ? ' – kaina nuo ' . $priceTextDesc : '') . $storeSuffix,
+                    'meta_description' => mb_ucfirst($entity->name) . ($priceTextDesc ? ' ✔ kaina nuo ' . $priceTextDesc . ', palygink akcijas prekybos centruose!' : ''),
                 ];
             case 'search':
                 return [
@@ -660,10 +676,10 @@ class ProductController extends Controller
                 ];
             case 'all_discounts':
                 return [
-                    'seo_title' => 'Visos akcijos',
-                    'seo_description' => 'Visos akcijos',
-                    'meta_title' => 'Visos akcijos',
-                    'meta_description' => 'Visos akcijos',
+                    'seo_title' => 'Akcijos ir nuolaidos Lietuvoje',
+                    'seo_description' => 'Visi akcijų leidiniai vienoje vietoje – Maxima, Lidl, Iki, Rimi, Norfa ir kiti prekybos tinklai.',
+                    'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – Maxima, Lidl, Iki, Rimi, Norfa',
+                    'meta_description' => 'Visi akcijų leidiniai vienoje vietoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai, savaitės ir savaitgalio akcijos.',
                 ];
             default:
                 return [
@@ -673,6 +689,129 @@ class ProductController extends Controller
                     'meta_description' => '',
                 ];
         }
+    }
+
+    public function getSitemap()
+    {
+        return Cache::tags(['sitemap'])->remember('sitemap_entries_v1', 3600, function () {
+            $freshness = $this->pageFreshnessService->build();
+            $defaultLastmod = Carbon::parse($freshness['updated_at'])->format('Y-m-d');
+
+            $stores = \App\Models\Store::query()
+                ->whereHas('discounts')
+                ->pluck('slug')
+                ->all();
+
+            $categories = \App\Models\Category::query()
+                ->whereNull('parent_id')
+                ->whereHas('discounts')
+                ->pluck('slug')
+                ->all();
+
+            $products = Product::query()
+                ->whereHas('discounts')
+                ->with('category:id,slug')
+                ->select('slug', 'updated_at', 'category_id')
+                ->get()
+                ->map(function (Product $product) {
+                    $categorySlug = $product->category?->slug;
+                    $path = $categorySlug ? "{$categorySlug}/{$product->slug}" : $product->slug;
+
+                    return [
+                        'path' => $path,
+                        'lastmod' => $product->updated_at?->format('Y-m-d') ?? null,
+                    ];
+                })
+                ->values()
+                ->all();
+
+            $blogPosts = \App\Models\BlogPost::published()
+                ->select('slug', 'updated_at', 'published_at')
+                ->get()
+                ->map(function ($post) {
+                    $date = $post->updated_at ?? $post->published_at;
+
+                    return [
+                        'slug' => $post->slug,
+                        'lastmod' => $date?->format('Y-m-d'),
+                    ];
+                })
+                ->values()
+                ->all();
+
+            return response()->json([
+                'lastmod' => $defaultLastmod,
+                'stores' => $stores,
+                'categories' => $categories,
+                'products' => $products,
+                'blog_posts' => $blogPosts,
+            ]);
+        });
+    }
+
+    private function resolveStoreValidity($store): array
+    {
+        if ($store->flyer_valid_from && $store->flyer_valid_to) {
+            return [
+                'valid_from' => $store->flyer_valid_from->format('Y-m-d'),
+                'valid_to' => $store->flyer_valid_to->format('Y-m-d'),
+            ];
+        }
+
+        $minStart = Discount::where('store_id', $store->id)->min('start_at');
+        $maxEnd = Discount::where('store_id', $store->id)->max('end_at');
+
+        if ($minStart && $maxEnd) {
+            return [
+                'valid_from' => Carbon::parse($minStart)->format('Y-m-d'),
+                'valid_to' => Carbon::parse($maxEnd)->format('Y-m-d'),
+            ];
+        }
+
+        return $this->pageFreshnessService->getCurrentWeekRange();
+    }
+
+    private function getStoreLeafletWords(string $storeSlug): array
+    {
+        if ($storeSlug === 'iki') {
+            return ['accusative' => 'leidynį', 'nominative' => 'leidynys'];
+        }
+
+        return ['accusative' => 'leidinį', 'nominative' => 'leidinys'];
+    }
+
+    private function formatValidityRangeLabel(string $validFrom, string $validTo): string
+    {
+        return $this->pageFreshnessService->formatLtDate($validFrom)
+            . '–'
+            . $this->pageFreshnessService->formatLtDate($validTo);
+    }
+
+    private function getStoreNamesForProduct($product): string
+    {
+        $names = $product->discounts
+            ->pluck('store.name')
+            ->filter()
+            ->unique()
+            ->take(4)
+            ->values()
+            ->all();
+
+        if (count($names) === 0) {
+            return '';
+        }
+
+        if (count($names) === 1) {
+            return $names[0];
+        }
+
+        if (count($names) === 2) {
+            return "{$names[0]}, {$names[1]}";
+        }
+
+        $last = array_pop($names);
+
+        return implode(', ', $names) . ', ' . $last;
     }
 
     private function generateDiscountsCacheKey($storeOrCategory, $category = null, $filters = [])

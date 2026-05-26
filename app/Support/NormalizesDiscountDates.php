@@ -17,21 +17,35 @@ trait NormalizesDiscountDates
         $this->attributes['end_at'] = static::normalizeDiscountDate($value);
     }
 
-    protected static function normalizeDiscountDate($value): ?string
+    public static function normalizeDiscountDate($value): ?string
     {
         if ($value === null || $value === '') {
             return null;
         }
 
+        $timezone = config('app.timezone', 'Europe/Vilnius');
+
         if ($value instanceof DateTimeInterface) {
-            return Carbon::instance($value)->startOfDay()->format('Y-m-d H:i:s');
+            return Carbon::instance($value)
+                ->timezone($timezone)
+                ->startOfDay()
+                ->format('Y-m-d');
         }
 
-        $timestamp = strtotime((string) $value);
-        if ($timestamp === false) {
+        $value = trim((string) $value);
+
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})/', $value, $match)) {
+            return Carbon::parse($match[1], $timezone)
+                ->startOfDay()
+                ->format('Y-m-d');
+        }
+
+        try {
+            return Carbon::parse($value, $timezone)
+                ->startOfDay()
+                ->format('Y-m-d');
+        } catch (\Exception $e) {
             return null;
         }
-
-        return Carbon::createFromTimestamp($timestamp)->startOfDay()->format('Y-m-d H:i:s');
     }
 }

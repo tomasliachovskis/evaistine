@@ -140,7 +140,7 @@ class ListingPageMetaService
         $words = $this->getStoreLeafletWords($storeSlug);
 
         return [
-            'description' => "Peržiūrėkite {$storeName} savaitės {$words['accusative']} ir visas aktyvias akcijas vienoje vietoje. Kainos atnaujinamos kasdien pagal galiojantį leidinį.",
+            'description' => "Peržiūrėkite {$storeName} savaitės {$words['accusative']}, katalogą ir lankstinuką – visos aktyvios akcijos ir reklaminis leidinys vienoje vietoje. Kainos atnaujinamos kasdien pagal galiojantį {$words['nominative']}.",
             'valid_from' => $validity['valid_from'],
             'valid_to' => $validity['valid_to'],
         ];
@@ -383,12 +383,16 @@ class ListingPageMetaService
 
         return [
             [
-                'question' => "Kur rasti {$storeName} {$words['nominative']}?",
-                'answer' => "Naujausią {$storeName} {$words['nominative']} rasite šiame puslapyje – viršuje matote akcijų pasiūlymus, o po prekių sąrašu pateiktas aktualus {$storeName} akcijų leidinys su galiojimo datomis.",
+                'question' => "Kur rasti {$storeName} naują {$words['nominative']}?",
+                'answer' => "Naujausią {$storeName} akcijų {$words['nominative']} rasite šiame puslapyje – viršuje matote akcijų pasiūlymus, o po prekių sąrašu pateiktas aktualus katalogas su galiojimo datomis.",
             ],
             [
-                'question' => "Nuo kada galioja {$storeName} leidinys?",
+                'question' => "Nuo kada galioja {$storeName} akcijos šią savaitę?",
                 'answer' => "{$storeName} savaitės akcijos paprastai galioja nuo pirmadienio iki sekmadienio. Tikslią datą matote prie leidinio bloko ir kiekvieno pasiūlymo.",
+            ],
+            [
+                'question' => "Ar yra {$storeName} savaitgalio akcijos?",
+                'answer' => "Taip – {$storeName} savaitgalio akcijos ir nuolaidos dažniausiai skelbiamos pagrindiniame savaitės {$words['nominative']}. Visus galiojančius pasiūlymus rasite šiame puslapyje.",
             ],
             [
                 'question' => "Kaip dažnai atnaujinamos {$storeName} akcijos?",

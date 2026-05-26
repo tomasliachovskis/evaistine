@@ -21,196 +21,510 @@ use App\Rules\StoreRules\MaximaRules;
 use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
 use App\Rules\StoreRules\SilasRules;
+use App\Support\NormalizesDiscountDates;
 use App\Support\ProductPackSizeExtractor;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Intervention\Image\ImageManager;
+use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 use Intervention\Image\Interfaces\ImageInterface;
 
 class ProcessDiscounts extends Command
 {
-    private const PRODUCT_IMAGE_MAX_BYTES = 102400;
+    use NormalizesDiscountDates;
 
-    protected $signature = 'discounts:process';
+    private const PRODUCT_IMAGE_MAX_BYTES = 102400;
+    private const CHUNK_SIZE = 250;
+
+    protected $signature = 'discounts:process
+                            {--map-categories : Run ChatGPT bulk category mapping before processing}
+                            {--skip-stores= : Comma-separated store names to ignore during processing}';
     protected $description = 'Process new discounts from discount_temp table';
 
-    public function __construct()
+    /** @var array<string, Store> */
+    private array $storesByName = [];
+
+    /** @var array<string, int> */
+    private array $categoriesByName = [];
+
+    /** @var array<int, list<CategoryMapper>> */
+    private array $mappersByStoreId = [];
+
+    /** @var array<string, int> */
+    private array $productMappingsByName = [];
+
+    /** @var array<string, Product> */
+    private array $productsBySlug = [];
+
+    /** @var array<int, Product> */
+    private array $productsById = [];
+
+    /** @var array<string, bool> */
+    private array $existingDiscountCache = [];
+
+    /** @var array<string, bool> */
+    private array $unmappedCategoryKeys = [];
+
+    /** @var array<string, string> */
+    private array $pageImageBinaryCache = [];
+
+    private ?ImageManager $imageManager = null;
+
+    /** @var list<string>|null */
+    private ?array $skipStoreNames = null;
+
+    public function handle(): int
     {
-        parent::__construct();
-    }
-
-    public function handle()
-    {
-        $this->info('Starting bulk category mapping...');
-        $this->call('categories:bulk-map');
-        $this->info('Bulk category mapping completed.');
-
-        $duplicates = DiscountTemp::whereNotNull('product_url')
-            ->where('processed', false)
-            ->select('product_url')
-            ->groupBy('product_url')
-            ->havingRaw('COUNT(*) > 1')
-            ->pluck('product_url');
-
-        foreach ($duplicates as $url) {
-            $records = DiscountTemp::where('product_url', $url)
-                ->where('processed', false)
-                ->where('category', '!=', '')
-                ->orderBy('id', 'desc')
-                ->get();
-
-            $firstRecord = $records->shift();
-            foreach ($records as $record) {
-                $record->delete();
-            }
+        if ($this->option('map-categories')) {
+            $this->info('Starting bulk category mapping...');
+            $this->call('categories:bulk-map');
+            $this->info('Bulk category mapping completed.');
         }
 
-        $tempDiscounts = DiscountTemp::where('processed', false)->where('category', '!=', '')->get();
+        $skip = $this->skipStoreNames();
+        if ($skip !== []) {
+            $this->info('Ignoring stores: ' . implode(', ', $skip));
+        }
 
-        foreach ($tempDiscounts as $tempDiscount) {
-            $store = Store::where('name', $tempDiscount->store)->first();
+        $this->preloadLookups();
+        $this->removeDuplicateTempRows();
 
-            if (!$store) {
-                $this->error("Store not found: {$tempDiscount->store}");
-                continue;
-            }
+        $processedIds = [];
+        $query = DiscountTemp::query()
+            ->where('processed', false)
+            ->where('category', '!=', '');
+        $this->applySkipStoresFilter($query);
 
-            $rules = $this->getStoreRules($store->name, $tempDiscount);
+        $total = (clone $query)->count();
+        $this->info("Processing {$total} discount_temp row(s)...");
 
-            $normalizedCondition = $this->normalizeCondition($tempDiscount->condition);
-
-            $packResult = ProductPackSizeExtractor::extractAndStrip($tempDiscount->info);
-            $packSize = $packResult['size'];
-            $normalizedInfo = $packResult['info'];
-            if (!empty($normalizedInfo)) {
-                $normalizedInfo = str_replace(['"', "'"], '', $normalizedInfo);
-                $normalizedInfo = $this->stripAsterisks($normalizedInfo) ?: null;
-            }
-
-            $normalizedOriginalPrice = $rules->normalizePrice($tempDiscount->original_price);
-            $normalizedDiscountedPrice = $rules->normalizePrice($tempDiscount->discounted_price);
-
-            $discountPercent = $tempDiscount->discount_percent;
-            $normalizedDiscount = $rules->normalizeDiscount($discountPercent);
-
-            if (!empty($discountPercent)) {
-                $discountPercent = $normalizedDiscount;
-
-                if ($normalizedOriginalPrice <= 0) {
-                    $discountPercent = 0;
-                }
-            }
-
-            if (empty($discountPercent) && $normalizedOriginalPrice > 0 && $normalizedDiscountedPrice > 0) {
-                $discountPercent = round((($normalizedOriginalPrice - $normalizedDiscountedPrice) / $normalizedOriginalPrice) * 100);
-            } else if (empty($discountPercent)) {
-                $discountPercent = null;
-            }
-
-            if ($discountPercent < 0 || $discountPercent >= 100) {
-                $discountPercent = 0;
-            }
-
-            if (empty($normalizedOriginalPrice) && empty($normalizedDiscountedPrice)) {
-                $discountPercent = $normalizedDiscount;
-            }
-
-            if (!$rules->validate()) {
-                $this->error("Invalid discount data for product: {$tempDiscount->id}");
-                $tempDiscount->update(['processed' => true]);
-                continue;
-            }
-
-            $startAt = $tempDiscount->start_at && strtotime($tempDiscount->start_at) ? $tempDiscount->start_at : null;
-            $endAt = $tempDiscount->end_at && strtotime($tempDiscount->end_at) ? $tempDiscount->end_at : null;
-
-            if ($startAt === null && $endAt === null) {
-                $this->error("Invalid discount data for product: {$tempDiscount->id}");
-                $tempDiscount->update(['processed' => true]);
-                continue;
-            }
-
-            $categoryId = $this->assignCategory($tempDiscount, $store);
-            if ($categoryId === false || $categoryId === null) {
-                $this->error("Category not mapped for product: {$tempDiscount->id}");
-
-                CategoryMapper::firstOrCreate(
-                    ['store_category' => $tempDiscount->category],
-                    ['store' => $store->id]
-                );
-
-                $tempDiscount->update(['processed' => true]);
-                continue;
-            }
-
-            $normalizedProductName = $this->composeDisplayName($tempDiscount->name, $packSize);
-            $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand, $store->name);
-
-            $mapping = ProductMapping::where('name', $normalizedProductName)->first();
-
-            if ($mapping) {
-                $product = Product::findOrFail($mapping->product_id);
-            } else {
-                $product = Product::firstOrCreate(
-                    ['slug' => $productSlug],
-                    [
-                        'name' => $normalizedProductName,
-                        'brand' => $tempDiscount->brand,
-                        'slug' => $productSlug,
-                        'description' => '',
-                        'category_id' => $categoryId,
-                        'image_url' => $tempDiscount->image_url,
-                    ]
-                );
-            }
-
-            $isFlyerSource = !empty($tempDiscount->box) && !empty($tempDiscount->page_image_path);
-
-            if ($product->wasRecentlyCreated && $isFlyerSource) {
-                if (empty($product->image_url)) {
-                    $croppedImageUrl = $this->cropProductImage($tempDiscount, $product);
-                    if ($croppedImageUrl) {
-                        $product->image_url = $croppedImageUrl;
+        $query->orderBy('id')
+            ->chunkById(self::CHUNK_SIZE, function ($tempDiscounts) use (&$processedIds) {
+                foreach ($tempDiscounts as $tempDiscount) {
+                    if ($this->processTempDiscount($tempDiscount)) {
+                        $processedIds[] = $tempDiscount->id;
                     }
                 }
-                $product->image_from_flyer = true;
-                $product->save();
-            } elseif (!$product->wasRecentlyCreated && $product->image_from_flyer && !empty($tempDiscount->image_url)) {
-                $product->image_url = $tempDiscount->image_url;
-                $product->image_from_flyer = false;
-                $product->save();
-            }
 
-            $existingMainDiscount = Discount::where('product_id', $product->id)
-                ->where('store_id', $store->id)
-                ->where('start_at', $startAt)
-                ->where('end_at', $endAt)
-                ->first();
-
-            if (!$existingMainDiscount) {
-                Discount::create([
-                    'product_id' => $product->id,
-                    'store_id' => $store->id,
-                    'product_url' => $tempDiscount->product_url,
-                    'original_price' => $normalizedOriginalPrice,
-                    'discounted_price' => $normalizedDiscountedPrice,
-                    'discount_percent' => $discountPercent,
-                    'condition' => $normalizedCondition,
-                    'info' => $normalizedInfo,
-                    'card' => $tempDiscount->card,
-                    'start_at' => $startAt,
-                    'end_at' => $endAt,
-                ]);
-            } else {
-                $existingMainDiscount->touch();
-            }
-
-            $tempDiscount->update(['processed' => true]);
-        }
+                $this->markTempProcessed($processedIds);
+                $processedIds = [];
+            });
 
         $this->info('Discounts processed successfully');
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function skipStoreNames(): array
+    {
+        if ($this->skipStoreNames !== null) {
+            return $this->skipStoreNames;
+        }
+
+        $option = $this->option('skip-stores');
+        if (!$option) {
+            $this->skipStoreNames = [];
+
+            return $this->skipStoreNames;
+        }
+
+        $this->skipStoreNames = array_values(array_filter(array_map(
+            fn (string $name) => mb_strtolower(trim($name)),
+            explode(',', $option)
+        )));
+
+        return $this->skipStoreNames;
+    }
+
+    private function applySkipStoresFilter($query): void
+    {
+        $skip = $this->skipStoreNames();
+        if ($skip === []) {
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($skip), '?'));
+        $query->whereRaw("LOWER(store) NOT IN ({$placeholders})", $skip);
+    }
+
+    private function preloadLookups(): void
+    {
+        $this->storesByName = [];
+        foreach (Store::all() as $store) {
+            $this->storesByName[mb_strtolower($store->name)] = $store;
+        }
+        $this->categoriesByName = Category::pluck('id', 'name')->all();
+        $this->productMappingsByName = ProductMapping::pluck('product_id', 'name')->all();
+
+        $this->mappersByStoreId = [];
+        foreach (CategoryMapper::orderBy('id')->get() as $mapper) {
+            $this->mappersByStoreId[$mapper->store][] = $mapper;
+        }
+    }
+
+    private function removeDuplicateTempRows(): void
+    {
+        $deleted = DB::delete('
+            DELETE t1 FROM discount_temp t1
+            INNER JOIN discount_temp t2
+                ON t1.product_url = t2.product_url
+                AND t1.id < t2.id
+            WHERE t1.processed = 0
+              AND t2.processed = 0
+              AND t1.product_url IS NOT NULL
+              AND t1.category != ?
+              AND t2.category != ?
+        ', ['', '']);
+
+        if ($deleted > 0) {
+            $this->info("Removed {$deleted} duplicate discount_temp row(s).");
+        }
+    }
+
+    private function processTempDiscount(DiscountTemp $tempDiscount): bool
+    {
+        $store = $this->storesByName[mb_strtolower($tempDiscount->store)] ?? null;
+
+        if (!$store) {
+            $this->error("Store not found: {$tempDiscount->store}");
+            return true;
+        }
+
+        $rules = $this->getStoreRules($store->name, $tempDiscount);
+
+        $normalizedCondition = $this->normalizeCondition($tempDiscount->condition);
+
+        $packResult = ProductPackSizeExtractor::extractAndStrip($tempDiscount->info);
+        $packSize = $packResult['size'];
+        $normalizedInfo = $packResult['info'];
+        if (!empty($normalizedInfo)) {
+            $normalizedInfo = str_replace(['"', "'"], '', $normalizedInfo);
+            $normalizedInfo = $this->stripAsterisks($normalizedInfo) ?: null;
+        }
+
+        $normalizedOriginalPrice = $rules->normalizePrice($tempDiscount->original_price);
+        $normalizedDiscountedPrice = $rules->normalizePrice($tempDiscount->discounted_price);
+
+        $discountPercent = $tempDiscount->discount_percent;
+        $normalizedDiscount = $rules->normalizeDiscount($discountPercent);
+
+        if (!empty($discountPercent)) {
+            $discountPercent = $normalizedDiscount;
+
+            if ($normalizedOriginalPrice <= 0) {
+                $discountPercent = 0;
+            }
+        }
+
+        if (empty($discountPercent) && $normalizedOriginalPrice > 0 && $normalizedDiscountedPrice > 0) {
+            $discountPercent = round((($normalizedOriginalPrice - $normalizedDiscountedPrice) / $normalizedOriginalPrice) * 100);
+        } elseif (empty($discountPercent)) {
+            $discountPercent = null;
+        }
+
+        if ($discountPercent < 0 || $discountPercent >= 100) {
+            $discountPercent = 0;
+        }
+
+        if (empty($normalizedOriginalPrice) && empty($normalizedDiscountedPrice)) {
+            $discountPercent = $normalizedDiscount;
+        }
+
+        if (!$rules->validate()) {
+            return true;
+        }
+
+        $startAt = static::normalizeDiscountDate($tempDiscount->start_at);
+        $endAt = static::normalizeDiscountDate($tempDiscount->end_at);
+
+        if ($startAt === null && $endAt === null) {
+            return true;
+        }
+
+        $categoryId = $this->resolveCategoryId($tempDiscount, $store);
+        if ($categoryId === false || $categoryId === null) {
+            CategoryMapper::firstOrCreate(
+                ['store_category' => $tempDiscount->category],
+                ['store' => $store->id]
+            );
+
+            return true;
+        }
+
+        $normalizedProductName = $this->composeDisplayName($tempDiscount->name, $packSize);
+        $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand, $store->name);
+
+        $mappingProductId = $this->productMappingsByName[$normalizedProductName] ?? null;
+
+        if ($mappingProductId) {
+            $product = $this->findProductById($mappingProductId);
+            if (!$product) {
+                unset($this->productMappingsByName[$normalizedProductName]);
+                $product = $this->findOrCreateProduct($normalizedProductName, $productSlug, $tempDiscount, $categoryId);
+            }
+        } else {
+            $product = $this->findOrCreateProduct($normalizedProductName, $productSlug, $tempDiscount, $categoryId);
+        }
+
+        $isFlyerSource = !empty($tempDiscount->box) && !empty($tempDiscount->page_image_path);
+
+        if ($product->wasRecentlyCreated && $isFlyerSource) {
+            if (empty($product->image_url)) {
+                $croppedImageUrl = $this->cropProductImage($tempDiscount, $product);
+                if ($croppedImageUrl) {
+                    $product->image_url = $croppedImageUrl;
+                }
+            }
+            $product->image_from_flyer = true;
+            $product->save();
+        } elseif (!$product->wasRecentlyCreated && $product->image_from_flyer && !empty($tempDiscount->image_url)) {
+            $product->image_url = $tempDiscount->image_url;
+            $product->image_from_flyer = false;
+            $product->save();
+        }
+
+        if ($this->discountExists($product->id, $store->id, $startAt, $endAt)) {
+            return true;
+        }
+
+        Discount::withoutEvents(function () use (
+            $product,
+            $store,
+            $tempDiscount,
+            $normalizedOriginalPrice,
+            $normalizedDiscountedPrice,
+            $discountPercent,
+            $normalizedCondition,
+            $normalizedInfo,
+            $startAt,
+            $endAt
+        ) {
+            Discount::create([
+                'product_id' => $product->id,
+                'store_id' => $store->id,
+                'product_url' => $tempDiscount->product_url,
+                'original_price' => $normalizedOriginalPrice,
+                'discounted_price' => $normalizedDiscountedPrice,
+                'discount_percent' => $discountPercent,
+                'condition' => $normalizedCondition,
+                'info' => $normalizedInfo,
+                'card' => $tempDiscount->card,
+                'start_at' => $startAt,
+                'end_at' => $endAt,
+            ]);
+        });
+
+        $this->markDiscountExists($product->id, $store->id, $startAt, $endAt);
+
+        return true;
+    }
+
+    private function findProductById(int $productId): ?Product
+    {
+        if (isset($this->productsById[$productId])) {
+            return $this->productsById[$productId];
+        }
+
+        $product = Product::find($productId);
+        if ($product) {
+            $this->productsById[$productId] = $product;
+            $this->productsBySlug[$product->slug] = $product;
+        }
+
+        return $product;
+    }
+
+    private function findOrCreateProduct(
+        string $normalizedProductName,
+        string $productSlug,
+        DiscountTemp $tempDiscount,
+        int $categoryId
+    ): Product {
+        if (isset($this->productsBySlug[$productSlug])) {
+            return $this->productsBySlug[$productSlug];
+        }
+
+        $product = Product::firstOrCreate(
+            ['slug' => $productSlug],
+            [
+                'name' => $normalizedProductName,
+                'brand' => $tempDiscount->brand,
+                'slug' => $productSlug,
+                'description' => '',
+                'category_id' => $categoryId,
+                'image_url' => $tempDiscount->image_url,
+            ]
+        );
+
+        $this->productsBySlug[$productSlug] = $product;
+        $this->productsById[$product->id] = $product;
+
+        if ($product->wasRecentlyCreated) {
+            $this->productMappingsByName[$normalizedProductName] = $product->id;
+        }
+
+        return $product;
+    }
+
+    private function discountExists(int $productId, int $storeId, ?string $startAt, ?string $endAt): bool
+    {
+        $key = $this->discountCacheKey($productId, $storeId, $startAt, $endAt);
+
+        if (array_key_exists($key, $this->existingDiscountCache)) {
+            return $this->existingDiscountCache[$key];
+        }
+
+        $exists = Discount::query()
+            ->where('product_id', $productId)
+            ->where('store_id', $storeId)
+            ->where('start_at', $startAt)
+            ->where('end_at', $endAt)
+            ->exists();
+
+        $this->existingDiscountCache[$key] = $exists;
+
+        return $exists;
+    }
+
+    private function markDiscountExists(int $productId, int $storeId, ?string $startAt, ?string $endAt): void
+    {
+        $this->existingDiscountCache[$this->discountCacheKey($productId, $storeId, $startAt, $endAt)] = true;
+    }
+
+    private function discountCacheKey(int $productId, int $storeId, ?string $startAt, ?string $endAt): string
+    {
+        return "{$productId}:{$storeId}:{$startAt}:{$endAt}";
+    }
+
+    /**
+     * @param array<int> $ids
+     */
+    private function markTempProcessed(array $ids): void
+    {
+        if ($ids === []) {
+            return;
+        }
+
+        DiscountTemp::whereIn('id', $ids)->update(['processed' => true]);
+    }
+
+    private function resolveCategoryId(DiscountTemp $tempDiscount, Store $store): int|false|null
+    {
+        if (empty($tempDiscount->category)) {
+            return null;
+        }
+
+        $productName = strtolower($tempDiscount->name);
+        $petKeywords = ['šunų', 'ėdalas', 'kačių', 'gyvūnų'];
+
+        foreach ($petKeywords as $keyword) {
+            if (mb_strpos($productName, $keyword) !== false) {
+                return 619;
+            }
+        }
+
+        $categoryName = $tempDiscount->category;
+        $storeCategory = str_replace(['https://iki.lt/'], '', $categoryName);
+
+        if (isset($this->categoriesByName[$categoryName])) {
+            return $this->categoriesByName[$categoryName];
+        }
+
+        $mappers = $this->mappersByStoreId[$store->id] ?? [];
+
+        $mapper = $this->findMapper($mappers, $categoryName, exact: true);
+        if ($mapper && $mapper->category_id) {
+            return $mapper->category_id;
+        }
+
+        $mapper = $this->findMapper($mappers, $categoryName, exact: false);
+        if ($mapper && $mapper->category_id) {
+            return $mapper->category_id;
+        }
+
+        if (str_contains($storeCategory, '/')) {
+            $parts = explode('/', $storeCategory);
+
+            if (count($parts) >= 2) {
+                $twoParts = $parts[0] . '/' . $parts[1];
+
+                $mapper = $this->findMapper($mappers, $twoParts, exact: true, allowTrailingSlash: true);
+                if ($mapper && $mapper->category_id) {
+                    return $mapper->category_id;
+                }
+
+                $mapper = $this->findMapper($mappers, $twoParts, exact: false);
+                if ($mapper && $mapper->category_id) {
+                    return $mapper->category_id;
+                }
+            }
+
+            $firstPart = $parts[0];
+
+            $mapper = $this->findMapper($mappers, $firstPart, exact: true);
+            if ($mapper && $mapper->category_id) {
+                return $mapper->category_id;
+            }
+
+            $mapper = $this->findMapper($mappers, $firstPart, exact: false);
+            if ($mapper && $mapper->category_id) {
+                return $mapper->category_id;
+            }
+        }
+
+        $this->createCategoryAndMapping($tempDiscount->category, $store);
+
+        return false;
+    }
+
+    /**
+     * @param list<CategoryMapper> $mappers
+     */
+    private function findMapper(
+        array $mappers,
+        string $needle,
+        bool $exact,
+        bool $allowTrailingSlash = false
+    ): ?CategoryMapper {
+        foreach ($mappers as $mapper) {
+            if ($exact) {
+                if ($mapper->store_category === $needle) {
+                    return $mapper;
+                }
+                if ($allowTrailingSlash && $mapper->store_category === $needle . '/') {
+                    return $mapper;
+                }
+                continue;
+            }
+
+            if (str_starts_with($mapper->store_category, $needle)) {
+                return $mapper;
+            }
+        }
+
+        return null;
+    }
+
+    private function createCategoryAndMapping(string $storeCategory, Store $store): void
+    {
+        $key = $store->id . ':' . $storeCategory;
+        if (isset($this->unmappedCategoryKeys[$key])) {
+            return;
+        }
+
+        CategoryMapper::create([
+            'category_id' => null,
+            'store_category' => $storeCategory,
+            'store' => $store->id,
+        ]);
+
+        $this->unmappedCategoryKeys[$key] = true;
+        $this->info("Added unmapped category: {$storeCategory}");
     }
 
     private function getStoreRules(string $storeName, DiscountTemp $tempDiscount)
@@ -245,120 +559,6 @@ class ProcessDiscounts extends Command
         }
     }
 
-    private function assignCategory(DiscountTemp $tempDiscount, Store $store)
-    {
-        if (empty($tempDiscount->category)) {
-            return null;
-        }
-
-        $productName = strtolower($tempDiscount->name);
-        $petKeywords = ['šunų', 'ėdalas', 'kačių', 'gyvūnų'];
-
-        foreach ($petKeywords as $keyword) {
-            if (mb_strpos($productName, $keyword) !== false) {
-                return 619;
-            }
-        }
-
-        $categoryName = $tempDiscount->category;
-        $storeCategory = str_replace(['https://iki.lt/'], '', $categoryName);
-
-        $category = Category::where('name', $categoryName)->first();
-        if ($category) {
-            return $category->id;
-        }
-
-        // Try full category exact match
-        $mapper = CategoryMapper::where('store', $store->id)
-            ->where('store_category', $categoryName)
-            ->orderBy('id', 'asc')
-            ->first();
-
-        if ($mapper) {
-            return $mapper->category_id;
-        }
-
-        // Try LIKE match with full category
-        $mapper = CategoryMapper::where('store', $store->id)
-            ->where('store_category', 'LIKE', $categoryName . '%')
-            ->orderBy('id', 'asc')
-            ->first();
-
-        if ($mapper) {
-            return $mapper->category_id;
-        }
-
-        if (str_contains($storeCategory, '/')) {
-            $parts = explode('/', $storeCategory);
-
-            // Try 2 parts first (if available)
-            if (count($parts) >= 2) {
-                $twoParts = $parts[0] . '/' . $parts[1];
-
-                // Try exact match with 2 parts
-                $mapper = CategoryMapper::where('store', $store->id)
-                    ->where(function ($query) use ($twoParts) {
-                        $query->where('store_category', $twoParts)
-                            ->orWhere('store_category', $twoParts . '/');
-                    })
-                    ->orderBy('id', 'asc')
-                    ->first();
-
-                if ($mapper) {
-                    return $mapper->category_id;
-                }
-
-                // Try LIKE match with 2 parts
-                $mapper = CategoryMapper::where('store', $store->id)
-                    ->where('store_category', 'LIKE', $twoParts . '%')
-                    ->orderBy('id', 'asc')
-                    ->first();
-
-                if ($mapper) {
-                    return $mapper->category_id;
-                }
-            }
-
-            // Try 1 part (first part)
-            $firstPart = $parts[0];
-
-            // Try exact match with 1 part
-            $mapper = CategoryMapper::where('store', $store->id)
-                ->where('store_category', $firstPart)
-                ->orderBy('id', 'asc')
-                ->first();
-
-            if ($mapper) {
-                return $mapper->category_id;
-            }
-
-            // Try LIKE match with 1 part
-            $mapper = CategoryMapper::where('store', $store->id)
-                ->where('store_category', 'LIKE', $firstPart . '%')
-                ->orderBy('id', 'asc')
-                ->first();
-
-            if ($mapper) {
-                return $mapper->category_id;
-            }
-        }
-
-        $this->createCategoryAndMapping($tempDiscount->category, $store);
-
-        return false;
-    }
-
-    private function createCategoryAndMapping(string $storeCategory, Store $store)
-    {
-        CategoryMapper::create([
-            'category_id' => null,
-            'store_category' => $storeCategory,
-            'store' => $store->id,
-        ]);
-
-        $this->info("Added unmapped category: {$storeCategory}");
-    }
-
     private function composeDisplayName(string $rawName, ?string $infoPackSize): string
     {
         $nameResult = ProductPackSizeExtractor::extractAndStrip($rawName);
@@ -382,13 +582,6 @@ class ProcessDiscounts extends Command
     {
         $slugParts = [];
 
-//        if (!empty($brand) && $storeName !== 'maxima') {
-//            $normalizedBrand = $this->normalizeForSlug($brand);
-//            if (!empty($normalizedBrand)) {
-//                $slugParts[] = $normalizedBrand;
-//            }
-//        }
-
         $normalizedName = $this->normalizeForSlug($productName);
         if (!empty($normalizedName)) {
             $slugParts[] = $normalizedName;
@@ -406,7 +599,7 @@ class ProcessDiscounts extends Command
 
         $lithuanianToLatin = [
             'ą' => 'a', 'č' => 'c', 'ę' => 'e', 'ė' => 'e', 'į' => 'i', 'š' => 's', 'ų' => 'u', 'ū' => 'u', 'ž' => 'z',
-            'Ą' => 'A', 'Č' => 'C', 'Ę' => 'E', 'Ė' => 'E', 'Į' => 'I', 'Š' => 'S', 'Ų' => 'U', 'Ū' => 'U', 'Ž' => 'Z'
+            'Ą' => 'A', 'Č' => 'C', 'Ę' => 'E', 'Ė' => 'E', 'Į' => 'I', 'Š' => 'S', 'Ų' => 'U', 'Ū' => 'U', 'Ž' => 'Z',
         ];
 
         $text = strtr($text, $lithuanianToLatin);
@@ -416,6 +609,27 @@ class ProcessDiscounts extends Command
         $text = preg_replace('/-+/', '-', $text);
 
         return trim($text, '-');
+    }
+
+    private function imageManager(): ImageManager
+    {
+        if ($this->imageManager === null) {
+            $this->imageManager = new ImageManager(new Driver());
+        }
+
+        return $this->imageManager;
+    }
+
+    private function readPageImage(string $pageImagePath): ?ImageInterface
+    {
+        if (!isset($this->pageImageBinaryCache[$pageImagePath])) {
+            if (!file_exists($pageImagePath)) {
+                return null;
+            }
+            $this->pageImageBinaryCache[$pageImagePath] = file_get_contents($pageImagePath);
+        }
+
+        return $this->imageManager()->read($this->pageImageBinaryCache[$pageImagePath]);
     }
 
     private function cropProductImage(DiscountTemp $tempDiscount, Product $product): ?string
@@ -431,10 +645,10 @@ class ProcessDiscounts extends Command
             }
 
             $pageImagePath = storage_path('app/public/' . $tempDiscount->page_image_path);
-            if (!file_exists($pageImagePath)) return null;
-
-            $manager = new ImageManager(new Driver());
-            $image = $manager->read($pageImagePath);
+            $image = $this->readPageImage($pageImagePath);
+            if ($image === null) {
+                return null;
+            }
 
             $imageWidth = $image->width();
             $imageHeight = $image->height();
@@ -444,9 +658,6 @@ class ProcessDiscounts extends Command
             $currentWidth = $xmax - $xmin;
             $currentHeight = $ymax - $ymin;
 
-            // --- ADAPTYVI LOGIKA ---
-            // Jei produktas mažas (pvz., < 200), didiname 50 vienetų (saugiau).
-            // Jei produktas didelis (> 200), didiname tik 10 vienetų (minimaliai).
             $paddingX = ($currentWidth < 200) ? 50 : 10;
             $paddingY = ($currentHeight < 200) ? 50 : 10;
 
@@ -454,12 +665,11 @@ class ProcessDiscounts extends Command
             $xmax = min(1000, $xmax + $paddingX);
             $ymin = max(0, $ymin - $paddingY);
             $ymax = min(1000, $ymax + $paddingY);
-            // -----------------------
 
-            $x1 = (int)($xmin * $imageWidth / 1000);
-            $y1 = (int)($ymin * $imageHeight / 1000);
-            $x2 = (int)($xmax * $imageWidth / 1000);
-            $y2 = (int)($ymax * $imageHeight / 1000);
+            $x1 = (int) ($xmin * $imageWidth / 1000);
+            $y1 = (int) ($ymin * $imageHeight / 1000);
+            $x2 = (int) ($xmax * $imageWidth / 1000);
+            $y2 = (int) ($ymax * $imageHeight / 1000);
 
             $cropWidth = max(1, $x2 - $x1);
             $cropHeight = max(1, $y2 - $y1);
@@ -467,7 +677,9 @@ class ProcessDiscounts extends Command
             $croppedImage = $image->crop($cropWidth, $cropHeight, $x1, $y1);
 
             $productsDir = 'products';
-            if (!Storage::disk('public')->exists($productsDir)) Storage::disk('public')->makeDirectory($productsDir);
+            if (!Storage::disk('public')->exists($productsDir)) {
+                Storage::disk('public')->makeDirectory($productsDir);
+            }
 
             $filename = $product->slug . '-' . time() . '.jpg';
             $storagePath = $productsDir . '/' . $filename;
@@ -475,9 +687,9 @@ class ProcessDiscounts extends Command
             Storage::disk('public')->put($storagePath, $binary);
 
             return Storage::disk('public')->url($storagePath);
-
         } catch (\Exception $e) {
             Log::error('Error cropping product image', ['product_id' => $product->id, 'error' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -487,7 +699,6 @@ class ProcessDiscounts extends Command
         $image->blendTransparency('ffffff');
 
         $quality = 84;
-        $binary = '';
 
         while ($quality >= 58) {
             $binary = $image->toJpeg(quality: $quality)->toString();
@@ -535,16 +746,16 @@ class ProcessDiscounts extends Command
                 if (!empty($parts)) {
                     if (count($parts) === 1) {
                         return $parts[0];
-                    } else {
-                        $last = array_pop($parts);
-                        return implode(', ', $parts) . ' ir ' . $last;
                     }
+
+                    $last = array_pop($parts);
+
+                    return implode(', ', $parts) . ' ir ' . $last;
                 }
             }
         }
 
         $condition = str_replace(['"', "'"], '', $condition);
-
         $condition = str_replace(['Įsidėk 2 už', 'Pirk 2 už'], '1+1', $condition);
 
         return $condition;
