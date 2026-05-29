@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\Discount;
 use App\Models\Store;
+use App\Support\FoodCategorySlugs;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -15,17 +16,6 @@ class ListingPageMetaService
     ];
 
     private const MIN_TOP_PRODUCT_PRICE = 5.0;
-
-    private const FOOD_CATEGORY_SLUGS = [
-        'vaisiai-ir-darzoves',
-        'mesa-ir-zuvis',
-        'pieno-produktai-ir-kiausiniai',
-        'duonos-gaminiai',
-        'bakaleja',
-        'saldumynai-ir-uzkandziai',
-        'saldytas-maistas-ir-ledai',
-        'surelis',
-    ];
 
     public function __construct(
         private PageFreshnessService $freshnessService
@@ -250,7 +240,7 @@ class ListingPageMetaService
             ->join('products', 'products.id', '=', 'discounts.product_id')
             ->join('categories', 'categories.id', '=', 'products.category_id')
             ->where('discounts.store_id', $store->id)
-            ->whereIn('categories.slug', self::FOOD_CATEGORY_SLUGS)
+            ->whereIn('categories.slug', FoodCategorySlugs::FOOD)
             ->selectRaw('COUNT(discounts.id) as offers_count')
             ->selectRaw('MAX(discounts.discount_percent) as max_discount_percent')
             ->selectRaw(
@@ -268,7 +258,7 @@ class ListingPageMetaService
             ->join('products', 'products.id', '=', 'discounts.product_id')
             ->join('categories', 'categories.id', '=', 'products.category_id')
             ->where('discounts.store_id', $store->id)
-            ->whereIn('categories.slug', self::FOOD_CATEGORY_SLUGS)
+            ->whereIn('categories.slug', FoodCategorySlugs::FOOD)
             ->select('categories.slug', DB::raw('COUNT(discounts.id) as offers_count'))
             ->groupBy('categories.slug')
             ->orderByDesc('offers_count')
@@ -295,7 +285,7 @@ class ListingPageMetaService
             ->join('categories', 'categories.id', '=', 'products.category_id')
             ->where('discounts.store_id', $store->id)
             ->whereNull('categories.parent_id')
-            ->whereNotIn('categories.slug', self::FOOD_CATEGORY_SLUGS)
+            ->whereNotIn('categories.slug', FoodCategorySlugs::FOOD)
             ->select(
                 'categories.name',
                 'categories.slug',
@@ -577,14 +567,14 @@ class ListingPageMetaService
 
     private function getMostSavedForStore(Store $store): array
     {
-        $foodSlugs = self::FOOD_CATEGORY_SLUGS;
+        $foodSlugs = FoodCategorySlugs::FOOD;
         $chemistrySlugs = [
             'buitine-chemija-valymo-priemones',
             'kosmetika-ir-higiena',
         ];
-        $drinksSlugs = [
-            'gerimai-kava-arbata',
-            'alkoholiniai-ir-nealkoholiniai-gerimai',
+        $homeSlugs = [
+            'namu-ukio-ir-laisvalaikio-prekes',
+            'vaiku-ir-kudikiu-prekes',
         ];
 
         $rows = DB::table('discounts')
@@ -612,8 +602,8 @@ class ListingPageMetaService
                 'value' => 0.0,
             ],
             [
-                'label' => 'Gėrimams',
-                'slugs' => $drinksSlugs,
+                'label' => 'Namams',
+                'slugs' => $homeSlugs,
                 'value' => 0.0,
             ],
         ];

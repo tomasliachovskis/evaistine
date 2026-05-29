@@ -2,48 +2,43 @@
 
 namespace App\Services;
 
-use App\Models\Category;
 use App\Models\Discount;
 use App\Models\DiscountHistory;
 use App\Models\Store;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class HomePageSectionsService
 {
+    /** @var HomeDealPoolService */
+    private $poolService;
+
     private const EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS = [
         'namu-ukio-ir-laisvalaikio-prekes',
     ];
 
     private const MIN_TOP_PRODUCT_PRICE = 5.0;
 
-    private const POPULAR_CATEGORY_IDS = [1, 52, 121, 352, 380];
-
-    private const SECTION_LIMIT = 8;
-
     /** @var DiscountResponseFormatter */
     private $formatter;
 
     public function __construct(
-        DiscountResponseFormatter $formatter
+        DiscountResponseFormatter $formatter,
+        HomeDealPoolService $poolService
     ) {
         $this->formatter = $formatter;
+        $this->poolService = $poolService;
     }
 
     public function build(): array
     {
-        $featured = $this->getFeaturedDeal();
-        $featuredId = $featured ? $featured->id : null;
+        $pools = $this->poolService->buildPools();
 
         return [
-            'featured_deal' => $featured ? $this->formatDeal($featured) : null,
-            'new_today' => $this->formatDeals($this->getNewToday($featuredId)),
-            'price_drops' => $this->formatDealsWithPriceChange($this->getPriceDrops($featuredId)),
-            'trending' => $this->formatDeals($this->getTrending($featuredId)),
-            'expiring_soon' => $this->formatDeals($this->getExpiringSoon($featuredId)),
-            'category_savings' => $this->getCategorySavings(),
+            'best_pool' => $this->formatDeals(collect($pools['best'])),
+            'food_pool' => $this->formatDeals(collect($pools['food'])),
+            'non_food_pool' => $this->formatDeals(collect($pools['non_food'])),
             'store_ranking' => $this->getStoreRanking(),
         ];
     }
@@ -70,165 +65,6 @@ class HomePageSectionsService
         $change = round((float) $previous - (float) $discount->discounted_price, 2);
 
         return $change > 0 ? $change : null;
-    }
-
-    private function baseQuery(): Builder
-    {
-        return Discount::query()
-            ->select('discounts.*')
-            ->with(['product.category', 'store'])
-            ->whereNotNull('discounts.discount_percent')
-            ->where('discounts.discount_percent', '>', 0);
-    }
-
-    private function applyTopProductFilters(Builder $query): Builder
-    {
-        return $query
-            ->whereNotNull('discounts.discounted_price')
-            ->where('discounts.discounted_price', '>=', self::MIN_TOP_PRODUCT_PRICE)
-            ->whereHas('product.category', function ($categoryQuery) {
-                $categoryQuery->whereNotIn('slug', self::EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS);
-            });
-    }
-
-    private function excludeIds(Builder $query, ?int $excludeId): Builder
-    {
-        if ($excludeId !== null) {
-            $query->where('discounts.id', '!=', $excludeId);
-        }
-
-        return $query;
-    }
-
-    private function getFeaturedDeal(): ?Discount
-    {
-        $query = $this->baseQuery();
-        $this->applyTopProductFilters($query);
-
-        return $query
-            ->orderByDesc('discounts.discount_percent')
-            ->first();
-    }
-
-    private function getNewToday(?int $excludeId): Collection
-    {
-        $query = $this->baseQuery();
-        $this->applyTopProductFilters($query);
-        $this->excludeIds($query, $excludeId);
-
-        return $query
-            ->whereDate('discounts.created_at', Carbon::today())
-            ->orderByDesc('discounts.discount_percent')
-            ->limit(self::SECTION_LIMIT)
-            ->get();
-    }
-
-    private function getTrending(?int $excludeId): Collection
-    {
-        $query = $this->baseQuery();
-        $this->applyTopProductFilters($query);
-        $this->excludeIds($query, $excludeId);
-
-        $ids = implode(',', self::POPULAR_CATEGORY_IDS);
-
-        return $query
-            ->orderByRaw(
-                "CASE WHEN (SELECT category_id FROM products WHERE products.id = discounts.product_id) IN ({$ids}) THEN 0 ELSE 1 END"
-            )
-            ->orderByDesc('discounts.discount_percent')
-            ->limit(self::SECTION_LIMIT)
-            ->get();
-    }
-
-    private function getExpiringSoon(?int $excludeId): Collection
-    {
-        $now = Carbon::now();
-        $cutoff = $now->copy()->addDays(3);
-
-        $query = $this->baseQuery();
-        $this->applyTopProductFilters($query);
-        $this->excludeIds($query, $excludeId);
-
-        return $query
-            ->whereNotNull('discounts.end_at')
-            ->where('discounts.end_at', '>=', $now)
-            ->where('discounts.end_at', '<=', $cutoff)
-            ->orderBy('discounts.end_at')
-            ->limit(self::SECTION_LIMIT)
-            ->get();
-    }
-
-    private function getPriceDrops(?int $excludeId): Collection
-    {
-        $latestHistory = DB::table('discount_histories as dh')
-            ->select('dh.product_id', 'dh.store_id', DB::raw('MAX(dh.id) as max_id'))
-            ->groupBy('dh.product_id', 'dh.store_id');
-
-        $query = $this->baseQuery();
-        $this->applyTopProductFilters($query);
-        $this->excludeIds($query, $excludeId);
-
-        return $query
-            ->joinSub($latestHistory, 'latest_hist', function ($join) {
-                $join->on('discounts.product_id', '=', 'latest_hist.product_id')
-                    ->on('discounts.store_id', '=', 'latest_hist.store_id');
-            })
-            ->join('discount_histories as prev', 'prev.id', '=', 'latest_hist.max_id')
-            ->whereColumn('discounts.discounted_price', '<', 'prev.discounted_price')
-            ->orderByRaw('(prev.discounted_price - discounts.discounted_price) DESC')
-            ->select('discounts.*')
-            ->limit(self::SECTION_LIMIT)
-            ->get();
-    }
-
-    private function getCategorySavings(): array
-    {
-        $today = Carbon::today()->toDateString();
-
-        $categories = Category::query()
-            ->whereNull('parent_id')
-            ->where('hide', false)
-            ->withCount([
-                'discounts' => function ($query) {
-                    $query->select(DB::raw('count(distinct discounts.id)'));
-                },
-            ])
-            ->whereHas('discounts')
-            ->get();
-
-        $rows = [];
-
-        foreach ($categories as $category) {
-            $best = Discount::query()
-                ->whereHas('product', fn ($q) => $q->where('category_id', $category->id))
-                ->whereNotNull('discount_percent')
-                ->max('discount_percent');
-
-            if (!$best || $best <= 0) {
-                continue;
-            }
-
-            $newTodayCount = Discount::query()
-                ->whereHas('product', fn ($q) => $q->where('category_id', $category->id))
-                ->whereDate('created_at', $today)
-                ->count();
-
-            $offerCount = $newTodayCount > 0 ? $newTodayCount : $category->discounts_count;
-
-            $rows[] = [
-                'name' => $category->name,
-                'slug' => $category->slug,
-                'href' => "/akcijos/{$category->slug}",
-                'max_discount_percent' => (int) round($best),
-                'offers_count' => $offerCount,
-                'new_today_count' => $newTodayCount,
-                'offers_count_label' => $newTodayCount > 0 ? 'šiandien' : 'akcijų',
-            ];
-        }
-
-        usort($rows, fn ($a, $b) => $b['max_discount_percent'] <=> $a['max_discount_percent']);
-
-        return array_slice($rows, 0, 8);
     }
 
     private function getStoreRanking(): array
@@ -307,26 +143,18 @@ class HomePageSectionsService
             ->all();
     }
 
+    private function applyTopProductFilters(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('discounts.discounted_price')
+            ->where('discounts.discounted_price', '>=', self::MIN_TOP_PRODUCT_PRICE)
+            ->whereHas('product.category', function ($categoryQuery) {
+                $categoryQuery->whereNotIn('slug', self::EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS);
+            });
+    }
+
     private function formatDeals(Collection $discounts): array
     {
         return $this->formatter->format($discounts)->values()->all();
-    }
-
-    private function formatDeal(Discount $discount): array
-    {
-        return $this->formatter->format(collect([$discount]))->first();
-    }
-
-    private function formatDealsWithPriceChange(Collection $discounts): array
-    {
-        return $discounts->map(function (Discount $discount) {
-            $formatted = $this->formatDeal($discount);
-            $change = $this->resolvePriceChangeAmount($discount);
-            if ($change !== null) {
-                $formatted['price_change_amount'] = $change;
-            }
-
-            return $formatted;
-        })->values()->all();
     }
 }

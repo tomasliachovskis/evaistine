@@ -438,7 +438,7 @@ class ProductController extends Controller
     public function getFavoriteHome()
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateFavoriteHomeCacheKey($filters) . '_v4';
+        $cacheKey = $this->generateFavoriteHomeCacheKey($filters) . '_v9';
 
         return Cache::tags(['discounts', 'favorites', 'home'])
             ->remember($cacheKey, 7200, function () {
