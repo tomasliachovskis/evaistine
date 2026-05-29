@@ -86,7 +86,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $nextAuthSecret = env('NEXTAUTH_SECRET');
+        $nextAuthSecret = config('services.nextauth.secret');
 
         if (!$nextAuthSecret) {
             return response()->json([

@@ -24,6 +24,7 @@ Route::post('/scrapers/check-discount', [ScrapingController::class, 'checkValidD
 Route::get('/discount', [ProductController::class, 'getAllDiscounts']);
 Route::get('/discount/{storeOrCategory}', [ProductController::class, 'getDiscounts']);
 Route::get('/discount/{storeOrCategory}/{category}', [ProductController::class, 'getDiscounts']);
+Route::get('/leidinys/{store}', [ProductController::class, 'getStoreLeafletHub']);
 
 //Route::get('/product/{slug}', [ProductController::class, 'getProductBySlug']);
 Route::get('/product/{slug}/with-similar', [ProductController::class, 'getProductWithSimilar']);

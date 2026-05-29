@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Product;
+use Illuminate\Support\Collection;
+
 class DiscountResponseFormatter
 {
     public function format($discounts)
@@ -19,10 +22,38 @@ class DiscountResponseFormatter
         });
     }
 
+    public function formatList(Collection $discounts): Collection
+    {
+        return $discounts->map(function ($discount) {
+            return $this->formatListDiscount($discount);
+        });
+    }
+
+    public function formatProductDiscounts(Product $product): Collection
+    {
+        $product->loadMissing(['discounts.store', 'discountHistories.store', 'category']);
+
+        $productDiscounts = $this->getProductDiscounts($product);
+        $productDiscountHistories = $this->getProductDiscountHistories($product);
+
+        return $product->discounts->map(function ($discount) use ($product, $productDiscounts, $productDiscountHistories) {
+            $discount->setRelation('product', $product);
+
+            return $this->buildSingleDiscountPayload($discount, $productDiscounts, $productDiscountHistories);
+        });
+    }
+
     protected function formatSingleDiscount($discount)
     {
-        $productDiscounts = $discount->product->discounts()->with('store')->get();
-        $productDiscountHistories = $discount->product->discountHistories()->with('store')->orderBy('id', 'desc')->get();
+        $product = $discount->product;
+        $productDiscounts = $this->getProductDiscounts($product);
+        $productDiscountHistories = $this->getProductDiscountHistories($product);
+
+        return $this->buildSingleDiscountPayload($discount, $productDiscounts, $productDiscountHistories);
+    }
+
+    protected function buildSingleDiscountPayload($discount, Collection $productDiscounts, Collection $productDiscountHistories): array
+    {
         $offerCount = $productDiscounts->count();
         $minPrice = $productDiscounts->min('discounted_price');
 
@@ -40,10 +71,10 @@ class DiscountResponseFormatter
             'valid_date' => ($discount->start_at ? $discount->start_at->format('Y-m-d') : '') . ' - ' . ($discount->end_at ? $discount->end_at->format('Y-m-d') : ''),
             'offer_count' => $offerCount,
             'min_price' => (float) $minPrice,
-            'offers' => $productDiscounts->map(function($offer) {
+            'offers' => $productDiscounts->map(function ($offer) {
                 return $this->formatOfferItem($offer);
             }),
-            'history' => $productDiscountHistories->map(function($history) {
+            'history' => $productDiscountHistories->map(function ($history) {
                 return $this->formatOfferItem($history);
             }),
             'product' => $this->formatProductData($discount->product),
@@ -74,7 +105,7 @@ class DiscountResponseFormatter
 
     protected function formatListDiscount($discount)
     {
-        $productDiscounts = $discount->product->discounts()->with('store')->get();
+        $productDiscounts = $this->getProductDiscounts($discount->product);
         $offerCount = $productDiscounts->count();
         $minPrice = $productDiscounts->min('discounted_price');
 
@@ -99,7 +130,8 @@ class DiscountResponseFormatter
 
     public function formatProduct($product)
     {
-        $productDiscountHistories = $product->discountHistories()->with('store')->orderBy('id', 'desc')->get();
+        $product->loadMissing(['discountHistories.store', 'category']);
+        $productDiscountHistories = $this->getProductDiscountHistories($product);
 
         return collect([
             [
@@ -117,12 +149,34 @@ class DiscountResponseFormatter
                 'offer_count' => 0,
                 'min_price' => 0,
                 'offers' => [],
-                'history' => $productDiscountHistories->map(function($history) {
+                'history' => $productDiscountHistories->map(function ($history) {
                     return $this->formatOfferItem($history);
                 }),
                 'product' => $this->formatProductData($product),
             ]
         ]);
+    }
+
+    protected function getProductDiscounts(Product $product): Collection
+    {
+        if ($product->relationLoaded('discounts')) {
+            $product->loadMissing('discounts.store');
+
+            return $product->discounts;
+        }
+
+        return $product->discounts()->with('store')->get();
+    }
+
+    protected function getProductDiscountHistories(Product $product): Collection
+    {
+        if ($product->relationLoaded('discountHistories')) {
+            $product->loadMissing('discountHistories.store');
+
+            return $product->discountHistories->sortByDesc('id')->values();
+        }
+
+        return $product->discountHistories()->with('store')->orderBy('id', 'desc')->get();
     }
 
     protected function formatProductData($product)

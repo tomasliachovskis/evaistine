@@ -104,6 +104,7 @@ class ProcessDiscountsFlow extends Command
 
         $exitCode = $this->call('discounts:process', [
             '--skip-stores' => implode(',', self::PROCESS_SKIP_STORES),
+            '--map-categories' => 1,
         ]);
 
         if ($exitCode !== 0) {

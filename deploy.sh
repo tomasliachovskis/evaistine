@@ -71,6 +71,7 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     sudo -u www-data php artisan view:clear
     sudo -u www-data php artisan cache:clear
     sudo -u www-data php artisan optimize
+    sudo -u www-data php artisan cache:warm --type=all
     sudo -u www-data php artisan queue:restart
 
     supervisorctl restart nuolaidos-flyers || true

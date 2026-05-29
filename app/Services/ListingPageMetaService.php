@@ -10,6 +10,23 @@ use Illuminate\Support\Facades\DB;
 
 class ListingPageMetaService
 {
+    private const EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS = [
+        'namu-ukio-ir-laisvalaikio-prekes',
+    ];
+
+    private const MIN_TOP_PRODUCT_PRICE = 5.0;
+
+    private const FOOD_CATEGORY_SLUGS = [
+        'vaisiai-ir-darzoves',
+        'mesa-ir-zuvis',
+        'pieno-produktai-ir-kiausiniai',
+        'duonos-gaminiai',
+        'bakaleja',
+        'saldumynai-ir-uzkandziai',
+        'saldytas-maistas-ir-ledai',
+        'surelis',
+    ];
+
     public function __construct(
         private PageFreshnessService $freshnessService
     ) {
@@ -21,19 +38,78 @@ class ListingPageMetaService
         $validity = $this->resolveStoreValidity($store);
         $topCategories = $this->getTopCategoriesForStore($store);
         $otherStores = $this->getOtherStores($store->id);
+        $totalOffers = Discount::where('store_id', $store->id)->count();
+        $maxDiscount = (int) round(Discount::where('store_id', $store->id)->max('discount_percent') ?? 0);
+        $topDeal = Discount::query()
+            ->with('product')
+            ->where('store_id', $store->id)
+            ->whereNotNull('discount_percent')
+            ->orderByDesc('discount_percent')
+            ->first();
+        $avgDuration = $this->getAverageDealDurationDays($store);
+        $avgDiscount = $this->getAverageDiscountPercentForStore($store);
+        $totalSavings = $this->getTotalSavingsForStore($store);
+
+        $intro = $this->buildStoreIntro($storeName, $store->slug, $validity);
+        $newToday = Discount::query()
+            ->where('store_id', $store->id)
+            ->whereDate('created_at', Carbon::today())
+            ->count();
+
+        $intro['quick_stats'] = [
+            [
+                'label' => 'Aktyvios akcijos',
+                'value' => (string) $totalOffers,
+                'sublabel' => $newToday > 0 ? '+' . $newToday . ' naujos šiandien' : null,
+            ],
+            [
+                'label' => 'Vidutinė nuolaida šią savaitę',
+                'value' => $avgDiscount > 0 ? '-' . $avgDiscount . '%' : '—',
+            ],
+            [
+                'label' => 'Vid. akcijos trukmė iki pabaigos',
+                'value' => $avgDuration !== null ? $avgDuration . ' d.' : '—',
+            ],
+            [
+                'label' => 'Sutaupymai su SuperAkcijos šią savaitę',
+                'value' => $totalSavings > 0
+                    ? number_format($totalSavings, 2, ',', ' ') . ' €'
+                    : '—',
+            ],
+        ];
 
         return [
             'type' => 'store',
             'store_slug' => $store->slug,
             'store_name' => $storeName,
-            'intro' => $this->buildStoreIntro($storeName, $store->slug, $validity),
+            'intro' => $intro,
             'popular_this_week' => $this->mapPopularCategoriesForStore($store->slug, $topCategories),
-            'popular_carousel_title' => 'Populiaru šią savaitę',
+            'popular_carousel_title' => 'Daugiausia sutaupoma šiandien',
+            'popular_carousel_subtitle' => 'Pasirinkite kategoriją ir atraskite geriausias akcijas',
             'sections' => [
+                'featured_category' => $this->getFeaturedFoodCategoryForStore($store),
                 'top_categories' => $topCategories,
                 'latest_leaflet' => $this->buildLeaflet($store, $storeName, $validity),
+                'top_deals' => $this->getTopDealsForStore($store),
+                'most_saved' => $this->getMostSavedForStore($store),
+                'expiring_soon' => $this->getExpiringDealsForStore($store),
+                'weekend_deals' => $this->getWeekendDealsForStore($store),
                 'faq' => $this->buildStoreFaq($storeName, $store->slug),
                 'other_stores' => $otherStores,
+            ],
+        ];
+    }
+
+    public function buildForStoreListing(Store $store): array
+    {
+        return [
+            'type' => 'store',
+            'store_slug' => $store->slug,
+            'store_name' => $store->name,
+            'intro' => [],
+            'popular_carousel_title' => 'TOP pasiūlymai pagal kategorijas',
+            'sections' => [
+                'top_categories' => $this->getTopCategoriesForStore($store),
             ],
         ];
     }
@@ -149,32 +225,86 @@ class ListingPageMetaService
     private function buildLeaflet(Store $store, string $storeName, array $validity): ?array
     {
         $imageUrl = $store->flyer_image_url;
-        if (!$imageUrl) {
+        $pdfUrl = $store->flyer_pdf_url;
+        $hasPdf = $pdfUrl && $pdfUrl !== '#';
+
+        if (!$imageUrl && !$hasPdf) {
             return null;
         }
 
         return [
             'title' => "{$storeName} akcijų leidinys",
-            'image_url' => $imageUrl,
+            'image_url' => $imageUrl ?? '',
             'view_url' => "/akcijos/{$store->slug}",
-            'pdf_url' => $store->flyer_pdf_url,
+            'pdf_url' => $hasPdf ? $pdfUrl : null,
             'valid_from' => $validity['valid_from'],
             'valid_to' => $validity['valid_to'],
         ];
     }
 
+    private function getFeaturedFoodCategoryForStore(Store $store): ?array
+    {
+        $today = Carbon::today()->toDateString();
+
+        $aggregate = DB::table('discounts')
+            ->join('products', 'products.id', '=', 'discounts.product_id')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->where('discounts.store_id', $store->id)
+            ->whereIn('categories.slug', self::FOOD_CATEGORY_SLUGS)
+            ->selectRaw('COUNT(discounts.id) as offers_count')
+            ->selectRaw('MAX(discounts.discount_percent) as max_discount_percent')
+            ->selectRaw(
+                'SUM(CASE WHEN discounts.end_at IS NOT NULL AND DATE(discounts.end_at) = ? THEN 1 ELSE 0 END) as expiring_today_count',
+                [$today]
+            )
+            ->first();
+
+        $offersCount = (int) ($aggregate->offers_count ?? 0);
+        if ($offersCount <= 0) {
+            return null;
+        }
+
+        $topSlugRow = DB::table('discounts')
+            ->join('products', 'products.id', '=', 'discounts.product_id')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->where('discounts.store_id', $store->id)
+            ->whereIn('categories.slug', self::FOOD_CATEGORY_SLUGS)
+            ->select('categories.slug', DB::raw('COUNT(discounts.id) as offers_count'))
+            ->groupBy('categories.slug')
+            ->orderByDesc('offers_count')
+            ->first();
+
+        $imageSlug = $topSlugRow->slug ?? 'bakaleja';
+
+        return [
+            'name' => 'Maisto prekės',
+            'href' => "/akcijos/{$store->slug}",
+            'max_discount_percent' => (int) round($aggregate->max_discount_percent ?? 0),
+            'image_slug' => $imageSlug,
+            'offers_count' => $offersCount,
+            'expiring_today_count' => (int) ($aggregate->expiring_today_count ?? 0),
+        ];
+    }
+
     private function getTopCategoriesForStore(Store $store): array
     {
+        $today = Carbon::today()->toDateString();
+
         $rows = DB::table('discounts')
             ->join('products', 'products.id', '=', 'discounts.product_id')
             ->join('categories', 'categories.id', '=', 'products.category_id')
             ->where('discounts.store_id', $store->id)
             ->whereNull('categories.parent_id')
+            ->whereNotIn('categories.slug', self::FOOD_CATEGORY_SLUGS)
             ->select(
                 'categories.name',
                 'categories.slug',
                 DB::raw('COUNT(discounts.id) as offers_count'),
                 DB::raw('MAX(discounts.discount_percent) as max_discount_percent')
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN discounts.end_at IS NOT NULL AND DATE(discounts.end_at) = ? THEN 1 ELSE 0 END) as expiring_today_count',
+                [$today]
             )
             ->groupBy('categories.id', 'categories.name', 'categories.slug')
             ->orderByDesc('offers_count')
@@ -188,6 +318,7 @@ class ListingPageMetaService
                 'max_discount_percent' => (int) round($row->max_discount_percent ?? 0),
                 'image_slug' => $row->slug,
                 'offers_count' => (int) $row->offers_count,
+                'expiring_today_count' => (int) ($row->expiring_today_count ?? 0),
             ];
         })->values()->all();
     }
@@ -355,6 +486,208 @@ class ListingPageMetaService
         }, $modules);
     }
 
+    private function mapStoreDealRow(Discount $d, Store $store): array
+    {
+        $categorySlug = $d->product->category?->slug;
+        $href = $categorySlug
+            ? "/akcijos/{$categorySlug}/{$d->product->slug}"
+            : "/akcijos/{$store->slug}";
+
+        return [
+            'name' => $d->product->name,
+            'href' => $href,
+            'product_id' => $d->product->id,
+            'discount_percent' => (int) round($d->discount_percent),
+            'discounted_price' => (float) $d->discounted_price,
+            'original_price' => (float) $d->original_price,
+            'unit_price' => null,
+            'image_url' => $d->product->image_url,
+            'category_slug' => $categorySlug,
+            'valid_to' => $d->end_at ? $d->end_at->format('Y-m-d') : '',
+        ];
+    }
+
+    private function getTopDealsForStore(Store $store): array
+    {
+        $query = Discount::query()
+            ->with(['product.category'])
+            ->where('store_id', $store->id)
+            ->whereNotNull('discount_percent');
+
+        $this->applyTopProductFilters($query);
+
+        return $query
+            ->orderByDesc('discount_percent')
+            ->limit(8)
+            ->get()
+            ->map(fn (Discount $d) => $this->mapStoreDealRow($d, $store))
+            ->values()
+            ->all();
+    }
+
+    private function getExpiringDealsForStore(Store $store, int $limit = 4): array
+    {
+        $now = Carbon::now();
+        $cutoff = $now->copy()->addDays(3);
+
+        return Discount::query()
+            ->with(['product.category'])
+            ->where('store_id', $store->id)
+            ->whereNotNull('discount_percent')
+            ->whereNotNull('end_at')
+            ->where('end_at', '>=', $now)
+            ->where('end_at', '<=', $cutoff)
+            ->orderBy('end_at')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Discount $d) => $this->mapStoreDealRow($d, $store))
+            ->values()
+            ->all();
+    }
+
+    private function getWeekendDealsForStore(Store $store, int $limit = 6): array
+    {
+        $now = Carbon::now();
+        $endOfWeekend = Carbon::now()->startOfWeek()->addDays(6)->endOfDay();
+
+        return Discount::query()
+            ->with(['product.category'])
+            ->where('store_id', $store->id)
+            ->whereNotNull('discount_percent')
+            ->whereNotNull('end_at')
+            ->where('end_at', '>=', $now)
+            ->where('end_at', '<=', $endOfWeekend)
+            ->orderByDesc('discount_percent')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Discount $d) => $this->mapStoreDealRow($d, $store))
+            ->values()
+            ->all();
+    }
+
+    private function applyTopProductFilters($query): void
+    {
+        $query
+            ->whereNotNull('discounted_price')
+            ->where('discounted_price', '>=', self::MIN_TOP_PRODUCT_PRICE)
+            ->whereHas('product.category', function ($categoryQuery) {
+                $categoryQuery->whereNotIn('slug', self::EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS);
+            });
+    }
+
+    private function getMostSavedForStore(Store $store): array
+    {
+        $foodSlugs = self::FOOD_CATEGORY_SLUGS;
+        $chemistrySlugs = [
+            'buitine-chemija-valymo-priemones',
+            'kosmetika-ir-higiena',
+        ];
+        $drinksSlugs = [
+            'gerimai-kava-arbata',
+            'alkoholiniai-ir-nealkoholiniai-gerimai',
+        ];
+
+        $rows = DB::table('discounts')
+            ->join('products', 'products.id', '=', 'discounts.product_id')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->where('discounts.store_id', $store->id)
+            ->whereNull('categories.parent_id')
+            ->whereColumn('discounts.original_price', '>', 'discounts.discounted_price')
+            ->select(
+                'categories.slug as category_slug',
+                DB::raw('SUM(discounts.original_price - discounts.discounted_price) as savings_amount')
+            )
+            ->groupBy('categories.slug')
+            ->get();
+
+        $segments = [
+            [
+                'label' => 'Maisto prekėms',
+                'slugs' => $foodSlugs,
+                'value' => 0.0,
+            ],
+            [
+                'label' => 'Chemijai',
+                'slugs' => $chemistrySlugs,
+                'value' => 0.0,
+            ],
+            [
+                'label' => 'Gėrimams',
+                'slugs' => $drinksSlugs,
+                'value' => 0.0,
+            ],
+        ];
+
+        foreach ($rows as $row) {
+            $slug = (string) $row->category_slug;
+            $amount = (float) ($row->savings_amount ?? 0);
+            if ($amount <= 0) {
+                continue;
+            }
+
+            foreach ($segments as $index => $segment) {
+                if (!in_array($slug, $segment['slugs'], true)) {
+                    continue;
+                }
+                $segments[$index]['value'] += $amount;
+                break;
+            }
+        }
+
+        $segments = array_values(array_filter($segments, fn ($segment) => $segment['value'] > 0));
+        usort($segments, fn ($a, $b) => $b['value'] <=> $a['value']);
+        $segments = array_slice($segments, 0, 3);
+
+        return array_map(function ($segment) {
+            return [
+                'label' => $segment['label'],
+                'value' => round((float) $segment['value'], 2),
+                'unit' => 'EUR',
+            ];
+        }, $segments);
+    }
+
+    private function getAverageDealDurationDays(Store $store): ?int
+    {
+        $discounts = Discount::query()
+            ->where('store_id', $store->id)
+            ->whereNotNull('start_at')
+            ->whereNotNull('end_at')
+            ->get(['start_at', 'end_at']);
+
+        if ($discounts->isEmpty()) {
+            return null;
+        }
+
+        $totalDays = $discounts->sum(function (Discount $d) {
+            return Carbon::parse($d->start_at)->diffInDays(Carbon::parse($d->end_at));
+        });
+
+        return (int) max(1, round($totalDays / $discounts->count()));
+    }
+
+    private function getAverageDiscountPercentForStore(Store $store): int
+    {
+        return (int) round(
+            Discount::where('store_id', $store->id)
+                ->whereNotNull('discount_percent')
+                ->avg('discount_percent') ?? 0
+        );
+    }
+
+    private function getTotalSavingsForStore(Store $store): float
+    {
+        $discounts = Discount::query()
+            ->where('store_id', $store->id)
+            ->whereColumn('original_price', '>', 'discounted_price')
+            ->get(['original_price', 'discounted_price']);
+
+        return round(
+            $discounts->sum(fn (Discount $d) => (float) $d->original_price - (float) $d->discounted_price),
+            2
+        );
+    }
+
     private function getDiscountCountForCategory(Category $category): int
     {
         return Discount::whereHas('product', fn ($q) => $q->where('category_id', $category->id))->count();
@@ -381,18 +714,21 @@ class ListingPageMetaService
     {
         $words = $this->getStoreLeafletWords($storeSlug);
 
+        $hubPath = "/leidinys/{$storeSlug}";
+        $listingPath = "/akcijos/{$storeSlug}";
+
         return [
             [
                 'question' => "Kur rasti {$storeName} naują {$words['nominative']}?",
-                'answer' => "Naujausią {$storeName} akcijų {$words['nominative']} rasite šiame puslapyje – viršuje matote akcijų pasiūlymus, o po prekių sąrašu pateiktas aktualus katalogas su galiojimo datomis.",
+                'answer' => "Naujausią {$storeName} akcijų {$words['nominative']} rasite {$hubPath} puslapyje – viršuje matote leidinį, PDF ir geriausius pasiūlymus. Visas akcijas rasite {$listingPath}.",
             ],
             [
                 'question' => "Nuo kada galioja {$storeName} akcijos šią savaitę?",
-                'answer' => "{$storeName} savaitės akcijos paprastai galioja nuo pirmadienio iki sekmadienio. Tikslią datą matote prie leidinio bloko ir kiekvieno pasiūlymo.",
+                'answer' => "{$storeName} savaitės akcijos paprastai galioja nuo pirmadienio iki sekmadienio. Tikslią datą matote prie leidinio bloko {$hubPath} puslapyje.",
             ],
             [
                 'question' => "Ar yra {$storeName} savaitgalio akcijos?",
-                'answer' => "Taip – {$storeName} savaitgalio akcijos ir nuolaidos dažniausiai skelbiamos pagrindiniame savaitės {$words['nominative']}. Visus galiojančius pasiūlymus rasite šiame puslapyje.",
+                'answer' => "Taip – {$storeName} savaitgalio akcijos skelbiamos {$hubPath} puslapyje. Visas sąrašas – {$listingPath}.",
             ],
             [
                 'question' => "Kaip dažnai atnaujinamos {$storeName} akcijos?",
@@ -404,7 +740,7 @@ class ListingPageMetaService
             ],
             [
                 'question' => "Ar galima atsisiųsti {$storeName} {$words['accusative']} PDF formatu?",
-                'answer' => "Jei turime PDF nuorodą, ją rasite {$storeName} leidinio bloke po prekių sąrašu. Ten pat galite peržiūrėti visas akcijas interaktyviai.",
+                'answer' => "Jei turime PDF nuorodą, ją rasite {$hubPath} puslapyje prie {$words['nominative']} viršelio.",
             ],
         ];
     }

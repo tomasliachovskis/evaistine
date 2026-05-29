@@ -16,8 +16,6 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('cache:clear-discounts')->hourly();
-
         $schedule->job(new ProcessPdfFlyerJob)
             ->everyMinute()
             ->withoutOverlapping();

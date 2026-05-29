@@ -55,11 +55,6 @@ class ProcessScrapingFlow extends Command
             return 1;
         }
 
-        if (!$this->generateDescriptions()) {
-            $this->error('Generating descriptions failed. Aborting.');
-            return 1;
-        }
-
         if (!$this->option('skip-deploy')) {
             if (!$this->deploy()) {
                 $this->warn('Deployment failed or skipped. Continuing...');
@@ -137,7 +132,9 @@ class ProcessScrapingFlow extends Command
     {
         $this->info('Step 3: Processing discounts...');
 
-        $exitCode = $this->call('discounts:process');
+        $exitCode = $this->call('discounts:process', [
+            '--map-categories' => 1,
+        ]);
 
         if ($exitCode !== 0) {
             $this->error('discounts:process failed with exit code: ' . $exitCode);

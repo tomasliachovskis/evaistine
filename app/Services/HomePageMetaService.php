@@ -66,12 +66,15 @@ class HomePageMetaService
         $totalDeals = $stores->sum('discounts_count');
         $activeStoreCount = $stores->filter(fn (Store $s) => $s->discounts_count > 0)->count();
         $topDiscount = (int) round(Discount::max('discount_percent') ?? 0);
+        $newTodayCount = HomePageSectionsService::getNewTodayCount();
 
         return [
             'total_deals' => $totalDeals,
             'total_deals_label' => number_format($totalDeals, 0, '', ' '),
             'active_store_count' => $activeStoreCount,
             'top_discount_percent' => $topDiscount > 0 ? $topDiscount : null,
+            'new_today_count' => $newTodayCount,
+            'new_today_count_label' => number_format($newTodayCount, 0, '', ' '),
         ];
     }
 

@@ -14,6 +14,7 @@ use App\Models\SearchResult;
 use App\Models\ProductFavorite;
 use App\Services\DiscountResponseFormatter;
 use App\Services\HomePageMetaService;
+use App\Services\HomePageSectionsService;
 use App\Services\ListingPageMetaService;
 use App\Services\MeilisearchService;
 use App\Services\PageFreshnessService;
@@ -27,6 +28,7 @@ class ProductController extends Controller
     protected $listingPageMetaService;
     protected $storesPageMetaService;
     protected $homePageMetaService;
+    protected $homePageSectionsService;
     protected $pageFreshnessService;
 
     public function __construct(
@@ -35,6 +37,7 @@ class ProductController extends Controller
         ListingPageMetaService $listingPageMetaService,
         StoresPageMetaService $storesPageMetaService,
         HomePageMetaService $homePageMetaService,
+        HomePageSectionsService $homePageSectionsService,
         PageFreshnessService $pageFreshnessService
     ) {
         $this->formatter = $formatter;
@@ -42,6 +45,7 @@ class ProductController extends Controller
         $this->listingPageMetaService = $listingPageMetaService;
         $this->storesPageMetaService = $storesPageMetaService;
         $this->homePageMetaService = $homePageMetaService;
+        $this->homePageSectionsService = $homePageSectionsService;
         $this->pageFreshnessService = $pageFreshnessService;
     }
 
@@ -141,10 +145,10 @@ class ProductController extends Controller
             return $payload;
         }
 
-        if ($entityType === 'store') {
-            $payload['listing_meta'] = $this->listingPageMetaService->buildForStore($entity);
-        } elseif ($entityType === 'category') {
+        if ($entityType === 'category') {
             $payload['listing_meta'] = $this->listingPageMetaService->buildForCategory($entity);
+        } elseif ($entityType === 'store') {
+            $payload['listing_meta'] = $this->listingPageMetaService->buildForStoreListing($entity);
         } elseif ($entityType === 'store_category' && $secondaryEntity) {
             $payload['listing_meta'] = $this->listingPageMetaService->buildForStoreCategory($entity, $secondaryEntity);
         }
@@ -393,7 +397,7 @@ class ProductController extends Controller
         }
 
         return Cache::tags(['discounts', 'favorites', 'product', $slug])
-            ->remember($cacheKey, 7200, function () use ($slug, $filters) {
+            ->remember($cacheKey, 86400, function () use ($slug, $filters) {
                 $product = Product::where('slug', $slug)->firstOrFail();
 
                 $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
@@ -434,19 +438,12 @@ class ProductController extends Controller
     public function getFavoriteHome()
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateFavoriteHomeCacheKey($filters) . '_v2';
+        $cacheKey = $this->generateFavoriteHomeCacheKey($filters) . '_v4';
 
         return Cache::tags(['discounts', 'favorites', 'home'])
-            ->remember($cacheKey, 7200, function () use ($filters) {
-                $query = Discount::with(['product', 'store']);
-
-                $discounts = $this->buildDiscountQuery($query, $filters)
-                    ->inRandomOrder()
-                    ->limit(10)
-                    ->get();
-
+            ->remember($cacheKey, 7200, function () {
                 return response()->json([
-                    'data' => $this->formatter->format($discounts),
+                    'sections' => $this->homePageSectionsService->build(),
                     'page_meta' => $this->homePageMetaService->build(),
                 ]);
             });
@@ -461,7 +458,7 @@ class ProductController extends Controller
         $cacheKey = "product_slug_{$slug}";
 
         return Cache::tags(['discounts', 'product', $slug])
-            ->remember($cacheKey, 7200, function () use ($slug) {
+            ->remember($cacheKey, 86400, function () use ($slug) {
                 $product = Product::where('slug', $slug)
                     ->with([
                         'discounts.store',
@@ -481,7 +478,7 @@ class ProductController extends Controller
     {
         $filters = $this->getFilters();
         $filtersHash = md5(json_encode($filters));
-        $cacheKey = "product_with_similar_{$slug}_{$filtersHash}";
+        $cacheKey = "product_with_similar_v2_{$slug}_{$filtersHash}";
         $cacheTags = ['discounts', 'product', $slug, 'similar'];
 
         $cachedResponse = Cache::tags($cacheTags)->get($cacheKey);
@@ -500,11 +497,12 @@ class ProductController extends Controller
 
         $randomSeed = $this->generateRandomSeed($slug);
 
-        $similarDiscounts = Discount::whereHas('product', function ($query) use ($slug, $product) {
-            $query->where('slug', '!=', $slug)
-                ->where('category_id', $product->category_id);
-        })
-            ->with(['product.category', 'store'])
+        $similarDiscounts = Discount::query()
+            ->join('products', 'discounts.product_id', '=', 'products.id')
+            ->where('products.category_id', $product->category_id)
+            ->where('products.slug', '!=', $slug)
+            ->select('discounts.*')
+            ->with(['product.category', 'product.discounts.store', 'store'])
             ->orderByRaw("RAND({$randomSeed})")
             ->limit(7)
             ->get();
@@ -512,19 +510,19 @@ class ProductController extends Controller
         if ($product->discounts->isEmpty()) {
             $data = $this->formatter->formatProduct($product);
         } else {
-            $data = $this->formatter->format($product->discounts);
+            $data = $this->formatter->formatProductDiscounts($product);
         }
 
         $responseData = [
             'data' => $data,
             'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
             'seo' => $this->generateSeoData('product', $product),
-            'similar' => $this->formatter->format($similarDiscounts)
+            'similar' => $this->formatter->formatList($similarDiscounts)
         ];
 
         $jsonString = json_encode($responseData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        Cache::tags($cacheTags)->put($cacheKey, $jsonString, 7200);
+        Cache::tags($cacheTags)->put($cacheKey, $jsonString, 86400);
 
         return response($jsonString, 200, ['Content-Type' => 'application/json']);
     }
@@ -540,6 +538,19 @@ class ProductController extends Controller
         ];
 
         switch ($type) {
+            case 'store_leaflet':
+                $words = $this->getStoreLeafletWords($entity->slug);
+                $breadcrumbs[] = [
+                    'name' => $entity->name,
+                    'slug' => 'akcijos/' . $entity->slug,
+                    'type' => 'store',
+                ];
+                $breadcrumbs[] = [
+                    'name' => ucfirst($words['nominative']),
+                    'slug' => 'leidinys/' . $entity->slug,
+                    'type' => 'store_leaflet',
+                ];
+                break;
             case 'store':
                 $breadcrumbs[] = [
                     'name' => $entity->name,
@@ -614,7 +625,7 @@ class ProductController extends Controller
                     'meta_title' => $entity->name . " akcijos – pigiausios kainos, iki {$maxDiscount}% nuolaidos",
                     'meta_description' => "Palyginkite {$lowerName} akcijas prekybos centruose – {$countLabel}+ pasiūlymų iš {$storeNames}. Iki {$maxDiscount}% nuolaidos šią savaitę!",
                 ];
-            case 'store':
+            case 'store_leaflet':
                 $count = $this->getDiscountCountForStore($entity);
                 $countLabel = $this->formatCount($count);
                 $validity = $this->resolveStoreValidity($entity);
@@ -626,10 +637,23 @@ class ProductController extends Controller
                     . $this->pageFreshnessService->formatLtDate($validity['valid_to'], true);
 
                 return [
-                    'seo_title' => $entity->name . ' akcijos ir naujas ' . $words['nominative'],
+                    'seo_title' => $entity->name . ' ' . $words['nominative'],
                     'seo_description' => $entity->description,
-                    'meta_title' => "{$storeUpper} akcijos ir {$words['nominative']} {$validityLabel} – {$countLabel}+ pasiūlymų",
-                    'meta_description' => "Naujausias {$entity->name} akcijų {$words['nominative']} galioja {$validityLong}. {$countLabel}+ akcijų ir nuolaidų – peržiūrėkite katalogą, savaitės ir savaitgalio pasiūlymus.",
+                    'meta_title' => "{$storeUpper} {$words['nominative']} – naujas savaitės leidinys, galioja {$validityLabel}",
+                    'meta_description' => "Naujausias {$entity->name} akcijų {$words['nominative']} ir katalogas. {$countLabel}+ akcijų, PDF, savaitgalio pasiūlymai. Galioja {$validityLong}.",
+                ];
+            case 'store':
+                $count = $this->getDiscountCountForStore($entity);
+                $countLabel = $this->formatCount($count);
+                $maxDiscount = (int) round(Discount::where('store_id', $entity->id)->max('discount_percent') ?? 0);
+                $storeUpper = mb_strtoupper($entity->name);
+                $words = $this->getStoreLeafletWords($entity->slug);
+
+                return [
+                    'seo_title' => $entity->name . ' akcijos',
+                    'seo_description' => $entity->description,
+                    'meta_title' => "{$storeUpper} akcijos – {$countLabel}+ pasiūlymų" . ($maxDiscount > 0 ? ", iki -{$maxDiscount}%" : ''),
+                    'meta_description' => "Visos {$entity->name} akcijos ir nuolaidos. Filtruokite, rūšiuokite ir palyginkite kainas. Naujas {$words['nominative']}: /leidinys/{$entity->slug}",
                 ];
             case 'store_category':
                 $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);
@@ -691,9 +715,22 @@ class ProductController extends Controller
         }
     }
 
+    public function getStoreLeafletHub(string $store)
+    {
+        $storeModel = \App\Models\Store::where('slug', $store)->firstOrFail();
+        $totalOffers = Discount::where('store_id', $storeModel->id)->count();
+
+        return response()->json([
+            'listing_meta' => $this->listingPageMetaService->buildForStore($storeModel),
+            'breadcrumbs' => $this->generateBreadcrumbs('store_leaflet', $storeModel),
+            'seo' => $this->generateSeoData('store_leaflet', $storeModel),
+            'total_offers' => $totalOffers,
+        ]);
+    }
+
     public function getSitemap()
     {
-        return Cache::tags(['sitemap'])->remember('sitemap_entries_v1', 3600, function () {
+        return Cache::tags(['sitemap'])->remember('sitemap_entries_v2', 3600, function () {
             $freshness = $this->pageFreshnessService->build();
             $defaultLastmod = Carbon::parse($freshness['updated_at'])->format('Y-m-d');
 
@@ -742,6 +779,7 @@ class ProductController extends Controller
             return response()->json([
                 'lastmod' => $defaultLastmod,
                 'stores' => $stores,
+                'leaflet_stores' => $stores,
                 'categories' => $categories,
                 'products' => $products,
                 'blog_posts' => $blogPosts,
@@ -936,7 +974,15 @@ class ProductController extends Controller
             ->with(['product.category', 'store'])
             ->get();
 
-        $formattedProducts = $this->formatter->format($discounts);
+        $formattedProducts = $discounts->map(function (Discount $discount) {
+            $formatted = $this->formatter->format(collect([$discount]))->first();
+            $change = $this->homePageSectionsService->resolvePriceChangeAmount($discount);
+            if ($change !== null) {
+                $formatted['price_change_amount'] = $change;
+            }
+
+            return $formatted;
+        })->values();
 
         $storeTotals = $this->calculateStoreTotals($productIds, $discounts);
 

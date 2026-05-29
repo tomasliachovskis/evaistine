@@ -5,7 +5,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ "${DEPLOY_PHOTOS_ON_SERVER:-}" = "1" ]; then
-    exec bash "$SCRIPT_DIR/scripts/sync-product-photos-to-frontend.sh"
+    bash "$SCRIPT_DIR/scripts/sync-product-photos-to-frontend.sh"
+    cd "${API_DIR:-/var/www/api}"
+    sudo -u www-data php artisan cache:warm --type=all
+    exit 0
 fi
 
 SERVER="root@195.181.245.125"
