@@ -476,15 +476,22 @@ class ProductController extends Controller
 
     public function getProductWithSimilar($slug)
     {
-        $filters = $this->getFilters();
-        $filtersHash = md5(json_encode($filters));
-        $cacheKey = "product_with_similar_v2_{$slug}_{$filtersHash}";
+        $startedAt = microtime(true);
+        $cacheKey = "product_with_similar_v3_{$slug}";
         $cacheTags = ['discounts', 'product', $slug, 'similar'];
 
         $cachedResponse = Cache::tags($cacheTags)->get($cacheKey);
 
         if ($cachedResponse !== null) {
-            return response($cachedResponse, 200, ['Content-Type' => 'application/json']);
+            \Log::info('product_with_similar cache hit', [
+                'slug' => $slug,
+                'cache_key' => $cacheKey,
+                'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+            ]);
+
+            return response($cachedResponse, 200, ['Content-Type' => 'application/json'])
+                ->header('X-Cache', 'HIT')
+                ->header('X-Cache-Key', $cacheKey);
         }
 
         $product = Product::where('slug', $slug)
@@ -524,7 +531,15 @@ class ProductController extends Controller
 
         Cache::tags($cacheTags)->put($cacheKey, $jsonString, 86400);
 
-        return response($jsonString, 200, ['Content-Type' => 'application/json']);
+        \Log::info('product_with_similar cache miss', [
+            'slug' => $slug,
+            'cache_key' => $cacheKey,
+            'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+        ]);
+
+        return response($jsonString, 200, ['Content-Type' => 'application/json'])
+            ->header('X-Cache', 'MISS')
+            ->header('X-Cache-Key', $cacheKey);
     }
 
     private function generateBreadcrumbs($type, $entity = null, $secondaryEntity = null)
