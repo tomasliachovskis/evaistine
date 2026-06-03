@@ -20,6 +20,9 @@ class ClearDiscountsCache extends Command
             $this->warn('Tagged cache not supported, full application cache cleared.');
         }
 
+        $version = (int) Cache::get('discounts_cache_version', 1);
+        Cache::forever('discounts_cache_version', $version + 1);
+
         $this->info('Discounts cache cleared.');
 
         return 0;

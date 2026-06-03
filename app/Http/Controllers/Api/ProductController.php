@@ -474,21 +474,20 @@ class ProductController extends Controller
             });
     }
 
+    public static function productWithSimilarCacheKey(string $slug): string
+    {
+        $version = (int) Cache::get('discounts_cache_version', 1);
+
+        return "product_with_similar_v4_{$version}_{$slug}";
+    }
+
     public function getProductWithSimilar($slug)
     {
-        $startedAt = microtime(true);
-        $cacheKey = "product_with_similar_v3_{$slug}";
-        $cacheTags = ['discounts', 'product', $slug, 'similar'];
+        $cacheKey = self::productWithSimilarCacheKey($slug);
 
-        $cachedResponse = Cache::tags($cacheTags)->get($cacheKey);
+        $cachedResponse = Cache::get($cacheKey);
 
         if ($cachedResponse !== null) {
-            \Log::info('product_with_similar cache hit', [
-                'slug' => $slug,
-                'cache_key' => $cacheKey,
-                'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
-            ]);
-
             return response($cachedResponse, 200, ['Content-Type' => 'application/json'])
                 ->header('X-Cache', 'HIT')
                 ->header('X-Cache-Key', $cacheKey);
@@ -529,13 +528,7 @@ class ProductController extends Controller
 
         $jsonString = json_encode($responseData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        Cache::tags($cacheTags)->put($cacheKey, $jsonString, 86400);
-
-        \Log::info('product_with_similar cache miss', [
-            'slug' => $slug,
-            'cache_key' => $cacheKey,
-            'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
-        ]);
+        Cache::put($cacheKey, $jsonString, now()->addDays(7));
 
         return response($jsonString, 200, ['Content-Type' => 'application/json'])
             ->header('X-Cache', 'MISS')

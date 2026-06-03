@@ -28,8 +28,12 @@ rsync -avz -e "ssh $SSH_OPTS" \
   --exclude='storage/framework/cache/**' \
   --exclude='storage/framework/sessions/**' \
   --exclude='storage/framework/views/**' \
+  --exclude='bootstrap/cache/**' \
+  --exclude='.phpunit.result.cache' \
+  --exclude='.cursor' \
   --exclude='.env' \
   --exclude='storage' \
+  --exclude='vendor' \
   --exclude='node_modules' \
   --exclude='.idea' \
   --exclude='.git' \
@@ -44,6 +48,23 @@ rsync -avz --omit-dir-times --no-perms --no-owner --no-group -e "ssh $SSH_OPTS" 
 # Run Laravel commands on the server
 ssh $SSH_OPTS $SERVER << 'EOF'
     cd /var/www/api
+
+    if [ ! -f .env ]; then
+        echo "Missing .env on server"
+        exit 1
+    fi
+
+    if grep -q '^APP_ENV=' .env; then
+        sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env
+    else
+        echo 'APP_ENV=production' >> .env
+    fi
+
+    if grep -q '^APP_DEBUG=' .env; then
+        sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env
+    else
+        echo 'APP_DEBUG=false' >> .env
+    fi
 
     mkdir -p storage/app/flyers-incoming
     mkdir -p storage/app/temp/flyers
@@ -65,12 +86,21 @@ ssh $SSH_OPTS $SERVER << 'EOF'
         chown -R www-data:www-data scripts
     fi
 
+    if [ -d vendor ]; then
+        chown -R www-data:www-data vendor
+        chmod -R u+rwX vendor
+    fi
+
+    if ! sudo -u www-data composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader; then
+        rm -rf vendor
+        sudo -u www-data composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+    fi
+    sudo -u www-data php artisan optimize:clear
     sudo -u www-data php artisan migrate --force
-    sudo -u www-data php artisan config:clear
-    sudo -u www-data php artisan route:clear
-    sudo -u www-data php artisan view:clear
-    sudo -u www-data php artisan cache:clear
-    sudo -u www-data php artisan optimize
+    sudo -u www-data php artisan config:cache
+    sudo -u www-data php artisan route:cache
+    sudo -u www-data php artisan event:cache
+    sudo -u www-data php artisan view:cache
     sudo -u www-data php artisan cache:warm --type=all
     sudo -u www-data php artisan queue:restart
 

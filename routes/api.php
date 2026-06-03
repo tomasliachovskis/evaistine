@@ -4,9 +4,11 @@ use App\Http\Controllers\Api\ScrapingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProductWithSimilarController;
 use App\Http\Controllers\Api\BlogPostController;
 use App\Http\Controllers\Api\ProductAssistantController;
 use App\Http\Controllers\Api\AuthController;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -27,7 +29,8 @@ Route::get('/discount/{storeOrCategory}/{category}', [ProductController::class, 
 Route::get('/leidinys/{store}', [ProductController::class, 'getStoreLeafletHub']);
 
 //Route::get('/product/{slug}', [ProductController::class, 'getProductBySlug']);
-Route::get('/product/{slug}/with-similar', [ProductController::class, 'getProductWithSimilar']);
+Route::get('/product/{slug}/with-similar', ProductWithSimilarController::class)
+    ->withoutMiddleware(ThrottleRequests::class);
 Route::get('/search/{query}', [ProductController::class, 'search']);
 
 Route::get('/categories', [ProductController::class, 'getCategories']);
