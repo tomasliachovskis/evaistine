@@ -7,14 +7,22 @@ use App\Models\Store;
 use App\Models\Category;
 use App\Models\Product;
 use App\Http\Controllers\Api\ProductController;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class CacheWarmingService
 {
     protected $productController;
+    protected ?Command $command = null;
 
     public function __construct(ProductController $productController)
     {
         $this->productController = $productController;
+    }
+
+    public function setCommand(?Command $command): void
+    {
+        $this->command = $command;
     }
 
     public function warmCriticalCaches()
@@ -28,15 +36,21 @@ class CacheWarmingService
 
     public function warmAllDiscountsCache()
     {
-        $filters = ['order' => 'popular'];
+        $cacheKey = $this->productController->resolveAllDiscountsCacheKey();
+        $this->section('all discounts', 1);
+        $this->logWarm('all', '/discount', $cacheKey, ['discounts', 'all']);
         $this->productController->getAllDiscounts();
     }
 
     public function warmStoreCaches()
     {
         $stores = Store::select('slug')->get();
+        $this->section('stores', $stores->count());
 
         foreach ($stores as $store) {
+            $cacheKey = $this->productController->resolveDiscountsCacheKey($store->slug);
+            $label = $this->productController->resolveDiscountsCacheLabel($store->slug);
+            $this->logWarm('store', $label, $cacheKey, ['discounts', $store->slug, 'all']);
             $this->productController->getDiscounts($store->slug);
         }
     }
@@ -44,8 +58,12 @@ class CacheWarmingService
     public function warmCategoryCaches()
     {
         $categories = Category::whereNull('parent_id')->select('slug')->get();
+        $this->section('categories', $categories->count());
 
         foreach ($categories as $category) {
+            $cacheKey = $this->productController->resolveDiscountsCacheKey($category->slug);
+            $label = $this->productController->resolveDiscountsCacheLabel($category->slug);
+            $this->logWarm('category', $label, $cacheKey, ['discounts', $category->slug, 'all']);
             $this->productController->getDiscounts($category->slug);
         }
     }
@@ -57,7 +75,12 @@ class CacheWarmingService
             ->orderBy('discounts_count', 'desc')
             ->get();
 
+        $this->section('products with-similar', $productsWithDiscounts->count());
+
         foreach ($productsWithDiscounts as $product) {
+            $cacheKey = ProductController::productWithSimilarCacheKey($product->slug);
+            $label = "/product/{$product->slug}/with-similar";
+            $this->logWarm('product', $label, $cacheKey);
             $this->productController->getProductWithSimilar($product->slug);
         }
     }
@@ -71,7 +94,13 @@ class CacheWarmingService
 
     public function warmStoreCategoryCaches()
     {
-        foreach ($this->storeCategoryPairsQuery()->get() as $pair) {
+        $pairs = $this->storeCategoryPairsQuery()->get();
+        $this->section('store+category', $pairs->count());
+
+        foreach ($pairs as $pair) {
+            $cacheKey = $this->productController->resolveDiscountsCacheKey($pair->store_slug, $pair->category_slug);
+            $label = $this->productController->resolveDiscountsCacheLabel($pair->store_slug, $pair->category_slug);
+            $this->logWarm('store+category', $label, $cacheKey, ['discounts', $pair->store_slug, $pair->category_slug]);
             $this->productController->getDiscounts($pair->store_slug, $pair->category_slug);
         }
     }
@@ -93,11 +122,45 @@ class CacheWarmingService
 
     public function warmFavoritesCache()
     {
+        $categories = Category::whereNull('parent_id')->limit(10)->get();
+        $this->section('favorites', 1 + $categories->count());
+
+        $homeKey = $this->productController->resolveFavoriteHomeCacheKey();
+        $this->logWarm('favorite-home', '/favorite/home', $homeKey, ['discounts', 'favorites', 'home']);
         $this->productController->getFavoriteHome();
 
-        $categories = Category::whereNull('parent_id')->limit(10)->get();
         foreach ($categories as $category) {
+            $cacheKey = $this->productController->resolveFavoriteCategoryCacheKey($category->id);
+            $label = "/favorite/category/{$category->id}";
+            $this->logWarm('favorite-category', $label, $cacheKey, ['discounts', 'favorites', 'category', $category->id]);
             $this->productController->getFavoriteCategory($category->id);
         }
+    }
+
+    protected function section(string $name, int $count): void
+    {
+        if (!$this->command) {
+            return;
+        }
+
+        $this->command->newLine();
+        $this->command->info("→ {$name} ({$count})");
+    }
+
+    protected function logWarm(string $type, string $label, string $cacheKey, ?array $tags = null): void
+    {
+        if (!$this->command || !$this->command->getOutput()->isVerbose()) {
+            return;
+        }
+
+        $status = 'MISS';
+
+        if ($tags !== null) {
+            $status = Cache::tags($tags)->has($cacheKey) ? 'HIT' : 'MISS';
+        } else {
+            $status = Cache::has($cacheKey) ? 'HIT' : 'MISS';
+        }
+
+        $this->command->line("  [{$type}] {$status} {$label} → {$cacheKey}");
     }
 }

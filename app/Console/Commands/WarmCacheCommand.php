@@ -14,6 +14,8 @@ class WarmCacheCommand extends Command
     {
         $type = $this->option('type');
 
+        $cacheWarmingService->setCommand($this);
+
         $this->info("Starting cache warming for type: {$type}");
 
         switch ($type) {

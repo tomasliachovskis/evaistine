@@ -48,6 +48,11 @@ class ProcessDiscountsFlow extends Command
             return 1;
         }
 
+        if (!$this->warmDiscountsCache()) {
+            $this->error('Warming discounts cache failed. Aborting.');
+            return 1;
+        }
+
         if (!$this->option('skip-photos')) {
             if (!$this->syncPhotosToFrontend()) {
                 $this->warn('Photo sync failed or skipped. Continuing...');
@@ -191,9 +196,26 @@ class ProcessDiscountsFlow extends Command
         return true;
     }
 
+    private function warmDiscountsCache(): bool
+    {
+        $this->info('Step 6: Warming discounts cache...');
+
+        $exitCode = $this->call('cache:warm', ['--type' => 'all']);
+
+        if ($exitCode !== 0) {
+            $this->error('cache:warm failed with exit code: ' . $exitCode);
+            return false;
+        }
+
+        $this->info('Discounts cache warmed successfully.');
+        $this->newLine();
+
+        return true;
+    }
+
     private function syncPhotosToFrontend(): bool
     {
-        $this->info('Step 6: Syncing product photos to frontend (deploy-photos.sh)...');
+        $this->info('Step 7: Syncing product photos to frontend (deploy-photos.sh)...');
 
         $deployScript = base_path('deploy-photos.sh');
         if (!file_exists($deployScript)) {

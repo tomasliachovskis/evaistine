@@ -520,6 +520,51 @@ class ProductController extends Controller
         return "product_with_similar_v4_{$slug}";
     }
 
+    public function resolveDiscountsCacheKey($storeOrCategory, $category = null): string
+    {
+        $filters = $this->getFilters();
+
+        return $this->generateDiscountsCacheKey(
+            $storeOrCategory,
+            $category,
+            $this->normalizeFiltersForCacheKey($filters, $storeOrCategory, $category)
+        );
+    }
+
+    public function resolveAllDiscountsCacheKey(): string
+    {
+        $filters = $this->getFilters();
+
+        return $this->generateAllDiscountsCacheKey($this->normalizeFiltersForCacheKey($filters));
+    }
+
+    public function resolveFavoriteHomeCacheKey(): string
+    {
+        $filters = $this->getFilters();
+
+        return $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)) . '_v9';
+    }
+
+    public function resolveFavoriteCategoryCacheKey($id): string
+    {
+        $filters = $this->getFilters();
+
+        return $this->generateFavoriteCategoryCacheKey($id, $this->normalizeFiltersForCacheKey($filters));
+    }
+
+    public function resolveDiscountsCacheLabel($storeOrCategory, $category = null): string
+    {
+        if ($category) {
+            return "/discount/{$storeOrCategory}/{$category}";
+        }
+
+        if (\App\Models\Store::where('slug', $storeOrCategory)->exists()) {
+            return "/discount/{$storeOrCategory}";
+        }
+
+        return "/discount/{$storeOrCategory}";
+    }
+
     public static function resolveCachedProductWithSimilar(string $slug): ?array
     {
         $cacheKey = self::productWithSimilarCacheKey($slug);
