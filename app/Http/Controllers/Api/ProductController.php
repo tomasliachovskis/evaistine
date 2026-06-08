@@ -52,7 +52,11 @@ class ProductController extends Controller
     public function getDiscounts($storeOrCategory, $category = null)
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateDiscountsCacheKey($storeOrCategory, $category, $filters);
+        $cacheKey = $this->generateDiscountsCacheKey(
+            $storeOrCategory,
+            $category,
+            $this->normalizeFiltersForCacheKey($filters, $storeOrCategory, $category)
+        );
 
         return Cache::tags(['discounts', $storeOrCategory, $category ?: 'all'])
             ->remember($cacheKey, 3600, function () use ($storeOrCategory, $category, $filters) {
@@ -67,7 +71,7 @@ class ProductController extends Controller
     public function getAllDiscounts()
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateAllDiscountsCacheKey($filters);
+        $cacheKey = $this->generateAllDiscountsCacheKey($this->normalizeFiltersForCacheKey($filters));
 
         return Cache::tags(['discounts', 'all'])
             ->remember($cacheKey, 3600, function () use ($filters) {
@@ -166,6 +170,43 @@ class ProductController extends Controller
             'store' => request()->get('store'),
             'category' => request()->get('category'),
         ];
+    }
+
+    private function normalizeFiltersForCacheKey(array $filters, ?string $storeOrCategory = null, ?string $category = null): array
+    {
+        $normalized = $filters;
+
+        if (empty($normalized['page']) || (int) $normalized['page'] === 1) {
+            unset($normalized['page']);
+        }
+
+        if (($normalized['order'] ?? 'popular') === 'popular') {
+            unset($normalized['order']);
+        }
+
+        if (! empty($normalized['store'])) {
+            $storeSlugs = array_values(array_filter(array_map('trim', explode(',', (string) $normalized['store']))));
+
+            if ($category !== null && count($storeSlugs) === 1 && $storeSlugs[0] === $storeOrCategory) {
+                unset($normalized['store']);
+            } elseif ($category === null && count($storeSlugs) === 1 && $storeSlugs[0] === $storeOrCategory && \App\Models\Store::where('slug', $storeOrCategory)->exists()) {
+                unset($normalized['store']);
+            }
+        }
+
+        if (! empty($normalized['category'])) {
+            $categorySlugs = array_values(array_filter(array_map('trim', explode(',', (string) $normalized['category']))));
+            $pathCategory = $category ?? $storeOrCategory;
+            $isCategoryRoute = $category !== null || ! \App\Models\Store::where('slug', $storeOrCategory)->exists();
+
+            if ($isCategoryRoute && count($categorySlugs) === 1 && $categorySlugs[0] === $pathCategory) {
+                unset($normalized['category']);
+            }
+        }
+
+        return array_filter($normalized, function ($value) {
+            return $value !== null && $value !== '';
+        });
     }
 
     private function buildDiscountQuery($query, $filters, bool $applyOrder = true)
@@ -281,7 +322,7 @@ class ProductController extends Controller
     public function search(Request $request, $query)
     {
         $filters = $this->getFilters();
-        $cacheKey = "search_" . md5($query . serialize($filters));
+        $cacheKey = 'search_' . md5($query . serialize($this->normalizeFiltersForCacheKey($filters)));
 
         return Cache::tags(['discounts', 'search'])
             ->remember($cacheKey, 1800, function () use ($query, $filters) {
@@ -390,7 +431,7 @@ class ProductController extends Controller
     public function getFavoriteProduct($slug)
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateFavoriteProductCacheKey($slug, $filters);
+        $cacheKey = $this->generateFavoriteProductCacheKey($slug, $this->normalizeFiltersForCacheKey($filters));
 
         if (! Product::where('slug', $slug)->exists()) {
             return response()->json(['error' => 'Product not found'], 404);
@@ -417,7 +458,7 @@ class ProductController extends Controller
     public function getFavoriteCategory($id)
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateFavoriteCategoryCacheKey($id, $filters);
+        $cacheKey = $this->generateFavoriteCategoryCacheKey($id, $this->normalizeFiltersForCacheKey($filters));
 
         return Cache::tags(['discounts', 'favorites', 'category', $id])
             ->remember($cacheKey, 7200, function () use ($id, $filters) {
@@ -438,7 +479,7 @@ class ProductController extends Controller
     public function getFavoriteHome()
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateFavoriteHomeCacheKey($filters) . '_v9';
+        $cacheKey = $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)) . '_v9';
 
         return Cache::tags(['discounts', 'favorites', 'home'])
             ->remember($cacheKey, 7200, function () {
@@ -476,22 +517,41 @@ class ProductController extends Controller
 
     public static function productWithSimilarCacheKey(string $slug): string
     {
-        $version = (int) Cache::get('discounts_cache_version', 1);
+        return "product_with_similar_v4_{$slug}";
+    }
 
-        return "product_with_similar_v4_{$version}_{$slug}";
+    public static function resolveCachedProductWithSimilar(string $slug): ?array
+    {
+        $cacheKey = self::productWithSimilarCacheKey($slug);
+        $cachedResponse = Cache::get($cacheKey);
+
+        if ($cachedResponse === null) {
+            return null;
+        }
+
+        return [
+            'body' => $cachedResponse,
+            'status' => 'HIT',
+            'key' => $cacheKey,
+        ];
+    }
+
+    public static function cachedProductWithSimilarResponse(array $cached): \Illuminate\Http\Response
+    {
+        return response($cached['body'], 200, ['Content-Type' => 'application/json'])
+            ->header('X-Cache', $cached['status'])
+            ->header('X-Cache-Key', $cached['key']);
     }
 
     public function getProductWithSimilar($slug)
     {
-        $cacheKey = self::productWithSimilarCacheKey($slug);
+        $cached = self::resolveCachedProductWithSimilar($slug);
 
-        $cachedResponse = Cache::get($cacheKey);
-
-        if ($cachedResponse !== null) {
-            return response($cachedResponse, 200, ['Content-Type' => 'application/json'])
-                ->header('X-Cache', 'HIT')
-                ->header('X-Cache-Key', $cacheKey);
+        if ($cached !== null) {
+            return self::cachedProductWithSimilarResponse($cached);
         }
+
+        $cacheKey = self::productWithSimilarCacheKey($slug);
 
         $product = Product::where('slug', $slug)
             ->with(['discounts.store', 'discountHistories.store', 'category'])

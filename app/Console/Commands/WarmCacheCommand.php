@@ -7,7 +7,7 @@ use App\Services\CacheWarmingService;
 
 class WarmCacheCommand extends Command
 {
-    protected $signature = 'cache:warm {--type=all : Type of cache to warm (all, stores, categories, products, favorites)}';
+    protected $signature = 'cache:warm {--type=all : Type of cache to warm (all, stores, categories, store-categories, products, favorites)}';
     protected $description = 'Warm up application cache for better performance';
 
     public function handle(CacheWarmingService $cacheWarmingService)
@@ -19,7 +19,6 @@ class WarmCacheCommand extends Command
         switch ($type) {
             case 'all':
                 $cacheWarmingService->warmCriticalCaches();
-                $cacheWarmingService->warmStoreCategoryCaches();
                 $cacheWarmingService->warmFavoritesCache();
                 break;
             case 'stores':
@@ -27,6 +26,12 @@ class WarmCacheCommand extends Command
                 break;
             case 'categories':
                 $cacheWarmingService->warmCategoryCaches();
+                break;
+            case 'store-categories':
+                $count = $cacheWarmingService->getStoreCategoryPairsCount();
+                $this->info("Warming cache for {$count} store+category pairs...");
+                $cacheWarmingService->warmStoreCategoryCaches();
+                $this->info('Store+category cache warming completed!');
                 break;
             case 'products':
                 $count = $cacheWarmingService->getProductsWithDiscountsCount();

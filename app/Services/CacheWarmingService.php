@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Discount;
 use App\Models\Store;
 use App\Models\Category;
 use App\Models\Product;
@@ -20,6 +21,7 @@ class CacheWarmingService
     {
         $this->warmStoreCaches();
         $this->warmCategoryCaches();
+        $this->warmStoreCategoryCaches();
         $this->warmPopularProductsCache();
         $this->warmAllDiscountsCache();
     }
@@ -56,7 +58,6 @@ class CacheWarmingService
             ->get();
 
         foreach ($productsWithDiscounts as $product) {
-            dump($product->slug);
             $this->productController->getProductWithSimilar($product->slug);
         }
     }
@@ -70,14 +71,24 @@ class CacheWarmingService
 
     public function warmStoreCategoryCaches()
     {
-        $stores = Store::select('slug')->get();
-        $categories = Category::whereNull('parent_id')->select('slug')->get();
-
-        foreach ($stores as $store) {
-            foreach ($categories as $category) {
-                $this->productController->getDiscounts($store->slug, $category->slug);
-            }
+        foreach ($this->storeCategoryPairsQuery()->get() as $pair) {
+            $this->productController->getDiscounts($pair->store_slug, $pair->category_slug);
         }
+    }
+
+    public function getStoreCategoryPairsCount(): int
+    {
+        return $this->storeCategoryPairsQuery()->get()->count();
+    }
+
+    protected function storeCategoryPairsQuery()
+    {
+        return Discount::query()
+            ->join('products', 'discounts.product_id', '=', 'products.id')
+            ->join('stores', 'discounts.store_id', '=', 'stores.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->select('stores.slug as store_slug', 'categories.slug as category_slug')
+            ->distinct();
     }
 
     public function warmFavoritesCache()
