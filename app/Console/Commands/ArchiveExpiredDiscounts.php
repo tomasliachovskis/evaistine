@@ -72,17 +72,19 @@ class ArchiveExpiredDiscounts extends Command
 
     private function expiredDiscountsQuery(): Builder
     {
-        return Discount::query()->where(function ($query) {
+        $todayStart = now()->startOfDay();
+
+        return Discount::query()->where(function ($query) use ($todayStart) {
             $query
-                ->where(function ($subQuery) {
+                ->where(function ($subQuery) use ($todayStart) {
                     $subQuery
                         ->whereNotNull('end_at')
-                        ->where('end_at', '<', now()->endOfDay());
+                        ->where('end_at', '<', $todayStart);
                 })
-                ->orWhere(function ($subQuery) {
+                ->orWhere(function ($subQuery) use ($todayStart) {
                     $subQuery
-                        ->where('updated_at', '<', now()->subHours(36))
-                        ->whereNull('end_at');
+                        ->whereNull('end_at')
+                        ->where('updated_at', '<', $todayStart->copy()->subDay());
                 });
         });
     }

@@ -406,6 +406,6 @@ class MeilisearchService
 
     protected function isActiveDiscount(Discount $discount)
     {
-        return $discount->end_at === null || $discount->end_at >= now();
+        return $discount->end_at === null || $discount->end_at >= now()->startOfDay();
     }
 }
