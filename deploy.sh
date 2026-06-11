@@ -45,9 +45,6 @@ REMOTE_IMAGES_DIR="/var/www/images"
 ssh $SSH_OPTS $FRONTEND_SERVER "mkdir -p $REMOTE_IMAGES_DIR"
 rsync -avz --omit-dir-times --no-perms --no-owner --no-group -e "ssh $SSH_OPTS" storage/app/public/products/ $FRONTEND_SERVER:$REMOTE_IMAGES_DIR/
 
-mkdir -p storage/app/flyers-incoming
-find storage/app/flyers-incoming -mindepth 1 -delete 2>/dev/null || true
-
 # Run Laravel commands on the server
 ssh $SSH_OPTS $SERVER << 'EOF'
     cd /var/www/api
@@ -118,5 +115,8 @@ ssh $SSH_OPTS $FRONTEND_SERVER << 'EOF'
     pm2 restart all
     ./scripts/production-deploy.sh revalidate
 EOF
+
+mkdir -p storage/app/flyers-incoming
+find storage/app/flyers-incoming -mindepth 1 -delete 2>/dev/null || true
 
 echo "Deployment completed successfully!"
