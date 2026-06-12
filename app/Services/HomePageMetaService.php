@@ -53,11 +53,11 @@ class HomePageMetaService
         $dealsLabel = number_format($totalDeals, 0, '', ' ');
 
         return [
-            'h1' => 'Akcijos ir nuolaidos Lietuvoje',
+            'h1' => 'Visos akcijos ir nuolaidos lietuvoje',
             'intro_lead' => "Agreguojame {$dealsLabel}+ akcijų iš {$topNames} ir kitų Lietuvos tinklų.",
             'intro_support' => 'Palyginkite prekybos tinklų savaitės nuolaidas ir akcijas vienoje vietoje – duomenys atnaujinami kasdien.',
-            'meta_title' => 'Akcijos ir nuolaidos Lietuvoje | SuperAkcijos.lt',
-            'meta_description' => "{$dealsLabel}+ akcijų iš {$topNames} ir kitų tinklų. Peržiūrėkite geriausius savaitės pasiūlymus.",
+            'meta_title' => 'Daug akcijų ir nuolaidų Lietuvoje | SuperAkcijos.lt',
+            'meta_description' => "Visos akcijos ir nuolaidos Lietuvoje vienoje vietoje. {$dealsLabel}+ akcijų iš {$topNames} ir kitų parduotuvių. Naujausi leidiniai ir geriausi pasiūlymai kasdien.",
         ];
     }
 

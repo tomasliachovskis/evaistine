@@ -104,6 +104,8 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     sudo -u www-data php artisan cache:warm --type=all
     sudo -u www-data php artisan queue:restart
 
+    sudo systemctl restart php8.4-fpm
+
     supervisorctl restart nuolaidos-flyers || true
 EOF
 
