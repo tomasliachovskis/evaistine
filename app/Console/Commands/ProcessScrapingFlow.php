@@ -45,6 +45,11 @@ class ProcessScrapingFlow extends Command
             return 1;
         }
 
+        if (!$this->removeDuplicateActiveDiscounts()) {
+            $this->error('Removing duplicate active discounts failed. Aborting.');
+            return 1;
+        }
+
         if (!$this->archiveExpiredDiscounts()) {
             $this->error('Archiving expired discounts failed. Aborting.');
             return 1;
@@ -162,9 +167,25 @@ class ProcessScrapingFlow extends Command
         return true;
     }
 
+    private function removeDuplicateActiveDiscounts(): bool
+    {
+        $this->info('Step 5: Removing duplicate active discounts...');
+
+        $exitCode = $this->call('discounts:remove-duplicate-active');
+
+        if ($exitCode !== 0) {
+            $this->error('discounts:remove-duplicate-active failed with exit code: ' . $exitCode);
+            return false;
+        }
+
+        $this->info('✓ Duplicate active discounts removed successfully.');
+        $this->newLine();
+        return true;
+    }
+
     private function archiveExpiredDiscounts(): bool
     {
-        $this->info('Step 5: Archiving expired discounts...');
+        $this->info('Step 6: Archiving expired discounts...');
 
         $exitCode = $this->call('discounts:archive-expired');
 
@@ -180,7 +201,7 @@ class ProcessScrapingFlow extends Command
 
     private function reindexMeilisearch(): bool
     {
-        $this->info('Step 6: Reindexing Meilisearch...');
+        $this->info('Step 7: Reindexing Meilisearch...');
 
         $exitCode = $this->call('discounts:index-meilisearch', ['--with-ssh-tunnel' => true]);
 

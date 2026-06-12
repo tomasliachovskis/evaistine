@@ -33,6 +33,11 @@ class ProcessDiscountsFlow extends Command
             return 1;
         }
 
+        if (!$this->removeDuplicateActiveDiscounts()) {
+            $this->error('Removing duplicate active discounts failed. Aborting.');
+            return 1;
+        }
+
         if (!$this->archiveExpiredDiscounts()) {
             $this->error('Archiving expired discounts failed. Aborting.');
             return 1;
@@ -140,9 +145,26 @@ class ProcessDiscountsFlow extends Command
         return true;
     }
 
+    private function removeDuplicateActiveDiscounts(): bool
+    {
+        $this->info('Step 3: Removing duplicate active discounts...');
+
+        $exitCode = $this->call('discounts:remove-duplicate-active');
+
+        if ($exitCode !== 0) {
+            $this->error('discounts:remove-duplicate-active failed with exit code: ' . $exitCode);
+            return false;
+        }
+
+        $this->info('Duplicate active discounts removed successfully.');
+        $this->newLine();
+
+        return true;
+    }
+
     private function archiveExpiredDiscounts(): bool
     {
-        $this->info('Step 3: Archiving expired discounts...');
+        $this->info('Step 4: Archiving expired discounts...');
 
         $exitCode = $this->call('discounts:archive-expired');
 
@@ -159,7 +181,7 @@ class ProcessDiscountsFlow extends Command
 
     private function reindexMeilisearch(): bool
     {
-        $this->info('Step 4: Reindexing Meilisearch...');
+        $this->info('Step 5: Reindexing Meilisearch...');
 
         $options = [];
         if (!app()->environment('production')) {
@@ -181,7 +203,7 @@ class ProcessDiscountsFlow extends Command
 
     private function clearDiscountsCache(): bool
     {
-        $this->info('Step 5: Clearing discounts cache...');
+        $this->info('Step 6: Clearing discounts cache...');
 
         $exitCode = $this->call('cache:clear-discounts');
 
@@ -198,7 +220,7 @@ class ProcessDiscountsFlow extends Command
 
     private function warmDiscountsCache(): bool
     {
-        $this->info('Step 6: Warming discounts cache...');
+        $this->info('Step 7: Warming discounts cache...');
 
         $exitCode = $this->call('cache:warm', ['--type' => 'all']);
 
@@ -215,7 +237,7 @@ class ProcessDiscountsFlow extends Command
 
     private function syncPhotosToFrontend(): bool
     {
-        $this->info('Step 7: Syncing product photos to frontend (deploy-photos.sh)...');
+        $this->info('Step 8: Syncing product photos to frontend (deploy-photos.sh)...');
 
         $deployScript = base_path('deploy-photos.sh');
         if (!file_exists($deployScript)) {
