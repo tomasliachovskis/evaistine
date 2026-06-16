@@ -13,6 +13,7 @@ use App\Rules\StoreRules\AibeRules;
 use App\Rules\StoreRules\CiaRules;
 use App\Rules\StoreRules\ExpressMarketRules;
 use App\Rules\StoreRules\GrusteRules;
+use App\Rules\StoreRules\GulbeleRules;
 use App\Rules\StoreRules\IkiRules;
 use App\Rules\StoreRules\KoopsRules;
 use App\Rules\StoreRules\KubasRules;
@@ -554,6 +555,8 @@ class ProcessDiscounts extends Command
                 return new KubasRules($tempDiscount);
             case 'Koops':
                 return new KoopsRules($tempDiscount);
+            case 'Gulbelė':
+                return new GulbeleRules($tempDiscount);
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
         }

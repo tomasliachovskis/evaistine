@@ -11,13 +11,14 @@ class ProcessScrapingFlow extends Command
     protected $signature = 'scraping:process-all {--skip-deploy : Skip deployment step}';
     protected $description = 'Process complete product scraping flow';
 
-    private array $expectedStores = ['Rimi', 'Lidl', 'Iki', 'Maxima', 'Norfa'];
+    private array $expectedStores = ['Rimi', 'Lidl', 'Iki', 'Maxima', 'Norfa', 'Gulbelė'];
     private array $scrapers = [
         'rimi.js',
         'lidl.js',
         'iki.js',
         'barbora.js',
         'norfa.js',
+        'gulbele.js',
     ];
 
     public function handle()
