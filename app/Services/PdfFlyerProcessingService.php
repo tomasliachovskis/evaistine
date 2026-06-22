@@ -144,8 +144,6 @@ class PdfFlyerProcessingService
             'image_urls' => $images
         ]);
 
-        $this->updateStoreFlyer($store, $pdfPath, $validityDates, $images);
-
         return [
             'success' => true,
             'count' => $totalSavedCount,
@@ -153,42 +151,6 @@ class PdfFlyerProcessingService
             'process_id' => $processId,
             'images' => $images
         ];
-    }
-
-    private function updateStoreFlyer(Store $store, string $pdfPath, ?array $validityDates, array $images): void
-    {
-        try {
-            $pdfDir = 'flyers/pdfs';
-            if (!Storage::disk('public')->exists($pdfDir)) {
-                Storage::disk('public')->makeDirectory($pdfDir);
-            }
-
-            $pdfStoragePath = $pdfDir . '/' . $store->slug . '.pdf';
-            Storage::disk('public')->put($pdfStoragePath, file_get_contents($pdfPath));
-
-            $firstImageUrl = $images[0]['processed_url'] ?? null;
-            $startAt = $validityDates['start_at'] ?? null;
-            $endAt = $validityDates['end_at'] ?? null;
-
-            $store->update([
-                'flyer_pdf_url' => Storage::disk('public')->url($pdfStoragePath),
-                'flyer_image_url' => $firstImageUrl,
-                'flyer_valid_from' => $startAt,
-                'flyer_valid_to' => $endAt,
-                'flyer_updated_at' => now(),
-            ]);
-
-            Log::channel('flyer')->info('Store flyer fields updated', [
-                'store' => $store->slug,
-                'flyer_valid_from' => $startAt,
-                'flyer_valid_to' => $endAt,
-            ]);
-        } catch (\Exception $e) {
-            Log::channel('flyer')->warning('Failed to update store flyer fields', [
-                'store' => $store->slug,
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 
     private function convertPdfToImages(string $pdfPath, string $processId, ?int $targetPage = null): array

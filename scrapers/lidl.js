@@ -35,8 +35,8 @@ puppeteer.use(StealthPlugin());
 
     await sleep(2000);
 
-    await page.click('#week-panel-0 > div > div > button'); // Click the button
-    await sleep(2000);
+    // await page.click('#week-panel-0 > div > div > button'); // Click the button
+    // await sleep(2000);
 
     // const offers = await page.evaluate(() => {
     //     const elements = document.querySelectorAll('a.ACategoryOverviewSlider__Link');

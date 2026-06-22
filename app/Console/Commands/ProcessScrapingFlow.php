@@ -13,12 +13,12 @@ class ProcessScrapingFlow extends Command
 
     private array $expectedStores = ['Rimi', 'Lidl', 'Iki', 'Maxima', 'Norfa', 'Gulbelė'];
     private array $scrapers = [
-        'rimi.js',
+//        'rimi.js',
         'lidl.js',
         'iki.js',
         'barbora.js',
-        'norfa.js',
-        'gulbele.js',
+//        'norfa.js',
+//        'gulbele.js',
     ];
 
     public function handle()

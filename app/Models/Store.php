@@ -17,17 +17,6 @@ class Store extends Model
         'seo_title',
         'meta_title',
         'meta_description',
-        'flyer_pdf_url',
-        'flyer_image_url',
-        'flyer_valid_from',
-        'flyer_valid_to',
-        'flyer_updated_at',
-    ];
-
-    protected $casts = [
-        'flyer_valid_from' => 'date',
-        'flyer_valid_to' => 'date',
-        'flyer_updated_at' => 'datetime',
     ];
 
     public function products()
@@ -38,5 +27,29 @@ class Store extends Model
     public function discounts()
     {
         return $this->hasMany(Discount::class);
+    }
+
+    public function flyers()
+    {
+        return $this->hasMany(StoreFlyer::class);
+    }
+
+    public function latestFlyerValidity(): ?array
+    {
+        $flyer = $this->flyers()
+            ->where('is_active', true)
+            ->whereNotNull('valid_from')
+            ->whereNotNull('valid_to')
+            ->orderByDesc('valid_from')
+            ->first();
+
+        if (!$flyer) {
+            return null;
+        }
+
+        return [
+            'valid_from' => $flyer->valid_from->format('Y-m-d'),
+            'valid_to' => $flyer->valid_to->format('Y-m-d'),
+        ];
     }
 }

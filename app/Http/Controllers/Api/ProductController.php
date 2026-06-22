@@ -664,6 +664,26 @@ class ProductController extends Controller
                     'type' => 'store_leaflet',
                 ];
                 break;
+            case 'store_flyer_detail':
+                $words = $this->getStoreLeafletWords($entity->slug);
+                $flyerTitle = $secondaryEntity->title
+                    ?: app(\App\Services\StoreFlyerTitleBuilder::class)->build($secondaryEntity, $entity);
+                $breadcrumbs[] = [
+                    'name' => $entity->name,
+                    'slug' => 'akcijos/' . $entity->slug,
+                    'type' => 'store',
+                ];
+                $breadcrumbs[] = [
+                    'name' => ucfirst($words['nominative']),
+                    'slug' => 'leidinys/' . $entity->slug,
+                    'type' => 'store_leaflet',
+                ];
+                $breadcrumbs[] = [
+                    'name' => $flyerTitle,
+                    'slug' => 'leidinys/' . $entity->slug . '/' . $secondaryEntity->slug,
+                    'type' => 'store_flyer',
+                ];
+                break;
             case 'store':
                 $breadcrumbs[] = [
                     'name' => $entity->name,
@@ -841,6 +861,33 @@ class ProductController extends Controller
         ]);
     }
 
+    public function getStoreLeaflet(string $store, string $flyerSlug)
+    {
+        $storeModel = \App\Models\Store::where('slug', $store)->firstOrFail();
+        $flyer = \App\Models\StoreFlyer::query()
+            ->where('store_id', $storeModel->id)
+            ->where('slug', $flyerSlug)
+            ->where('is_active', true)
+            ->where('processing_status', \App\Models\StoreFlyer::STATUS_READY)
+            ->with('pages')
+            ->firstOrFail();
+
+        $listingMeta = $this->listingPageMetaService->buildForStoreFlyer($storeModel, $flyer);
+        $title = $listingMeta['flyer']['title'];
+
+        return response()->json([
+            'listing_meta' => $listingMeta,
+            'breadcrumbs' => $this->generateBreadcrumbs('store_flyer_detail', $storeModel, $flyer),
+            'seo' => [
+                'seo_title' => $title,
+                'seo_description' => "{$title} – {$storeModel->name} akcijų leidinys.",
+                'meta_title' => $title,
+                'meta_description' => "{$title} – peržiūrėkite visus {$storeModel->name} leidinio puslapius.",
+            ],
+            'total_offers' => Discount::where('store_id', $storeModel->id)->count(),
+        ]);
+    }
+
     public function getSitemap()
     {
         return Cache::tags(['sitemap'])->remember('sitemap_entries_v2', 3600, function () {
@@ -889,10 +936,27 @@ class ProductController extends Controller
                 ->values()
                 ->all();
 
+            $leafletEntries = \App\Models\StoreFlyer::query()
+                ->where('is_active', true)
+                ->where('processing_status', \App\Models\StoreFlyer::STATUS_READY)
+                ->whereNotNull('slug')
+                ->with('store:id,slug')
+                ->select('slug', 'updated_at', 'store_id')
+                ->get()
+                ->map(function ($flyer) {
+                    return [
+                        'path' => "leidinys/{$flyer->store->slug}/{$flyer->slug}",
+                        'lastmod' => $flyer->updated_at?->format('Y-m-d'),
+                    ];
+                })
+                ->values()
+                ->all();
+
             return response()->json([
                 'lastmod' => $defaultLastmod,
                 'stores' => $stores,
                 'leaflet_stores' => $stores,
+                'leaflets' => $leafletEntries,
                 'categories' => $categories,
                 'products' => $products,
                 'blog_posts' => $blogPosts,
@@ -902,11 +966,10 @@ class ProductController extends Controller
 
     private function resolveStoreValidity($store): array
     {
-        if ($store->flyer_valid_from && $store->flyer_valid_to) {
-            return [
-                'valid_from' => $store->flyer_valid_from->format('Y-m-d'),
-                'valid_to' => $store->flyer_valid_to->format('Y-m-d'),
-            ];
+        $flyerValidity = $store->latestFlyerValidity();
+
+        if ($flyerValidity) {
+            return $flyerValidity;
         }
 
         $minStart = Discount::where('store_id', $store->id)->min('start_at');

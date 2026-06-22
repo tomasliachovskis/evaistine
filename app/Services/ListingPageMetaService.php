@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\Discount;
 use App\Models\Store;
+use App\Models\StoreFlyer;
 use App\Support\FoodCategorySlugs;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,8 @@ class ListingPageMetaService
     private const MIN_TOP_PRODUCT_PRICE = 5.0;
 
     public function __construct(
-        private PageFreshnessService $freshnessService
+        private PageFreshnessService $freshnessService,
+        private StoreFlyerTitleBuilder $flyerTitleBuilder
     ) {
     }
 
@@ -40,7 +42,9 @@ class ListingPageMetaService
         $avgDiscount = $this->getAverageDiscountPercentForStore($store);
         $totalSavings = $this->getTotalSavingsForStore($store);
 
-        $intro = $this->buildStoreIntro($storeName, $store->slug, $validity);
+        $leaflets = $this->buildLeaflets($store);
+        $intro = $this->buildStoreIntro($storeName, $store->slug, $validity, count($leaflets));
+        $intro['seo_about'] = $this->buildStoreHubSeoAbout($storeName, $store->slug, count($leaflets));
         $newToday = Discount::query()
             ->where('store_id', $store->id)
             ->whereDate('created_at', Carbon::today())
@@ -79,12 +83,13 @@ class ListingPageMetaService
             'sections' => [
                 'featured_category' => $this->getFeaturedFoodCategoryForStore($store),
                 'top_categories' => $topCategories,
-                'latest_leaflet' => $this->buildLeaflet($store, $storeName, $validity),
+                'latest_leaflet' => $leaflets[0] ?? null,
+                'leaflets' => $leaflets,
                 'top_deals' => $this->getTopDealsForStore($store),
                 'most_saved' => $this->getMostSavedForStore($store),
                 'expiring_soon' => $this->getExpiringDealsForStore($store),
                 'weekend_deals' => $this->getWeekendDealsForStore($store),
-                'faq' => $this->buildStoreFaq($storeName, $store->slug),
+                'faq' => $this->buildStoreLeafletHubFaq($store, $this->getTopCategoriesForStore($store, false)),
                 'other_stores' => $otherStores,
             ],
         ];
@@ -174,18 +179,17 @@ class ListingPageMetaService
             'popular_this_week' => [],
             'popular_carousel_title' => 'Populiaru šią savaitę',
             'sections' => [
-                'faq' => $this->buildStoreFaq($storeName, $store->slug),
+                'faq' => $this->buildStoreFaq($store, $category, $this->getTopCategoriesForStore($store, false)),
             ],
         ];
     }
 
     private function resolveStoreValidity(Store $store): array
     {
-        if ($store->flyer_valid_from && $store->flyer_valid_to) {
-            return [
-                'valid_from' => $store->flyer_valid_from->format('Y-m-d'),
-                'valid_to' => $store->flyer_valid_to->format('Y-m-d'),
-            ];
+        $flyerValidity = $store->latestFlyerValidity();
+
+        if ($flyerValidity) {
+            return $flyerValidity;
         }
 
         $minStart = Discount::where('store_id', $store->id)->min('start_at');
@@ -201,34 +205,60 @@ class ListingPageMetaService
         return $this->freshnessService->getCurrentWeekRange();
     }
 
-    private function buildStoreIntro(string $storeName, string $storeSlug, array $validity): array
+    private function buildStoreIntro(string $storeName, string $storeSlug, array $validity, int $activeLeafletCount): array
     {
         $words = $this->getStoreLeafletWords($storeSlug);
+        $multipleLeaflets = $activeLeafletCount > 1;
+        $headline = $multipleLeaflets ? 'Naujausi' : 'Naujausias';
+        $leafletNoun = $multipleLeaflets ? $words['nominative_plural'] : $words['nominative'];
+        $locationSuffix = $multipleLeaflets ? ' vienoje vietoje' : '';
 
         return [
-            'description' => "Peržiūrėkite {$storeName} savaitės {$words['accusative']}, katalogą ir lankstinuką – visos aktyvios akcijos ir reklaminis leidinys vienoje vietoje. Kainos atnaujinamos kasdien pagal galiojantį {$words['nominative']}.",
+            'description' => "{$headline} {$storeName} akcijų {$leafletNoun}{$locationSuffix}. Peržiūrėkite šios savaitės nuolaidas, specialius pasiūlymus ir populiariausias akcijas.",
             'valid_from' => $validity['valid_from'],
             'valid_to' => $validity['valid_to'],
         ];
     }
 
-    private function buildLeaflet(Store $store, string $storeName, array $validity): ?array
+    private function buildLeaflets(Store $store): array
     {
-        $imageUrl = $store->flyer_image_url;
-        $pdfUrl = $store->flyer_pdf_url;
-        $hasPdf = $pdfUrl && $pdfUrl !== '#';
+        return $store->flyers()
+            ->active()
+            ->ready()
+            ->withCount('pages')
+            ->ordered()
+            ->get()
+            ->map(fn ($flyer) => $this->flyerTitleBuilder->toListingArray($flyer, $store))
+            ->filter(function (array $leaflet) {
+                return ($leaflet['image_url'] || $leaflet['pdf_url'])
+                    && ($leaflet['pages_count'] > 0 || $leaflet['image_url']);
+            })
+            ->values()
+            ->all();
+    }
 
-        if (!$imageUrl && !$hasPdf) {
-            return null;
-        }
+    public function buildForStoreFlyer(Store $store, StoreFlyer $flyer): array
+    {
+        $flyer->loadMissing(['pages', 'store']);
+        $title = $this->flyerTitleBuilder->build($flyer, $store);
 
         return [
-            'title' => "{$storeName} akcijų leidinys",
-            'image_url' => $imageUrl ?? '',
-            'view_url' => "/akcijos/{$store->slug}",
-            'pdf_url' => $hasPdf ? $pdfUrl : null,
-            'valid_from' => $validity['valid_from'],
-            'valid_to' => $validity['valid_to'],
+            'type' => 'store_flyer',
+            'store_slug' => $store->slug,
+            'store_name' => $store->name,
+            'flyer' => [
+                'title' => $title,
+                'slug' => $flyer->slug,
+                'image_url' => $flyer->image_url ?? '',
+                'pdf_url' => $flyer->pdf_url && $flyer->pdf_url !== '#' ? $flyer->pdf_url : null,
+                'valid_from' => $flyer->valid_from?->format('Y-m-d') ?? '',
+                'valid_to' => $flyer->valid_to?->format('Y-m-d') ?? '',
+                'view_url' => "/leidinys/{$store->slug}/{$flyer->slug}",
+            ],
+            'pages' => $flyer->pages->map(fn ($page) => [
+                'page_number' => $page->page_number,
+                'image_url' => $page->image_url,
+            ])->values()->all(),
         ];
     }
 
@@ -276,16 +306,23 @@ class ListingPageMetaService
         ];
     }
 
-    private function getTopCategoriesForStore(Store $store): array
+    private function getTopCategoriesForStore(Store $store, bool $excludeFood = true): array
     {
         $today = Carbon::today()->toDateString();
 
-        $rows = DB::table('discounts')
+        $query = DB::table('discounts')
             ->join('products', 'products.id', '=', 'discounts.product_id')
             ->join('categories', 'categories.id', '=', 'products.category_id')
             ->where('discounts.store_id', $store->id)
-            ->whereNull('categories.parent_id')
-            ->whereNotIn('categories.slug', FoodCategorySlugs::FOOD)
+            ->whereNull('categories.parent_id');
+
+        if ($excludeFood) {
+            $query->whereNotIn('categories.slug', FoodCategorySlugs::FOOD);
+        } else {
+            $query->whereIn('categories.slug', FoodCategorySlugs::ALL);
+        }
+
+        $rows = $query
             ->select(
                 'categories.name',
                 'categories.slug',
@@ -303,7 +340,8 @@ class ListingPageMetaService
 
         return $rows->map(function ($row) use ($store) {
             return [
-                'name' => $row->name,
+                'name' => trim($row->name),
+                'slug' => $row->slug,
                 'href' => "/akcijos/{$store->slug}/{$row->slug}",
                 'max_discount_percent' => (int) round($row->max_discount_percent ?? 0),
                 'image_slug' => $row->slug,
@@ -694,31 +732,90 @@ class ListingPageMetaService
     private function getStoreLeafletWords(string $storeSlug): array
     {
         if ($storeSlug === 'iki') {
-            return ['accusative' => 'leidynį', 'nominative' => 'leidynys'];
+            return [
+                'accusative' => 'leidynį',
+                'nominative' => 'leidynys',
+                'nominative_plural' => 'leidyniai',
+            ];
         }
 
-        return ['accusative' => 'leidinį', 'nominative' => 'leidinys'];
+        return [
+            'accusative' => 'leidinį',
+            'nominative' => 'leidinys',
+            'nominative_plural' => 'leidiniai',
+        ];
     }
 
-    private function buildStoreFaq(string $storeName, string $storeSlug): array
+    private function buildStoreHubSeoAbout(string $storeName, string $storeSlug, int $activeLeafletCount): string
     {
         $words = $this->getStoreLeafletWords($storeSlug);
+        $multipleLeaflets = $activeLeafletCount > 1;
+        $leafletNoun = $multipleLeaflets ? $words['nominative_plural'] : $words['nominative'];
+        $leafletPhrase = $multipleLeaflets
+            ? "naujausius {$storeName} akcijų {$leafletNoun}"
+            : "naujausią {$storeName} akcijų {$leafletNoun}";
 
-        $hubPath = "/leidinys/{$storeSlug}";
-        $listingPath = "/akcijos/{$storeSlug}";
+        $intro = "SuperAkcijos.lt – patogi vieta, kur {$leafletPhrase}, didžiausias savaitės nuolaidas ir populiariausius pasiūlymus rasite be papildomų paieškų.";
+        $detail = "Kas savaitę atnaujiname akcijų sąrašą pagal galiojantį leidinį, todėl čia matote, kas šiuo metu galioja parduotuvėse. Jei domina naujas leidinys, šios savaitės akcijos ar norite greitai palyginti nuolaidas – viršuje peržiūrėkite leidinių viršelius, o žemiau – atrinktas didžiausias nuolaidas su kainomis.";
+
+        return "{$intro}\n\n{$detail}";
+    }
+
+    private function buildStoreLeafletHubFaq(Store $store, array $topCategories): array
+    {
+        $storeName = $store->name;
+        $storeSlug = $store->slug;
+        $words = $this->getStoreLeafletWords($storeSlug);
+        $listingUrl = $this->siteUrl("/akcijos/{$storeSlug}");
+        $hubLink = $this->faqLink($this->siteUrl("/leidinys/{$storeSlug}"), "{$storeName} leidinio puslapyje");
+        $listingLink = $this->faqLink($listingUrl, "{$storeName} akcijų sąraše");
+        $weeklyAkcijosLink = $this->faqLink($listingUrl, "šią savaitę galiojančias {$storeName} akcijas");
+        $nuolaidosLink = $this->faqLink($listingUrl, "aktualias {$storeName} nuolaidas");
+        $categoryLink = $this->faqCategoryLink($store, null, $topCategories, $listingLink);
+
+        return [
+            [
+                'question' => "Kur rasti naują {$storeName} leidinį?",
+                'answer' => "Naujausią {$storeName} akcijų {$words['nominative']} rasite {$hubLink} – viršuje matote leidinio viršelį ir galiojimo datas. Visas akcijas su kainomis – {$listingLink}.",
+            ],
+            [
+                'question' => "Kokios {$storeName} akcijos galioja šią savaitę?",
+                'answer' => "{$storeName} savaitės akcijos paprastai galioja nuo pirmadienio iki sekmadienio. {$weeklyAkcijosLink} rasite su galiojimo datomis ir kainomis.",
+            ],
+            [
+                'question' => "Ar galima atsisiųsti {$storeName} {$words['accusative']} PDF formatu?",
+                'answer' => "Kai turime PDF nuorodą, ją rasite {$hubLink} prie leidinio viršelio – galite atsisiųsti ir peržiūrėti be interneto.",
+            ],
+            [
+                'question' => "Kaip dažnai atnaujinamos {$storeName} nuolaidos?",
+                'answer' => "{$storeName} akcijos ir nuolaidos SuperAkcijos.lt atnaujinamos kasdien. {$nuolaidosLink} galite peržiūrėti bet kuriuo metu, o populiariausias kategorijas – {$categoryLink}.",
+            ],
+        ];
+    }
+
+    private function buildStoreFaq(Store $store, ?Category $currentCategory, array $topCategories): array
+    {
+        $storeName = $store->name;
+        $storeSlug = $store->slug;
+        $words = $this->getStoreLeafletWords($storeSlug);
+        $listingUrl = $this->siteUrl("/akcijos/{$storeSlug}");
+        $hubLink = $this->faqLink($this->siteUrl("/leidinys/{$storeSlug}"), "{$storeName} leidinio puslapyje");
+        $listingLink = $this->faqLink($listingUrl, "{$storeName} akcijų sąraše");
+        $weeklyAkcijosLink = $this->faqLink($listingUrl, "šią savaitę galiojančias {$storeName} akcijas");
+        $categoryLink = $this->faqCategoryLink($store, $currentCategory, $topCategories, $listingLink);
 
         return [
             [
                 'question' => "Kur rasti {$storeName} naują {$words['nominative']}?",
-                'answer' => "Naujausią {$storeName} akcijų {$words['nominative']} rasite {$hubPath} puslapyje – viršuje matote leidinį, PDF ir geriausius pasiūlymus. Visas akcijas rasite {$listingPath}.",
+                'answer' => "Naujausią {$storeName} akcijų {$words['nominative']} rasite {$hubLink} – viršuje matote leidinį, PDF ir geriausius pasiūlymus. Visas akcijas rasite {$listingLink}.",
             ],
             [
                 'question' => "Nuo kada galioja {$storeName} akcijos šią savaitę?",
-                'answer' => "{$storeName} savaitės akcijos paprastai galioja nuo pirmadienio iki sekmadienio. Tikslią datą matote prie leidinio bloko {$hubPath} puslapyje.",
+                'answer' => "{$storeName} savaitės akcijos paprastai galioja nuo pirmadienio iki sekmadienio. Tikslias datas ir kainas matote {$weeklyAkcijosLink}.",
             ],
             [
                 'question' => "Ar yra {$storeName} savaitgalio akcijos?",
-                'answer' => "Taip – {$storeName} savaitgalio akcijos skelbiamos {$hubPath} puslapyje. Visas sąrašas – {$listingPath}.",
+                'answer' => "Taip – savaitgalio pasiūlymus dažniausiai rasite {$listingLink}. Jei norite filtruoti pagal kategoriją, peržiūrėkite {$categoryLink}.",
             ],
             [
                 'question' => "Kaip dažnai atnaujinamos {$storeName} akcijos?",
@@ -730,9 +827,44 @@ class ListingPageMetaService
             ],
             [
                 'question' => "Ar galima atsisiųsti {$storeName} {$words['accusative']} PDF formatu?",
-                'answer' => "Jei turime PDF nuorodą, ją rasite {$hubPath} puslapyje prie {$words['nominative']} viršelio.",
+                'answer' => "Jei turime PDF nuorodą, ją rasite {$hubLink} prie {$words['nominative']} viršelio.",
             ],
         ];
+    }
+
+    private function faqLink(string $url, string $label): string
+    {
+        return '<a href="' . e($url, false) . '">' . e($label) . '</a>';
+    }
+
+    private function faqCategoryLink(Store $store, ?Category $preferredCategory, array $topCategories, string $listingLinkFallback): string
+    {
+        if ($preferredCategory) {
+            $categoryName = mb_strtolower(trim($preferredCategory->name));
+
+            return $this->faqLink(
+                $this->siteUrl("/akcijos/{$store->slug}/{$preferredCategory->slug}"),
+                "{$categoryName} akcijas {$store->name}"
+            );
+        }
+
+        $topCategory = $topCategories[0] ?? null;
+
+        if (!$topCategory || empty($topCategory['href']) || empty($topCategory['slug'])) {
+            return $listingLinkFallback;
+        }
+
+        $categoryName = mb_strtolower($topCategory['name']);
+
+        return $this->faqLink(
+            $this->siteUrl("/akcijos/{$store->slug}/{$topCategory['slug']}"),
+            "{$categoryName} akcijas {$store->name}"
+        );
+    }
+
+    private function siteUrl(string $path): string
+    {
+        return 'https://superakcijos.lt' . $path;
     }
 
     private function buildCategoryFaq(string $categoryName): array
