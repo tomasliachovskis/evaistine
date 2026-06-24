@@ -86,15 +86,13 @@ ssh $SSH_OPTS $SERVER << 'EOF'
         chown -R www-data:www-data scripts
     fi
 
-    if [ -d vendor ]; then
-        chown -R www-data:www-data vendor
-        chmod -R u+rwX vendor
-    fi
+    mkdir -p vendor
+    chown -R www-data:www-data vendor storage bootstrap/cache
+    chmod -R ug+rwx storage bootstrap/cache
 
-    if ! sudo -u www-data composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader; then
-        rm -rf vendor
-        sudo -u www-data composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-    fi
+    composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+    chown -R www-data:www-data vendor
+    chmod -R u+rwX vendor
     sudo -u www-data php artisan optimize:clear
     sudo -u www-data php artisan migrate --force
     sudo -u www-data php artisan config:cache
