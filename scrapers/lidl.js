@@ -106,7 +106,7 @@ puppeteer.use(StealthPlugin());
 
                 return blocks.map(block => {
                     const brand = block.querySelector('.product-grid-box__brand')?.textContent.trim() ?? '';
-                    let name = block.querySelector('.odsc-tile__link')?.textContent.trim();
+                    let name = block.querySelector('.product-grid-box__title')?.textContent.trim();
                     const discounted_price = block.querySelector('.ods-price__value')?.textContent.trim();
                     const original_price = block.querySelector('.ods-price__stroke-price')?.textContent.trim();
                     const info = block.querySelector('.ods-price__footer')?.textContent.trim();

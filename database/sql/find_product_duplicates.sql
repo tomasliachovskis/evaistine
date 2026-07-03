@@ -4,7 +4,16 @@ WITH p AS (
         name,
         category_id,
         TRIM(SUBSTRING_INDEX(name, ',', -1)) AS suffix,
-        TRIM(SUBSTRING_INDEX(name, ',', CHAR_LENGTH(name) - CHAR_LENGTH(REPLACE(name, ',', '')))) AS base
+        TRIM(SUBSTRING_INDEX(name, ',', CHAR_LENGTH(name) - CHAR_LENGTH(REPLACE(name, ',', '')))) AS base,
+        LOWER(
+            TRIM(
+                REGEXP_REPLACE(
+                    REGEXP_REPLACE(name, '[[:space:]]*,[[:space:]]*', ', '),
+                    '[[:space:]]+',
+                    ' '
+                )
+            )
+        ) AS normalized_name
     FROM products
     WHERE (CHAR_LENGTH(name) - CHAR_LENGTH(REPLACE(name, ',', ''))) BETWEEN 1 AND 2
 ),
@@ -134,7 +143,8 @@ s AS (
     FROM w
     LEFT JOIN ranked r ON r.id = w.id
     GROUP BY w.id, w.name, w.category_id, w.suffix, w.base, w.suffix_kind, w.suffix_norm, w.wc
-)
+),
+fuzzy_pairs AS (
 SELECT
     a.id AS id1,
     b.id AS id2,
@@ -229,4 +239,63 @@ JOIN s b
             AND LEFT(a.s10, LEAST(CHAR_LENGTH(a.s10), CHAR_LENGTH(b.s10)) - 1)
               = LEFT(b.s10, LEAST(CHAR_LENGTH(a.s10), CHAR_LENGTH(b.s10)) - 1))
     ))
-ORDER BY a.category_id, a.suffix_norm, a.wc, a.base
+),
+duplicate_exact_names AS (
+    SELECT name
+    FROM p
+    GROUP BY name
+    HAVING COUNT(*) > 1
+),
+exact_name_pairs AS (
+    SELECT
+        a.id AS id1,
+        b.id AS id2,
+        a.name AS name1,
+        b.name AS name2,
+        a.category_id,
+        TRIM(SUBSTRING_INDEX(a.name, ',', -1)) AS suffix1,
+        TRIM(SUBSTRING_INDEX(b.name, ',', -1)) AS suffix2,
+        NULL AS suffix_norm,
+        NULL AS word_count,
+        TRIM(SUBSTRING_INDEX(a.name, ',', CHAR_LENGTH(a.name) - CHAR_LENGTH(REPLACE(a.name, ',', '')))) AS base1,
+        TRIM(SUBSTRING_INDEX(b.name, ',', CHAR_LENGTH(b.name) - CHAR_LENGTH(REPLACE(b.name, ',', '')))) AS base2
+    FROM p a
+    JOIN duplicate_exact_names den ON den.name = a.name
+    JOIN p b ON a.id < b.id AND a.name = b.name
+),
+duplicate_normalized_names AS (
+    SELECT normalized_name
+    FROM p
+    GROUP BY normalized_name
+    HAVING COUNT(*) > 1
+        AND SUM(CASE WHEN name LIKE '% ,%' THEN 1 ELSE 0 END) > 0
+),
+normalized_name_pairs AS (
+    SELECT
+        a.id AS id1,
+        b.id AS id2,
+        a.name AS name1,
+        b.name AS name2,
+        a.category_id,
+        TRIM(SUBSTRING_INDEX(a.name, ',', -1)) AS suffix1,
+        TRIM(SUBSTRING_INDEX(b.name, ',', -1)) AS suffix2,
+        NULL AS suffix_norm,
+        NULL AS word_count,
+        TRIM(SUBSTRING_INDEX(a.name, ',', CHAR_LENGTH(a.name) - CHAR_LENGTH(REPLACE(a.name, ',', '')))) AS base1,
+        TRIM(SUBSTRING_INDEX(b.name, ',', CHAR_LENGTH(b.name) - CHAR_LENGTH(REPLACE(b.name, ',', '')))) AS base2
+    FROM p a
+    JOIN duplicate_normalized_names dnn ON dnn.normalized_name = a.normalized_name
+    JOIN p b ON a.id < b.id
+    WHERE a.normalized_name = b.normalized_name
+    AND a.name <> b.name
+    AND (
+        a.name LIKE '% ,%'
+        OR b.name LIKE '% ,%'
+    )
+)
+SELECT * FROM fuzzy_pairs
+UNION ALL
+SELECT * FROM exact_name_pairs
+UNION ALL
+SELECT * FROM normalized_name_pairs
+ORDER BY category_id, suffix_norm, word_count, base1

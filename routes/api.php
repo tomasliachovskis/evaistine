@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\KeywordPageController;
 use App\Http\Controllers\Api\ScrapingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +34,9 @@ Route::get('/leidinys/{store}', [ProductController::class, 'getStoreLeafletHub']
 Route::get('/product/{slug}/with-similar', ProductWithSimilarController::class)
     ->withoutMiddleware(ThrottleRequests::class);
 Route::get('/search/{query}', [ProductController::class, 'search']);
+
+Route::get('/keywords', [KeywordPageController::class, 'index']);
+Route::get('/keyword/{slug}', [KeywordPageController::class, 'show']);
 
 Route::get('/categories', [ProductController::class, 'getCategories']);
 Route::get('/stores', [ProductController::class, 'getStores']);

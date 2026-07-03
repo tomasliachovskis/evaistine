@@ -11,29 +11,57 @@ use Illuminate\Support\Facades\DB;
 
 class ProductDuplicateMergeService
 {
-    public function filterPairs(Collection $pairs): Collection
+    public function analyzePairs(Collection $pairs): Collection
     {
         if ($pairs->isEmpty()) {
-            return $pairs;
+            return collect();
         }
 
         $productIds = $pairs->flatMap(fn ($pair) => [(int) $pair->id1, (int) $pair->id2])->unique()->values();
         $products = Product::query()->whereIn('id', $productIds)->get()->keyBy('id');
 
-        return $pairs->filter(function ($pair) use ($products) {
+        return $pairs->map(function ($pair) use ($products) {
             $first = $products->get((int) $pair->id1);
             $second = $products->get((int) $pair->id2);
 
             if (!$first || !$second) {
-                return false;
+                return [
+                    'pair' => $pair,
+                    'keep' => false,
+                    'reason' => 'missing product',
+                ];
             }
 
             if ($this->pairHasSpecialCharInDifferingWord($first->name, $second->name)) {
-                return false;
+                return [
+                    'pair' => $pair,
+                    'keep' => false,
+                    'reason' => 'special character in differing word',
+                ];
             }
 
-            return !$this->pairHasConflictingSuffixSize($first->name, $second->name);
+            if ($this->pairHasConflictingSuffixSize($first->name, $second->name)) {
+                return [
+                    'pair' => $pair,
+                    'keep' => false,
+                    'reason' => 'conflicting suffix size',
+                ];
+            }
+
+            return [
+                'pair' => $pair,
+                'keep' => true,
+                'reason' => null,
+            ];
         })->values();
+    }
+
+    public function filterPairs(Collection $pairs): Collection
+    {
+        return $this->analyzePairs($pairs)
+            ->filter(fn (array $result) => $result['keep'])
+            ->map(fn (array $result) => $result['pair'])
+            ->values();
     }
 
     public function pairHasConflictingSuffixSize(string $name1, string $name2): bool
@@ -133,8 +161,7 @@ class ProductDuplicateMergeService
             ->get()
             ->sortBy([
                 fn (Product $product) => $product->image_from_flyer ? 1 : 0,
-                fn (Product $product) => $this->nameHasSpecialCharacters($product->name) ? 1 : 0,
-                fn (Product $product) => $product->created_at?->getTimestamp() ?? 0,
+                fn (Product $product) => $product->id,
             ])
             ->firstOrFail();
     }
@@ -146,7 +173,7 @@ class ProductDuplicateMergeService
 
     public function wordHasSpecialCharacters(string $word): bool
     {
-        return (bool) preg_match('/[^\p{L}\p{N}.-]/u', $word);
+        return (bool) preg_match('/[\'"`+\-*\/=_%$#@!^&(){}\[\]:;<>|\\\\]/u', $word);
     }
 
     private function extractBaseWords(string $name): array

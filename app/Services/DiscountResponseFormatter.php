@@ -29,6 +29,35 @@ class DiscountResponseFormatter
         });
     }
 
+    public function formatExpiredList(Collection $histories): array
+    {
+        return $histories->map(function ($history) {
+            return $this->formatExpiredHistory($history);
+        })->values()->all();
+    }
+
+    protected function formatExpiredHistory($history): array
+    {
+        return [
+            'id' => -1 * (int) $history->id,
+            'store_id' => $history->store_id,
+            'original_price' => (float) $history->original_price,
+            'discounted_price' => (float) $history->discounted_price,
+            'discount_percent' => $history->discount_percent !== null ? (float) $history->discount_percent : null,
+            'condition' => $history->condition,
+            'info' => $history->info ?? null,
+            'card' => $history->card,
+            'valid_date' => ($history->start_at ? $history->start_at->format('Y-m-d') : '') . ' - ' . ($history->end_at ? $history->end_at->format('Y-m-d') : ''),
+            'from_date' => $history->start_at ? $history->start_at->format('Y-m-d') : null,
+            'to_date' => $history->end_at ? $history->end_at->format('Y-m-d') : null,
+            'offers' => [],
+            'offer_count' => 0,
+            'min_price' => (float) $history->discounted_price,
+            'is_expired' => true,
+            'product' => $this->formatProductData($history->product),
+        ];
+    }
+
     public function formatProductDiscounts(Product $product): Collection
     {
         $product->loadMissing(['discounts.store', 'discountHistories.store', 'category']);
@@ -112,9 +141,9 @@ class DiscountResponseFormatter
         return [
             'id' => $discount->id,
             'store_id' => $discount->store_id,
-            'original_price' => $discount->original_price,
-            'discounted_price' => $discount->discounted_price,
-            'discount_percent' => $discount->discount_percent,
+            'original_price' => (float) $discount->original_price,
+            'discounted_price' => (float) $discount->discounted_price,
+            'discount_percent' => $discount->discount_percent !== null ? (float) $discount->discount_percent : null,
             'condition' => $discount->condition,
             'info' => $discount->info,
             'card' => $discount->card,

@@ -387,6 +387,12 @@ class MeilisearchService
             $filterParts[] = 'category_id = ' . intval($filters['category_id']);
         }
 
+        if (isset($filters['category_ids']) && !empty($filters['category_ids'])) {
+            $categoryIds = is_array($filters['category_ids']) ? $filters['category_ids'] : [$filters['category_ids']];
+            $categoryIdsStr = implode(', ', array_map('intval', $categoryIds));
+            $filterParts[] = "category_id IN [{$categoryIdsStr}]";
+        }
+
         if (isset($filters['category_name']) && !empty($filters['category_name'])) {
             $categoryName = addslashes($filters['category_name']);
             $filterParts[] = "category_name = \"{$categoryName}\"";

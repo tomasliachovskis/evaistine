@@ -936,6 +936,12 @@ class ProductController extends Controller
                 ->values()
                 ->all();
 
+            $keywords = \App\Models\KeywordPage::query()
+                ->published()
+                ->orderBy('sort_order')
+                ->pluck('slug')
+                ->all();
+
             $leafletEntries = \App\Models\StoreFlyer::query()
                 ->where('is_active', true)
                 ->where('processing_status', \App\Models\StoreFlyer::STATUS_READY)
@@ -960,6 +966,7 @@ class ProductController extends Controller
                 'categories' => $categories,
                 'products' => $products,
                 'blog_posts' => $blogPosts,
+                'keywords' => $keywords,
             ]);
         });
     }

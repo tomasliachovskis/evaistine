@@ -33,11 +33,41 @@ class MergeDuplicateProducts extends Command
 
         $this->info("Found {$pairs->count()} duplicate pairs.");
 
-        $filteredPairs = $mergeService->filterPairs($pairs);
-        $skippedPairs = $pairs->count() - $filteredPairs->count();
+        if ($dryRun) {
+            $this->table(
+                ['ID 1', 'Name 1', 'ID 2', 'Name 2'],
+                $pairs->map(fn ($pair) => [
+                    $pair->id1,
+                    $pair->name1,
+                    $pair->id2,
+                    $pair->name2,
+                ])->all()
+            );
+        }
+
+        $analyzedPairs = $mergeService->analyzePairs($pairs);
+        $filteredPairs = $analyzedPairs
+            ->filter(fn (array $result) => $result['keep'])
+            ->map(fn (array $result) => $result['pair'])
+            ->values();
+        $skipped = $analyzedPairs->filter(fn (array $result) => !$result['keep'])->values();
+        $skippedPairs = $skipped->count();
 
         if ($skippedPairs > 0) {
-            $this->info("Skipped {$skippedPairs} pair(s) — special character in a differing word.");
+            $this->info("Skipped {$skippedPairs} pair(s) after filtering.");
+
+            if ($dryRun) {
+                $this->table(
+                    ['ID 1', 'Name 1', 'ID 2', 'Name 2', 'Reason'],
+                    $skipped->map(fn (array $result) => [
+                        $result['pair']->id1,
+                        $result['pair']->name1,
+                        $result['pair']->id2,
+                        $result['pair']->name2,
+                        $result['reason'],
+                    ])->all()
+                );
+            }
         }
 
         if ($filteredPairs->isEmpty()) {
