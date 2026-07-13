@@ -9,6 +9,7 @@ use App\Models\Store;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class KeywordPageService
 {
@@ -18,6 +19,18 @@ class KeywordPageService
 
     private const STORE_COMPARISON_FETCH_LIMIT = 250;
 
+    private const MIN_CHIP_OFFERS = 3;
+
+    private const HOME_TOP_DEALS_FETCH = 30;
+
+    private const HOME_POOL_MAX_SEARCH_TERMS = 2;
+
+    private const MIN_HOME_POOL_PRICE = 5.0;
+
+    private const EXCLUDED_HOME_POOL_CATEGORY_SLUGS = [
+        'namu-ukio-ir-laisvalaikio-prekes',
+    ];
+
     public function __construct(
         private MeilisearchService $meilisearchService,
         private DiscountResponseFormatter $formatter,
@@ -25,6 +38,7 @@ class KeywordPageService
         private StoreFlyerTitleBuilder $flyerTitleBuilder,
         private KeywordPageDynamicMetaService $dynamicMetaService,
         private KeywordPageCategoryResolver $categoryResolver,
+        private HomeDealScorer $homeDealScorer,
     ) {
     }
 
@@ -38,27 +52,108 @@ class KeywordPageService
             ->all();
     }
 
+    /**
+     * @return list<string>
+     */
+    public function listAllSlugs(): array
+    {
+        return KeywordPage::query()
+            ->orderBy('sort_order')
+            ->orderBy('title')
+            ->pluck('slug')
+            ->all();
+    }
+
     public function listPublishedPages(): array
     {
         return KeywordPage::query()
             ->published()
+            ->where('is_chip', true)
             ->orderBy('sort_order')
             ->orderBy('title')
-            ->get(['slug', 'title', 'h1', 'emoji'])
-            ->map(fn (KeywordPage $page) => [
-                'slug' => $page->slug,
-                'title' => $page->title,
-                'h1' => $page->h1,
-                'emoji' => $page->emoji ?: '🏷️',
-                'href' => "/akcijos/{$page->slug}",
-            ])
+            ->get(['slug', 'title', 'h1', 'emoji', 'matching_offers_count'])
+            ->map(fn (KeywordPage $page) => $this->mapPublishedPageSummary($page))
             ->values()
             ->all();
+    }
+
+    /**
+     * @return list<array{slug: string, title: string, h1: string, emoji: string, href: string}>
+     */
+    public function listPublishedPagesForCategory(string $categorySlug): array
+    {
+        $listingSlugs = $this->categoryResolver->resolveListingCategorySlugs([$categorySlug]);
+        if ($listingSlugs === []) {
+            return [];
+        }
+
+        return KeywordPage::query()
+            ->published()
+            ->where('is_chip', true)
+            ->orderByDesc('matching_offers_count')
+            ->orderBy('title')
+            ->get(['slug', 'title', 'h1', 'emoji', 'matching_offers_count', 'category_slugs'])
+            ->filter(function (KeywordPage $page) use ($listingSlugs) {
+                $primary = $this->categoryResolver->resolvePrimaryListingCategorySlugs(
+                    (array) ($page->category_slugs ?? []),
+                );
+
+                return $primary !== [] && in_array($primary[0], $listingSlugs, true);
+            })
+            ->map(fn (KeywordPage $page) => $this->mapPublishedPageSummary($page))
+            ->values()
+            ->all();
+    }
+
+    public function refreshOfferCounts(KeywordPage $page): KeywordPage
+    {
+        $page->forceFill([
+            'matching_offers_count' => $this->countMatchingOffers($page),
+            'displayed_offers_count' => $this->countDisplayedOffersForPage($page),
+            'offers_counted_at' => now(),
+        ])->save();
+
+        return $page->refresh();
+    }
+
+    public function refreshAllOfferCounts(): int
+    {
+        $count = 0;
+
+        KeywordPage::query()
+            ->orderBy('sort_order')
+            ->orderBy('title')
+            ->each(function (KeywordPage $page) use (&$count) {
+                $this->refreshOfferCounts($page);
+                $count++;
+            });
+
+        return $count;
+    }
+
+    /**
+     * @return array{slug: string, title: string, h1: string, emoji: string, href: string, matching_offers_count: int}
+     */
+    private function mapPublishedPageSummary(KeywordPage $page): array
+    {
+        return [
+            'slug' => $page->slug,
+            'title' => $page->title,
+            'h1' => $page->h1,
+            'emoji' => $page->emoji ?: '🏷️',
+            'href' => "/akcijos/{$page->slug}",
+            'matching_offers_count' => (int) ($page->matching_offers_count ?? 0),
+        ];
     }
 
     public function countMatchingOffersForPage(KeywordPage $page): int
     {
         return $this->countMatchingOffers($page);
+    }
+
+    public function countDisplayedOffersForPage(KeywordPage $page): int
+    {
+        return $this->collectDisplayedDiscounts($page, ['order' => 'popular'])->count();
     }
 
     public function buildListingResponse(KeywordPage $page, array $filters): array
@@ -97,9 +192,146 @@ class KeywordPageService
     public function isKeywordSlug(string $slug): bool
     {
         return KeywordPage::query()
-            ->published()
             ->where('slug', $slug)
             ->exists();
+    }
+
+    public function fetchTopDiscountsForPage(KeywordPage $page, int $limit): Collection
+    {
+        if ($limit <= 0) {
+            return collect();
+        }
+
+        $cacheKey = "home_kw_top_deals_{$page->slug}_v3";
+
+        $discounts = Cache::tags(['discounts', 'home', 'home_kw_pool'])
+            ->remember($cacheKey, 7200, function () use ($page) {
+                return $this->fetchTopDiscountsForHomePoolFromDatabase($page);
+            });
+
+        return $this->homeDealScorer
+            ->sortByScore(
+                $discounts->filter(fn (Discount $discount) => $this->passesHomePoolFilters($discount, $page))
+            )
+            ->take($limit)
+            ->values();
+    }
+
+    private function fetchTopDiscountsForHomePoolFromDatabase(KeywordPage $page): Collection
+    {
+        $terms = $this->resolveHomePoolSearchTerms($page);
+
+        if ($terms === []) {
+            return collect();
+        }
+
+        $query = Discount::query()
+            ->with(['product.category', 'store'])
+            ->whereNotNull('discounts.discount_percent')
+            ->where('discounts.discount_percent', '>', 0)
+            ->whereNotNull('discounts.discounted_price')
+            ->where('discounts.discounted_price', '>=', self::MIN_HOME_POOL_PRICE)
+            ->whereHas('product', function ($productQuery) use ($terms, $page) {
+                $this->applyHomePoolCategoryFilter($productQuery, $page);
+
+                $productQuery->where(function ($termQuery) use ($terms) {
+                    foreach ($terms as $term) {
+                        $termQuery->orWhere('name', 'like', '%' . $term . '%');
+                    }
+                });
+            });
+
+        return $query
+            ->orderByDesc('discounts.discount_percent')
+            ->limit(self::HOME_TOP_DEALS_FETCH)
+            ->get()
+            ->filter(fn (Discount $discount) => $this->passesKeywordFilters($discount, $page))
+            ->values();
+    }
+
+    private function applyHomePoolCategoryFilter($productQuery, KeywordPage $page): void
+    {
+        $listingSlugs = $this->categoryResolver->resolvePrimaryListingCategorySlugs(
+            (array) ($page->category_slugs ?? []),
+        );
+
+        if ($listingSlugs === []) {
+            $productQuery->whereHas('category', function ($categoryQuery) {
+                $categoryQuery->whereNotIn('slug', self::EXCLUDED_HOME_POOL_CATEGORY_SLUGS);
+            });
+
+            return;
+        }
+
+        $productQuery->whereHas('category', function ($categoryQuery) use ($listingSlugs) {
+            $categoryQuery
+                ->whereNotIn('slug', self::EXCLUDED_HOME_POOL_CATEGORY_SLUGS)
+                ->where(function ($slugQuery) use ($listingSlugs) {
+                    $slugQuery
+                        ->whereIn('slug', $listingSlugs)
+                        ->orWhereIn('parent_id', function ($subQuery) use ($listingSlugs) {
+                            $subQuery
+                                ->select('id')
+                                ->from('categories')
+                                ->whereIn('slug', $listingSlugs);
+                        });
+                });
+        });
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveHomePoolSearchTerms(KeywordPage $page): array
+    {
+        $terms = [];
+        $slug = trim($page->slug);
+
+        if ($slug !== '') {
+            $terms[] = $slug;
+        }
+
+        foreach ((array) ($page->search_terms ?? []) as $term) {
+            $term = trim((string) $term);
+            if ($term === '' || in_array($term, $terms, true)) {
+                continue;
+            }
+
+            $terms[] = $term;
+
+            if (count($terms) >= self::HOME_POOL_MAX_SEARCH_TERMS) {
+                break;
+            }
+        }
+
+        return $terms;
+    }
+
+    public function productMatchesKeywordPage(Discount $discount, KeywordPage $page): bool
+    {
+        return $this->passesKeywordFilters($discount, $page);
+    }
+
+    private function passesHomePoolFilters(Discount $discount, KeywordPage $page): bool
+    {
+        if (!$this->passesKeywordFilters($discount, $page)) {
+            return false;
+        }
+
+        if ((float) ($discount->discount_percent ?? 0) <= 0) {
+            return false;
+        }
+
+        if ((float) ($discount->discounted_price ?? 0) < self::MIN_HOME_POOL_PRICE) {
+            return false;
+        }
+
+        $categorySlug = $discount->product?->category?->slug;
+        if ($categorySlug !== null && in_array($categorySlug, self::EXCLUDED_HOME_POOL_CATEGORY_SLUGS, true)) {
+            return false;
+        }
+
+        return true;
     }
 
     private function collectDisplayedDiscounts(KeywordPage $page, array $filters): Collection
@@ -171,8 +403,10 @@ class KeywordPageService
         return $page->slug;
     }
 
-    private function fetchDisplayedDiscountsFromMeilisearch(KeywordPage $page): Collection
+    private function fetchDisplayedDiscountsFromMeilisearch(KeywordPage $page, ?int $maxResults = null): Collection
     {
+        $limit = $maxResults ?? self::DISPLAY_DEALS_LIMIT;
+
         $query = $this->buildSearchQuery($page);
         if ($query === '') {
             return collect();
@@ -186,7 +420,7 @@ class KeywordPageService
                 $filters,
                 ['discounted_price:asc'],
                 1,
-                self::DISPLAY_DEALS_LIMIT + self::MEILISEARCH_FETCH_BUFFER,
+                $limit + self::MEILISEARCH_FETCH_BUFFER,
             );
         } catch (\Exception $e) {
             \Log::warning('Keyword page displayed deals Meilisearch search failed', [
@@ -224,7 +458,7 @@ class KeywordPageService
             }
             if ((float) $discount->discounted_price > 0) {
                 $ordered->push($discount);
-                if ($ordered->count() >= self::DISPLAY_DEALS_LIMIT) {
+                if ($ordered->count() >= $limit) {
                     break;
                 }
             } else {
@@ -232,10 +466,10 @@ class KeywordPageService
             }
         }
 
-        if ($ordered->count() < self::DISPLAY_DEALS_LIMIT) {
+        if ($ordered->count() < $limit) {
             foreach ($zeroPriceCandidates as $discount) {
                 $ordered->push($discount);
-                if ($ordered->count() >= self::DISPLAY_DEALS_LIMIT) {
+                if ($ordered->count() >= $limit) {
                     break;
                 }
             }
@@ -244,7 +478,7 @@ class KeywordPageService
         return $ordered;
     }
 
-    private function fallbackCollectDisplayedDiscounts(KeywordPage $page): Collection
+    private function fallbackCollectDisplayedDiscounts(KeywordPage $page, ?int $maxResults = null): Collection
     {
         $categoryIds = $this->resolveCategoryIds($page);
         $discountIds = $this->fallbackSearchDiscountIds($page, $categoryIds);
@@ -264,7 +498,7 @@ class KeywordPageService
                     ? (float) $discount->discounted_price
                     : 999999,
             ])
-            ->take(self::DISPLAY_DEALS_LIMIT)
+            ->take($maxResults ?? self::DISPLAY_DEALS_LIMIT)
             ->values();
     }
 
@@ -359,7 +593,7 @@ class KeywordPageService
             return [];
         }
 
-        return Category::whereIn('slug', $slugs)->pluck('id')->all();
+        return $this->categoryResolver->resolvePrimaryCategoryTreeIds($slugs);
     }
 
     private function passesKeywordFilters(Discount $discount, KeywordPage $page): bool
@@ -375,8 +609,10 @@ class KeywordPageService
         }
 
         if (!empty($page->category_slugs)) {
-            $categorySlug = $discount->product?->category?->slug;
-            if ($categorySlug && !in_array($categorySlug, $page->category_slugs, true)) {
+            if (!$this->categoryResolver->productMatchesAllowedCategories(
+                $discount->product?->category,
+                (array) $page->category_slugs,
+            )) {
                 return false;
             }
         }
@@ -784,23 +1020,52 @@ class KeywordPageService
 
     private function buildBreadcrumbs(KeywordPage $page): array
     {
-        return [
+        $breadcrumbs = [
             [
                 'name' => 'Akcijos',
                 'slug' => '/',
                 'type' => 'home',
             ],
-            [
+        ];
+
+        $category = $this->resolveBreadcrumbCategory($page);
+
+        if ($category) {
+            $breadcrumbs[] = [
+                'name' => $category->name,
+                'slug' => 'akcijos/' . $category->slug,
+                'type' => 'category',
+            ];
+        } else {
+            $breadcrumbs[] = [
                 'name' => 'Akcijos pagal produktą',
                 'slug' => 'akcijos',
                 'type' => 'all_discounts',
-            ],
-            [
-                'name' => $page->h1,
-                'slug' => 'akcijos/' . $page->slug,
-                'type' => 'keyword',
-            ],
+            ];
+        }
+
+        $breadcrumbs[] = [
+            'name' => $page->h1,
+            'slug' => 'akcijos/' . $page->slug,
+            'type' => 'keyword',
         ];
+
+        return $breadcrumbs;
+    }
+
+    private function resolveBreadcrumbCategory(KeywordPage $page): ?Category
+    {
+        $slugs = $this->categoryResolver->resolveListingCategorySlugs(
+            (array) ($page->category_slugs ?? []),
+        );
+
+        if ($slugs === []) {
+            return null;
+        }
+
+        return Category::query()
+            ->where('slug', $slugs[0])
+            ->first(['slug', 'name']);
     }
 
     private function buildSeo(KeywordPage $page, Collection $discounts, int $matchingTotal): array

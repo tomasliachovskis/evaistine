@@ -40,7 +40,10 @@ return [
     ],
 
     'meilisearch' => [
-        'host' => env('MEILISEARCH_HOST', 'http://127.0.0.1:7700'),
+        'host' => env(
+            'MEILISEARCH_HOST',
+            env('LARAVEL_SAIL') ? 'http://host.docker.internal:7700' : 'http://127.0.0.1:7700'
+        ),
         'key' => env('MEILISEARCH_KEY'),
     ],
 

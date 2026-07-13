@@ -114,6 +114,17 @@ class KeywordPageForm
                     ->numeric()
                     ->default(1)
                     ->required(),
+                TextInput::make('matching_offers_count')
+                    ->label('Atitikmenų skaičius (DB)')
+                    ->numeric()
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->helperText('Atnaujinama per keywords:refresh-counts'),
+                TextInput::make('displayed_offers_count')
+                    ->label('Rodomų pasiūlymų skaičius (DB)')
+                    ->numeric()
+                    ->disabled()
+                    ->dehydrated(false),
                 TextInput::make('sort_order')
                     ->label('Rikiavimas')
                     ->numeric()
@@ -123,6 +134,10 @@ class KeywordPageForm
                     ->label('Publikuota')
                     ->default(true)
                     ->required(),
+                Toggle::make('is_chip')
+                    ->label('Chip')
+                    ->helperText('Rodyti keyword chip eilutėje (hub, footer, kategorijos)')
+                    ->default(false),
             ]);
     }
 }

@@ -30,7 +30,11 @@ class KeywordPage extends Model
         'faq',
         'related_slugs',
         'min_active_offers',
+        'matching_offers_count',
+        'displayed_offers_count',
+        'offers_counted_at',
         'is_published',
+        'is_chip',
         'sort_order',
     ];
 
@@ -45,6 +49,10 @@ class KeywordPage extends Model
         'faq' => 'array',
         'related_slugs' => 'array',
         'is_published' => 'boolean',
+        'is_chip' => 'boolean',
+        'matching_offers_count' => 'integer',
+        'displayed_offers_count' => 'integer',
+        'offers_counted_at' => 'datetime',
         'min_active_offers' => 'integer',
         'sort_order' => 'integer',
     ];

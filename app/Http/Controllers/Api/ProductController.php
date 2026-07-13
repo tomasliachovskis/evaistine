@@ -479,7 +479,7 @@ class ProductController extends Controller
     public function getFavoriteHome()
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)) . '_v9';
+        $cacheKey = $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)) . '_v15';
 
         return Cache::tags(['discounts', 'favorites', 'home'])
             ->remember($cacheKey, 7200, function () {
@@ -542,7 +542,7 @@ class ProductController extends Controller
     {
         $filters = $this->getFilters();
 
-        return $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)) . '_v9';
+        return $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)) . '_v15';
     }
 
     public function resolveFavoriteCategoryCacheKey($id): string
@@ -890,7 +890,7 @@ class ProductController extends Controller
 
     public function getSitemap()
     {
-        return Cache::tags(['sitemap'])->remember('sitemap_entries_v2', 3600, function () {
+        return Cache::tags(['sitemap'])->remember('sitemap_entries_v3', 3600, function () {
             $freshness = $this->pageFreshnessService->build();
             $defaultLastmod = Carbon::parse($freshness['updated_at'])->format('Y-m-d');
 
@@ -937,7 +937,6 @@ class ProductController extends Controller
                 ->all();
 
             $keywords = \App\Models\KeywordPage::query()
-                ->published()
                 ->orderBy('sort_order')
                 ->pluck('slug')
                 ->all();

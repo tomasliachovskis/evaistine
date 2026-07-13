@@ -100,6 +100,7 @@ class DiscountResponseFormatter
             'valid_date' => ($discount->start_at ? $discount->start_at->format('Y-m-d') : '') . ' - ' . ($discount->end_at ? $discount->end_at->format('Y-m-d') : ''),
             'offer_count' => $offerCount,
             'min_price' => (float) $minPrice,
+            'home_keyword_slug' => $discount->getAttribute('home_keyword_slug'),
             'offers' => $productDiscounts->map(function ($offer) {
                 return $this->formatOfferItem($offer);
             }),
@@ -153,6 +154,7 @@ class DiscountResponseFormatter
             'offers' => [],
             'offer_count' => $offerCount,
             'min_price' => (float) $minPrice,
+            'home_keyword_slug' => $discount->getAttribute('home_keyword_slug'),
             'product' => $this->formatProductData($discount->product),
         ];
     }

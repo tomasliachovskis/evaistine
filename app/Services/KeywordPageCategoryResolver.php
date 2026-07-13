@@ -49,6 +49,77 @@ class KeywordPageCategoryResolver
         return $resolved;
     }
 
+    /**
+     * @param  list<string>  $slugs
+     * @return list<string>
+     */
+    public function resolvePrimaryListingCategorySlugs(array $slugs): array
+    {
+        return $this->resolveListingCategorySlugs($slugs, 1);
+    }
+
+    /**
+     * @param  list<string>  $slugs
+     * @return list<int>
+     */
+    public function resolveCategoryTreeIds(array $slugs, int $listingLimit = 2): array
+    {
+        $listingSlugs = $this->resolveListingCategorySlugs($slugs, $listingLimit);
+        $ids = [];
+
+        foreach ($listingSlugs as $slug) {
+            $category = Category::query()->where('slug', $slug)->first();
+            if ($category) {
+                $ids = array_merge($ids, $this->collectCategoryTreeIds($category));
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * @param  list<string>  $slugs
+     * @return list<int>
+     */
+    public function resolvePrimaryCategoryTreeIds(array $slugs): array
+    {
+        return $this->resolveCategoryTreeIds($slugs, 1);
+    }
+
+    public function productMatchesAllowedCategories(?Category $productCategory, array $allowedSlugs): bool
+    {
+        if ($allowedSlugs === []) {
+            return true;
+        }
+
+        if (!$productCategory) {
+            return false;
+        }
+
+        $primaryAllowed = $this->resolvePrimaryListingCategorySlugs($allowedSlugs);
+        if ($primaryAllowed === []) {
+            return false;
+        }
+
+        $productListing = $this->resolveListingCategorySlugs([$productCategory->slug], 2);
+
+        return in_array($primaryAllowed[0], $productListing, true);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function collectCategoryTreeIds(Category $category): array
+    {
+        $ids = [$category->id];
+
+        foreach (Category::query()->where('parent_id', $category->id)->get() as $child) {
+            $ids = array_merge($ids, $this->collectCategoryTreeIds($child));
+        }
+
+        return $ids;
+    }
+
     private function resolveSubcategoryToListingSlug(string $slug): ?string
     {
         if (in_array($slug, FoodCategorySlugs::ALL, true)) {

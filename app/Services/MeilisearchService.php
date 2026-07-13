@@ -16,6 +16,10 @@ class MeilisearchService
     {
         $config = Config::get('services.meilisearch');
         $this->client = new Client($config['host'], $config['key']);
+    }
+
+    public function ensureIndexConfigured(): void
+    {
         $this->configureIndex();
     }
 

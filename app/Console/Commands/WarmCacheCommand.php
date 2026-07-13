@@ -20,6 +20,10 @@ class WarmCacheCommand extends Command
 
         switch ($type) {
             case 'all':
+                $this->info('Refreshing keyword offer counts...');
+                if ($this->call('keywords:refresh-counts') !== 0) {
+                    $this->warn('keywords:refresh-counts failed. Continuing with cache warm...');
+                }
                 $cacheWarmingService->warmCriticalCaches();
                 $cacheWarmingService->warmFavoritesCache();
                 break;

@@ -116,7 +116,7 @@ Jei kurk puslapį:
 - tips: 2–4 patarimai (icon emoji, title, text)
 - faq: 3–5 unikalūs klausimai, atsakymai naudingi vartotojui
 - search_terms: 8–15 Meilisearch termų (stiebai, variantai; be žodžio „akcija“)
-- category_slugs: 1–2 iš available_category_slugs. Naudok platesnes kategorijas (pvz. gerimai-kava-arbata, ne tik subkategorijas)
+- category_slugs: tiksliai 1 iš available_category_slugs – pagrindinė kategorija, kurioje realiai parduodamas produktas (pvz. citrinos → vaisiai-ir-darzoves, NE gerimai-kava-arbata)
 - exclude_terms: netinkami match žodžiai. NIEKADA neįtrauk: akcija, akcijos, nuolaida, iki, maxima, lidl
 - brands: patvirtintas/papildytas brandų sąrašas iš candidate_brands
 - grammar_plural, grammar_genitive, grammar_dative – taisyklinga lietuvių kalba

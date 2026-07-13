@@ -17,9 +17,10 @@ class KeywordPageController extends Controller
 
     public function index()
     {
-        return Cache::tags(['keywords'])->remember('keyword_pages_list_v4', 3600, function () {
+        return Cache::tags(['keywords'])->remember('keyword_pages_list_v8', 3600, function () {
             return response()->json([
                 'slugs' => $this->keywordPageService->listPublishedSlugs(),
+                'all_slugs' => $this->keywordPageService->listAllSlugs(),
                 'pages' => $this->keywordPageService->listPublishedPages(),
             ]);
         });
@@ -28,7 +29,6 @@ class KeywordPageController extends Controller
     public function show(Request $request, string $slug)
     {
         $page = KeywordPage::query()
-            ->published()
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -41,7 +41,7 @@ class KeywordPageController extends Controller
             'category' => $request->get('category'),
         ];
 
-        $cacheKey = 'keyword_page_v4_' . md5($slug . serialize(array_filter($filters, fn ($v) => $v !== null && $v !== '')));
+        $cacheKey = 'keyword_page_v5_' . md5($slug . serialize(array_filter($filters, fn ($v) => $v !== null && $v !== '')));
 
         return Cache::tags(['keywords', 'discounts', $slug])
             ->remember($cacheKey, 1800, function () use ($page, $filters) {

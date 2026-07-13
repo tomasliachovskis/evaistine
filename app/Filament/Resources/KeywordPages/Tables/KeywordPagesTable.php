@@ -30,6 +30,20 @@ class KeywordPagesTable
                 IconColumn::make('is_published')
                     ->label('Publikuota')
                     ->boolean(),
+                IconColumn::make('is_chip')
+                    ->label('Chip')
+                    ->boolean(),
+                TextColumn::make('matching_offers_count')
+                    ->label('Atitikmenys')
+                    ->sortable(),
+                TextColumn::make('displayed_offers_count')
+                    ->label('Rodoma')
+                    ->sortable(),
+                TextColumn::make('offers_counted_at')
+                    ->label('Skaičiuota')
+                    ->dateTime('Y-m-d H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->label('Atnaujinta')
                     ->dateTime('Y-m-d H:i')

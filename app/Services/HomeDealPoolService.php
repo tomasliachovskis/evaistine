@@ -19,23 +19,76 @@ class HomeDealPoolService
 
     private const POPULAR_CATEGORY_IDS = [1, 52, 121, 352, 380];
 
-    private const POOL_LIMIT = 50;
+    private const FOOD_POOL_LIMIT = 50;
+
+    private const NON_FOOD_POOL_LIMIT = 25;
 
     private const CANDIDATE_LIMIT = 600;
 
     private const BEST_MAX_PER_CATEGORY = 10;
 
-    private const FOOD_MAX_PER_CATEGORY = 5;
+    private const FOOD_MAX_PER_CATEGORY = 1;
 
-    private const NON_FOOD_MAX_PER_CATEGORY = 10;
+    private const NON_FOOD_MAX_PER_CATEGORY = 1;
+
+    private const FOOD_POOL_MIN_SIZE = 40;
+
+    private const NON_FOOD_POOL_MIN_SIZE = 20;
+
+    private const MAX_DEALS_PER_KEYWORD = 2;
+
+    /** @var HomeKeywordDealPoolBuilder */
+    private $keywordPoolBuilder;
+
+    /** @var HomeSectionDealExclusionService */
+    private $homeSectionDealExclusion;
+
+    public function __construct(
+        HomeKeywordDealPoolBuilder $keywordPoolBuilder,
+        HomeSectionDealExclusionService $homeSectionDealExclusion
+    ) {
+        $this->keywordPoolBuilder = $keywordPoolBuilder;
+        $this->homeSectionDealExclusion = $homeSectionDealExclusion;
+    }
 
     public function buildPools(?int $excludeId = null): array
     {
-        $candidates = $this->fetchScoredCandidates($excludeId);
+        $allCandidates = $this->fetchScoredCandidates($excludeId);
+        $sectionCandidates = $this->homeSectionDealExclusion->filterDiscounts($allCandidates);
+
+        $food = $this->homeSectionDealExclusion->filterDiscountArray(
+            $this->keywordPoolBuilder->buildFoodPool()
+        );
+        if (count($food) < self::FOOD_POOL_MIN_SIZE) {
+            $food = $this->supplementPool(
+                $food,
+                $sectionCandidates,
+                FoodCategorySlugs::FOOD,
+                [],
+                self::FOOD_MAX_PER_CATEGORY,
+                self::FOOD_POOL_LIMIT,
+            );
+        }
+        $food = $this->enforceKeywordPoolLimits($food, 'food');
+
+        $nonFood = $this->homeSectionDealExclusion->filterDiscountArray(
+            $this->keywordPoolBuilder->buildNonFoodPool()
+        );
+        if (count($nonFood) < self::NON_FOOD_POOL_MIN_SIZE) {
+            $nonFood = $this->supplementPool(
+                $nonFood,
+                $sectionCandidates,
+                FoodCategorySlugs::NON_FOOD,
+                FoodCategorySlugs::EXCLUDED_FROM_BEST_AND_NON_FOOD,
+                self::NON_FOOD_MAX_PER_CATEGORY,
+                self::NON_FOOD_POOL_LIMIT,
+            );
+        }
+        $nonFood = $this->enforceKeywordPoolLimits($nonFood, 'non_food');
 
         return [
             'best' => $this->pickDiversePool(
-                $candidates,
+                $allCandidates,
                 FoodCategorySlugs::NON_FOOD,
                 array_merge(
                     FoodCategorySlugs::EXCLUDED_FROM_BEST_AND_NON_FOOD,
@@ -43,19 +96,77 @@ class HomeDealPoolService
                 ),
                 self::BEST_MAX_PER_CATEGORY
             ),
-            'food' => $this->pickDiversePool(
-                $candidates,
-                FoodCategorySlugs::FOOD,
-                [],
-                self::FOOD_MAX_PER_CATEGORY
-            ),
-            'non_food' => $this->pickDiversePool(
-                $candidates,
-                FoodCategorySlugs::NON_FOOD,
-                FoodCategorySlugs::EXCLUDED_FROM_BEST_AND_NON_FOOD,
-                self::NON_FOOD_MAX_PER_CATEGORY
-            ),
+            'food' => $food,
+            'non_food' => $nonFood,
         ];
+    }
+
+    /**
+     * @param  list<Discount>  $existing
+     * @return list<Discount>
+     */
+    private function supplementPool(
+        array $existing,
+        Collection $candidates,
+        ?array $allowedSlugs,
+        array $excludedSlugs,
+        int $maxPerCategory,
+        int $poolLimit
+    ): array {
+        $remaining = $poolLimit - count($existing);
+
+        if ($remaining <= 0) {
+            return $existing;
+        }
+
+        $existingDiscountIds = array_flip(array_map(fn (Discount $discount) => $discount->id, $existing));
+        $existingProductIds = array_flip(array_map(fn (Discount $discount) => $discount->product_id, $existing));
+
+        $filteredCandidates = $candidates->filter(function (Discount $discount) use ($existingDiscountIds, $existingProductIds) {
+            return !isset($existingDiscountIds[$discount->id])
+                && !isset($existingProductIds[$discount->product_id]);
+        });
+
+        $additional = $this->pickDiversePool(
+            $filteredCandidates,
+            $allowedSlugs,
+            $excludedSlugs,
+            $maxPerCategory,
+            $remaining,
+        );
+
+        return array_merge($existing, $this->homeSectionDealExclusion->filterDiscountArray($additional));
+    }
+
+    /**
+     * @param  list<Discount>  $pool
+     * @return list<Discount>
+     */
+    private function enforceKeywordPoolLimits(array $pool, string $segment): array
+    {
+        $counts = [];
+        $result = [];
+
+        foreach ($pool as $discount) {
+            $keywordSlug = $discount->getAttribute('home_keyword_slug')
+                ?: $this->keywordPoolBuilder->resolveKeywordSlugForDiscount($discount, $segment);
+
+            if ($keywordSlug !== null) {
+                $discount->setAttribute('home_keyword_slug', $keywordSlug);
+            }
+
+            $groupKey = $keywordSlug
+                ?? ('category:' . ($discount->product->category->slug ?? 'unknown'));
+
+            if (($counts[$groupKey] ?? 0) >= self::MAX_DEALS_PER_KEYWORD) {
+                continue;
+            }
+
+            $counts[$groupKey] = ($counts[$groupKey] ?? 0) + 1;
+            $result[] = $discount;
+        }
+
+        return $result;
     }
 
     private function fetchScoredCandidates(?int $excludeId): Collection
@@ -116,7 +227,7 @@ class HomeDealPoolService
         ?array $allowedSlugs,
         array $excludedSlugs,
         int $maxPerCategory,
-        int $limit = self::POOL_LIMIT
+        int $limit = self::FOOD_POOL_LIMIT
     ): array {
         $available = $candidates->filter(function (Discount $discount) use ($allowedSlugs, $excludedSlugs) {
             $slug = $discount->product->category->slug ?? null;

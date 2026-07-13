@@ -20,7 +20,8 @@ class ListingPageMetaService
 
     public function __construct(
         private PageFreshnessService $freshnessService,
-        private StoreFlyerTitleBuilder $flyerTitleBuilder
+        private StoreFlyerTitleBuilder $flyerTitleBuilder,
+        private KeywordPageService $keywordPageService,
     ) {
     }
 
@@ -123,6 +124,7 @@ class ListingPageMetaService
             'type' => 'category',
             'category_slug' => $categorySlug,
             'category_name' => $categoryName,
+            'keyword_pages' => $this->keywordPageService->listPublishedPagesForCategory($categorySlug),
             'intro' => [
                 'description' => 'Palyginkite ' . mb_strtolower($categoryName) . ' akcijas visuose pagrindiniuose prekybos tinkluose. Matysite didžiausias nuolaidas ir aktyvių pasiūlymų skaičių kiekvienoje parduotuvėje.',
                 'valid_from' => $validity['valid_from'],
@@ -171,6 +173,7 @@ class ListingPageMetaService
             'store_name' => $storeName,
             'category_slug' => $category->slug,
             'category_name' => $categoryName,
+            'keyword_pages' => $this->keywordPageService->listPublishedPagesForCategory($category->slug),
             'intro' => [
                 'description' => "Visos {$storeName} " . mb_strtolower($categoryName) . ' akcijos vienoje vietoje. Peržiūrėkite savaitės pasiūlymus ir sutaupykite apsipirkdami sezoninius produktus.',
                 'valid_from' => $validity['valid_from'],

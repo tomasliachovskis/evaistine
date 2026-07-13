@@ -123,11 +123,15 @@ class KeywordCsvImporter
 
             $page = new KeywordPage($pageData);
             $matchCount = $this->keywordPageService->countMatchingOffersForPage($page);
+            $displayedCount = $this->keywordPageService->countDisplayedOffersForPage($page);
             $recommendation = $matchCount >= $pageData['min_active_offers'] ? 'PUBLISH' : 'KEEP UNPUBLISHED';
 
             if ($apply) {
                 $persist = $pageData;
                 $persist['is_published'] = $matchCount >= $persist['min_active_offers'];
+                $persist['matching_offers_count'] = $matchCount;
+                $persist['displayed_offers_count'] = $displayedCount;
+                $persist['offers_counted_at'] = now();
                 KeywordPage::updateOrCreate(['slug' => $persist['slug']], $persist);
             }
 
@@ -145,9 +149,9 @@ class KeywordCsvImporter
         }
 
         if ($apply) {
-            Cache::forget('keyword_pages_list_v4');
+            Cache::forget('keyword_pages_list_v8');
             foreach ($imported as $row) {
-                Cache::forget('keyword_page_v4_' . $row['slug']);
+                Cache::forget('keyword_page_v5_' . $row['slug']);
             }
         }
 
@@ -297,11 +301,15 @@ class KeywordCsvImporter
 
             $page = new KeywordPage($pageData);
             $matchCount = $this->keywordPageService->countMatchingOffersForPage($page);
+            $displayedCount = $this->keywordPageService->countDisplayedOffersForPage($page);
             $recommendation = $matchCount >= $pageData['min_active_offers'] ? 'PUBLISH' : 'KEEP UNPUBLISHED';
 
             if ($apply) {
                 $persist = $pageData;
                 $persist['is_published'] = $matchCount >= $persist['min_active_offers'];
+                $persist['matching_offers_count'] = $matchCount;
+                $persist['displayed_offers_count'] = $displayedCount;
+                $persist['offers_counted_at'] = now();
                 KeywordPage::updateOrCreate(['slug' => $persist['slug']], $persist);
             }
 
@@ -320,9 +328,9 @@ class KeywordCsvImporter
         }
 
         if ($apply) {
-            Cache::forget('keyword_pages_list_v4');
+            Cache::forget('keyword_pages_list_v8');
             foreach ($imported as $row) {
-                Cache::forget('keyword_page_v4_' . $row['slug']);
+                Cache::forget('keyword_page_v5_' . $row['slug']);
             }
         }
 
