@@ -49,10 +49,10 @@ class KeywordPageDynamicMetaService
     private function buildMetaTitle(string $keyword, ?string $minPrice, int $count): string
     {
         if ($minPrice !== null) {
-            return "{$keyword} – kaina nuo {$minPrice} ({$count})";
+            return "{$keyword} – kaina nuo {$minPrice} | {$count} pasiūlymų";
         }
 
-        return "{$keyword} ({$count})";
+        return "{$keyword} | {$count} pasiūlymų";
     }
 
     private function buildMetaDescription(
