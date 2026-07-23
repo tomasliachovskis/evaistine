@@ -1,9 +1,34 @@
 #!/bin/bash
+set -euo pipefail
 
 # Define server and project details
 #SERVER="root@84.247.186.143"
 SERVER="root@195.181.245.125"
 REMOTE_DIR="/var/www/api"
+
+ensure_rsync() {
+    if command -v rsync >/dev/null 2>&1; then
+        return 0
+    fi
+
+    echo "rsync not found — attempting to install..."
+    if command -v apt-get >/dev/null 2>&1; then
+        if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq rsync openssh-client
+        elif [ "$(id -u)" -eq 0 ]; then
+            apt-get update -qq
+            apt-get install -y -qq rsync openssh-client
+        fi
+    fi
+
+    if ! command -v rsync >/dev/null 2>&1; then
+        echo "ERROR: rsync is required but not installed. Install it (e.g. apt-get install -y rsync) and retry."
+        exit 1
+    fi
+}
+
+ensure_rsync
 
 # Check for private key
 SSH_KEY=""
@@ -107,12 +132,12 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     supervisorctl restart nuolaidos-flyers || true
 EOF
 
-# Restart frontend
+# Restart frontend + clear Next.js cache (in-memory stores cache + ISR)
 ssh $SSH_OPTS $FRONTEND_SERVER << 'EOF'
     cd /var/www/nuolaidos-front/
     mkdir -p /var/www/nuolaidos-front/public/assets
     ln -sfn /var/www/images /var/www/nuolaidos-front/public/assets/product
-    pm2 restart all
+    ./scripts/production-deploy.sh restart
     ./scripts/production-deploy.sh revalidate
 EOF
 

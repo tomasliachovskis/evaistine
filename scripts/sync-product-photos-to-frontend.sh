@@ -75,7 +75,7 @@ run_ssh "$FRONTEND_SERVER" << 'EOF'
     cd /var/www/nuolaidos-front/
     mkdir -p /var/www/nuolaidos-front/public/assets
     ln -sfn /var/www/images /var/www/nuolaidos-front/public/assets/product
-    pm2 restart all
+    ./scripts/production-deploy.sh restart
     ./scripts/production-deploy.sh revalidate
 EOF
 
