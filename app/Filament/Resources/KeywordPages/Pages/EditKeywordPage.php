@@ -19,6 +19,20 @@ class EditKeywordPage extends EditRecord
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $title = trim((string) ($data['title'] ?? ''));
+        if ($title !== '') {
+            $data['h1'] = mb_strtoupper(mb_substr($title, 0, 1)) . mb_substr($title, 1) . ' akcijos ir nuolaidos šią savaitę';
+        }
+
+        return $data;
+    }
+
     protected function afterSave(): void
     {
         app(KeywordPageService::class)->refreshOfferCounts($this->record->refresh());

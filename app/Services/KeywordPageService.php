@@ -13,9 +13,11 @@ use Illuminate\Support\Facades\Cache;
 
 class KeywordPageService
 {
-    private const DISPLAY_DEALS_LIMIT = 15;
+    private const PER_PAGE = 24;
 
-    private const MEILISEARCH_FETCH_BUFFER = 20;
+    private const MAX_LISTING_FETCH = 1000;
+
+    private const MEILISEARCH_FETCH_BUFFER = 50;
 
     private const STORE_COMPARISON_FETCH_LIMIT = 250;
 
@@ -153,7 +155,7 @@ class KeywordPageService
 
     public function countDisplayedOffersForPage(KeywordPage $page): int
     {
-        return $this->collectDisplayedDiscounts($page, ['order' => 'popular'])->count();
+        return $this->collectMatchingDiscountsCollection($page)->count();
     }
 
     public function buildListingResponse(KeywordPage $page, array $filters): array
@@ -164,27 +166,40 @@ class KeywordPageService
             abort(404);
         }
 
-        $displayedDiscounts = $this->collectDisplayedDiscounts($page, $filters);
+        $allDiscounts = $this->collectMatchingDiscountsCollection($page);
 
-        if ($displayedDiscounts->isEmpty()) {
+        if ($allDiscounts->isEmpty()) {
             abort(404);
         }
 
+        $filtered = $this->applyCollectionFilters($allDiscounts, $filters);
+        $sorted = $this->sortDiscounts($filtered, (string) ($filters['order'] ?? 'popular'));
+        $filteredTotal = $sorted->count();
+
+        if ($filteredTotal === 0) {
+            abort(404);
+        }
+
+        $pageNumber = max(1, (int) ($filters['page'] ?? 1));
+        $pageItems = $sorted
+            ->slice(($pageNumber - 1) * self::PER_PAGE, self::PER_PAGE)
+            ->values();
+
         $paginator = new LengthAwarePaginator(
-            $displayedDiscounts->values(),
-            $matchingTotal,
-            self::DISPLAY_DEALS_LIMIT,
-            1,
+            $pageItems,
+            $filteredTotal,
+            self::PER_PAGE,
+            $pageNumber,
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        $listingMeta = $this->buildListingMeta($page, $displayedDiscounts, $matchingTotal);
+        $listingMeta = $this->buildListingMeta($page, $allDiscounts, $matchingTotal);
 
         return [
             'data' => $this->formatter->format($paginator),
             'expired' => [],
             'breadcrumbs' => $this->buildBreadcrumbs($page),
-            'seo' => $this->buildSeo($page, $displayedDiscounts, $matchingTotal),
+            'seo' => $this->buildSeo($page, $allDiscounts, $matchingTotal),
             'listing_meta' => $listingMeta,
         ];
     }
@@ -334,23 +349,36 @@ class KeywordPageService
         return true;
     }
 
-    private function collectDisplayedDiscounts(KeywordPage $page, array $filters): Collection
+    private function collectMatchingDiscountsCollection(KeywordPage $page): Collection
     {
-        $discounts = $this->fetchDisplayedDiscountsFromMeilisearch($page);
+        $limit = min(
+            max($this->countMatchingOffers($page) + self::MEILISEARCH_FETCH_BUFFER, self::PER_PAGE),
+            self::MAX_LISTING_FETCH,
+        );
+
+        $discounts = $this->fetchDisplayedDiscountsFromMeilisearch($page, $limit);
 
         if ($discounts->isEmpty()) {
-            $discounts = $this->fallbackCollectDisplayedDiscounts($page);
+            $discounts = $this->fallbackCollectDisplayedDiscounts($page, $limit);
         }
 
-        return $this->applyCollectionFilters($discounts, $filters)
-            ->sortBy(fn (Discount $discount) => [
-                (float) $discount->discounted_price > 0 ? 0 : 1,
-                (float) $discount->discounted_price > 0
-                    ? (float) $discount->discounted_price
-                    : 999999,
-            ])
-            ->take(self::DISPLAY_DEALS_LIMIT)
-            ->values();
+        return $discounts->values();
+    }
+
+    private function sortDiscounts(Collection $discounts, string $order): Collection
+    {
+        return match ($order) {
+            'price_min' => $discounts->sortBy(fn (Discount $d) => [
+                (float) $d->discounted_price > 0 ? 0 : 1,
+                (float) $d->discounted_price > 0 ? (float) $d->discounted_price : 999999,
+            ])->values(),
+            'price_max' => $discounts->sortByDesc(fn (Discount $d) => (float) $d->discounted_price)->values(),
+            'price_discount_proc_max' => $discounts->sortByDesc(fn (Discount $d) => (float) $d->discount_percent)->values(),
+            'price_discount_max' => $discounts->sortByDesc(
+                fn (Discount $d) => (float) $d->original_price - (float) $d->discounted_price
+            )->values(),
+            default => $discounts->values(),
+        };
     }
 
     private function countMatchingOffers(KeywordPage $page): int
@@ -405,7 +433,7 @@ class KeywordPageService
 
     private function fetchDisplayedDiscountsFromMeilisearch(KeywordPage $page, ?int $maxResults = null): Collection
     {
-        $limit = $maxResults ?? self::DISPLAY_DEALS_LIMIT;
+        $limit = $maxResults ?? self::MAX_LISTING_FETCH;
 
         $query = $this->buildSearchQuery($page);
         if ($query === '') {
@@ -418,9 +446,9 @@ class KeywordPageService
             $results = $this->meilisearchService->search(
                 $query,
                 $filters,
-                ['discounted_price:asc'],
+                [],
                 1,
-                $limit + self::MEILISEARCH_FETCH_BUFFER,
+                min($limit + self::MEILISEARCH_FETCH_BUFFER, self::MAX_LISTING_FETCH),
             );
         } catch (\Exception $e) {
             \Log::warning('Keyword page displayed deals Meilisearch search failed', [
@@ -450,28 +478,14 @@ class KeywordPageService
             ->keyBy('id');
 
         $ordered = collect();
-        $zeroPriceCandidates = collect();
         foreach ($discountIds as $discountId) {
             $discount = $discountsById->get($discountId);
             if (!$discount || !$this->passesKeywordFilters($discount, $page)) {
                 continue;
             }
-            if ((float) $discount->discounted_price > 0) {
-                $ordered->push($discount);
-                if ($ordered->count() >= $limit) {
-                    break;
-                }
-            } else {
-                $zeroPriceCandidates->push($discount);
-            }
-        }
-
-        if ($ordered->count() < $limit) {
-            foreach ($zeroPriceCandidates as $discount) {
-                $ordered->push($discount);
-                if ($ordered->count() >= $limit) {
-                    break;
-                }
+            $ordered->push($discount);
+            if ($ordered->count() >= $limit) {
+                break;
             }
         }
 
@@ -492,13 +506,7 @@ class KeywordPageService
             ->whereIn('id', $discountIds)
             ->get()
             ->filter(fn (Discount $discount) => $this->passesKeywordFilters($discount, $page))
-            ->sortBy(fn (Discount $discount) => [
-                (float) $discount->discounted_price > 0 ? 0 : 1,
-                (float) $discount->discounted_price > 0
-                    ? (float) $discount->discounted_price
-                    : 999999,
-            ])
-            ->take($maxResults ?? self::DISPLAY_DEALS_LIMIT)
+            ->take($maxResults ?? self::MAX_LISTING_FETCH)
             ->values();
     }
 
@@ -625,7 +633,6 @@ class KeywordPageService
         $freshness = $this->freshnessService->build();
         $validity = $this->freshnessService->getCurrentWeekRange();
         $stats = $this->buildQuickStats($displayedDiscounts, $matchingTotal);
-        $topDeals = $this->mapTopDealsFromDiscounts($displayedDiscounts);
         $storeComparison = $this->buildStoreComparisonForPage($page, $matchingTotal);
         $relatedPages = $this->buildRelatedPages($page);
         $leaflets = $this->buildLeafletsForDiscounts($displayedDiscounts);
@@ -657,22 +664,17 @@ class KeywordPageService
                 'updated_at' => $freshness['updated_at'],
                 'quick_stats' => $stats,
             ],
-            'weekly_highlight' => $this->buildWeeklyHighlight($topDeals, $page->title),
             'tips' => $page->tips ?? [],
             'related_pages' => $relatedPages,
             'popular_carousel_title' => 'TOP pasiūlymai pagal nuolaidą',
             'sections' => [
-                'top_deals' => $topDeals,
+                'top_deals' => [],
                 'category_stats' => [
                     'title' => $page->title . ' akcijų statistika',
                     'summary' => $this->buildStatsSummary($page, $displayedDiscounts, $matchingTotal),
                     'highlights' => array_slice($stats, 0, 4),
                     'store_comparison' => $storeComparison,
-                    'top_discounted_products' => collect($topDeals)->take(5)->map(fn ($deal) => [
-                        'name' => $deal['name'],
-                        'store' => $this->resolveStoreNameFromDeal($deal),
-                        'discount_percent' => $deal['discount_percent'],
-                    ])->values()->all(),
+                    'top_discounted_products' => [],
                     'updated_at' => Carbon::now()->format('Y-m-d'),
                 ],
                 'leaflets' => $leaflets,
@@ -1045,7 +1047,7 @@ class KeywordPageService
         }
 
         $breadcrumbs[] = [
-            'name' => $page->h1,
+            'name' => $this->dynamicMetaService->heading($page),
             'slug' => 'akcijos/' . $page->slug,
             'type' => 'keyword',
         ];

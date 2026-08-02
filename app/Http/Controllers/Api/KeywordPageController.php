@@ -41,7 +41,7 @@ class KeywordPageController extends Controller
             'category' => $request->get('category'),
         ];
 
-        $cacheKey = 'keyword_page_v5_' . md5($slug . serialize(array_filter($filters, fn ($v) => $v !== null && $v !== '')));
+        $cacheKey = 'keyword_page_v6_' . md5($slug . serialize(array_filter($filters, fn ($v) => $v !== null && $v !== '')));
 
         return Cache::tags(['keywords', 'discounts', $slug])
             ->remember($cacheKey, 1800, function () use ($page, $filters) {

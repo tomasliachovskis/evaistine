@@ -43,14 +43,15 @@ class KeywordPageForm
                     ->maxLength(64)
                     ->helperText('Antraštėms: „Kur {dative} akcija?“'),
                 TextInput::make('h1')
-                    ->label('H1 antraštė')
-                    ->required()
+                    ->label('H1 antraštė (deprecated)')
                     ->maxLength(255)
-                    ->helperText('Iš primary_keywords[0]. Meta title/description generuojami runtime.')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->helperText('Runtime: {title} akcijos ir nuolaidos šią savaitę')
                     ->columnSpanFull(),
                 TagsInput::make('primary_keywords')
                     ->label('Primary keywords (top 3 exact)')
-                    ->helperText('H1 = [0], meta title = [1], meta description = [2]')
+                    ->helperText('Nebenaudojama H1 / meta – H1 = {title} akcijos ir nuolaidos šią savaitę')
                     ->columnSpanFull(),
                 TagsInput::make('brands')
                     ->label('Prekės ženklai / linijos')
@@ -60,14 +61,14 @@ class KeywordPageForm
                     ->maxLength(255)
                     ->disabled()
                     ->dehydrated(false)
-                    ->helperText('Generuojamas runtime pagal primary keywords + kainas')
+                    ->helperText('Runtime: {title} akcija – kaina nuo … | N pasiūlymų')
                     ->columnSpanFull(),
                 Textarea::make('meta_description')
                     ->label('Meta description (deprecated)')
                     ->rows(3)
                     ->disabled()
                     ->dehydrated(false)
-                    ->helperText('Generuojamas runtime pagal primary keywords + kainas')
+                    ->helperText('Runtime pagal {title} akcija + kainas')
                     ->columnSpanFull(),
                 TagsInput::make('search_terms')
                     ->label('Paieškos terminai')

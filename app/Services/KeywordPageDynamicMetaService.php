@@ -14,18 +14,7 @@ class KeywordPageDynamicMetaService
      */
     public function build(KeywordPage $page, Collection $discounts, int $matchingTotal): array
     {
-        $primary = $page->primary_keywords ?? [];
-
-        if ($page->slug === 'kava') {
-            $mainKw = $this->capitalizeKeyword($primary[0] ?? 'kava akcija');
-            $h1 = $mainKw;
-            $titleKw = $mainKw;
-            $descKw = $mainKw;
-        } else {
-            $h1 = $page->h1 ?: $this->capitalizeKeyword($primary[0] ?? $page->title);
-            $titleKw = $this->capitalizeKeyword($primary[1] ?? $primary[0] ?? ($page->title . ' akcija'));
-            $descKw = $this->capitalizeKeyword($primary[2] ?? $primary[0] ?? ($page->title . ' akcija'));
-        }
+        $keyword = $this->titleKeyword($page);
 
         $priced = $discounts->filter(fn (Discount $d) => (float) $d->discounted_price > 0);
         $minPrice = $priced->min('discounted_price');
@@ -35,15 +24,30 @@ class KeywordPageDynamicMetaService
         $maxLabel = $this->formatPrice($maxPrice);
         $storeHashtags = $this->buildStoreHashtags($discounts);
 
-        $metaTitle = $this->buildMetaTitle($titleKw, $minLabel, $matchingTotal);
-        $metaDescription = $this->buildMetaDescription($descKw, $minLabel, $maxLabel, $matchingTotal, $storeHashtags);
+        $metaTitle = $this->buildMetaTitle($keyword, $minLabel, $matchingTotal);
+        $metaDescription = $this->buildMetaDescription($keyword, $minLabel, $maxLabel, $matchingTotal, $storeHashtags);
 
         return [
-            'seo_title' => $h1,
+            'seo_title' => $this->heading($page),
             'seo_description' => strip_tags($page->intro_html ?? ''),
             'meta_title' => $metaTitle,
             'meta_description' => $metaDescription,
         ];
+    }
+
+    private function titleKeyword(KeywordPage $page): string
+    {
+        return $this->capitalizeKeyword(trim((string) $page->title) . ' akcija');
+    }
+
+    public function heading(KeywordPage $page): string
+    {
+        $title = trim((string) $page->title);
+        if ($title === '') {
+            return '';
+        }
+
+        return $this->capitalizeKeyword($title) . ' akcijos ir nuolaidos šią savaitę';
     }
 
     private function buildMetaTitle(string $keyword, ?string $minPrice, int $count): string
