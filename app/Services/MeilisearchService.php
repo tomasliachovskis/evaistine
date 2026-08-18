@@ -31,6 +31,7 @@ class MeilisearchService
             $index->updateSearchableAttributes([
                 'product_name',
                 'product_brand',
+                'product_name_stem',
             ]);
 
             $task = $index->updateFilterableAttributes([
@@ -43,6 +44,7 @@ class MeilisearchService
                 'discounted_price',
                 'original_price',
                 'end_at_timestamp',
+                'product_id',
             ]);
 
             $this->waitForTask($index, $task);
@@ -348,6 +350,7 @@ class MeilisearchService
             'id' => $discount->id,
             'product_id' => $discount->product_id,
             'product_name' => $product ? ($product->name ?? '') : '',
+            'product_name_stem' => self::buildNameStem($product ? ($product->name ?? '') : ''),
             'product_brand' => $product ? ($product->brand ?? '') : '',
             'product_slug' => $product ? ($product->slug ?? '') : '',
             'category_id' => $product ? ($product->category_id ?? null) : null,
@@ -417,5 +420,149 @@ class MeilisearchService
     protected function isActiveDiscount(Discount $discount)
     {
         return $discount->end_at === null || $discount->end_at >= now()->startOfDay();
+    }
+
+    /**
+     * Finds products with a similar name by matching stemmed keywords, excluding
+     * the given product and deduplicating by product_id (a product can have
+     * multiple active discounts across stores). Restricted to the same category
+     * so a shared stem word can't pull in an unrelated product from elsewhere in
+     * the catalog.
+     */
+    public function findSimilarDiscounts(string $stemQuery, int $excludeProductId, int $categoryId, int $limit = 7)
+    {
+        if (trim($stemQuery) === '') {
+            return collect();
+        }
+
+        try {
+            $index = $this->client->index($this->indexName);
+
+            $response = $index->search($stemQuery, [
+                'attributesToSearchOn' => ['product_name_stem'],
+                'filter' => "product_id != {$excludeProductId} AND category_id = {$categoryId}",
+                'limit' => $limit * 4,
+            ]);
+
+            $discountIds = [];
+            $seenProductIds = [];
+
+            foreach ($response->getHits() as $hit) {
+                $productId = $hit['product_id'] ?? null;
+
+                if ($productId === null || isset($seenProductIds[$productId])) {
+                    continue;
+                }
+
+                $seenProductIds[$productId] = true;
+                $discountIds[] = $hit['id'];
+
+                if (count($discountIds) >= $limit) {
+                    break;
+                }
+            }
+
+            if (empty($discountIds)) {
+                return collect();
+            }
+
+            $discounts = Discount::query()
+                ->whereIn('id', $discountIds)
+                ->with(['product.category', 'product.discounts.store', 'store'])
+                ->get()
+                ->keyBy('id');
+
+            return collect($discountIds)
+                ->map(fn ($id) => $discounts->get($id))
+                ->filter()
+                ->values();
+        } catch (\Exception $e) {
+            Log::error('Meilisearch findSimilarDiscounts failed: ' . $e->getMessage());
+
+            return collect();
+        }
+    }
+
+    /**
+     * Builds a whitespace-joined list of lightly stemmed keywords from a product
+     * name, for fuzzy "similar product" matching. Strips brand names (written in
+     * ALL CAPS in this catalog), package sizes/units, generic filler words, and
+     * common Lithuanian noun/adjective case endings so that inflected forms of the
+     * same word (e.g. "arbata", "arbatos", "arbatoms") share a stem.
+     */
+    public static function buildNameStem(?string $name): string
+    {
+        if (empty($name)) {
+            return '';
+        }
+
+        // Drop parenthetical noise, e.g. "(įv. rūšių)"
+        $name = preg_replace('/\([^)]*\)/u', ' ', $name);
+
+        // Catalog convention: truncated words are written with a trailing period
+        // (e.g. "sald." standing for "saldintas"/"saldumynai"/"saldainiai"/...).
+        // Such stubs are ambiguous across unrelated words, so they need a higher
+        // length bar than complete words to count as a similarity signal.
+        preg_match_all('/([A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž]+)\./u', $name, $abbrevMatches);
+        $abbreviated = array_flip(array_map(
+            fn ($w) => mb_strtolower($w, 'UTF-8'),
+            $abbrevMatches[1]
+        ));
+
+        $words = preg_split('/[^A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž]+/u', $name, -1, PREG_SPLIT_NO_EMPTY);
+
+        if (empty($words)) {
+            return '';
+        }
+
+        static $stopwords = [
+            'iv', 'įv', 'rūšių', 'rūšies', 'skonio', 'skonis', 'proc', 'vnt', 'pak',
+            'g', 'kg', 'ml', 'cl', 'l', 'x',
+        ];
+
+        static $suffixes = null;
+        if ($suffixes === null) {
+            $suffixes = [
+                'iams', 'omis', 'umas', 'ose', 'oje', 'iai', 'ėms', 'oms',
+                'ai', 'os', 'io', 'ių', 'ų', 'is',
+                'ė', 'ę', 'ą', 'į', 'a', 'o', 'e', 'i', 'u',
+            ];
+            usort($suffixes, fn ($a, $b) => mb_strlen($b) - mb_strlen($a));
+        }
+
+        $stems = [];
+
+        foreach ($words as $word) {
+            $lower = mb_strtolower($word, 'UTF-8');
+
+            // Brand / model names are written in ALL CAPS in this catalog.
+            if ($word === mb_strtoupper($word, 'UTF-8') && mb_strlen($word, 'UTF-8') > 1) {
+                continue;
+            }
+
+            $minLength = isset($abbreviated[$lower]) ? 6 : 4;
+
+            if (mb_strlen($lower, 'UTF-8') < $minLength || in_array($lower, $stopwords, true)) {
+                continue;
+            }
+
+            $stem = $lower;
+
+            if (mb_strlen($lower, 'UTF-8') >= 6) {
+                foreach ($suffixes as $suffix) {
+                    $suffixLen = mb_strlen($suffix, 'UTF-8');
+
+                    if (mb_substr($lower, -$suffixLen, null, 'UTF-8') === $suffix
+                        && mb_strlen($lower, 'UTF-8') - $suffixLen >= 3) {
+                        $stem = mb_substr($lower, 0, mb_strlen($lower, 'UTF-8') - $suffixLen, 'UTF-8');
+                        break;
+                    }
+                }
+            }
+
+            $stems[] = $stem;
+        }
+
+        return implode(' ', array_unique($stems));
     }
 }

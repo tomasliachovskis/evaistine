@@ -517,7 +517,7 @@ class ProductController extends Controller
 
     public static function productWithSimilarCacheKey(string $slug): string
     {
-        return "product_with_similar_v4_{$slug}";
+        return "product_with_similar_v7_{$slug}";
     }
 
     public function resolveDiscountsCacheKey($storeOrCategory, $category = null): string
@@ -608,15 +608,56 @@ class ProductController extends Controller
 
         $randomSeed = $this->generateRandomSeed($slug);
 
-        $similarDiscounts = Discount::query()
-            ->join('products', 'discounts.product_id', '=', 'products.id')
-            ->where('products.category_id', $product->category_id)
-            ->where('products.slug', '!=', $slug)
-            ->select('discounts.*')
-            ->with(['product.category', 'product.discounts.store', 'store'])
-            ->orderByRaw("RAND({$randomSeed})")
-            ->limit(7)
-            ->get();
+        $similarLimit = 16;
+        $excludeProductIds = [$product->id];
+        $similarDiscounts = collect();
+
+        // Tier 1: same category + same brand (strongest match)
+        if (! empty($product->brand)) {
+            $brandDiscounts = Discount::query()
+                ->join('products', 'discounts.product_id', '=', 'products.id')
+                ->where('products.category_id', $product->category_id)
+                ->where('products.brand', $product->brand)
+                ->whereNotIn('products.id', $excludeProductIds)
+                ->select('discounts.*')
+                ->with(['product.category', 'product.discounts.store', 'store'])
+                ->orderByRaw("RAND({$randomSeed})")
+                ->limit($similarLimit)
+                ->get();
+
+            $similarDiscounts = $similarDiscounts->concat($brandDiscounts);
+            $excludeProductIds = array_merge($excludeProductIds, $brandDiscounts->pluck('product_id')->all());
+        }
+
+        // Tier 2: Meilisearch name-stem match within the same category
+        if ($similarDiscounts->count() < $similarLimit) {
+            $nameStem = MeilisearchService::buildNameStem($product->name);
+
+            if ($nameStem !== '') {
+                $stemDiscounts = $this->meilisearchService
+                    ->findSimilarDiscounts($nameStem, $product->id, $product->category_id, $similarLimit)
+                    ->whereNotIn('product_id', $excludeProductIds)
+                    ->values();
+
+                $similarDiscounts = $similarDiscounts->concat($stemDiscounts);
+                $excludeProductIds = array_merge($excludeProductIds, $stemDiscounts->pluck('product_id')->all());
+            }
+        }
+
+        // Tier 3: same category, random, to fill up whatever is still missing
+        if ($similarDiscounts->count() < $similarLimit) {
+            $fallbackDiscounts = Discount::query()
+                ->join('products', 'discounts.product_id', '=', 'products.id')
+                ->where('products.category_id', $product->category_id)
+                ->whereNotIn('products.id', $excludeProductIds)
+                ->select('discounts.*')
+                ->with(['product.category', 'product.discounts.store', 'store'])
+                ->orderByRaw("RAND({$randomSeed})")
+                ->limit($similarLimit - $similarDiscounts->count())
+                ->get();
+
+            $similarDiscounts = $similarDiscounts->concat($fallbackDiscounts);
+        }
 
         if ($product->discounts->isEmpty()) {
             $data = $this->formatter->formatProduct($product);
@@ -890,7 +931,7 @@ class ProductController extends Controller
 
     public function getSitemap()
     {
-        return Cache::tags(['sitemap'])->remember('sitemap_entries_v3', 3600, function () {
+        return Cache::tags(['sitemap'])->remember('sitemap_entries_v4', 3600, function () {
             $freshness = $this->pageFreshnessService->build();
             $defaultLastmod = Carbon::parse($freshness['updated_at'])->format('Y-m-d');
 
@@ -906,7 +947,9 @@ class ProductController extends Controller
                 ->all();
 
             $products = Product::query()
-                ->whereHas('discounts')
+                ->where(function ($query) {
+                    $query->whereHas('discounts')->orWhereHas('discountHistories');
+                })
                 ->with('category:id,slug')
                 ->select('slug', 'updated_at', 'category_id')
                 ->get()

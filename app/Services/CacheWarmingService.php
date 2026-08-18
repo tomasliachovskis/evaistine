@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
+use Symfony\Component\Console\Helper\ProgressBar;
 
 class CacheWarmingService
 {
@@ -77,12 +78,18 @@ class CacheWarmingService
 
         $this->section('products with-similar', $productsWithDiscounts->count());
 
+        $progressBar = $this->startProgressBar($productsWithDiscounts->count());
+
         foreach ($productsWithDiscounts as $product) {
             $cacheKey = ProductController::productWithSimilarCacheKey($product->slug);
             $label = "/product/{$product->slug}/with-similar";
             $this->logWarm('product', $label, $cacheKey);
             $this->productController->getProductWithSimilar($product->slug);
+
+            $progressBar?->advance();
         }
+
+        $this->finishProgressBar($progressBar);
     }
 
     public function getProductsWithDiscountsCount()
@@ -135,6 +142,29 @@ class CacheWarmingService
             $this->logWarm('favorite-category', $label, $cacheKey, ['discounts', 'favorites', 'category', $category->id]);
             $this->productController->getFavoriteCategory($category->id);
         }
+    }
+
+    protected function startProgressBar(int $count): ?ProgressBar
+    {
+        if (!$this->command || $this->command->getOutput()->isVerbose()) {
+            return null;
+        }
+
+        $bar = $this->command->getOutput()->createProgressBar($count);
+        $bar->setFormat(' %current%/%max% [%bar%] %percent:3s%%  %elapsed:6s%/%estimated:-6s%');
+        $bar->start();
+
+        return $bar;
+    }
+
+    protected function finishProgressBar(?ProgressBar $bar): void
+    {
+        if (!$bar) {
+            return;
+        }
+
+        $bar->finish();
+        $this->command->newLine();
     }
 
     protected function section(string $name, int $count): void
