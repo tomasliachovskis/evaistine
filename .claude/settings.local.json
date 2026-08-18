@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan tinker '--execute= *)",
+      "Read(//opt/homebrew/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(docker exec nuolaidos-laravel.test-1 php artisan tinker '--execute= *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(sail artisan tinker '--execute= *)",
+      "Bash(grep -n '$words\\\\s*=\\\\|function.*[Ww]ords\\\\|leidinys.*leidiniai\\\\|nominative' app/Http/Controllers/Api/ProductController.php app/Services/ListingPageMetaService.php)",
+      "Bash(docker exec *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(npm run *)",
+      "Bash(git push *)"
+    ]
+  }
+}
