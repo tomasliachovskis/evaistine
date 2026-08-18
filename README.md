@@ -96,3 +96,5 @@ sail artisan categories:bulk-map
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+test-favorites@example.com / Test1234!, 
