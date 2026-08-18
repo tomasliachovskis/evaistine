@@ -1209,6 +1209,25 @@ class ProductController extends Controller
             return $formatted;
         })->values();
 
+        $productIdsWithoutDiscount = $productIds->diff($discounts->pluck('product_id')->unique());
+
+        if ($productIdsWithoutDiscount->isNotEmpty()) {
+            $productsWithoutDiscount = Product::whereIn('id', $productIdsWithoutDiscount)
+                ->with(['category', 'discountHistories.store'])
+                ->get();
+
+            foreach ($productsWithoutDiscount as $product) {
+                $formattedProducts->push($this->formatter->formatProduct($product)->first());
+            }
+        }
+
+        $productIdOrder = $productIds->values()->all();
+        $formattedProducts = $formattedProducts
+            ->sortBy(function ($item) use ($productIdOrder) {
+                return array_search($item['product']['id'], $productIdOrder);
+            })
+            ->values();
+
         $storeTotals = $this->calculateStoreTotals($productIds, $discounts);
 
         return response()->json([

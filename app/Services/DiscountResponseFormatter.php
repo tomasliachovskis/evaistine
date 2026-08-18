@@ -180,6 +180,7 @@ class DiscountResponseFormatter
                 'offer_count' => 0,
                 'min_price' => 0,
                 'offers' => [],
+                'is_expired' => true,
                 'history' => $productDiscountHistories->map(function ($history) {
                     return $this->formatOfferItem($history);
                 }),
