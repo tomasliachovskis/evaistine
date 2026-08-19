@@ -17,6 +17,11 @@ class Store extends Model
         'seo_title',
         'meta_title',
         'meta_description',
+        'faq',
+    ];
+
+    protected $casts = [
+        'faq' => 'array',
     ];
 
     public function products()

@@ -10,8 +10,8 @@ use Illuminate\Console\Command;
 
 class GenerateDescriptions extends Command
 {
-    protected $signature = 'descriptions:generate {type : store, category, or store-category} {--id= : Specific ID to generate description for} {--all : Generate for all stores/categories} {--store-category : Generate top products tables for store+category combinations}';
-    protected $description = 'Generate descriptions for stores and categories using ChatGPT API, or top products tables for store+category combinations';
+    protected $signature = 'descriptions:generate {type : store, category, faq, store-faq, or store-category} {--id= : Specific ID to generate description for} {--all : Generate for all stores/categories} {--store-category : Generate top products tables for store+category combinations}';
+    protected $description = 'Generate descriptions or FAQ for stores and categories using ChatGPT API, or top products tables for store+category combinations';
 
     private DescriptionGenerationService $descriptionService;
 
@@ -36,6 +36,10 @@ class GenerateDescriptions extends Command
             $this->handleStores($id, $all);
         } elseif ($type === 'category') {
             $this->handleCategories($id, $all);
+        } elseif ($type === 'faq') {
+            $this->handleCategoryFaqs($id, $all);
+        } elseif ($type === 'store-faq') {
+            $this->handleStoreFaqs($id, $all);
         } elseif ($type === 'store-category') {
             $this->handleStoreCategories($id, $all);
         } else {
@@ -93,15 +97,13 @@ class GenerateDescriptions extends Command
 
             $this->generateCategoryDescription($category);
         } elseif ($all) {
-            $categoriesWithActiveDiscounts = Category::whereHas('products.discounts', function($query) {
-                $query->where('end_at', '>=', now());
-            })->get();
-            $this->info("Generating descriptions for {$categoriesWithActiveDiscounts->count()} categories with active discounts...");
+            $categoriesWithProducts = Category::whereHas('products')->get();
+            $this->info("Generating descriptions for {$categoriesWithProducts->count()} categories with products (rich GPT description for those with active discounts, minimal fallback otherwise)...");
 
-            $bar = $this->output->createProgressBar($categoriesWithActiveDiscounts->count());
+            $bar = $this->output->createProgressBar($categoriesWithProducts->count());
             $bar->start();
 
-            foreach ($categoriesWithActiveDiscounts as $category) {
+            foreach ($categoriesWithProducts as $category) {
                 $this->generateCategoryDescription($category);
                 $bar->advance();
                 sleep(1);
@@ -112,6 +114,88 @@ class GenerateDescriptions extends Command
             $this->info('Completed generating descriptions for categories with products.');
         } else {
             $this->error('Please specify --id or --all option.');
+        }
+    }
+
+    private function handleCategoryFaqs(?string $id, bool $all): void
+    {
+        if ($id) {
+            $category = Category::find($id);
+            if (!$category) {
+                $this->error("Category with ID {$id} not found.");
+                return;
+            }
+
+            $this->generateCategoryFaq($category);
+        } elseif ($all) {
+            $categoriesWithActiveDiscounts = Category::whereHas('products.discounts', function ($query) {
+                $query->where('end_at', '>=', now());
+            })->get();
+            $this->info("Generating FAQ for {$categoriesWithActiveDiscounts->count()} categories with active discounts...");
+
+            $bar = $this->output->createProgressBar($categoriesWithActiveDiscounts->count());
+            $bar->start();
+
+            foreach ($categoriesWithActiveDiscounts as $category) {
+                $this->generateCategoryFaq($category);
+                $bar->advance();
+                sleep(1);
+            }
+
+            $bar->finish();
+            $this->newLine();
+            $this->info('Completed generating FAQ for categories with active discounts.');
+        } else {
+            $this->error('Please specify --id or --all option.');
+        }
+    }
+
+    private function handleStoreFaqs(?string $id, bool $all): void
+    {
+        if ($id) {
+            $store = Store::find($id);
+            if (!$store) {
+                $this->error("Store with ID {$id} not found.");
+                return;
+            }
+
+            $this->generateStoreFaq($store);
+        } elseif ($all) {
+            $stores = Store::whereHas('discounts')->get();
+            $this->info("Generating FAQ for {$stores->count()} stores with active discounts...");
+
+            $bar = $this->output->createProgressBar($stores->count());
+            $bar->start();
+
+            foreach ($stores as $store) {
+                $this->generateStoreFaq($store);
+                $bar->advance();
+                sleep(1);
+            }
+
+            $bar->finish();
+            $this->newLine();
+            $this->info('Completed generating FAQ for stores with active discounts.');
+        } else {
+            $this->error('Please specify --id or --all option.');
+        }
+    }
+
+    private function generateStoreFaq(Store $store): void
+    {
+        $this->info("Generating FAQ for store: {$store->name}");
+
+        try {
+            $faq = $this->descriptionService->generateStoreFaq($store);
+
+            if ($faq) {
+                $store->update(['faq' => $faq]);
+                $this->info("✓ Successfully generated " . count($faq) . " FAQ item(s) for {$store->name}");
+            } else {
+                $this->warn("✗ Failed to generate FAQ for {$store->name}");
+            }
+        } catch (\Exception $e) {
+            $this->error("✗ Error generating FAQ for {$store->name}: " . $e->getMessage());
         }
     }
 
@@ -146,7 +230,11 @@ class GenerateDescriptions extends Command
                 ->count();
 
             if ($activeDiscountsCount === 0) {
-                $this->warn("Category '{$category->name}' has no active discounts. Skipping description generation.");
+                $category->update([
+                    'description' => "{$category->name} akcijos ir nuolaidos – palyginkite kainas skirtingose parduotuvėse. Naujos akcijos šioje kategorijoje atsiranda kiekvieną savaitę.",
+                    'meta_description' => "{$category->name} akcijos ir nuolaidos vienoje vietoje – SuperAkcijos.lt.",
+                ]);
+                $this->warn("Category '{$category->name}' has no active discounts. Wrote minimal fallback description instead of calling GPT.");
                 return;
             }
 
@@ -161,6 +249,24 @@ class GenerateDescriptions extends Command
             }
         } catch (\Exception $e) {
             $this->error("✗ Error generating description for {$category->name}: " . $e->getMessage());
+        }
+    }
+
+    private function generateCategoryFaq(Category $category): void
+    {
+        $this->info("Generating FAQ for category: {$category->name}");
+
+        try {
+            $faq = $this->descriptionService->generateCategoryFaq($category);
+
+            if ($faq) {
+                $category->update(['faq' => $faq]);
+                $this->info("✓ Successfully generated " . count($faq) . " FAQ item(s) for {$category->name}");
+            } else {
+                $this->warn("✗ Failed to generate FAQ for {$category->name}");
+            }
+        } catch (\Exception $e) {
+            $this->error("✗ Error generating FAQ for {$category->name}: " . $e->getMessage());
         }
     }
 

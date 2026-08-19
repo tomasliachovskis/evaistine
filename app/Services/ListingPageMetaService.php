@@ -106,6 +106,7 @@ class ListingPageMetaService
             'popular_carousel_title' => 'TOP pasiūlymai pagal kategorijas',
             'sections' => [
                 'top_categories' => $this->getTopCategoriesForStore($store),
+                'faq' => $store->faq ?? [],
             ],
         ];
     }
@@ -156,7 +157,7 @@ class ListingPageMetaService
                 'top_brands' => $this->getTopBrandsForCategory($category),
                 'weekly_deals' => $this->getWeeklyDealsForCategory($category, $categorySlug),
                 'seasonal_modules' => $this->getSeasonalModules($categorySlug),
-                'faq' => $this->buildCategoryFaq($categoryName),
+                'faq' => $this->buildCategoryFaq($category),
             ],
         ];
     }
@@ -870,23 +871,8 @@ class ListingPageMetaService
         return 'https://superakcijos.lt' . $path;
     }
 
-    private function buildCategoryFaq(string $categoryName): array
+    private function buildCategoryFaq(Category $category): array
     {
-        $lower = mb_strtolower($categoryName);
-
-        return [
-            [
-                'question' => "Kur šiandien pigiausia pirkti bananus?",
-                'answer' => 'Kainos keičiasi kasdien. Palyginkite akcijas pagal parduotuvę arba filtruokite pagal didžiausią nuolaidą – matysite aktualius pasiūlymus visuose tinkluose.',
-            ],
-            [
-                'question' => "Ar sezoniniai {$lower} visada pigesni akcijų metu?",
-                'answer' => 'Dažniausiai taip – sezoniniai produktai būna pigiausi būtent per savaitės akcijas.',
-            ],
-            [
-                'question' => 'Kaip greitai rasti ekologiškus produktus?',
-                'answer' => 'Naudokite filtrus arba kategorijos nuorodas viršuje.',
-            ],
-        ];
+        return $category->faq ?? [];
     }
 }

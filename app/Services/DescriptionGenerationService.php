@@ -15,8 +15,9 @@ class DescriptionGenerationService
     private ?string $apiKey;
     private string $apiUrl = 'https://api.openai.com/v1/chat/completions';
 
-    public function __construct()
-    {
+    public function __construct(
+        private KeywordPageService $keywordPageService,
+    ) {
         $this->apiKey = config('services.openai.api_key');
 
         if (empty($this->apiKey)) {
@@ -60,31 +61,11 @@ class DescriptionGenerationService
 
             if ($response->successful()) {
                 $content = $response->json('choices.0.message.content');
-                $gptContent = trim($content);
 
-                $topProductsTable = $this->generateStoreTopProductsTable($store);
-                if ($topProductsTable) {
-                    $discountDistributionHeading = '<h3 class="text-xl md:text-2xl font-semibold mb-3">Nuolaidų paskirstymas';
-                    $discountDistributionPosition = strpos($gptContent, $discountDistributionHeading);
-                    if ($discountDistributionPosition !== false) {
-                        $hrBeforeDiscount = strrpos(substr($gptContent, 0, $discountDistributionPosition), '<hr');
-                        if ($hrBeforeDiscount !== false) {
-                            $hrEndPosition = strpos($gptContent, '>', $hrBeforeDiscount) + 1;
-                            $gptContent = substr_replace($gptContent, "\n\n" . $topProductsTable . "\n\n", $hrEndPosition, 0);
-                        } else {
-                            $gptContent = substr_replace($gptContent, "\n\n" . $topProductsTable . "\n\n<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">\n\n", $discountDistributionPosition, 0);
-                        }
-                    } else {
-                        $faqPosition = strpos($gptContent, '<h3 class="text-xl md:text-2xl font-semibold mt-3 mb-3">Dažniausiai užduodami klausimai');
-                        if ($faqPosition !== false) {
-                            $gptContent = substr_replace($gptContent, "\n\n" . $topProductsTable . "\n\n<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">\n\n", $faqPosition, 0);
-                        } else {
-                            $gptContent .= "\n\n<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">\n\n" . $topProductsTable;
-                        }
-                    }
-                }
-
-                return $gptContent;
+                // Deliberately NOT splicing in generateStoreTopProductsTable() here:
+                // that table bakes in today's exact prices/dates, which would make
+                // this evergreen description stale again within days.
+                return trim($content);
             }
 
             Log::error('OpenAI API request failed for store description', [
@@ -132,31 +113,11 @@ class DescriptionGenerationService
 
             if ($response->successful()) {
                 $content = $response->json('choices.0.message.content');
-                $gptContent = trim($content);
 
-                $topProductsTable = $this->generateCategoryTopProductsTable($category);
-                if ($topProductsTable) {
-                    $discountDistributionHeading = '<h3 class="text-xl md:text-2xl font-semibold mb-3">Nuolaidų paskirstymas';
-                    $discountDistributionPosition = strpos($gptContent, $discountDistributionHeading);
-                    if ($discountDistributionPosition !== false) {
-                        $hrBeforeDiscount = strrpos(substr($gptContent, 0, $discountDistributionPosition), '<hr');
-                        if ($hrBeforeDiscount !== false) {
-                            $hrEndPosition = strpos($gptContent, '>', $hrBeforeDiscount) + 1;
-                            $gptContent = substr_replace($gptContent, "\n\n" . $topProductsTable . "\n\n", $hrEndPosition, 0);
-                        } else {
-                            $gptContent = substr_replace($gptContent, "\n\n" . $topProductsTable . "\n\n<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">\n\n", $discountDistributionPosition, 0);
-                        }
-                    } else {
-                        $faqPosition = strpos($gptContent, '<h3 class="text-xl md:text-2xl font-semibold mt-3 mb-3">Dažniausiai užduodami klausimai');
-                        if ($faqPosition !== false) {
-                            $gptContent = substr_replace($gptContent, "\n\n" . $topProductsTable . "\n\n<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">\n\n", $faqPosition, 0);
-                        } else {
-                            $gptContent .= "\n\n<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">\n\n" . $topProductsTable;
-                        }
-                    }
-                }
-
-                return $gptContent;
+                // Deliberately NOT splicing in generateCategoryTopProductsTable() here:
+                // that table bakes in today's exact prices/dates, which would make
+                // this evergreen description stale again within days.
+                return trim($content);
             }
 
             Log::error('OpenAI API request failed for category description', [
@@ -171,6 +132,197 @@ class DescriptionGenerationService
         }
 
         return null;
+    }
+
+    /**
+     * @return list<array{question: string, answer: string}>|null
+     */
+    public function generateCategoryFaq(Category $category): ?array
+    {
+        if (!$this->isConfigured()) {
+            Log::warning('DescriptionGenerationService is not configured');
+            return null;
+        }
+
+        $categoryData = $this->getCategoryData($category);
+
+        try {
+            $response = Http::timeout(120)
+                ->retry(2, 2000)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($this->apiUrl, [
+                    'model' => config('services.openai.model', 'gpt-5-mini'),
+                    'response_format' => ['type' => 'json_object'],
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => $this->getCategoryFaqSystemPrompt()
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => json_encode($categoryData, JSON_UNESCAPED_UNICODE)
+                        ]
+                    ],
+                ]);
+
+            if (!$response->successful()) {
+                Log::error('OpenAI API request failed for category FAQ', [
+                    'category_id' => $category->id,
+                    'status' => $response->status(),
+                    'response' => $response->body(),
+                ]);
+
+                return null;
+            }
+
+            $content = trim((string) $response->json('choices.0.message.content'));
+            $faq = $this->parseFaqResponse($content);
+
+            if ($faq === null) {
+                Log::error('OpenAI API returned invalid FAQ JSON for category', [
+                    'category_id' => $category->id,
+                    'content' => $content,
+                ]);
+            }
+
+            return $faq;
+        } catch (\Exception $e) {
+            Log::error('Error calling OpenAI API for category FAQ', [
+                'category_id' => $category->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array{question: string, answer: string}>|null
+     */
+    public function generateStoreFaq(Store $store): ?array
+    {
+        if (!$this->isConfigured()) {
+            Log::warning('DescriptionGenerationService is not configured');
+            return null;
+        }
+
+        $storeData = $this->getStoreData($store);
+
+        try {
+            $response = Http::timeout(120)
+                ->retry(2, 2000)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($this->apiUrl, [
+                    'model' => config('services.openai.model', 'gpt-5-mini'),
+                    'response_format' => ['type' => 'json_object'],
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => $this->getStoreFaqSystemPrompt()
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => json_encode($storeData, JSON_UNESCAPED_UNICODE)
+                        ]
+                    ],
+                ]);
+
+            if (!$response->successful()) {
+                Log::error('OpenAI API request failed for store FAQ', [
+                    'store_id' => $store->id,
+                    'status' => $response->status(),
+                    'response' => $response->body(),
+                ]);
+
+                return null;
+            }
+
+            $content = trim((string) $response->json('choices.0.message.content'));
+            $faq = $this->parseFaqResponse($content);
+
+            if ($faq === null) {
+                Log::error('OpenAI API returned invalid FAQ JSON for store', [
+                    'store_id' => $store->id,
+                    'content' => $content,
+                ]);
+            }
+
+            return $faq;
+        } catch (\Exception $e) {
+            Log::error('Error calling OpenAI API for store FAQ', [
+                'store_id' => $store->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<array{question: string, answer: string}>|null
+     */
+    private function parseFaqResponse(string $content): ?array
+    {
+        $parsed = json_decode($content, true);
+
+        if (!is_array($parsed) || !is_array($parsed['faq'] ?? null)) {
+            return null;
+        }
+
+        $faq = array_values(array_filter(array_map(function ($item) {
+            if (!is_array($item)) {
+                return null;
+            }
+
+            $question = trim((string) ($item['question'] ?? ''));
+            $answer = trim((string) ($item['answer'] ?? ''));
+
+            if ($question === '' || $answer === '') {
+                return null;
+            }
+
+            return ['question' => $question, 'answer' => $answer];
+        }, $parsed['faq'])));
+
+        return $faq !== [] ? $faq : null;
+    }
+
+    private function getCategoryFaqSystemPrompt(): string
+    {
+        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (SuperAkcijos.lt). You will receive JSON data about ONE product category's currently active discounts.
+
+Your task: generate 3-5 short, genuinely useful, EVERGREEN FAQ question/answer pairs in Lithuanian about THIS specific category. This content will stay on the page for weeks without being regenerated, so it must still read as true and sensible long after the exact discounts in this data have expired and been replaced by different ones.
+
+STRICT RULES:
+- Output a single JSON object: {\"faq\": [{\"question\": \"...\", \"answer\": \"...\"}]}. No prose outside the JSON.
+- DO NOT mention any specific price, specific discount percent number, specific date, or any single named product/SKU from top_discounts as if it is a current fact (e.g. never write things like '-54% iki 2026-08-31' or 'Kopūstai baltagūžiai (Čia) -54%'). Those exact facts will be stale within days.
+- DO use the provided data (top_discounts, store_statistics, discount_distribution) as SILENT RESEARCH to understand what kinds of products, product groups, and store patterns are typical for this category — then phrase answers in general, durable terms (e.g. 'šviežios daržovės, tokios kaip kopūstai ar bulvės' instead of naming one exact discounted item; 'nuolaidos šioje kategorijoje dažniausiai siekia apie 20-40%' instead of '-54% iki 2026-08-31'; 'IKI ir Rimi šioje kategorijoje dažnai turi daugiau pasiūlymų' instead of an exact current count).
+- Still be genuinely specific to THIS category (its typical product types, typical discount range, typical shopping patterns) — never fall back to generic filler that could apply to any category (e.g. never mention 'bananas' or 'organic products' unless the category is actually about fruit/vegetables).
+- Good evergreen topics: what kinds of products in this category tend to have the biggest discounts; roughly how big discounts in this category typically run; which stores tend to be strong in this category; general tips for finding the best deals here (e.g. checking back regularly, comparing stores, filtering by discount size); whether/when this category tends to have seasonal patterns.
+- Keep answers to 1-3 sentences, natural conversational Lithuanian, no marketing fluff, no HTML tags.
+- If the data is too thin to support genuinely category-specific evergreen answers, return fewer items (minimum 1) rather than padding with generic ones.
+";
+    }
+
+    private function getStoreFaqSystemPrompt(): string
+    {
+        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (SuperAkcijos.lt). You will receive JSON data about ONE store's currently active discounts.
+
+Your task: generate 3-5 short, genuinely useful, EVERGREEN FAQ question/answer pairs in Lithuanian about THIS specific store. This content will stay on the page for weeks without being regenerated, so it must still read as true and sensible long after the exact discounts in this data have expired and been replaced by different ones.
+
+STRICT RULES:
+- Output a single JSON object: {\"faq\": [{\"question\": \"...\", \"answer\": \"...\"}]}. No prose outside the JSON.
+- DO NOT mention any specific price, specific discount percent number, specific date, or any single named product/SKU from top_discounts or category_statistics as if it is a current fact. Those exact facts will be stale within days.
+- DO use the provided data (category_statistics, top_discounts, discount_distribution, essential_products) as SILENT RESEARCH to understand which product categories and kinds of deals are typical for this store — then phrase answers in general, durable terms (e.g. 'dažniausiai daug pasiūlymų būna [category_name] ir [category_name] kategorijose' instead of exact counts; 'nuolaidos šiame tinkle dažniausiai siekia apie 10-30%' instead of an exact percent).
+- Still be genuinely specific to THIS store (its typical strong categories, typical discount range, card/loyalty conditions if relevant) — never fall back to generic filler that could describe any store.
+- Good evergreen topics: which product categories this store tends to have the most/biggest discounts in; roughly how big discounts at this store typically run; whether a loyalty card unlocks extra discounts here (use card_discounts > 0 as a signal, but phrase qualitatively, not as an exact count); general tips for finding the best deals at this store.
+- Keep answers to 1-3 sentences, natural conversational Lithuanian, no marketing fluff, no HTML tags.
+- If the data is too thin to support genuinely store-specific evergreen answers, return fewer items (minimum 1) rather than padding with generic ones.
+";
     }
 
     private function getStoreData(Store $store): array
@@ -250,9 +402,21 @@ class DescriptionGenerationService
             ->values()
             ->toArray();
 
+        $keywordPages = collect($storeCategoryLinks)
+            ->flatMap(fn ($link) => $this->keywordPageService->listPublishedPagesForCategory($link['slug']))
+            ->unique('slug')
+            ->take(6)
+            ->map(fn ($page) => [
+                'title' => $page['title'],
+                'url' => "@https://superakcijos.lt{$page['href']}",
+            ])
+            ->values()
+            ->all();
+
         return [
             'store_name' => $store->name,
             'store_url' => "@https://superakcijos.lt/akcijos/{$store->slug}",
+            'keyword_pages' => $keywordPages,
             'total_active_discounts' => $activeDiscounts->count(),
             'total_products' => $activeDiscounts->unique('product_id')->count(),
             'total_categories' => $activeDiscounts->unique('product.category_id')->count(),
@@ -392,10 +556,16 @@ class DescriptionGenerationService
             ->values()
             ->toArray();
 
+        $keywordPages = $this->keywordPageService->listPublishedPagesForCategory($category->slug);
+
         return [
             'category_name' => $category->name,
             'category_slug' => $category->slug,
             'category_url' => "@https://superakcijos.lt/akcijos/{$category->slug}",
+            'keyword_pages' => array_map(fn ($page) => [
+                'title' => $page['title'],
+                'url' => "@https://superakcijos.lt{$page['href']}",
+            ], $keywordPages),
             'total_active_discounts' => $activeDiscounts->count(),
             'total_products' => $activeDiscounts->unique('product_id')->count(),
             'total_stores' => $activeDiscounts->unique('store_id')->count(),
@@ -440,170 +610,65 @@ class DescriptionGenerationService
 
     private function getStoreSystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter who writes HTML descriptions for grocery e-shops. Generate rich, SEO-friendly content that exactly follows the new structure below using provided JSON data.
+        return "You are a Lithuanian copywriter who writes HTML descriptions for grocery e-shops. Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
+
+This content will stay on the page for weeks without being regenerated. Treat the JSON data as SILENT RESEARCH to understand this store's typical scale, typical discount range, and which categories/product types tend to be strong here — not as facts to quote directly. NEVER print an exact number copied straight from the JSON (no exact discount counts, no exact percentages, no exact euro amounts, no specific dates like 'iki 2026-08-31'). Round percentages to the nearest 5 or 10 and express counts as qualitative ranges ('dešimtys', 'keli šimtai', etc.). Never mention a specific current end-date for offers — if you need to reference freshness, use an evergreen phrase like 'atnaujinama kiekvieną savaitę'.
 
 STRICT OUTPUT FORMAT:
-Wrap everything in a single <div class=\"space-y-8 md:space-y-10\"> element. Use only the tags shown here. Do not use <strong> tags.
+Wrap everything in a single <div class=\"space-y-4\"> element. Use <strong> tags for emphasis where needed. Output ONLY the header and 3-4 prose paragraphs below — no tables, no stats grids, no discount-distribution lists.
 
 1) HEADER
-- <h2 class=\"text-2xl md:text-3xl font-semibold leading-tight mb-3\"> with EXACT title format:
-  '[store_name] akcijos: šios savaitės pasiūlymai – iki [max_discount_percent]% nuolaidos! Akcijos galioja [VALIDITY]'
-  Where [VALIDITY] is:
-   - 'nuo [earliest_end] iki [latest_end]' if both are present and different,
-   - 'iki [date]' if dates are the same or only one date is present.
-  Dates format: YYYY-MM-DD. Sentence case only.
+- <h2 class=\"text-2xl md:text-3xl font-semibold leading-tight mb-3\"> with title format:
+  '[store_name] akcijos ir nuolaidos – naujausi pasiūlymai atnaujinami kiekvieną savaitę'
+  (No specific percent number or date in the title.) Sentence case only.
 
-2) INTRO PARAGRAPHS
-- First <p class=\"leading-relaxed\"> paragraph describing the store benefits and scope using natural Lithuanian. Include '[total_active_discounts] aktyvių akcijų', 'vidutinė sutaupyta suma už prekę €[avg_savings_per_product]' (two decimals, space as thousands separator, dot as decimal). Mention main product areas using category context from data. Do NOT include any links in this first paragraph. Do NOT include validity window.
-- Second <p class=\"leading-relaxed\"> paragraph continuing the description. Include EXACTLY 1 store+category link from store_category_links array (use the first one from the array). Use format: '<a href=\"[url]\">[name]</a>' where url is from store_category_links.url and name is from store_category_links.name. Integrate this link naturally into the text about popular categories. Do NOT include validity window. CRITICAL: Only the second paragraph should have links, the first paragraph must have NO links at all.
-- After the two paragraphs, add a separate <p class=\"leading-relaxed\"> on a new line with validity window: if valid_date_range.earliest_end and latest_end are both present and different, write: 'Akcijos galioja nuo [earliest_end] iki [latest_end]'. If they are equal or only one is present, write: 'Akcijos galioja iki [date]'. Dates format YYYY-MM-DD.
-
-<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
-
-3) STATS SECTION
-- <h3 class=\"text-xl md:text-2xl font-semibold mb-3\"> 'Aktualūs [store_name] akcijų skaičiai: vidutinė nuolaida [avg_discount_percent]%'
-- A <table class=\"w-full border-collapse text-sm md:text-base rounded-lg overflow-hidden\"> with styled header/body:
-  - <thead>
-    - <tr>
-      - <th class=\"bg-gray-50 text-left font-medium text-gray-700 px-4 py-2 border-b\"> for both columns
-  - <tbody>
-    - Include exactly these 5 rows in order, using alternating row colors with inline styles: first row use style=\"background-color: #f9fafb\", second row use style=\"background-color: #ffffff\", third row use style=\"background-color: #f9fafb\", fourth row use style=\"background-color: #ffffff\", fifth row use style=\"background-color: #f9fafb\" (gray-50 and white alternating, starting with gray):
-    - First <tr style=\"background-color: #f9fafb\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Aktyvių nuolaidų skaičius'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '[total_active_discounts]'
-    - Second <tr style=\"background-color: #ffffff\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Vidutinė nuolaida'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '[avg_discount_percent]%'
-    - Third <tr style=\"background-color: #f9fafb\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Vidutinė sutaupyta suma už prekę'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> '€[avg_savings_per_product]'
-    - Fourth <tr style=\"background-color: #ffffff\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Nuolaidų dydis'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> 'nuo [min_discount_percent]% iki [max_discount_percent]%'
-    - Fifth <tr style=\"background-color: #f9fafb\">
-      - First <td class=\"px-4 py-2 text-gray-700 align-top border-b\"> 'Akcijos galioja'
-      - Second <td class=\"px-4 py-2 text-gray-900 font-medium align-top border-b\"> either '[earliest_end] iki [latest_end]' or 'iki [date]' per the rule above
-
-Then a <p class=\"leading-relaxed mt-3\"> noting strongest categories using category_statistics by picking top 3 with highest 'count'. Include EXACTLY 3 category links from category_statistics using format '<a href=\"[url]\">[name]</a>' where url is from category_statistics.url (remove leading '@' if present) and name is from category_statistics.name. These are regular category links, NOT store+category links. IMPORTANT: Remember which 3 categories you used here, as they must NOT be repeated in FAQ section.
-
-<hr class=\"my-10 md:my-12 border-gray-200\" style=\"margin-top: 1.0rem; margin-bottom: 0.5rem;\">
-
-4) DISCOUNT DISTRIBUTION
-- <h3 class=\"text-xl md:text-2xl font-semibold mt-3 mb-3\"> 'Nuolaidų paskirstymas kategorijose'
-- A <p class=\"leading-relaxed\"> summarizing where most discounts are (use category_statistics and discount_distribution buckets).
-- A <ul style=\"padding-left: 1.25rem\" class=\"list-disc pl-5 space-y-1 py-2\"> with three items: 'Mažesnės nuolaidos (iki 10%)', 'Vidutinės nuolaidos (20–30%)', 'Didelės nuolaidos (30–50%)' with approximate product counts derived from discount_distribution.
-
-<hr class=\"my-8 border-gray-200 mt-3\">
-
-5) FAQ
-- <h3 class=\"text-xl md:text-2xl font-semibold mt-3 mb-3\"> 'Dažniausiai užduodami klausimai (DUK)'
-- A <div class=\"faq-section space-y-4\"> containing three Q/A blocks using <h4 class=\"font-semibold mb-2\"> and <p class=\"leading-relaxed\">:
-  - Which categories have most offers? Include EXACTLY 1 store+category link from store_category_links array (use the second one from the array if available, otherwise skip). Use format '<a href=\"[url]\">[name]</a>' where url is from store_category_links.url and name is from store_category_links.name. If store_category_links has only 1 link total, do NOT include it here (it was already used in intro). Also include EXACTLY 2 regular category links from category_statistics using format '<a href=\"[url]\">[name]</a>' where url is from category_statistics.url (remove leading '@' if present). CRITICAL: These 2 category links MUST be different from the 3 categories used in stats section above. Use categories ranked 4th and 5th by 'count' in category_statistics, or any other categories that were NOT used in stats section. Do NOT repeat any categories. IMPORTANT: Total links in entire description must be at least 8-10 links (1 store+category in intro, 3 category in stats, 1 store+category + 2 category in FAQ, plus 6 product links in top products section).
-  - How long are offers valid? Use the computed validity text.
-  - How to save more? Mention card_discounts count if >0 and shopping tips.
+2) PROSE (3-4 paragraphs, each a <p class=\"leading-relaxed\">)
+- Paragraph 1: Describe the store's typical scope in natural Lithuanian, using qualitative terms derived from total_active_discounts/avg_savings_per_product magnitude (e.g. 'čia rasite dešimtis ar šimtus akcijų', 'galite sutaupyti kelis eurus perkant kasdienes prekes') — never an exact digit copied from the JSON. Mention main product areas using category context from the data. Do NOT include any links in this first paragraph.
+- Paragraph 2: Describe qualitatively which categories tend to be strongest at this store (using category_statistics, picking the top few by 'count', but describing rank/strength in words, not exact counts/percents). Include 2-3 store+category links naturally in the sentence using format '<a href=\"[url]\">[name]</a>' where url/name come from store_category_links (remove leading '@' if present).
+- Paragraph 3: A durable tip-style paragraph — e.g. general advice for finding the best deals at this store (comparing categories, checking back regularly, using a loyalty card if card_discounts > 0, phrased qualitatively not as an exact count).
+- Paragraph 4 (only if keyword_pages is non-empty): Naturally mention 2-4 related, popular search topics available at this store as a helpful pointer, linking each via '<a href=\"[url]\">[title]</a>' where url/title come from keyword_pages (remove leading '@' from the url). Do not invent topics not present in keyword_pages; skip this paragraph entirely if keyword_pages is empty.
+- Do NOT add any paragraph about a specific validity window or end date.
 
 OUTPUT RULES:
 - Language: Lithuanian.
-- Use data fields exactly as provided from JSON.
 - Remove any leading '@' from URLs.
-- Always include <main> wrapper and the exact section sequence with <hr> separators.
-- Never invent stores; use [store_name].
-- Numbers: format money as €[value] with two decimals; thousands separator as space; decimals with dot. Percent as [value]%. Do not round integers. For money values like avg_savings_per_product, use two decimals.
-- Do not use <strong> tags anywhere; rely on Tailwind classes for emphasis.
-- Ensure all headings follow sentence case (only the first word capitalized).
-- Keep tone promotional but natural; avoid repeating the same phrase.
+- Never invent stores, categories, or keyword topics; only use names present in the provided JSON.
+- Never print an exact number, exact percent, exact euro amount, or exact date copied from the JSON anywhere in the output — always round or describe qualitatively.
+- Use <strong> tags for emphasis on important phrases and the store name.
+- Ensure the heading follows sentence case (only the first word capitalized).
+- Keep tone promotional but natural, conversational, varied sentence structure; avoid repeating the same phrase across paragraphs.
+- Grammar: NEVER use the construction 'Pas [store_name]' (e.g. 'Pas Rimi rasite...') — this is grammatically incorrect Lithuanian for a store name. Instead decline the store name properly, e.g. '[store_name] parduotuvėje rasite...', '[store_name] siūlo...', or similar correctly-declined phrasing.
 ";
     }
 
     private function getCategorySystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter who writes HTML descriptions for grocery e-shops. Generate rich, SEO-friendly content that exactly follows the new structure below using provided JSON data.
+        return "You are a Lithuanian copywriter who writes HTML descriptions for grocery e-shops. Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
+
+This content will stay on the page for weeks without being regenerated. Treat the JSON data as SILENT RESEARCH to understand this category's typical scale, typical discount range, and which stores/product types tend to be strong here — not as facts to quote directly. NEVER print an exact number copied straight from the JSON (no exact discount counts, no exact percentages, no exact euro amounts, no specific dates like 'iki 2026-08-31'). Round percentages to the nearest 5 or 10 and express counts as qualitative ranges ('dešimtys', 'keli šimtai', etc.). Never mention a specific current end-date for offers — if you need to reference freshness, use an evergreen phrase like 'atnaujinama kiekvieną savaitę'.
 
 STRICT OUTPUT FORMAT:
-Wrap everything in a single <div class=\"category-description-block p-0 lg:p-4\"> element. Use <strong> tags for emphasis where needed.
+Wrap everything in a single <div class=\"category-description-block p-0 lg:p-4\"> element. Use <strong> tags for emphasis where needed. Output ONLY the header and 3-4 prose paragraphs below — no tables, no stats grids, no per-store comparison sections.
 
 1) HEADER
-- <h2 class=\"text-3xl font-bold mb-6 leading-tight\"> with EXACT title format:
-  '[category_name] akcijos: atraskite šios savaitės pasiūlymus – iki [max_discount_percent] % nuolaidos!'
-  Note: Space before % sign. Sentence case only.
+- <h2 class=\"text-3xl font-bold mb-6 leading-tight\"> with title format:
+  '[category_name] akcijos: atraskite naujausius pasiūlymus'
+  (No specific percent number in the title.) Sentence case only.
 
-2) INTRO PARAGRAPHS
-- First <p class=\"mb-4 text-gray-700\"> paragraph: Start with a question or engaging statement about the category. Use <strong> tags to emphasize category name and key discount percentage. CRITICAL: When mentioning specific product types, include product links from top_discounts. Match product names from top_discounts to mentioned product types and create links using format: '<a href=\"[product_url]\">[product_type]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present). Example: 'Ruošiate pietus, planuojate šventinį stalą ar tiesiog pildote šaldytuvą? Kategorija <strong>„[category_name]\"</strong> yra puiki vieta sutaupyti, neaukojant kokybės! Čia rasite... – viskas su akcijomis, siekiančiomis <strong>net [max_discount_percent] %!</strong>'
-- Second <p class=\"mb-6 text-gray-700\"> paragraph: Include '[total_active_discounts] aktyvių akcijų', 'Vidutinė nuolaida siekia <strong>[avg_discount_percent] %</strong>', and validity: 'Pasiūlymai galioja <strong>nuo [earliest_end] iki [latest_end]</strong>' if both dates are present and different, or 'Pasiūlymai galioja <strong>iki [date]</strong>' if dates are the same or only one is present. Dates format: YYYY-MM-DD. CRITICAL: Include product links from top_discounts when mentioning product types in this paragraph as well.
-
-<hr class=\"mb-6 border-gray-300\">
-
-3) STATS SECTION
-- <h2 id=\"svarbiausia-siu-savaiciu-statistika\" class=\"text-2xl font-semibold mb-4 text-gray-800\"> 'Svarbiausia šios savaitės statistika'
-- A <div class=\"max-w-full mb-6 shadow-md rounded-lg border\">
-    - A <table class=\"w-full text-left border-collapse\"> with styled header/body:
-      - <thead>
-        - <tr class=\"bg-gray-100\">
-          - <th class=\"p-3 border-r border-gray-300\"> 'Rodiklis'
-          - <th class=\"p-3\"> 'Reikšmė'
-      - <tbody>
-        - Include exactly these 5 rows in order:
-        - First <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Aktyvių nuolaidų skaičius</strong>'
-          - Second <td class=\"p-3\"> '[total_active_discounts] prekių'
-        - Second <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Vidutinė nuolaida</strong>'
-          - Second <td class=\"p-3\"> '[avg_discount_percent] %'
-        - Third <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Didžiausia nuolaida</strong>'
-          - Second <td class=\"p-3\"> '[max_discount_percent] %'
-        - Fourth <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Galiojimo laikotarpis</strong>'
-          - Second <td class=\"p-3\"> either '[earliest_end] – [latest_end]' or '[date]' per the rule above
-        - Fifth <tr class=\"hover:bg-gray-50 border-t border-gray-200\">
-          - First <td class=\"p-3 border-r border-gray-200\"> '<strong>Vidutinė sutaupyta suma už prekę</strong>'
-          - Second <td class=\"p-3\"> '€[avg_savings_per_product]'
-
-<hr class=\"mb-6 border-gray-300\">
-
-4) BEST STORES TABLE
-- <h2 id=\"geriausi-pasiulymai-pagal-prekybos-tinklus\" class=\"text-2xl font-semibold mb-4 text-gray-800\"> 'Geriausi pasiūlymai pagal prekybos tinklus'
-- A <p class=\"mb-4 text-gray-700\"> introducing the table: 'Peržiūrėkite, kurie tinklai šią savaitę siūlo geriausias kainas ir didžiausią asortimentą [category_name] kategorijoje.'
-- A <div class=\"overflow-x-auto max-w-full mb-6 shadow-md rounded-lg border\"> wrapper containing:
-  - <table class=\"w-full text-left border-collapse min-w-max\">
-    - <thead>
-      - <tr class=\"bg-gray-100\">
-        - <th class=\"p-3 border-r border-gray-300\"> 'Parduotuvė'
-        - <th class=\"p-3 border-r border-gray-300\"> 'Vidutinė nuolaida'
-        - <th class=\"p-3 border-r border-gray-300\"> 'Produktų skaičius'
-        - <th class=\"p-3\"> 'Šios savaitės privalumas'
-    - <tbody>
-      - Include ALL stores from store_statistics (up to 6 items). If store_statistics has fewer than 6 stores, list all available stores. If it has more than 6, list the top 6 sorted by avg_discount desc. CRITICAL: Include ALL major stores that appear in store_statistics (Rimi, Iki, Maxima, Norfa, Lidl, etc.) - do not skip any stores.
-      - For each store, create a <tr class=\"hover:bg-gray-50 border-t\"> with:
-        - First <td class=\"p-3 border-r border-gray-200\"> Find matching entry in store_category_links where store_category_links.store_slug matches store_statistics.slug. If found, use format: '<strong><a href=\"[url]\">[store_name]</a></strong>' where url is from store_category_links.url and store_name is from store_statistics.name. If not found in store_category_links, use format: '<strong><a href=\"/akcijos/[store_slug]/[category_slug]\">[store_name]</a></strong>' where store_slug is from store_statistics.slug and category_slug is from category_slug field.
-        - Second <td class=\"p-3 border-r border-gray-200\"> '[avg_discount] %' (use <strong> tags if this store has the highest avg_discount)
-        - Third <td class=\"p-3 border-r border-gray-200\"> '[count] produktai'
-        - Fourth <td class=\"p-3\"> A natural sentence describing the store's advantage. CRITICAL: Include as many product links as possible from this specific store's top_products array (store_statistics[store_index].top_products) when mentioning product types. When you mention product types (e.g., 'avokadų', 'bulvių', 'kopūstų', 'mėsos gaminiams', 'dešroms', etc.), try to find matching products ONLY in this store's top_products array where the product name contains those keywords. Create links using format: '<a href=\"[product_url]\">[keyword]</a>' where product_url is from top_products.product_url (remove leading '@' if present). For example: 'Daug akcijų ant <a href=\"[url]\">avokadų</a>, <a href=\"[url]\">bulvių</a> ir <a href=\"[url]\">kopūstų</a>'. If multiple products match a keyword, use the one with highest discount_percent. IMPORTANT: Only use products from this store's top_products array - do NOT use products from other stores or from the global top_discounts array. Use <strong> tags to emphasize key product types or benefits. If this store has the highest avg_discount, start with '<strong>Didžiausia vidutinė nuolaida!</strong>'. If it has the most products, mention '<strong>Didžiausias asortimentas!</strong>'. Include specific product types from the category context with links whenever possible.
-
-<hr class=\"mb-6 border-gray-300\">
-
-5) FAQ
-- <h2 id=\"dazniausiai-uzduodami-klausimai-duk\" class=\"text-2xl font-semibold mb-4 text-gray-800\"> 'Dažniausiai užduodami klausimai (DUK)'
-- Three Q/A blocks:
-  - First <h3 class=\"text-xl font-semibold mb-2 text-gray-700\"> '1. Kurioms [category_name] produktų grupėms taikomos didžiausios nuolaidos?'
-    - <p class=\"mb-4 text-gray-600\"> Answer mentioning product types that typically have highest discounts (30–50% and more). CRITICAL: Include as many product links as possible from top_discounts when mentioning product types. Match product names from top_discounts to mentioned product types and create links using format: '<a href=\"[product_url]\">[product_type]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present). Include links to 2 store urls from store_statistics using format '<a href=\"[url]\">[name]</a>' where url is from store_statistics.url (remove leading '@' if present) and name is from store_statistics.name. Use <strong> tags for product group names.
-  - Second <h3 class=\"text-xl font-semibold mb-2 text-gray-700\"> '2. Iki kada galioja šios akcijos?'
-    - <p class=\"mb-4 text-gray-600\"> Use the computed validity text: 'Visi nurodyti pasiūlymai galioja nuo [earliest_end] iki [latest_end]' or 'Visi nurodyti pasiūlymai galioja iki [date]'. Add a note about checking specific product validity.
-  - Third <h3 class=\"text-xl font-semibold mb-2 text-gray-700\"> '3. Kaip sutaupyti dar daugiau?'
-    - <p class=\"mb-4 text-gray-600\"> Mention card_discounts count if >0: 'Jei turite lojalumo kortelę, galite pasinaudoti papildomomis nuolaidomis – šiuo metu yra [card_discounts] pasiūlymų, kuriems taikoma papildoma nuolaida su kortele.' Include shopping tips.
+2) PROSE (3-4 paragraphs, each a <p class=\"mb-4 text-gray-700\">, last one <p class=\"mb-6 text-gray-700\">)
+- Paragraph 1: Start with a question or engaging statement about the category. Use <strong> tags to emphasize the category name. CRITICAL: When mentioning specific product types, include product links from top_discounts. Match product names from top_discounts to mentioned product types and create links using format: '<a href=\"[product_url]\">[product_type]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present). Example: 'Ruošiate pietus, planuojate šventinį stalą ar tiesiog pildote šaldytuvą? Kategorija <strong>„[category_name]\"</strong> yra puiki vieta sutaupyti, neaukojant kokybės!' Do not state an exact discount percentage here.
+- Paragraph 2: Describe the typical scale qualitatively, e.g. 'Čia rasite <strong>dešimtis akcijų</strong>' (never the exact total_active_discounts number) and the typical discount range rounded, e.g. 'Nuolaidos dažniausiai siekia <strong>apie 10-30 %</strong>' (never the exact avg_discount_percent). Do NOT mention any specific validity date. CRITICAL: Include product links from top_discounts when mentioning product types in this paragraph as well.
+- Paragraph 3: Describe qualitatively (no exact counts/percents) which stores tend to be strong in this category and what kind of products/assortment they're known for, drawing on store_statistics and store_category_links naturally in running prose (not a table) — e.g. 'Platų pasirinkimą dažnai rasite <a href=\"[store_category_links.url]\">[store_name]</a> parduotuvėje, o <a href=\"[url]\">[store_name]</a> pasižymi patraukliomis kainomis [product type].' Mention 2-3 stores this way, using store_category_links for the hrefs (remove leading '@' if present) and store_statistics for which product types each store tends to be strong in (via their top_products).
+- Paragraph 4 (only if keyword_pages is non-empty): Naturally mention 2-4 related, popular search topics within this category as a helpful pointer for the reader, linking each via '<a href=\"[url]\">[title]</a>' where url/title come from keyword_pages (remove leading '@' from the url). Phrase it inviting, e.g. 'Jei ieškote ko nors konkretesnio, pasižiūrėkite ir <a href=\"...\">...</a> ar <a href=\"...\">...</a> pasiūlymus.' Do not invent topics not present in keyword_pages; skip this paragraph entirely if keyword_pages is empty.
 
 OUTPUT RULES:
 - Language: Lithuanian.
-- Use data fields exactly as provided from JSON.
 - Remove any leading '@' from URLs.
-- Always include the exact section sequence with <hr> separators.
-- Never invent stores; use [category_name] and store names from store_statistics.
-- Numbers: format money as €[value] with two decimals; no thousands separator. Percent as [value] % (with space before %). Do not round integers. For money values like avg_savings_per_product, use two decimals.
-- For best stores table, list ALL stores from store_statistics (up to 6 items). If there are fewer than 6 stores, list all available stores. CRITICAL: Do not skip any stores - include every store that appears in store_statistics.
-- Use <strong> tags for emphasis on important numbers, category names, and key phrases.
-- Ensure all headings follow sentence case (only the first word capitalized).
-- Keep tone promotional but natural; avoid repeating the same phrase.
-- In the best stores table, highlight the store with highest avg_discount using <strong> tags in the second column, and mention 'Didžiausia vidutinė nuolaida!' in the fourth column if applicable.
+- Never invent stores or keyword topics; only use names/titles present in the provided JSON.
+- Never print an exact number, exact percent, exact euro amount, or exact date copied from the JSON anywhere in the output — always round or describe qualitatively.
+- Use <strong> tags for emphasis on important phrases and category names.
+- Ensure the heading follows sentence case (only the first word capitalized).
+- Keep tone promotional but natural, conversational, varied sentence structure; avoid repeating the same phrase across paragraphs.
 ";
     }
 
@@ -835,153 +900,4 @@ OUTPUT RULES:
         return true;
     }
 
-    public function generateStoreTopProductsTable(Store $store): ?string
-    {
-        $activeDiscounts = Discount::where('store_id', $store->id)
-            ->with(['product.category', 'store'])
-            ->get();
-
-        if ($activeDiscounts->isEmpty()) {
-            return null;
-        }
-
-        $topDiscounts = $activeDiscounts->sortByDesc('discount_percent')->take(5);
-        $maxDiscountPercent = min($activeDiscounts->max('discount_percent'), 100);
-
-        $earliestEnd = $activeDiscounts->min('end_at');
-        $latestEnd = $activeDiscounts->max('end_at');
-        $validityText = '';
-        if ($earliestEnd && $latestEnd && $earliestEnd->format('Y-m-d') !== $latestEnd->format('Y-m-d')) {
-            $validityText = 'Akcijos galioja nuo ' . $earliestEnd->format('Y-m-d') . ' iki ' . $latestEnd->format('Y-m-d');
-        } elseif ($earliestEnd || $latestEnd) {
-            $date = $earliestEnd ?: $latestEnd;
-            $validityText = 'Akcijos galioja iki ' . $date->format('Y-m-d');
-        }
-
-        $html = '<h2 class="text-xl md:text-2xl font-semibold mb-3">Geriausi pasiūlymai ' . htmlspecialchars($store->name) . ' produktams, nuolaidos iki ' . $maxDiscountPercent . '%</h2>';
-        $html .= '<table class="w-full border-collapse text-sm md:text-base mb-2">';
-        $html .= '<tbody>';
-
-        $rowIndex = 0;
-        foreach ($topDiscounts as $discount) {
-            $bgColor = ($rowIndex % 2 === 0) ? '#f9fafb' : '#ffffff';
-            $productUrl = str_replace('@', '', $discount->product->category->slug . '/' . $discount->product->slug);
-            $productUrl = '/akcijos/' . $productUrl;
-
-            $html .= '<tr style="background-color: ' . $bgColor . '">';
-            $html .= '<td class="px-4 py-2 text-gray-900 align-top border-b">';
-            $html .= '<a href="' . htmlspecialchars($productUrl) . '" style="font-size: 1.1em;">' . htmlspecialchars($discount->product->name) . '</a>';
-            $html .= '</td>';
-
-            $hasOriginalPrice = $discount->original_price > 0;
-            $hasDiscountedPrice = $discount->discounted_price > 0;
-            $hasDiscount = $discount->discount_percent > 0;
-
-            $html .= '<td class="px-4 py-2 border-b text-center" style="vertical-align: middle;">';
-            if ($hasDiscount) {
-                $html .= '<span class="bg-[#ff002f] text-white text-[13px] sm:text-[14px] font-bold rounded-md px-2 py-0.5">' . $discount->discount_percent . '%</span>';
-            }
-            $html .= '</td>';
-
-            $html .= '<td class="px-4 py-2 border-b text-right" style="vertical-align: middle;">';
-            if ($hasOriginalPrice && $hasDiscountedPrice && $discount->original_price != $discount->discounted_price) {
-                $originalPrice = number_format($discount->original_price, 2, '.', '');
-                $discountedPrice = number_format($discount->discounted_price, 2, '.', '');
-                $html .= '<div><span style="color: #6b7280; text-decoration: line-through;">' . $originalPrice . '€</span></div>';
-                $html .= '<div><span style="color: #10b981; font-weight: bold; font-size: 1.1em;">' . $discountedPrice . '€</span></div>';
-            } elseif ($hasDiscountedPrice) {
-                $discountedPrice = number_format($discount->discounted_price, 2, '.', '');
-                $html .= '<span style="color: #10b981; font-weight: bold; font-size: 1.1em;">' . $discountedPrice . '€</span>';
-            }
-            $html .= '</td>';
-            $html .= '</tr>';
-
-            $rowIndex++;
-        }
-
-        $html .= '</tbody>';
-        $html .= '</table>';
-
-        if ($validityText) {
-            $html .= '<p class="leading-relaxed mt-3">' . htmlspecialchars($validityText) . '</p>';
-        }
-
-        return $html;
-    }
-
-    public function generateCategoryTopProductsTable(Category $category): ?string
-    {
-        $activeDiscounts = Discount::whereHas('product', function($query) use ($category) {
-                $query->where('category_id', $category->id);
-            })
-            ->with(['product.category', 'store'])
-            ->get();
-
-        if ($activeDiscounts->isEmpty()) {
-            return null;
-        }
-
-        $topDiscounts = $activeDiscounts->sortByDesc('discount_percent')->take(5);
-        $maxDiscountPercent = min($activeDiscounts->max('discount_percent'), 100);
-
-        $earliestEnd = $activeDiscounts->min('end_at');
-        $latestEnd = $activeDiscounts->max('end_at');
-        $validityText = '';
-        if ($earliestEnd && $latestEnd && $earliestEnd->format('Y-m-d') !== $latestEnd->format('Y-m-d')) {
-            $validityText = 'Akcijos galioja nuo ' . $earliestEnd->format('Y-m-d') . ' iki ' . $latestEnd->format('Y-m-d');
-        } elseif ($earliestEnd || $latestEnd) {
-            $date = $earliestEnd ?: $latestEnd;
-            $validityText = 'Akcijos galioja iki ' . $date->format('Y-m-d');
-        }
-
-        $html = '<h2 class="text-xl md:text-2xl font-semibold mb-3">Geriausi pasiūlymai ' . htmlspecialchars(mb_strtolower($category->name)) . ' produktams, nuolaidos iki ' . $maxDiscountPercent . '%</h2>';
-        $html .= '<table class="w-full border-collapse text-sm md:text-base mb-2">';
-        $html .= '<tbody>';
-
-        $rowIndex = 0;
-        foreach ($topDiscounts as $discount) {
-            $bgColor = ($rowIndex % 2 === 0) ? '#f9fafb' : '#ffffff';
-            $productUrl = str_replace('@', '', $discount->product->category->slug . '/' . $discount->product->slug);
-            $productUrl = '/akcijos/' . $productUrl;
-
-            $html .= '<tr style="background-color: ' . $bgColor . '">';
-            $html .= '<td class="px-4 py-2 text-gray-900 align-top border-b">';
-            $html .= '<a href="' . htmlspecialchars($productUrl) . '" style="font-size: 1.1em;">' . htmlspecialchars($discount->product->name) . '</a>';
-            $html .= '</td>';
-
-            $hasOriginalPrice = $discount->original_price > 0;
-            $hasDiscountedPrice = $discount->discounted_price > 0;
-            $hasDiscount = $discount->discount_percent > 0;
-
-            $html .= '<td class="px-4 py-2 border-b text-center" style="vertical-align: middle;">';
-            if ($hasDiscount) {
-                $html .= '<span class="bg-[#ff002f] text-white text-[13px] sm:text-[14px] font-bold rounded-md px-2 py-0.5">' . $discount->discount_percent . '%</span>';
-            }
-            $html .= '</td>';
-
-            $html .= '<td class="px-4 py-2 border-b text-right" style="vertical-align: middle;">';
-            if ($hasOriginalPrice && $hasDiscountedPrice && $discount->original_price != $discount->discounted_price) {
-                $originalPrice = number_format($discount->original_price, 2, '.', '');
-                $discountedPrice = number_format($discount->discounted_price, 2, '.', '');
-                $html .= '<div><span style="color: #6b7280; text-decoration: line-through;">' . $originalPrice . '€</span></div>';
-                $html .= '<div><span style="color: #10b981; font-weight: bold; font-size: 1.1em;">' . $discountedPrice . '€</span></div>';
-            } elseif ($hasDiscountedPrice) {
-                $discountedPrice = number_format($discount->discounted_price, 2, '.', '');
-                $html .= '<span style="color: #10b981; font-weight: bold; font-size: 1.1em;">' . $discountedPrice . '€</span>';
-            }
-            $html .= '</td>';
-            $html .= '</tr>';
-
-            $rowIndex++;
-        }
-
-        $html .= '</tbody>';
-        $html .= '</table>';
-
-        if ($validityText) {
-            $html .= '<p class="leading-relaxed mt-3">' . htmlspecialchars($validityText) . '</p>';
-        }
-
-        return $html;
-    }
 }
