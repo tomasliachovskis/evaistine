@@ -6,8 +6,8 @@ use App\Models\Category;
 use App\Models\KeywordPage;
 use App\Services\KeywordPageCategoryResolver;
 use App\Services\KeywordPageService;
+use App\Support\CacheVersion;
 use App\Support\FoodCategorySlugs;
-use Illuminate\Support\Facades\Cache;
 
 class KeywordCsvImporter
 {
@@ -149,10 +149,7 @@ class KeywordCsvImporter
         }
 
         if ($apply) {
-            Cache::forget('keyword_pages_list_v8');
-            foreach ($imported as $row) {
-                Cache::forget('keyword_page_v5_' . $row['slug']);
-            }
+            CacheVersion::bump('keywords');
         }
 
         return [
@@ -328,10 +325,7 @@ class KeywordCsvImporter
         }
 
         if ($apply) {
-            Cache::forget('keyword_pages_list_v8');
-            foreach ($imported as $row) {
-                Cache::forget('keyword_page_v5_' . $row['slug']);
-            }
+            CacheVersion::bump('keywords');
         }
 
         return [

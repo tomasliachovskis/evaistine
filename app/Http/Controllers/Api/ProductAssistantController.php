@@ -35,8 +35,7 @@ class ProductAssistantController extends Controller
         $products = $request->input('products');
         $cacheKey = 'cart_comparison_' . md5(serialize($products));
 
-        return Cache::tags(['assistant', 'cart-comparison'])
-            ->remember($cacheKey, 1800, function () use ($products) {
+        return Cache::remember($cacheKey, 1800, function () use ($products) {
                 try {
                     $results = $this->assistantService->calculateCartPrices($products);
 

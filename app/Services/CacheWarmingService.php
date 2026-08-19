@@ -39,7 +39,7 @@ class CacheWarmingService
     {
         $cacheKey = $this->productController->resolveAllDiscountsCacheKey();
         $this->section('all discounts', 1);
-        $this->logWarm('all', '/discount', $cacheKey, ['discounts', 'all']);
+        $this->logWarm('all', '/discount', $cacheKey);
         $this->productController->getAllDiscounts();
     }
 
@@ -51,7 +51,7 @@ class CacheWarmingService
         foreach ($stores as $store) {
             $cacheKey = $this->productController->resolveDiscountsCacheKey($store->slug);
             $label = $this->productController->resolveDiscountsCacheLabel($store->slug);
-            $this->logWarm('store', $label, $cacheKey, ['discounts', $store->slug, 'all']);
+            $this->logWarm('store', $label, $cacheKey);
             $this->productController->getDiscounts($store->slug);
         }
     }
@@ -64,7 +64,7 @@ class CacheWarmingService
         foreach ($categories as $category) {
             $cacheKey = $this->productController->resolveDiscountsCacheKey($category->slug);
             $label = $this->productController->resolveDiscountsCacheLabel($category->slug);
-            $this->logWarm('category', $label, $cacheKey, ['discounts', $category->slug, 'all']);
+            $this->logWarm('category', $label, $cacheKey);
             $this->productController->getDiscounts($category->slug);
         }
     }
@@ -107,7 +107,7 @@ class CacheWarmingService
         foreach ($pairs as $pair) {
             $cacheKey = $this->productController->resolveDiscountsCacheKey($pair->store_slug, $pair->category_slug);
             $label = $this->productController->resolveDiscountsCacheLabel($pair->store_slug, $pair->category_slug);
-            $this->logWarm('store+category', $label, $cacheKey, ['discounts', $pair->store_slug, $pair->category_slug]);
+            $this->logWarm('store+category', $label, $cacheKey);
             $this->productController->getDiscounts($pair->store_slug, $pair->category_slug);
         }
     }
@@ -133,13 +133,13 @@ class CacheWarmingService
         $this->section('favorites', 1 + $categories->count());
 
         $homeKey = $this->productController->resolveFavoriteHomeCacheKey();
-        $this->logWarm('favorite-home', '/favorite/home', $homeKey, ['discounts', 'favorites', 'home']);
+        $this->logWarm('favorite-home', '/favorite/home', $homeKey);
         $this->productController->getFavoriteHome();
 
         foreach ($categories as $category) {
             $cacheKey = $this->productController->resolveFavoriteCategoryCacheKey($category->id);
             $label = "/favorite/category/{$category->id}";
-            $this->logWarm('favorite-category', $label, $cacheKey, ['discounts', 'favorites', 'category', $category->id]);
+            $this->logWarm('favorite-category', $label, $cacheKey);
             $this->productController->getFavoriteCategory($category->id);
         }
     }
@@ -177,19 +177,13 @@ class CacheWarmingService
         $this->command->info("→ {$name} ({$count})");
     }
 
-    protected function logWarm(string $type, string $label, string $cacheKey, ?array $tags = null): void
+    protected function logWarm(string $type, string $label, string $cacheKey): void
     {
         if (!$this->command || !$this->command->getOutput()->isVerbose()) {
             return;
         }
 
-        $status = 'MISS';
-
-        if ($tags !== null) {
-            $status = Cache::tags($tags)->has($cacheKey) ? 'HIT' : 'MISS';
-        } else {
-            $status = Cache::has($cacheKey) ? 'HIT' : 'MISS';
-        }
+        $status = Cache::has($cacheKey) ? 'HIT' : 'MISS';
 
         $this->command->line("  [{$type}] {$status} {$label} → {$cacheKey}");
     }

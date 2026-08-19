@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Discount;
 use App\Models\KeywordPage;
 use App\Models\Store;
+use App\Support\CacheVersion;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -217,12 +218,11 @@ class KeywordPageService
             return collect();
         }
 
-        $cacheKey = "home_kw_top_deals_{$page->slug}_v3";
+        $cacheKey = "home_kw_top_deals_{$page->slug}_v3_" . CacheVersion::suffix(['discounts']);
 
-        $discounts = Cache::tags(['discounts', 'home', 'home_kw_pool'])
-            ->remember($cacheKey, 7200, function () use ($page) {
-                return $this->fetchTopDiscountsForHomePoolFromDatabase($page);
-            });
+        $discounts = Cache::remember($cacheKey, 7200, function () use ($page) {
+            return $this->fetchTopDiscountsForHomePoolFromDatabase($page);
+        });
 
         return $this->homeDealScorer
             ->sortByScore(

@@ -3,22 +3,17 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
+use App\Support\CacheVersion;
 
 class ClearDiscountsCache extends Command
 {
     protected $signature = 'cache:clear-discounts';
 
-    protected $description = 'Clear API discounts cache (tagged cache)';
+    protected $description = 'Clear API discounts cache';
 
     public function handle(): int
     {
-        try {
-            Cache::tags(['discounts'])->flush();
-        } catch (\BadMethodCallException $e) {
-            Cache::flush();
-            $this->warn('Tagged cache not supported, full application cache cleared.');
-        }
+        CacheVersion::bump('discounts');
 
         $this->info('Discounts cache cleared.');
 

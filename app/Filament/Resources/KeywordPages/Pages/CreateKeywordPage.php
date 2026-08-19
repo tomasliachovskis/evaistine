@@ -4,8 +4,8 @@ namespace App\Filament\Resources\KeywordPages\Pages;
 
 use App\Filament\Resources\KeywordPages\KeywordPageResource;
 use App\Services\KeywordPageService;
+use App\Support\CacheVersion;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Facades\Cache;
 
 class CreateKeywordPage extends CreateRecord
 {
@@ -28,6 +28,7 @@ class CreateKeywordPage extends CreateRecord
     protected function afterCreate(): void
     {
         app(KeywordPageService::class)->refreshOfferCounts($this->record->refresh());
-        Cache::tags(['keywords', 'sitemap'])->flush();
+        CacheVersion::bump('keywords');
+        CacheVersion::bump('sitemap');
     }
 }

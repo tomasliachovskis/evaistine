@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
+use App\Support\CacheVersion;
 use App\Models\Discount;
 use App\Models\SearchResult;
 use App\Models\ProductFavorite;
@@ -58,14 +59,13 @@ class ProductController extends Controller
             $this->normalizeFiltersForCacheKey($filters, $storeOrCategory, $category)
         );
 
-        return Cache::tags(['discounts', $storeOrCategory, $category ?: 'all'])
-            ->remember($cacheKey, 3600, function () use ($storeOrCategory, $category, $filters) {
-                if ($category) {
-                    return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category, $filters);
-                }
+        return Cache::remember($cacheKey, 3600, function () use ($storeOrCategory, $category, $filters) {
+            if ($category) {
+                return $this->getDiscountsByStoreAndCategory($storeOrCategory, $category, $filters);
+            }
 
-                return $this->getDiscountsByStoreOrCategory($storeOrCategory, $filters);
-            });
+            return $this->getDiscountsByStoreOrCategory($storeOrCategory, $filters);
+        });
     }
 
     public function getAllDiscounts()
@@ -73,17 +73,16 @@ class ProductController extends Controller
         $filters = $this->getFilters();
         $cacheKey = $this->generateAllDiscountsCacheKey($this->normalizeFiltersForCacheKey($filters));
 
-        return Cache::tags(['discounts', 'all'])
-            ->remember($cacheKey, 3600, function () use ($filters) {
-                $query = Discount::with(['product', 'store']);
-                $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
+        return Cache::remember($cacheKey, 3600, function () use ($filters) {
+            $query = Discount::with(['product', 'store']);
+            $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
 
-                return response()->json([
-                    'data' => $this->formatter->format($discounts),
-                    'breadcrumbs' => $this->generateBreadcrumbs('all_discounts'),
-                    'seo' => $this->generateSeoData('all_discounts')
-                ]);
-            });
+            return response()->json([
+                'data' => $this->formatter->format($discounts),
+                'breadcrumbs' => $this->generateBreadcrumbs('all_discounts'),
+                'seo' => $this->generateSeoData('all_discounts')
+            ]);
+        });
     }
 
     private function getDiscountsByStoreOrCategory($storeOrCategory, $filters)
@@ -322,10 +321,10 @@ class ProductController extends Controller
     public function search(Request $request, $query)
     {
         $filters = $this->getFilters();
-        $cacheKey = 'search_' . md5($query . serialize($this->normalizeFiltersForCacheKey($filters)));
+        $cacheKey = 'search_' . md5($query . serialize($this->normalizeFiltersForCacheKey($filters)))
+            . '_' . CacheVersion::suffix(['discounts']);
 
-        return Cache::tags(['discounts', 'search'])
-            ->remember($cacheKey, 1800, function () use ($query, $filters) {
+        return Cache::remember($cacheKey, 1800, function () use ($query, $filters) {
                 try {
                     $page = $filters['page'] ?? 1;
                     $perPage = 24;
@@ -437,8 +436,7 @@ class ProductController extends Controller
             return response()->json(['error' => 'Product not found'], 404);
         }
 
-        return Cache::tags(['discounts', 'favorites', 'product', $slug])
-            ->remember($cacheKey, 86400, function () use ($slug, $filters) {
+        return Cache::remember($cacheKey, 86400, function () use ($slug, $filters) {
                 $product = Product::where('slug', $slug)->firstOrFail();
 
                 $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
@@ -460,8 +458,7 @@ class ProductController extends Controller
         $filters = $this->getFilters();
         $cacheKey = $this->generateFavoriteCategoryCacheKey($id, $this->normalizeFiltersForCacheKey($filters));
 
-        return Cache::tags(['discounts', 'favorites', 'category', $id])
-            ->remember($cacheKey, 7200, function () use ($id, $filters) {
+        return Cache::remember($cacheKey, 7200, function () use ($id, $filters) {
                 $query = Discount::whereHas('product', function ($q) use ($id) {
                     $q->where('category_id', $id);
                 })
@@ -481,8 +478,7 @@ class ProductController extends Controller
         $filters = $this->getFilters();
         $cacheKey = $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)) . '_v15';
 
-        return Cache::tags(['discounts', 'favorites', 'home'])
-            ->remember($cacheKey, 7200, function () {
+        return Cache::remember($cacheKey, 7200, function () {
                 return response()->json([
                     'sections' => $this->homePageSectionsService->build(),
                     'page_meta' => $this->homePageMetaService->build(),
@@ -496,10 +492,9 @@ class ProductController extends Controller
             return response()->json(['error' => 'Product not found'], 404);
         }
 
-        $cacheKey = "product_slug_{$slug}";
+        $cacheKey = "product_slug_{$slug}_" . CacheVersion::suffix(['discounts']);
 
-        return Cache::tags(['discounts', 'product', $slug])
-            ->remember($cacheKey, 86400, function () use ($slug) {
+        return Cache::remember($cacheKey, 86400, function () use ($slug) {
                 $product = Product::where('slug', $slug)
                     ->with([
                         'discounts.store',
@@ -931,7 +926,9 @@ class ProductController extends Controller
 
     public function getSitemap()
     {
-        return Cache::tags(['sitemap'])->remember('sitemap_entries_v4', 3600, function () {
+        $cacheKey = 'sitemap_entries_v4_' . CacheVersion::suffix(['sitemap']);
+
+        return Cache::remember($cacheKey, 3600, function () {
             $freshness = $this->pageFreshnessService->build();
             $defaultLastmod = Carbon::parse($freshness['updated_at'])->format('Y-m-d');
 
@@ -1089,12 +1086,12 @@ class ProductController extends Controller
             $key .= "_" . md5(serialize($filters));
         }
 
-        return $key;
+        return $key . '_' . CacheVersion::suffix(['discounts']);
     }
 
     private function generateAllDiscountsCacheKey($filters = [])
     {
-        return "all_discounts_" . md5(serialize($filters));
+        return "all_discounts_" . md5(serialize($filters)) . '_' . CacheVersion::suffix(['discounts']);
     }
 
     private function generateFavoriteProductCacheKey($slug, $filters = [])
@@ -1105,7 +1102,7 @@ class ProductController extends Controller
             $key .= "_" . md5(serialize($filters));
         }
 
-        return $key;
+        return $key . '_' . CacheVersion::suffix(['discounts']);
     }
 
     private function generateFavoriteCategoryCacheKey($id, $filters = [])
@@ -1116,7 +1113,7 @@ class ProductController extends Controller
             $key .= "_" . md5(serialize($filters));
         }
 
-        return $key;
+        return $key . '_' . CacheVersion::suffix(['discounts']);
     }
 
     private function generateFavoriteHomeCacheKey($filters = [])
@@ -1127,7 +1124,7 @@ class ProductController extends Controller
             $key .= "_" . md5(serialize($filters));
         }
 
-        return $key;
+        return $key . '_' . CacheVersion::suffix(['discounts']);
     }
 
     public function toggleFavorite(Request $request)

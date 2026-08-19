@@ -4,8 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\KeywordPage;
 use App\Services\KeywordPageService;
+use App\Support\CacheVersion;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 
 class RefreshKeywordOfferCountsCommand extends Command
 {
@@ -38,7 +38,7 @@ class RefreshKeywordOfferCountsCommand extends Command
         $bar->finish();
         $this->newLine(2);
 
-        Cache::forget('keyword_pages_list_v8');
+        CacheVersion::bump('keywords');
 
         $this->info('Refreshed offer counts for ' . $pages->count() . ' keyword page(s).');
 

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Discount;
 use App\Models\KeywordPage;
+use App\Support\CacheVersion;
 use App\Support\FoodCategorySlugs;
 use App\Support\HomeSectionKeywordBlacklist;
 use Illuminate\Support\Collection;
@@ -33,18 +34,20 @@ class HomeKeywordDealPoolBuilder
 
     public function buildFoodPool(): array
     {
-        return Cache::tags(['discounts', 'home', 'home_kw_pool'])
-            ->remember('home_kw_food_pool_v4', 7200, function () {
-                return $this->buildPoolForSegment('food');
-            });
+        $cacheKey = 'home_kw_food_pool_v4_' . CacheVersion::suffix(['discounts']);
+
+        return Cache::remember($cacheKey, 7200, function () {
+            return $this->buildPoolForSegment('food');
+        });
     }
 
     public function buildNonFoodPool(): array
     {
-        return Cache::tags(['discounts', 'home', 'home_kw_pool'])
-            ->remember('home_kw_non_food_pool_v4', 7200, function () {
-                return $this->buildPoolForSegment('non_food');
-            });
+        $cacheKey = 'home_kw_non_food_pool_v4_' . CacheVersion::suffix(['discounts']);
+
+        return Cache::remember($cacheKey, 7200, function () {
+            return $this->buildPoolForSegment('non_food');
+        });
     }
 
     public function resolveKeywordSlugForDiscount(Discount $discount, string $segment): ?string
