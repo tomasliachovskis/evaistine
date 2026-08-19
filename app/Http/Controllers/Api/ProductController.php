@@ -924,9 +924,17 @@ class ProductController extends Controller
         ]);
     }
 
+    private function sitemapProductsQuery()
+    {
+        return Product::query()
+            ->where(function ($query) {
+                $query->whereHas('discounts')->orWhereHas('discountHistories');
+            });
+    }
+
     public function getSitemap()
     {
-        $cacheKey = 'sitemap_entries_v4_' . CacheVersion::suffix(['sitemap']);
+        $cacheKey = 'sitemap_entries_v5_' . CacheVersion::suffix(['sitemap']);
 
         return Cache::remember($cacheKey, 3600, function () {
             $freshness = $this->pageFreshnessService->build();
@@ -943,24 +951,7 @@ class ProductController extends Controller
                 ->pluck('slug')
                 ->all();
 
-            $products = Product::query()
-                ->where(function ($query) {
-                    $query->whereHas('discounts')->orWhereHas('discountHistories');
-                })
-                ->with('category:id,slug')
-                ->select('slug', 'updated_at', 'category_id')
-                ->get()
-                ->map(function (Product $product) {
-                    $categorySlug = $product->category?->slug;
-                    $path = $categorySlug ? "{$categorySlug}/{$product->slug}" : $product->slug;
-
-                    return [
-                        'path' => $path,
-                        'lastmod' => $product->updated_at?->format('Y-m-d') ?? null,
-                    ];
-                })
-                ->values()
-                ->all();
+            $productsTotal = $this->sitemapProductsQuery()->count();
 
             $blogPosts = \App\Models\BlogPost::published()
                 ->select('slug', 'updated_at', 'published_at')
@@ -1003,9 +994,40 @@ class ProductController extends Controller
                 'leaflet_stores' => $stores,
                 'leaflets' => $leafletEntries,
                 'categories' => $categories,
-                'products' => $products,
+                'products_total' => $productsTotal,
                 'blog_posts' => $blogPosts,
                 'keywords' => $keywords,
+            ]);
+        });
+    }
+
+    public function getSitemapProducts(Request $request)
+    {
+        $perPage = 20000;
+        $page = max(1, (int) $request->query('page', 1));
+        $cacheKey = "sitemap_products_v1_page_{$page}_" . CacheVersion::suffix(['sitemap']);
+
+        return Cache::remember($cacheKey, 3600, function () use ($page, $perPage) {
+            $products = $this->sitemapProductsQuery()
+                ->with('category:id,slug')
+                ->select('id', 'slug', 'updated_at', 'category_id')
+                ->orderBy('id')
+                ->forPage($page, $perPage)
+                ->get()
+                ->map(function (Product $product) {
+                    $categorySlug = $product->category?->slug;
+                    $path = $categorySlug ? "{$categorySlug}/{$product->slug}" : $product->slug;
+
+                    return [
+                        'path' => $path,
+                        'lastmod' => $product->updated_at?->format('Y-m-d') ?? null,
+                    ];
+                })
+                ->values()
+                ->all();
+
+            return response()->json([
+                'products' => $products,
             ]);
         });
     }
