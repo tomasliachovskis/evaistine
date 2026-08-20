@@ -163,6 +163,7 @@ class DiscountResponseFormatter
     {
         $product->loadMissing(['discountHistories.store', 'category']);
         $productDiscountHistories = $this->getProductDiscountHistories($product);
+        $lastKnownPrice = $productDiscountHistories->first()->discounted_price ?? null;
 
         return collect([
             [
@@ -178,7 +179,7 @@ class DiscountResponseFormatter
                 'to_date' => null,
                 'valid_date' => null,
                 'offer_count' => 0,
-                'min_price' => 0,
+                'min_price' => $lastKnownPrice !== null ? (float) $lastKnownPrice : null,
                 'offers' => [],
                 'is_expired' => true,
                 'history' => $productDiscountHistories->map(function ($history) {
