@@ -21,7 +21,17 @@
         <server name="APP_ENV" value="testing"/>
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="CACHE_DRIVER" value="array"/>
-        <!-- <server name="DB_DATABASE" value=":memory:"/> -->
+        <!--
+            Force tests onto the local Sail MySQL container's disposable
+            `testing` database. RefreshDatabase drops and re-migrates the
+            configured database on every run; without this override it
+            silently falls back to the app's main .env DB_HOST, which
+            points at a shared remote server, not a local/disposable one.
+        -->
+        <server name="DB_CONNECTION" value="mysql"/>
+        <server name="DB_HOST" value="mysql"/>
+        <server name="DB_PORT" value="3306"/>
+        <server name="DB_DATABASE" value="testing"/>
         <server name="MAIL_MAILER" value="array"/>
         <server name="QUEUE_CONNECTION" value="sync"/>
         <server name="SESSION_DRIVER" value="array"/>
