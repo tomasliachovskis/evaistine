@@ -968,6 +968,7 @@ class ProductController extends Controller
                 ->all();
 
             $keywords = \App\Models\KeywordPage::query()
+                ->published()
                 ->orderBy('sort_order')
                 ->pluck('slug')
                 ->all();
