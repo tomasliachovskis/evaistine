@@ -171,6 +171,41 @@ class HomeDealPoolService
 
     private function fetchScoredCandidates(?int $excludeId): Collection
     {
+        return $this->scoredCandidatesQuery($excludeId)
+            ->orderByDesc('deal_score')
+            ->orderByDesc('discounts.discount_percent')
+            ->limit(self::CANDIDATE_LIMIT)
+            ->get();
+    }
+
+    /**
+     * Top-N deals for a single category (optionally scoped to one store),
+     * ranked by the same deal_score used for the home page pools. Used to
+     * power one carousel per category on /akcijos and /akcijos/{store}
+     * instead of a single cross-category pool.
+     */
+    public function bestForCategory(int $categoryId, int $limit, ?int $storeId = null): Collection
+    {
+        // Deliberately skips applyTopProductFilters()'s home-page-only heuristics
+        // (min €5 price, excluded "namu-ukio" category) — every category needs
+        // its own best deals here, including cheap ones (produce, plants) and
+        // the one category the home page spotlight excludes.
+        return $this->scoredCandidatesQuery(null, false)
+            ->whereNotNull('discounts.discounted_price')
+            ->when($storeId, function ($query) use ($storeId) {
+                $query->where('discounts.store_id', $storeId);
+            })
+            ->whereHas('product', function ($productQuery) use ($categoryId) {
+                $productQuery->where('category_id', $categoryId);
+            })
+            ->orderByDesc('deal_score')
+            ->orderByDesc('discounts.discount_percent')
+            ->limit($limit)
+            ->get();
+    }
+
+    private function scoredCandidatesQuery(?int $excludeId, bool $applyTopProductFilters = true): Builder
+    {
         $popularIds = implode(',', self::POPULAR_CATEGORY_IDS);
         $today = Carbon::today()->toDateString();
         $urgencyCutoff = Carbon::now()->copy()->addDays(3)->toDateTimeString();
@@ -180,7 +215,9 @@ class HomeDealPoolService
             ->groupBy('dh.product_id', 'dh.store_id');
 
         $query = $this->baseQuery();
-        $this->applyTopProductFilters($query);
+        if ($applyTopProductFilters) {
+            $this->applyTopProductFilters($query);
+        }
         $this->excludeIds($query, $excludeId);
 
         return $query
@@ -215,11 +252,7 @@ class HomeDealPoolService
                     END
                 ) AS deal_score",
                 [$today, $urgencyCutoff]
-            )
-            ->orderByDesc('deal_score')
-            ->orderByDesc('discounts.discount_percent')
-            ->limit(self::CANDIDATE_LIMIT)
-            ->get();
+            );
     }
 
     private function pickDiversePool(

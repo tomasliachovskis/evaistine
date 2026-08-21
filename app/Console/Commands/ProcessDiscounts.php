@@ -11,6 +11,7 @@ use App\Models\ProductMapping;
 use App\Models\Store;
 use App\Rules\StoreRules\AibeRules;
 use App\Rules\StoreRules\CiaRules;
+use App\Rules\StoreRules\EpromoRules;
 use App\Rules\StoreRules\ExpressMarketRules;
 use App\Rules\StoreRules\GrusteRules;
 use App\Rules\StoreRules\GulbeleRules;
@@ -562,6 +563,8 @@ class ProcessDiscounts extends Command
                 return new VynotekaRules($tempDiscount);
             case 'Thomas Philipps':
                 return new ThomasPhilippsRules($tempDiscount);
+            case 'ePromo':
+                return new EpromoRules($tempDiscount);
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
         }
