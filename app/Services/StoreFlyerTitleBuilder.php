@@ -31,6 +31,15 @@ class StoreFlyerTitleBuilder
         $hasPdf = $pdfUrl && $pdfUrl !== '#';
         $slug = $flyer->slug ?? '';
 
+        // is_active is a manually-set flag that isn't kept in sync with real
+        // validity dates (seen stale true on flyers over a month expired), so
+        // current/expired status is derived from valid_to instead, not it.
+        $validTo = $flyer->valid_to;
+        $isExpired = $validTo !== null && $validTo->lt(Carbon::today());
+        $daysRemaining = $isExpired || $validTo === null
+            ? null
+            : (int) Carbon::today()->diffInDays($validTo);
+
         return [
             'title' => $this->build($flyer, $store),
             'slug' => $slug,
@@ -43,6 +52,8 @@ class StoreFlyerTitleBuilder
             'valid_to' => $flyer->valid_to ? $flyer->valid_to->format('Y-m-d') : '',
             'pages_count' => (int) ($flyer->pages_count ?? $flyer->pages()->count()),
             'processing_status' => $flyer->processing_status ?? StoreFlyer::STATUS_PENDING,
+            'status' => $isExpired ? 'expired' : 'active',
+            'days_remaining' => $daysRemaining,
         ];
     }
 

@@ -228,8 +228,11 @@ class ListingPageMetaService
 
     private function buildLeaflets(Store $store): array
     {
-        return $store->flyers()
-            ->active()
+        // is_active isn't a reliable current/expired signal (see
+        // StoreFlyerTitleBuilder::toListingArray), so every ready flyer is
+        // listed here — newest first, current + full history — with status
+        // computed from its own dates instead of that flag.
+        $leaflets = $store->flyers()
             ->ready()
             ->withCount('pages')
             ->ordered()
@@ -239,19 +242,33 @@ class ListingPageMetaService
                 return ($leaflet['image_url'] || $leaflet['pdf_url'])
                     && ($leaflet['pages_count'] > 0 || $leaflet['image_url']);
             })
-            ->values()
-            ->all();
+            ->values();
+
+        $sawActive = false;
+
+        return $leaflets->map(function (array $leaflet) use (&$sawActive) {
+            if ($leaflet['status'] === 'active' && !$sawActive) {
+                $sawActive = true;
+                $leaflet['status'] = 'new';
+            }
+
+            return $leaflet;
+        })->all();
     }
 
     public function buildForStoreFlyer(Store $store, StoreFlyer $flyer): array
     {
         $flyer->loadMissing(['pages', 'store']);
         $title = $this->flyerTitleBuilder->build($flyer, $store);
+        $leaflets = $this->buildLeaflets($store);
 
         return [
             'type' => 'store_flyer',
             'store_slug' => $store->slug,
             'store_name' => $store->name,
+            'leaflets_count' => count($leaflets),
+            'leaflets' => $leaflets,
+            'top_categories' => $this->getTopCategoriesForStore($store),
             'flyer' => [
                 'title' => $title,
                 'slug' => $flyer->slug,
