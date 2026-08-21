@@ -7,6 +7,7 @@ use App\Models\Store;
 use App\Models\Category;
 use App\Models\Product;
 use App\Http\Controllers\Api\ProductController;
+use App\Support\CacheVersion;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -31,8 +32,25 @@ class CacheWarmingService
         $this->warmStoreCaches();
         $this->warmCategoryCaches();
         $this->warmStoreCategoryCaches();
+        $this->warmBestByCategoryCaches();
         $this->warmPopularProductsCache();
         $this->warmAllDiscountsCache();
+    }
+
+    public function warmBestByCategoryCaches()
+    {
+        $stores = Store::select('id', 'slug')->get();
+        $this->section('best-by-category', $stores->count() + 1);
+
+        $rootCacheKey = 'best_discounts_by_category_' . CacheVersion::suffix(['discounts']);
+        $this->logWarm('best-by-category', '/akcijos', $rootCacheKey);
+        $this->productController->getBestDiscountsByCategory();
+
+        foreach ($stores as $store) {
+            $cacheKey = "best_discounts_by_category_store_{$store->id}_" . CacheVersion::suffix(['discounts']);
+            $this->logWarm('best-by-category', "/akcijos/{$store->slug}", $cacheKey);
+            $this->productController->getBestDiscountsByCategoryForStore($store->slug);
+        }
     }
 
     public function warmAllDiscountsCache()
