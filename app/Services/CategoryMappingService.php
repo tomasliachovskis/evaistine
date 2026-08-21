@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\CategoryMapper;
 use App\Models\DiscountTemp;
 use App\Models\UnmappedProduct;
 use Illuminate\Support\Facades\Http;
@@ -369,6 +370,139 @@ OUTPUT FORMAT: Return ONLY a JSON object mapping the EXACT product IDs from the 
         }
 
         return null;
+    }
+
+    /**
+     * Map unmapped category_mappers rows (category_id null) to an existing root category
+     * (a Category with parent_id null), grouping by identical store_category text so every
+     * store sharing that text gets classified together in a single GPT call.
+     *
+     * @return array{mapped: int, unresolved: array<int, string>}
+     */
+    public function mapCategoryMapperRows(bool $dryRun = false): array
+    {
+        if (!$this->isConfigured()) {
+            $this->warn('CategoryMappingService is not configured. Skipping category_mappers mapping.');
+            return ['mapped' => 0, 'unresolved' => []];
+        }
+
+        $rootIdByName = [];
+        foreach (Category::whereNull('parent_id')->get(['id', 'name']) as $category) {
+            $rootIdByName[trim($category->name)] = $category->id;
+        }
+        $rootNames = array_keys($rootIdByName);
+
+        $groups = CategoryMapper::whereNull('category_id')->get()
+            ->groupBy(fn (CategoryMapper $mapper) => trim($mapper->store_category));
+
+        $entries = $groups->map(fn ($rows, $text) => ['id' => $rows->first()->id, 'text' => $text])->values();
+
+        $mapped = 0;
+        $unresolved = [];
+
+        foreach ($entries->chunk(30) as $chunk) {
+            $classification = $this->classifyStoreCategories($chunk->all(), $rootNames);
+
+            foreach ($chunk as $entry) {
+                $text = $entry['text'];
+                $ids = $groups[$text]->pluck('id');
+                $categoryName = $classification[$entry['id']] ?? null;
+                $categoryId = $categoryName ? ($rootIdByName[$categoryName] ?? null) : null;
+
+                if (!$categoryId) {
+                    $unresolved[] = $text;
+                    continue;
+                }
+
+                if (!$dryRun) {
+                    CategoryMapper::whereIn('id', $ids)->update(['category_id' => $categoryId]);
+                }
+
+                $mapped += $ids->count();
+            }
+
+            sleep(1);
+        }
+
+        return ['mapped' => $mapped, 'unresolved' => $unresolved];
+    }
+
+    private function classifyStoreCategories(array $entries, array $rootNames): array
+    {
+        try {
+            $payload = array_map(fn ($e) => ['id' => $e['id'], 'text' => $e['text']], $entries);
+            $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE);
+            $categoriesJson = json_encode(array_values($rootNames), JSON_UNESCAPED_UNICODE);
+
+            $response = Http::timeout(60)
+                ->retry(3, 1000)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($this->apiUrl, [
+                    'model' => config('services.openai.model', 'gpt-5-mini'),
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => $this->getStoreCategorySystemPrompt($categoriesJson),
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => "Categories: {$payloadJson}",
+                        ],
+                    ],
+                ]);
+
+            if (!$response->successful()) {
+                Log::error('OpenAI API request failed while classifying store categories', [
+                    'status' => $response->status(),
+                    'response' => $response->body(),
+                ]);
+
+                return [];
+            }
+
+            $content = trim($response->json('choices.0.message.content') ?? '');
+            $decoded = json_decode($content, true);
+
+            if (!is_array($decoded)) {
+                Log::warning('Failed to parse store category classification response', ['content' => $content]);
+
+                return [];
+            }
+
+            $validIds = array_column($entries, 'id');
+            $result = [];
+            foreach ($decoded as $id => $categoryName) {
+                $id = (int) $id;
+                if (in_array($id, $validIds, true) && in_array($categoryName, $rootNames, true)) {
+                    $result[$id] = $categoryName;
+                }
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Error calling OpenAI API for store category classification', ['error' => $e->getMessage()]);
+
+            return [];
+        }
+    }
+
+    private function getStoreCategorySystemPrompt(string $categoriesJson): string
+    {
+        return "You are classifying raw e-commerce category labels scraped from Lithuanian grocery/store websites into one of our existing top-level categories.
+
+CRITICAL: Return ONLY raw JSON without any markdown formatting, code blocks, or explanatory text.
+
+Our existing top-level categories (use these EXACT names, case-sensitive):
+{$categoriesJson}
+
+CRITICAL INSTRUCTION: You MUST use the EXACT numeric IDs provided in the input. Do NOT generate your own IDs or use sequential numbering.
+
+TASK: Each input item is {\"id\": <id>, \"text\": <raw store category label>}. The label is sometimes a breadcrumb path separated by '>' or '/'. Pick the single best-matching category from the list above for each item. If a label is too generic or doesn't clearly fit any category (e.g. \"Visos prekės\", \"All products\"), OMIT that id from the output entirely rather than guessing.
+
+OUTPUT FORMAT: Return ONLY a JSON object mapping the EXACT input id to one of the exact category names above:
+{\"14\": \"Mėsa ir žuvis\", \"27\": \"Gėrimai, kava, arbata\"}";
     }
 
     private function info(string $message): void

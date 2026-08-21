@@ -22,6 +22,8 @@ use App\Rules\StoreRules\MaximaRules;
 use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
 use App\Rules\StoreRules\SilasRules;
+use App\Rules\StoreRules\ThomasPhilippsRules;
+use App\Rules\StoreRules\VynotekaRules;
 use App\Support\NormalizesDiscountDates;
 use App\Support\ProductPackSizeExtractor;
 use Illuminate\Console\Command;
@@ -518,11 +520,10 @@ class ProcessDiscounts extends Command
             return;
         }
 
-        CategoryMapper::create([
-            'category_id' => null,
-            'store_category' => $storeCategory,
-            'store' => $store->id,
-        ]);
+        CategoryMapper::firstOrCreate(
+            ['store_category' => $storeCategory, 'store' => $store->id],
+            ['category_id' => null]
+        );
 
         $this->unmappedCategoryKeys[$key] = true;
         $this->info("Added unmapped category: {$storeCategory}");
@@ -557,6 +558,10 @@ class ProcessDiscounts extends Command
                 return new KoopsRules($tempDiscount);
             case 'Gulbelė':
                 return new GulbeleRules($tempDiscount);
+            case 'Vynoteka':
+                return new VynotekaRules($tempDiscount);
+            case 'Thomas Philipps':
+                return new ThomasPhilippsRules($tempDiscount);
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
         }
