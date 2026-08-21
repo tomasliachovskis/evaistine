@@ -106,6 +106,7 @@ class ListingPageMetaService
             'popular_carousel_title' => 'TOP pasiūlymai pagal kategorijas',
             'sections' => [
                 'top_categories' => $this->getTopCategoriesForStore($store),
+                'available_categories' => $this->getAllCategoriesWithCountsForStore($store),
                 'faq' => $store->faq ?? [],
             ],
         ];
@@ -184,6 +185,7 @@ class ListingPageMetaService
             'popular_carousel_title' => 'Populiaru šią savaitę',
             'sections' => [
                 'faq' => $this->buildStoreFaq($store, $category, $this->getTopCategoriesForStore($store, false)),
+                'available_categories' => $this->getAllCategoriesWithCountsForStore($store),
             ],
         ];
     }
@@ -351,6 +353,36 @@ class ListingPageMetaService
                 'image_slug' => $row->slug,
                 'offers_count' => (int) $row->offers_count,
                 'expiring_today_count' => (int) ($row->expiring_today_count ?? 0),
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Every root category this store currently has at least one active discount in,
+     * for the store listing page's category sidebar filter (unlike getTopCategoriesForStore,
+     * this isn't limited to 8 or restricted to non-food categories).
+     */
+    private function getAllCategoriesWithCountsForStore(Store $store): array
+    {
+        $rows = DB::table('discounts')
+            ->join('products', 'products.id', '=', 'discounts.product_id')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->where('discounts.store_id', $store->id)
+            ->whereNull('categories.parent_id')
+            ->select(
+                'categories.name',
+                'categories.slug',
+                DB::raw('COUNT(discounts.id) as offers_count')
+            )
+            ->groupBy('categories.id', 'categories.name', 'categories.slug')
+            ->orderByDesc('offers_count')
+            ->get();
+
+        return $rows->map(function ($row) {
+            return [
+                'name' => trim($row->name),
+                'slug' => $row->slug,
+                'offers_count' => (int) $row->offers_count,
             ];
         })->values()->all();
     }
