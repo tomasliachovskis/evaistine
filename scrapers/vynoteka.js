@@ -40,8 +40,7 @@ const cleanPrice = (value) => {
 };
 
 (async () => {
-    const chromiumPath = '/usr/bin/chromium-browser';
-    const chromePath = '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
+    const chromePath = `${process.env.HOME}/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome`;
     const launchOptions = {
         headless: 'new',
         args: [
@@ -50,10 +49,15 @@ const cleanPrice = (value) => {
         ],
     };
 
-    if (fs.existsSync(chromiumPath)) {
-        launchOptions.executablePath = chromiumPath;
-    } else if (fs.existsSync(chromePath)) {
+    // /usr/bin/chromium-browser is Ubuntu's transitional snap-stub package —
+    // it exists on disk but just errors telling you to install the snap, so
+    // it must never be used as executablePath. Prefer puppeteer's own managed
+    // Chrome, falling back to puppeteer's dynamic resolution if that specific
+    // cached version isn't present (e.g. after a puppeteer upgrade).
+    if (fs.existsSync(chromePath)) {
         launchOptions.executablePath = chromePath;
+    } else {
+        launchOptions.executablePath = puppeteer.executablePath();
     }
 
     const browser = await puppeteer.launch(launchOptions);
@@ -97,9 +101,14 @@ const cleanPrice = (value) => {
     }
 
     if (!start_at && !end_at) {
-        console.log('Could not determine current price validity period, stopping scrape.');
-        await browser.close();
-        process.exit(1);
+        // No "kainos galioja" leaflet link found at all (e.g. between leaflet
+        // cycles) — rather than dropping the whole run, fall back to today as
+        // the start date with no end date. discounts:process only requires
+        // one of the two to be set, and "valid from today, no known end" is a
+        // safe default when the site gives us nothing else to go on.
+        start_at = new Date().toLocaleDateString('en-CA');
+        end_at = null;
+        console.log(`Could not determine current price validity period, defaulting to start_at=${start_at}.`);
     }
 
     console.log(`Current price validity: ${start_at} - ${end_at}`);

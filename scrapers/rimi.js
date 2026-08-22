@@ -47,7 +47,7 @@ const axiosInstance = axios.create({
     }
 });
 
-const createPage = async (browser) => {
+const createPage = async (browser, { disableJs = false } = {}) => {
     const page = await browser.newPage();
 
     await page.setUserAgent(
@@ -56,11 +56,25 @@ const createPage = async (browser) => {
 
     await page.setViewport({ width: 1280, height: 720 });
 
-    // Block images, CSS, and fonts for faster loading
+    // Product detail pages are fully server-rendered — everything we read
+    // (price, validity dates, category, brand) is already in the initial
+    // HTML, no JS needed to reveal it (confirmed by diffing a plain fetch()
+    // against the rendered DOM). Disabling JS there skips script execution
+    // and downloads entirely, which is what was pegging the CPU with 25
+    // concurrent pages open. Puppeteer's own evaluate()/$eval() calls go
+    // through CDP and aren't affected by this toggle.
+    if (disableJs) {
+        await page.setJavaScriptEnabled(false);
+    }
+
+    // Block images, CSS, fonts, and (when JS is off) scripts for faster loading
     await page.setRequestInterception(true);
     page.on('request', (req) => {
         const resourceType = req.resourceType();
-        if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+        const blockedTypes = disableJs
+            ? ['image', 'stylesheet', 'font', 'media', 'script']
+            : ['image', 'stylesheet', 'font', 'media'];
+        if (blockedTypes.includes(resourceType)) {
             req.abort();
         } else {
             req.continue();
@@ -85,7 +99,7 @@ const scrapeProductDetails = async (browser, product, retries = 1) => {
 
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
-            page = await createPage(browser);
+            page = await createPage(browser, { disableJs: true });
 
             await page.goto(product.link, {
                 waitUntil: 'domcontentloaded',
@@ -285,6 +299,16 @@ const runScraper = async () => {
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
+            // Cut baseline per-process overhead — with up to 25 concurrent
+            // pages open for product detail scraping, this adds up fast.
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-background-networking',
+            '--disable-default-apps',
+            '--disable-sync',
+            '--metrics-recording-only',
+            '--mute-audio',
+            '--no-first-run',
         ]
     };
 
