@@ -278,8 +278,7 @@ const postBatchToAPI = async (products) => {
 };
 
 const runScraper = async () => {
-    const chromiumPath = '/usr/bin/chromium-browser';
-    const chromePath = '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
+    const chromePath = `${process.env.HOME}/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome`;
     const launchOptions = {
         headless: 'new',
         protocolTimeout: 300000,
@@ -289,10 +288,15 @@ const runScraper = async () => {
         ]
     };
 
-    if (fs.existsSync(chromiumPath)) {
-        launchOptions.executablePath = chromiumPath;
-    } else if (fs.existsSync(chromePath)) {
+    // /usr/bin/chromium-browser is Ubuntu's transitional snap-stub package —
+    // it exists on disk but just errors telling you to install the snap, so
+    // it must never be used as executablePath. Prefer puppeteer's own managed
+    // Chrome, falling back to puppeteer's dynamic resolution if that specific
+    // cached version isn't present (e.g. after a puppeteer upgrade).
+    if (fs.existsSync(chromePath)) {
         launchOptions.executablePath = chromePath;
+    } else {
+        launchOptions.executablePath = puppeteer.executablePath();
     }
 
     const browser = await puppeteer.launch(launchOptions);

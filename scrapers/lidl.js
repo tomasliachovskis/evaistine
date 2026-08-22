@@ -6,8 +6,7 @@ import axios from 'axios';
 puppeteer.use(StealthPlugin());
 
 (async () => {
-    const chromiumPath = '/usr/bin/chromium-browser';
-    const chromePath = '/root/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome';
+    const chromePath = `${process.env.HOME}/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome`;
     const launchOptions = {
         headless: 'new',
         args: [
@@ -16,47 +15,31 @@ puppeteer.use(StealthPlugin());
         ],
     };
 
-    if (fs.existsSync(chromiumPath)) {
-        launchOptions.executablePath = chromiumPath;
-    } else if (fs.existsSync(chromePath)) {
+    // /usr/bin/chromium-browser is Ubuntu's transitional snap-stub package —
+    // it exists on disk but just errors telling you to install the snap, so
+    // it must never be used as executablePath. Prefer puppeteer's own managed
+    // Chrome, falling back to puppeteer's dynamic resolution if that specific
+    // cached version isn't present (e.g. after a puppeteer upgrade).
+    if (fs.existsSync(chromePath)) {
         launchOptions.executablePath = chromePath;
+    } else {
+        launchOptions.executablePath = puppeteer.executablePath();
     }
 
     const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     const sleep = ms => new Promise(res => setTimeout(res, ms));
 
-    // Load the local HTML file
-    const filePath = 'https://www.lidl.lt/c/visos-sios-savaites-akcijos';
-    await page.goto(filePath, { waitUntil: 'domcontentloaded' });
-
-    await page.waitForSelector('#onetrust-accept-btn-handler', { timeout: 5000 });
-    await page.click('#onetrust-accept-btn-handler'); // Click the button
-
-    await sleep(2000);
-
-    // await page.click('#week-panel-0 > div > div > button'); // Click the button
-    // await sleep(2000);
-
-    // const offers = await page.evaluate(() => {
-    //     const elements = document.querySelectorAll('a.ACategoryOverviewSlider__Link');
-    //     const texts = Array.from(elements).map(offer => offer.href);
-    //     return [...new Set(texts)];
-    // });
-
+    // The offset query param doesn't paginate server-side (same underlying
+    // listing either way) but it DOES seed how many virtualized placeholder
+    // slots the page renders up front — starting from offset=90 pre-seeds
+    // almost the full ~95-item list's height, so scrolling down alone lazy-
+    // loads real content into nearly every slot without ever needing to click
+    // "Daugiau produktų" (which is what triggers the site's anti-bot rate
+    // limiting after a couple of quick clicks — endless skeleton placeholders).
     const offers = [
-        'https://www.lidl.lt/q/search?q=&offset=10',
-        'https://www.lidl.lt/q/search?q=&offset=20',
-        'https://www.lidl.lt/q/search?q=&offset=30',
-        'https://www.lidl.lt/q/search?q=&offset=40',
-        'https://www.lidl.lt/q/search?q=&offset=50',
-        'https://www.lidl.lt/q/search?q=&offset=60',
-        'https://www.lidl.lt/q/search?q=&offset=70',
-        'https://www.lidl.lt/q/search?q=&offset=80',
+        'https://www.lidl.lt/q/search?q=&offset=90',
     ];
-
-    console.log(offers);
-    console.log(offers.length);
 
     let allProducts = new Map();
 
@@ -64,6 +47,18 @@ puppeteer.use(StealthPlugin());
         await page.goto(offerLink, { waitUntil: 'domcontentloaded' });
 
         await sleep(2000);
+
+        // Cookie consent is domain-wide, so it's simplest to accept it directly
+        // on the search page rather than detouring through another page first.
+        // Detouring through /c/visos-sios-savaites-akcijos to accept it there,
+        // then navigating here, reliably hung the very next page interaction
+        // with a "Runtime.callFunctionOn timed out" ProtocolError — reproduced
+        // 5/5 times with the detour, 0/3 times going here directly.
+        const cookieButton = await page.$('#onetrust-accept-btn-handler');
+        if (cookieButton) {
+            await cookieButton.click();
+            await sleep(1000);
+        }
 
         // Scroll to .s-load-more__text before checking for products
         let loadMoreTextElement = await page.$('.s-load-more__text');
@@ -154,59 +149,64 @@ puppeteer.use(StealthPlugin());
             });
         };
 
-        // Scrape products and click load more button until it's no longer available
-        while (true) {
-            const productBlocks = await extractProducts();
-            console.log(`Found ${productBlocks.length} products on ${offerLink}`);
-
-            // Store unique products based on "name + price + valid"
+        const mergeProducts = (productBlocks) => {
             for (const product of productBlocks) {
                 const uniqueKey = `${product.name}-${product.discounted_price}-${product.start_at}-${product.end_at}`;
                 if (!allProducts.has(uniqueKey)) {
                     allProducts.set(uniqueKey, product);
                 }
             }
+        };
 
+        // The list is virtualized (only a window of items exists in the DOM at
+        // once), so scroll down slowly in small steps, extracting at every step —
+        // reading only at the end would miss items that scrolled back out of the
+        // window. Stop once we've stayed at the bottom for a few checks in a row.
+        let stableAtBottom = 0;
+        while (stableAtBottom < 3) {
+            mergeProducts(await extractProducts());
+
+            const atBottom = await page.evaluate(() => {
+                window.scrollBy(0, 350);
+                return window.scrollY + window.innerHeight >= document.body.scrollHeight;
+            });
+            await sleep(300);
+
+            stableAtBottom = atBottom ? stableAtBottom + 1 : 0;
+        }
+
+        console.log(`Found ${allProducts.size} unique products after scrolling ${offerLink}`);
+
+        // Fallback: if a "load more" button is still present (offset=90 didn't
+        // seed quite enough placeholders to cover every item), click it a few
+        // times, gently, to pick up whatever's left.
+        for (let clicks = 0; clicks < 3; clicks++) {
             const loadMoreButton = await page.$('.s-load-more__button.s-load-more__button');
             if (!loadMoreButton) {
                 break;
             }
 
-            // Scroll to button and click it
-            await page.evaluate((button) => {
-                button.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, loadMoreButton);
-
-            await sleep(500);
+            await page.evaluate(async () => {
+                const step = 400;
+                while (window.scrollY + window.innerHeight < document.body.scrollHeight) {
+                    window.scrollBy(0, step);
+                    await new Promise(r => setTimeout(r, 150));
+                }
+            });
+            await sleep(2500);
 
             try {
                 await loadMoreButton.click();
-                await sleep(1000);
+                await sleep(2000);
             } catch (error) {
                 console.log('Error clicking load more button:', error.message);
                 break;
             }
+
+            mergeProducts(await extractProducts());
         }
 
-        // When load button is no longer available, scroll to .s-load-more__text and scrape all products
-        const loadMoreText = await page.$('.s-load-more__text');
-        if (loadMoreText) {
-            await page.evaluate((element) => {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, loadMoreText);
-            await sleep(1000);
-        }
-
-        const finalProductBlocks = await extractProducts();
-        console.log(`Found ${finalProductBlocks.length} products on final scrape for ${offerLink}`);
-
-        // Store unique products from final scrape
-        for (const product of finalProductBlocks) {
-            const uniqueKey = `${product.name}-${product.discounted_price}-${product.start_at}-${product.end_at}`;
-            if (!allProducts.has(uniqueKey)) {
-                allProducts.set(uniqueKey, product);
-            }
-        }
+        console.log(`Found ${allProducts.size} unique products total on ${offerLink}`);
     }
 
     const uniqueProducts = Array.from(allProducts.values());
