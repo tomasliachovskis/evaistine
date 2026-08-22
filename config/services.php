@@ -50,4 +50,9 @@ return [
     'nextauth' => [
         'secret' => env('NEXTAUTH_SECRET'),
     ],
+
+    'frontend' => [
+        'revalidate_url' => env('FRONTEND_REVALIDATE_URL', 'https://superakcijos.lt/api/revalidate'),
+        'revalidate_secret' => env('REVALIDATE_SECRET'),
+    ],
 ];

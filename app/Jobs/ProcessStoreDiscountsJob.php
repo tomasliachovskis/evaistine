@@ -12,6 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
@@ -94,6 +95,9 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
              $step('cache:warm');
              Artisan::call('cache:warm', ['--type' => 'all']);
 
+            $step('revalidate frontend');
+            $this->revalidateFrontend();
+
             $step('done');
 
             $itemsCount = DiscountTemp::whereRaw('LOWER(store) = ?', [mb_strtolower($this->store)])
@@ -115,6 +119,35 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
                 'finished_at' => now(),
                 'error' => substr($trace, 0, 4000),
             ]);
+        }
+    }
+
+    // The Next.js frontend (superakcijos.lt) shares this backend's database
+    // but has its own ISR/data-provider cache — bumping cache:clear-discounts
+    // here only affects this Laravel app, not the frontend's cache. This is
+    // the same lightweight webhook deploy.sh calls after a deploy
+    // (POST /api/revalidate), just triggered here too so the live site picks
+    // up changes from this per-store pipeline without waiting for a deploy.
+    private function revalidateFrontend(): void
+    {
+        $secret = config('services.frontend.revalidate_secret');
+
+        if (!$secret) {
+            Log::info("ProcessStoreDiscountsJob[{$this->store}]: REVALIDATE_SECRET not configured, skipping frontend revalidation.");
+
+            return;
+        }
+
+        try {
+            $response = Http::timeout(10)
+                ->withToken($secret)
+                ->post(config('services.frontend.revalidate_url'));
+
+            if (!$response->successful()) {
+                Log::warning("ProcessStoreDiscountsJob[{$this->store}]: frontend revalidation returned {$response->status()}.");
+            }
+        } catch (\Throwable $e) {
+            Log::warning("ProcessStoreDiscountsJob[{$this->store}]: frontend revalidation request failed: {$e->getMessage()}");
         }
     }
 }

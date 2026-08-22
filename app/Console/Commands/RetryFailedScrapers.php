@@ -10,7 +10,7 @@ class RetryFailedScrapers extends Command
 {
     protected $signature = 'scrapers:retry-failed';
 
-    protected $description = 'Re-run any store whose latest scraper run failed more than an hour ago';
+    protected $description = 'Re-run any store whose latest scraper run failed more than 30 minutes ago';
 
     public function handle(ScraperRunner $runner): int
     {
@@ -20,33 +20,40 @@ class RetryFailedScrapers extends Command
             return 0;
         }
 
-        foreach (array_keys(config('scrapers')) as $store) {
-            $latestRun = ScraperRun::where('type', ScraperRun::TYPE_SCRAPE)
-                ->where('store', $store)
-                ->latest('started_at')
-                ->first();
+        // Find the latest scrape run per store, keep only the ones currently
+        // failed, then retry whichever has been failing the longest without
+        // a retry — not just the first one in config order. Iterating
+        // config('scrapers') in fixed order and returning on the first match
+        // meant a store that fails every time (e.g. Vynoteka) hogged every
+        // retry tick forever, starving every other failed store.
+        $oldestFailedStore = collect(array_keys(config('scrapers')))
+            ->map(function (string $store) {
+                return ScraperRun::where('type', ScraperRun::TYPE_SCRAPE)
+                    ->where('store', $store)
+                    ->latest('started_at')
+                    ->first();
+            })
+            ->filter(fn ($run) => $run && $run->status === ScraperRun::STATUS_FAILED)
+            ->filter(function ($run) {
+                return $run->finished_at && $run->finished_at->lte(now()->subMinutes(30));
+            })
+            ->sortBy('started_at')
+            ->first();
 
-            if (!$latestRun || $latestRun->status !== ScraperRun::STATUS_FAILED) {
-                continue;
-            }
-
-            if (!$latestRun->finished_at || $latestRun->finished_at->gt(now()->subHour())) {
-                continue;
-            }
-
-            $this->info("Retrying failed scraper for {$store}...");
-
-            $run = $runner->run($store);
-
-            if ($run->status === ScraperRun::STATUS_SUCCESS) {
-                $this->info("✓ {$store}: scraped {$run->items_count} row(s)");
-            } else {
-                $this->error("✗ {$store} failed again: {$run->error}");
-            }
-
-            // Only retry one store per tick — if it just ran, the "in
-            // progress" guard above will naturally cover the rest next time.
+        if (!$oldestFailedStore) {
             return 0;
+        }
+
+        $store = $oldestFailedStore->store;
+
+        $this->info("Retrying failed scraper for {$store}...");
+
+        $run = $runner->run($store);
+
+        if ($run->status === ScraperRun::STATUS_SUCCESS) {
+            $this->info("✓ {$store}: scraped {$run->items_count} row(s)");
+        } else {
+            $this->error("✗ {$store} failed again: {$run->error}");
         }
 
         return 0;
