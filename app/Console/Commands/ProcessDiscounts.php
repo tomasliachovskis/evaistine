@@ -44,7 +44,8 @@ class ProcessDiscounts extends Command
 
     protected $signature = 'discounts:process
                             {--map-categories : Run ChatGPT bulk category mapping before processing}
-                            {--skip-stores= : Comma-separated store names to ignore during processing}';
+                            {--skip-stores= : Comma-separated store names to ignore during processing}
+                            {--only-store= : Only process this single store}';
     protected $description = 'Process new discounts from discount_temp table';
 
     /** @var array<string, Store> */
@@ -100,6 +101,7 @@ class ProcessDiscounts extends Command
             ->where('processed', false)
             ->where('category', '!=', '');
         $this->applySkipStoresFilter($query);
+        $this->applyOnlyStoreFilter($query);
 
         $total = (clone $query)->count();
         $this->info("Processing {$total} discount_temp row(s)...");
@@ -154,6 +156,16 @@ class ProcessDiscounts extends Command
 
         $placeholders = implode(',', array_fill(0, count($skip), '?'));
         $query->whereRaw("LOWER(store) NOT IN ({$placeholders})", $skip);
+    }
+
+    private function applyOnlyStoreFilter($query): void
+    {
+        $onlyStore = $this->option('only-store');
+        if (!$onlyStore) {
+            return;
+        }
+
+        $query->whereRaw('LOWER(store) = ?', [mb_strtolower(trim($onlyStore))]);
     }
 
     private function preloadLookups(): void
