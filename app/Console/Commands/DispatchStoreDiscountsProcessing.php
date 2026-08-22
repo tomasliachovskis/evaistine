@@ -10,7 +10,7 @@ class DispatchStoreDiscountsProcessing extends Command
 {
     protected $signature = 'discounts:dispatch-store-processing';
 
-    protected $description = 'Queue processing for each store whose unprocessed discount_temp rows have been quiet for 30 minutes';
+    protected $description = 'Queue processing for each store whose unprocessed discount_temp rows have been quiet for 10 minutes';
 
     public function handle(): int
     {
@@ -38,8 +38,8 @@ class DispatchStoreDiscountsProcessing extends Command
                 continue;
             }
 
-            if ($latestUnprocessed->created_at->gt(now()->subMinutes(30))) {
-                $this->info("{$store}: still receiving rows, not quiet for 30 minutes yet. Skipping.");
+            if ($latestUnprocessed->created_at->gt(now()->subMinutes(10))) {
+                $this->info("{$store}: still receiving rows, not quiet for 10 minutes yet. Skipping.");
 
                 continue;
             }
