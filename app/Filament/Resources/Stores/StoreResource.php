@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Filament\Resources\Stores;
+
+use App\Filament\Resources\Stores\Pages\EditStore;
+use App\Filament\Resources\Stores\Pages\ListStores;
+use App\Filament\Resources\Stores\Schemas\StoreForm;
+use App\Filament\Resources\Stores\Tables\StoresTable;
+use App\Models\Store;
+use BackedEnum;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Table;
+
+class StoreResource extends Resource
+{
+    protected static ?string $model = Store::class;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
+
+    protected static ?string $navigationLabel = 'Parduotuvės';
+
+    protected static ?string $modelLabel = 'parduotuvė';
+
+    protected static ?string $pluralModelLabel = 'parduotuvės';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function form(Schema $schema): Schema
+    {
+        return StoreForm::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return StoresTable::configure($table);
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ListStores::route('/'),
+            'edit' => EditStore::route('/{record}/edit'),
+        ];
+    }
+}

@@ -226,6 +226,45 @@ class ListingPageMetaService
         ];
     }
 
+    public function buildAllLeaflets(): array
+    {
+        // Mirrors buildLeaflets() but across every store at once, for the
+        // /leidiniai index page. sort_order is per-store (0 = current), so
+        // ordering globally by it still groups each store's current leaflet
+        // first, tie-broken by valid_from desc.
+        $leaflets = StoreFlyer::query()
+            ->active()
+            ->ready()
+            ->with('store')
+            ->withCount('pages')
+            ->ordered()
+            ->get()
+            ->filter(fn (StoreFlyer $flyer) => $flyer->store !== null)
+            ->map(function (StoreFlyer $flyer) {
+                $item = $this->flyerTitleBuilder->toListingArray($flyer, $flyer->store);
+                $item['store_name'] = $flyer->store->name;
+                $item['store_slug'] = $flyer->store->slug;
+
+                return $item;
+            })
+            ->filter(function (array $leaflet) {
+                return ($leaflet['image_url'] || $leaflet['pdf_url'])
+                    && ($leaflet['pages_count'] > 0 || $leaflet['image_url']);
+            })
+            ->values();
+
+        $sawActiveForStore = [];
+
+        return $leaflets->map(function (array $leaflet) use (&$sawActiveForStore) {
+            if ($leaflet['status'] === 'active' && empty($sawActiveForStore[$leaflet['store_slug']])) {
+                $sawActiveForStore[$leaflet['store_slug']] = true;
+                $leaflet['status'] = 'new';
+            }
+
+            return $leaflet;
+        })->all();
+    }
+
     private function buildLeaflets(Store $store): array
     {
         // is_active isn't a reliable current/expired signal (see

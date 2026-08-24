@@ -853,6 +853,13 @@ class ProductController extends Controller
                     'type' => 'all_discounts'
                 ];
                 break;
+            case 'leaflets_index':
+                $breadcrumbs[] = [
+                    'name' => 'Leidiniai',
+                    'slug' => 'leidiniai',
+                    'type' => 'leaflets_index'
+                ];
+                break;
         }
 
         return $breadcrumbs;
@@ -954,6 +961,13 @@ class ProductController extends Controller
                     'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – Maxima, Lidl, Iki, Rimi, Norfa',
                     'meta_description' => 'Visi akcijų leidiniai vienoje vietoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai, savaitės ir savaitgalio akcijos.',
                 ];
+            case 'leaflets_index':
+                return [
+                    'seo_title' => 'Visi akcijų leidiniai',
+                    'seo_description' => 'Visų parduotuvių akcijų leidiniai ir katalogai vienoje vietoje – Maxima, Lidl, Iki, Rimi, Norfa ir kiti prekybos tinklai.',
+                    'meta_title' => 'Akcijų leidiniai – visų parduotuvių savaitės katalogai',
+                    'meta_description' => 'Naujausi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje. Peržiūrėkite savaitės pasiūlymus PDF ir nuotraukose.',
+                ];
             default:
                 return [
                     'seo_title' => '',
@@ -962,6 +976,18 @@ class ProductController extends Controller
                     'meta_description' => '',
                 ];
         }
+    }
+
+    public function getAllLeaflets()
+    {
+        $leaflets = $this->listingPageMetaService->buildAllLeaflets();
+
+        return response()->json([
+            'leaflets' => $leaflets,
+            'total' => count($leaflets),
+            'breadcrumbs' => $this->generateBreadcrumbs('leaflets_index'),
+            'seo' => $this->generateSeoData('leaflets_index'),
+        ]);
     }
 
     public function getStoreLeafletHub(string $store)

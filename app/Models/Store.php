@@ -18,6 +18,7 @@ class Store extends Model
         'meta_title',
         'meta_description',
         'faq',
+        'flyer_source_url',
     ];
 
     protected $casts = [

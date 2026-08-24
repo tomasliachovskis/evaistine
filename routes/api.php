@@ -29,6 +29,7 @@ Route::get('/discount/best-by-category', [ProductController::class, 'getBestDisc
 Route::get('/discount/{store}/best-by-category', [ProductController::class, 'getBestDiscountsByCategoryForStore']);
 Route::get('/discount/{storeOrCategory}', [ProductController::class, 'getDiscounts']);
 Route::get('/discount/{storeOrCategory}/{category}', [ProductController::class, 'getDiscounts']);
+Route::get('/leidiniai', [ProductController::class, 'getAllLeaflets']);
 Route::get('/leidinys/{store}/{flyerSlug}', [ProductController::class, 'getStoreLeaflet']);
 Route::get('/leidinys/{store}', [ProductController::class, 'getStoreLeafletHub']);
 
