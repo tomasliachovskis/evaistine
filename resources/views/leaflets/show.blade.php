@@ -34,12 +34,40 @@
                         <p class="mt-1.5 text-sm text-gray-600">{{ $dateRange }}</p>
                     @endif
                 </div>
-                @if (!empty($flyer['pdf_url']))
-                    <a href="{{ $flyer['pdf_url'] }}" target="_blank" rel="noopener" class="inline-flex h-10 items-center justify-center rounded-lg border border-green px-4 text-sm font-bold text-green transition-colors hover:bg-green/5">
-                        Atsisiųsti PDF
-                    </a>
-                @endif
+                {{-- The raw PDF is scrape/OCR source material, never a user-facing
+                     download — production shows a "Sekti akcijas" follow CTA here
+                     instead, never exposing the PDF URL at all. --}}
+                <x-store-subscribe-button />
             </div>
+
+            {{-- Ported from store-listing-header.tsx's nav row — plain links to
+                 the store's leaflet hub / full discount listing / top categories,
+                 not tabs that swap content in place. --}}
+            <nav aria-label="{{ $storeName }} skiltys" class="flex flex-wrap items-center gap-2.5">
+                <a href="/leidinys/{{ $storeSlug }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white">
+                    Leidiniai
+                    @if (($listingMeta['leaflets_count'] ?? 0) > 0)
+                        <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full bg-white/25 px-1.5 text-sm font-bold">{{ $listingMeta['leaflets_count'] }}</span>
+                    @endif
+                </a>
+                <a href="/akcijos/{{ $storeSlug }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-green px-4 py-2 text-base font-bold text-green transition-colors hover:bg-green/5">
+                    Akcijos
+                    @if ($totalOffers > 0)
+                        <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full bg-green/10 px-1.5 text-sm font-bold text-green">{{ number_format($totalOffers, 0, ',', ' ') }}</span>
+                    @endif
+                </a>
+                @if (!empty($listingMeta['top_categories']))
+                    <span class="mx-0.5 hidden h-6 w-px bg-gray-300 sm:block" aria-hidden="true"></span>
+                    @foreach (array_slice($listingMeta['top_categories'], 0, 5) as $category)
+                        <a href="{{ $category['href'] }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-gray-300 px-4 py-2 text-base font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green">
+                            {{ $category['name'] }}
+                            @if (!empty($category['offers_count']))
+                                <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full bg-gray-200 px-1.5 text-sm font-bold text-gray-600">{{ $category['offers_count'] }}</span>
+                            @endif
+                        </a>
+                    @endforeach
+                @endif
+            </nav>
 
             <div class="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
                 @if (!empty($pages))
