@@ -2,7 +2,10 @@
 
 @php
     $product = $deal['product'];
-    $store = collect($deal['offers'] ?? [])->firstWhere('store_id', $deal['store_id'])['store'] ?? null;
+    // Every store this product currently has a discount in, primary store
+    // (this card's own $deal['store_id']) first, deduped by slug.
+    $offerStores = collect($deal['offers'] ?? [])->pluck('store')->filter()->unique('slug')->values();
+    $stores = $offerStores->sortBy(fn ($s) => ($s['id'] ?? null) === ($deal['store_id'] ?? null) ? 0 : 1)->values();
     $href = '/akcijos/' . $product['full_slug'];
 
     $discountPrice = (float) ($deal['discounted_price'] ?? 0);
@@ -59,9 +62,18 @@
                 {{ $product['name'] }}
             </p>
 
-            @if ($store)
+            @if ($stores->count() > 1)
+                <div class="mt-auto flex min-w-0 items-center gap-1.5 pt-2">
+                    @foreach ($stores->take(3) as $storeItem)
+                        <x-store-logo :slug="$storeItem['slug']" :name="$storeItem['name']" size="xs" />
+                    @endforeach
+                    @if ($stores->count() > 3)
+                        <span class="text-xs font-medium text-gray-400">+{{ $stores->count() - 3 }}</span>
+                    @endif
+                </div>
+            @elseif ($stores->count() === 1)
                 <div class="mt-auto flex min-w-0 items-center pt-3">
-                    <x-store-logo :slug="$store['slug']" :name="$store['name']" size="sm" class="object-left" />
+                    <x-store-logo :slug="$stores[0]['slug']" :name="$stores[0]['name']" size="sm" class="object-left" />
                 </div>
             @endif
         </div>

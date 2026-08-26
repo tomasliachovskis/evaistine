@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use App\Support\CacheVersion;
 use App\Models\Discount;
 use App\Models\SearchResult;
@@ -180,6 +181,31 @@ class ProductController extends Controller
             });
             $entity = $category;
             $entityType = 'category';
+
+            // Browsing a category (no store filter) shows one card per
+            // product, not one per store — a product discounted at both
+            // Maxima and Rimi was appearing as two separate grid cards.
+            // Rank each product's discounts by price and keep only the
+            // cheapest; the deal card's own store logos already show every
+            // store it's available at (DiscountResponseFormatter::offers),
+            // so nothing is hidden, just no longer duplicated. Products
+            // belong to exactly one category, so ranking against the full
+            // discounts table (not re-filtered by category) is still
+            // correctly scoped. Skipped once a store filter narrows the
+            // page to one store, where a product can't appear twice anyway.
+            if (empty($filters['store'])) {
+                $rankedDiscounts = DB::table('discounts')
+                    ->select('id')
+                    ->selectRaw('ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY discounted_price ASC, id ASC) as rn')
+                    ->when($filters['card'], fn ($q) => $q->where('card', true))
+                    ->when($filters['plus'], fn ($q) => $q->where('condition', '1+1'));
+
+                $query->select('discounts.*')
+                    ->joinSub($rankedDiscounts, 'ranked_discounts', function ($join) {
+                        $join->on('discounts.id', '=', 'ranked_discounts.id');
+                    })
+                    ->where('ranked_discounts.rn', 1);
+            }
         } else {
             return response()->json(['error' => 'Store or category not found'], 404);
         }
