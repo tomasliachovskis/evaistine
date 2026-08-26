@@ -2,7 +2,7 @@
     @php $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €'; @endphp
 
     <section class="base-container py-8 sm:py-16">
-        <h1 class="mb-4">Stebimos prekės</h1>
+        <h1 class="mb-4 text-2xl font-extrabold text-gray-900 sm:text-3xl">Stebimos prekės</h1>
 
         @if ($savingsSummary['total_savings'] > 0)
             <div class="mb-6 flex items-center gap-4 rounded-2xl border border-green/20 bg-green/5 p-4 sm:p-5">
