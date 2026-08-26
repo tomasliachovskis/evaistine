@@ -105,7 +105,7 @@
                 <div class="grid grid-cols-1 gap-2.5">
                     @forelse ($categories as $category)
                         <a href="/akcijos/{{ $category['slug'] }}" class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
-                            <img src="/assets/products/{{ $category['slug'] }}.png" alt="" width="48" height="44" class="size-12 shrink-0 object-contain" onerror="this.style.visibility='hidden'">
+                            <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" width="48" height="44" class="size-12 shrink-0 object-contain" onerror="this.style.visibility='hidden'">
                             <div class="flex min-w-0 flex-1 items-center justify-between gap-3">
                                 <span class="line-clamp-2 text-[15px] font-semibold leading-snug text-gray-900">{{ $category['name'] }}</span>
                                 <span class="shrink-0 text-sm font-bold tabular-nums text-gray-700">{{ number_format($category['discounts_count'] ?? 0, 0, ',', ' ') }}</span>

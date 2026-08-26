@@ -82,7 +82,7 @@
                             placeholder="Ieškoti"
                             autocomplete="off"
                             inputmode="search"
-                            class="h-11 w-full rounded-lg border border-gray-200 pl-9 text-sm focus:border-green focus:outline-none"
+                            class="h-11 w-full rounded-lg border border-gray-200 pl-9 text-base focus:border-green focus:outline-none"
                         >
                     </div>
                     <button type="submit" class="w-full rounded-lg bg-green py-2.5 text-sm font-semibold text-white hover:bg-green-400">Ieškoti</button>

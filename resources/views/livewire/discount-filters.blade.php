@@ -117,6 +117,7 @@
                         :title="$section['name']"
                         :deals="$section['discounts']"
                         icon="shopping-basket"
+                        :category-slug="$section['slug']"
                         layout="carousel"
                         :see-all-href="$secondarySlug ? null : '/akcijos/'.$primarySlug.'/'.$section['slug']"
                     />

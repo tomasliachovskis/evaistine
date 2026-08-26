@@ -78,6 +78,19 @@ body {
 }
 
 @layer base {
+    /* Tailwind v4 migration compat: v3's preflight set a default gray
+       border-color on every element; v4 dropped that, so any bare
+       `border`/`border-b`/`border-t` (no explicit border-gray-* class)
+       falls back to currentColor — rendered as near-black instead of a
+       subtle divider wherever surrounding text is dark. Several ported
+       components (mobile-bottom-nav's sheets, site-search's mobile sheet)
+       use bare border utilities exactly like the original React source
+       did, relying on this default. Restores Tailwind's official v3
+       compatibility shim instead of patching every occurrence. */
+    *, ::after, ::before, ::backdrop, ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+
     body {
         @apply bg-background text-font;
     }

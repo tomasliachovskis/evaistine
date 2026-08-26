@@ -1,4 +1,4 @@
-@props(['id', 'title', 'subtitle' => null, 'deals', 'icon', 'layout' => 'carousel', 'seeAllHref' => null])
+@props(['id', 'title', 'subtitle' => null, 'deals', 'icon', 'categorySlug' => null, 'layout' => 'carousel', 'seeAllHref' => null])
 
 @php
     $pageCount = max(1, (int) ceil(count($deals) / 2));
@@ -10,7 +10,11 @@
         <div class="mb-2.5 flex items-center justify-between gap-2 sm:mb-3">
             <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
-                    <x-app-icon :name="$icon" class="size-4 text-green sm:hidden" />
+                    @if ($categorySlug)
+                        <img src="/assets/categories/{{ $categorySlug }}.svg" alt="" class="size-4 shrink-0 sm:hidden" onerror="this.style.display='none'">
+                    @else
+                        <x-app-icon :name="$icon" class="size-4 text-green sm:hidden" />
+                    @endif
                     <h2 id="{{ $id }}-heading" class="text-[0.95rem] font-semibold leading-tight text-gray-900 sm:text-2xl sm:font-extrabold sm:leading-snug">
                         {{ $title }}
                     </h2>
@@ -21,7 +25,7 @@
             </div>
             @if ($seeAllHref)
                 <div class="flex shrink-0 items-center gap-2">
-                    <a href="{{ $seeAllHref }}" class="inline-flex items-center gap-0.5 text-[11px] font-medium text-green hover:text-dark-green sm:text-sm sm:font-semibold">
+                    <a href="{{ $seeAllHref }}" class="inline-flex items-center gap-0.5 text-sm font-medium text-green hover:text-dark-green sm:font-semibold">
                         Žiūrėti visas
                         <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
                     </a>

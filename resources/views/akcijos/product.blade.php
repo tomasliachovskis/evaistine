@@ -78,7 +78,7 @@ use App\Support\ProductPageMeta;
              per-product follower count (resolveProductFollowerCount in
              product-social-proof.ts), and the price-deal signal badge
              (resolvePriceDealSignal). --}}
-        <div class="base-container pb-6 pt-1 sm:pt-2">
+        <div class="base-container pb-3 pt-1 sm:pt-2">
             <div class="rounded-2xl border border-gray-200 bg-white p-3 max-lg:border-gray-100 sm:p-6 lg:p-5">
                 <div class="grid grid-cols-[128px_minmax(0,1fr)] items-start gap-x-4 gap-y-6 sm:grid-cols-[144px_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-7 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-x-8">
                     <div class="flex min-w-0 items-start justify-center self-start overflow-hidden pt-2 pl-1.5 sm:pt-3 sm:pl-2 lg:p-3">
@@ -207,7 +207,7 @@ use App\Support\ProductPageMeta;
         @endif
 
         @if ($hasOffers)
-            <section id="offers" class="base-container scroll-mt-32 pb-6 pt-5 sm:pt-6 lg:pt-8">
+            <section id="offers" class="base-container scroll-mt-32 pb-6 pt-3 sm:pt-4 lg:pt-5">
                 <h2 class="mb-1 text-lg font-bold text-gray-900">{{ \App\Support\ProductPageMeta::offersHeading() }}</h2>
                 <p class="mb-4 text-sm text-gray-500">Palyginome {{ $offerGroups->count() }} {{ $offerGroups->count() === 1 ? 'parduotuvės pasiūlymą' : 'parduotuvių pasiūlymus' }}.</p>
 
