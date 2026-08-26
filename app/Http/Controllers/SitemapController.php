@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Api\ProductController;
+use App\Support\CanonicalUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 
@@ -43,9 +44,9 @@ class SitemapController extends Controller
             $lines[] = '';
         }
 
-        $lines[] = 'Sitemap: ' . url('/sitemap.xml');
+        $lines[] = 'Sitemap: ' . CanonicalUrl::build('/sitemap.xml');
         for ($page = 1; $page <= $productSitemapCount; $page++) {
-            $lines[] = 'Sitemap: ' . url("/product-sitemap/{$page}");
+            $lines[] = 'Sitemap: ' . CanonicalUrl::build("/product-sitemap/{$page}");
         }
 
         return response(implode("\n", $lines), 200, ['Content-Type' => 'text/plain']);
@@ -57,45 +58,45 @@ class SitemapController extends Controller
         $defaultLastmod = $data['lastmod'] ?? now()->format('Y-m-d');
 
         $urls = [
-            ['loc' => url('/'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '1.0'],
-            ['loc' => url('/akcijos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.9'],
-            ['loc' => url('/parduotuves'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'],
-            ['loc' => url('/naujienos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'],
-            ['loc' => url('/privatumo-politika'), 'lastmod' => $defaultLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
+            ['loc' => CanonicalUrl::build('/'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '1.0'],
+            ['loc' => CanonicalUrl::build('/akcijos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.9'],
+            ['loc' => CanonicalUrl::build('/parduotuves'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'],
+            ['loc' => CanonicalUrl::build('/naujienos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'],
+            ['loc' => CanonicalUrl::build('/privatumo-politika'), 'lastmod' => $defaultLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
         ];
 
         $leafletStoreSlugs = $data['leaflet_stores'] ?? $data['stores'] ?? [];
         foreach ($leafletStoreSlugs as $slug) {
-            $urls[] = ['loc' => url("/leidinys/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'];
+            $urls[] = ['loc' => CanonicalUrl::build("/leidinys/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'];
         }
 
         foreach ($data['leaflets'] ?? [] as $leaflet) {
-            $urls[] = ['loc' => url("/{$leaflet['path']}"), 'lastmod' => $leaflet['lastmod'] ?? $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.8'];
+            $urls[] = ['loc' => CanonicalUrl::build("/{$leaflet['path']}"), 'lastmod' => $leaflet['lastmod'] ?? $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.8'];
         }
 
         foreach ($data['stores'] ?? [] as $slug) {
-            $urls[] = ['loc' => url("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'];
+            $urls[] = ['loc' => CanonicalUrl::build("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'];
         }
 
         foreach ($data['categories'] ?? [] as $slug) {
-            $urls[] = ['loc' => url("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.7'];
+            $urls[] = ['loc' => CanonicalUrl::build("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.7'];
         }
 
         foreach ($data['keywords'] ?? [] as $slug) {
-            $urls[] = ['loc' => url("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'];
+            $urls[] = ['loc' => CanonicalUrl::build("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'];
         }
 
         foreach ($data['blog_posts'] ?? [] as $post) {
-            $urls[] = ['loc' => url("/naujienos/{$post['slug']}"), 'lastmod' => $post['lastmod'] ?? $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.5'];
+            $urls[] = ['loc' => CanonicalUrl::build("/naujienos/{$post['slug']}"), 'lastmod' => $post['lastmod'] ?? $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.5'];
         }
 
         $storeLocationCities = $data['store_location_cities'] ?? [];
         $overviewSlugs = collect($storeLocationCities)->pluck('store_slug')->unique();
         foreach ($overviewSlugs as $slug) {
-            $urls[] = ['loc' => url("/parduotuves/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
+            $urls[] = ['loc' => CanonicalUrl::build("/parduotuves/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
         }
         foreach ($storeLocationCities as $entry) {
-            $urls[] = ['loc' => url("/parduotuves/{$entry['store_slug']}/{$entry['city_slug']}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
+            $urls[] = ['loc' => CanonicalUrl::build("/parduotuves/{$entry['store_slug']}/{$entry['city_slug']}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
         }
 
         return response()
@@ -117,7 +118,7 @@ class SitemapController extends Controller
         }
 
         $urls = array_map(fn ($p) => [
-            'loc' => url('/akcijos/' . $p['path']),
+            'loc' => CanonicalUrl::build('/akcijos/' . $p['path']),
             'lastmod' => $p['lastmod'],
             'changefreq' => 'weekly',
             'priority' => '0.6',
