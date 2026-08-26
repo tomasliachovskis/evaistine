@@ -99,17 +99,30 @@ use App\Support\ProductPageMeta;
                             <p class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">Šiuo metu akcija nebegalioja. Žemiau matote paskutines žinomas kainas.</p>
                         @else
                             @if ($bestOffer)
+                                @php
+                                    $heroDiscountedPrice = (float) ($bestOffer['discounted_price'] ?? 0);
+                                    // ActiveOffersPriceInfo in product-hero.tsx: no real price to
+                                    // show at all (e.g. weighed produce, price varies by weight) —
+                                    // falls back to a "Sutaupyk iki X%" block instead of "0,00 €".
+                                    $heroPriceSlotPct = $heroDiscountedPrice <= 0 && !empty($bestOffer['discount_percent']) && $bestOffer['discount_percent'] > 0
+                                        ? round($bestOffer['discount_percent'])
+                                        : null;
+                                @endphp
                                 <div class="flex flex-col gap-1 py-2 sm:py-3">
-                                    <div class="flex flex-wrap items-end gap-x-1.5">
-                                        <span class="text-[1.75rem] font-bold leading-none text-gray-900 lg:text-[2rem]">{{ number_format($bestOffer['discounted_price'], 2, ',', ' ') }} €</span>
-                                        {{-- MIN_PROMOTION_BADGE_PERCENT in promotion-percent-badge.tsx. --}}
-                                        @if (!empty($bestOffer['discount_percent']) && $bestOffer['discount_percent'] >= 20)
-                                            <span class="inline-flex h-[1.6rem] items-center rounded-lg bg-[#ffdb4d] px-2.5 text-[17.6px] font-bold leading-none tabular-nums text-gray-900 sm:h-[2rem] sm:px-3 sm:text-[19px]">-{{ round($bestOffer['discount_percent']) }}%</span>
-                                        @endif
-                                        @if (!empty($bestOffer['original_price']) && $bestOffer['original_price'] > $bestOffer['discounted_price'])
-                                            <del class="hidden text-[0.8rem] font-medium tabular-nums text-gray-400 sm:text-[1rem] lg:inline">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del>
-                                        @endif
-                                    </div>
+                                    @if ($heroDiscountedPrice > 0)
+                                        <div class="flex flex-wrap items-end gap-x-1.5">
+                                            <span class="text-[1.75rem] font-bold leading-none text-gray-900 lg:text-[2rem]">{{ number_format($heroDiscountedPrice, 2, ',', ' ') }} €</span>
+                                            {{-- MIN_PROMOTION_BADGE_PERCENT in promotion-percent-badge.tsx. --}}
+                                            @if (!empty($bestOffer['discount_percent']) && $bestOffer['discount_percent'] >= 20)
+                                                <span class="inline-flex h-[1.6rem] items-center rounded-lg bg-[#ffdb4d] px-2.5 text-[17.6px] font-bold leading-none tabular-nums text-gray-900 sm:h-[2rem] sm:px-3 sm:text-[19px]">-{{ round($bestOffer['discount_percent']) }}%</span>
+                                            @endif
+                                            @if (!empty($bestOffer['original_price']) && $bestOffer['original_price'] > $heroDiscountedPrice)
+                                                <del class="hidden text-[0.8rem] font-medium tabular-nums text-gray-400 sm:text-[1rem] lg:inline">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del>
+                                            @endif
+                                        </div>
+                                    @elseif ($heroPriceSlotPct !== null)
+                                        <span class="inline-flex w-fit max-w-full items-center justify-center whitespace-nowrap rounded-lg bg-[#ffdb4d] px-2 py-1 text-[1.75rem] font-bold leading-none tabular-nums text-gray-900 lg:text-[2rem]">Sutaupyk iki {{ $heroPriceSlotPct }}%</span>
+                                    @endif
                                 </div>
                             @endif
 
@@ -233,13 +246,17 @@ use App\Support\ProductPageMeta;
                                     <img src="/assets/stores/{{ $store['slug'] ?? '' }}.svg" alt="" class="max-h-full max-w-full object-contain">
                                 </div>
                                 <div class="flex min-w-0 flex-1 flex-col gap-1.5 sm:gap-2">
+                                    {{-- Deliberately simpler than the ported original here (user
+                                         request): when there's a real price, show only that price
+                                         — no badge, no strikethrough original. The badge is only a
+                                         fallback for when there's no price to show at all. --}}
                                     <div class="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-                                        <span class="shrink-0 text-xl font-bold tabular-nums text-gray-900 sm:text-2xl">{{ number_format($offer['discounted_price'], 2, ',', ' ') }} €</span>
-                                        @if ($pct !== null)
+                                        @if (!empty($offer['discounted_price']) && $offer['discounted_price'] > 0)
+                                            <span class="shrink-0 text-xl font-bold tabular-nums text-gray-900 sm:text-2xl">{{ number_format($offer['discounted_price'], 2, ',', ' ') }} €</span>
+                                        @elseif ($pct !== null)
                                             <span class="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#ffdb4d] px-2 py-1 text-[13px] font-bold leading-none text-gray-900 tabular-nums">-{{ $pct }}%</span>
-                                        @endif
-                                        @if ($showOriginal)
-                                            <del class="hidden min-w-0 truncate text-xs font-medium tabular-nums text-gray-400 sm:inline sm:text-sm">{{ number_format($offer['original_price'], 2, ',', ' ') }} €</del>
+                                        @else
+                                            <span class="text-sm text-gray-500">Kaina nežinoma</span>
                                         @endif
                                     </div>
                                     <div class="inline-flex min-w-0 items-center gap-1.5 text-xs font-normal leading-snug text-gray-500 sm:text-[13px]">
@@ -280,9 +297,19 @@ use App\Support\ProductPageMeta;
             <section id="similar-products" class="scroll-mt-32 border-t border-gray-200 bg-white pb-6 pt-5 sm:py-8">
                 <div class="base-container">
                     <h2 class="mb-4 text-lg font-bold text-gray-900">{{ \App\Support\ProductPageMeta::similarHeading($product) }}</h2>
+                    {{-- Max 2 rows on every breakpoint: 2 cols on mobile (4 items),
+                         5 cols from sm+ (10 items) — items past the 4th are fetched
+                         (up to 10, see ProductController::getProductWithSimilar's
+                         $similarLimit) but hidden below sm so mobile still only shows
+                         its first 2 rows. --}}
                     <div class="grid w-full grid-cols-2 items-stretch gap-1.5 sm:grid-cols-5 sm:gap-2 lg:gap-3">
                         @foreach ($similar as $deal)
-                            <x-deal-card :deal="$deal" class="h-full" />
+                            {{-- deal-card.blade.php's root div never calls $attributes->merge(),
+                                 so a class prop passed straight to <x-deal-card> is silently
+                                 dropped — wrap it instead of touching that shared component. --}}
+                            <div class="{{ $loop->index >= 4 ? 'hidden sm:block' : '' }}">
+                                <x-deal-card :deal="$deal" class="h-full" />
+                            </div>
                         @endforeach
                     </div>
                 </div>

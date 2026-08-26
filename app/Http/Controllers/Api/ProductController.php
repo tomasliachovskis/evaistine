@@ -687,7 +687,7 @@ class ProductController extends Controller
 
     public static function productWithSimilarCacheKey(string $slug): string
     {
-        return "product_with_similar_v7_{$slug}";
+        return "product_with_similar_v8_{$slug}";
     }
 
     public function resolveDiscountsCacheKey($storeOrCategory, $category = null): string
@@ -778,7 +778,10 @@ class ProductController extends Controller
 
         $randomSeed = $this->generateRandomSeed($slug);
 
-        $similarLimit = 16;
+        // 10 = 2 rows at the similar-products grid's desktop column count (5);
+        // the Blade view further hides items past the 4th on mobile (2 cols),
+        // so both breakpoints show at most 2 rows.
+        $similarLimit = 10;
         $excludeProductIds = [$product->id];
         $similarDiscounts = collect();
 
