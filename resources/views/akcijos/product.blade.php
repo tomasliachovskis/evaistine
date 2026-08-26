@@ -114,13 +114,22 @@ use App\Support\ProductPageMeta;
                             @if (!empty($primaryDeal['to_date']) && now()->diffInDays($primaryDeal['to_date'], false) <= 1)
                                 <x-countdown :to-date="$primaryDeal['to_date']" />
                             @endif
-
-                            <div class="flex items-center gap-3 pt-1">
-                                <x-favorite-button :product-id="$product['id']" variant="button" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
-                                <span class="text-sm text-gray-500">{{ \App\Support\ProductPageMeta::followerLabel($product['id']) }}</span>
-                            </div>
                         @endif
                     </div>
+
+                    {{-- Ported from product-hero.tsx's ProductPriceWatchBanner (variant
+                         "offersHero") placement: a grid SIBLING of the image/title
+                         columns (not nested inside the title column), spanning both
+                         columns as its own full-width row below them on mobile/tablet —
+                         folded back into the title column only at lg+. Nesting it inside
+                         the narrow title column at every breakpoint (as before) squeezed
+                         it into ~half the viewport width on mobile, which is what looked
+                         broken/collapsed there. --}}
+                    @if (!$isExpired)
+                        <div class="col-span-2 pt-1 lg:col-span-1 lg:col-start-2">
+                            <x-product-price-watch-banner :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
