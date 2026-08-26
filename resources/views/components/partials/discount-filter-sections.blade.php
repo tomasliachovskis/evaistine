@@ -29,6 +29,7 @@
         <div class="flex flex-col gap-0.5">
             @foreach ($allStores as $store)
                 <a href="{{ $mode !== 'keyword' && $primarySlug !== null ? '/akcijos/'.$store['slug'].'/'.$primarySlug : '/akcijos/'.$store['slug'] }}" class="{{ $rowClass($store['slug'] === $primarySlug) }}">
+                    <x-store-logo :slug="$store['slug']" :name="$store['name']" size="xs" />
                     <span class="truncate">{{ $store['name'] }}</span>
                 </a>
             @endforeach
