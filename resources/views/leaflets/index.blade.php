@@ -4,6 +4,21 @@
         $n % 10 >= 2 && $n % 10 <= 9 && !($n % 100 >= 11 && $n % 100 <= 19) => 'dienas',
         default => 'dienų',
     };
+
+    // Reuses <x-keyword-chips-row>'s title/href/matching_offers_count shape
+    // (built for category pages' related-search chips) for a per-store
+    // active-leaflet-count chip row here instead — same scrollable pill
+    // pattern, different content.
+    $storeChips = collect($leaflets)
+        ->groupBy('store_slug')
+        ->map(fn ($group, $slug) => [
+            'title' => $group->first()['store_name'],
+            'href' => "/leidinys/{$slug}",
+            'matching_offers_count' => $group->where('status', '!=', 'expired')->count(),
+        ])
+        ->filter(fn ($chip) => $chip['matching_offers_count'] > 0)
+        ->sortByDesc('matching_offers_count')
+        ->values();
 @endphp
 
 <x-layouts.app
@@ -26,6 +41,8 @@
                 {{ count($leaflets) }} savaitės katalogai. Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.
             </p>
         </div>
+
+        <x-keyword-chips-row :pages="$storeChips" aria-label="Parduotuvės" />
 
         @if (empty($leaflets))
             <div class="flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-6 text-center">
