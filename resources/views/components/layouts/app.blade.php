@@ -70,7 +70,7 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('authModal', {
-                open: @json($errors->any() || request()->boolean('login')),
+                open: @json((isset($errors) && $errors->any()) || request()->boolean('login')),
                 mode: @json(old('form', 'login') === 'register' ? 'register' : 'login'),
             });
         });

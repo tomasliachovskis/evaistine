@@ -46,7 +46,11 @@
         </div>
 
         <div class="space-y-4 px-6 py-5">
-            @if ($errors->any())
+            {{-- $errors is only auto-shared by ShareErrorsFromSession, which runs on
+                 matched routes — a 404 (no route matched) renders this layout without
+                 it ever having bound, so guard with isset() rather than assuming it's
+                 always present. --}}
+            @if (isset($errors) && $errors->any())
                 <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{{ $errors->first() }}</p>
             @endif
 
