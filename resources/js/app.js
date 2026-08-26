@@ -111,7 +111,7 @@ document.addEventListener('alpine:init', () => {
             this.points.forEach((pt) => {
                 const isMin = pt.price === this.minPrice;
                 const circle = mk('circle', {
-                    cx: pt.x, cy: pt.y, r: isMin ? 5 : 3.5,
+                    cx: pt.x, cy: pt.y, r: 3.5,
                     fill: isMin ? '#09a952' : '#fff',
                     stroke: isMin ? '#044923' : '#09a952',
                     'stroke-width': 2,
