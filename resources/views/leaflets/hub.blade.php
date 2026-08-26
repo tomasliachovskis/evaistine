@@ -75,19 +75,19 @@
                 @endif
             </div>
 
-            <nav aria-label="{{ $storeName }} skiltys" class="flex flex-wrap items-center gap-2.5">
-                <a href="/leidinys/{{ $storeSlug }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white">
+            <nav aria-label="{{ $storeName }} skiltys" class="scroll-cards-x flex flex-nowrap items-center gap-2.5 sm:flex-wrap sm:overflow-visible">
+                <a href="/leidinys/{{ $storeSlug }}" class="inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white">
                     Leidiniai
                     <x-count-pill :count="count($leaflets)" color="white" />
                 </a>
-                <a href="/akcijos/{{ $storeSlug }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-green px-4 py-2 text-base font-bold text-green transition-colors hover:bg-green/5">
+                <a href="/akcijos/{{ $storeSlug }}" class="inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green px-4 py-2 text-base font-bold text-green transition-colors hover:bg-green/5">
                     Akcijos
                     <x-count-pill :count="$totalOffers" color="green" />
                 </a>
                 @if (count($topCategories) > 0)
-                    <span class="mx-0.5 hidden h-6 w-px bg-gray-300 sm:block" aria-hidden="true"></span>
+                    <span class="mx-0.5 hidden h-6 w-px shrink-0 bg-gray-300 sm:block" aria-hidden="true"></span>
                     @foreach (array_slice($topCategories, 0, 5) as $category)
-                        <a href="{{ $category['href'] }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-gray-300 px-4 py-2 text-base font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green">
+                        <a href="{{ $category['href'] }}" class="inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-gray-300 px-4 py-2 text-base font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green">
                             {{ $category['name'] }}
                             <x-count-pill :count="$category['offers_count'] ?? 0" color="gray" />
                         </a>
