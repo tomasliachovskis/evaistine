@@ -151,7 +151,11 @@ class DiscountResponseFormatter
             'valid_date' => ($discount->start_at ? $discount->start_at->format('Y-m-d') : '') . ' - ' . ($discount->end_at ? $discount->end_at->format('Y-m-d') : ''),
             'from_date' => $discount->start_at ? $discount->start_at->format('Y-m-d') : null,
             'to_date' => $discount->end_at ? $discount->end_at->format('Y-m-d') : null,
-            'offers' => [],
+            // Deliberately just this one discount's own store, not the full
+            // productDiscounts list (that's what offer_count/min_price are
+            // for) — list/carousel views only need enough to render the deal
+            // card's own store logo, not a full store comparison.
+            'offers' => [$this->formatOfferItem($discount)],
             'offer_count' => $offerCount,
             'min_price' => (float) $minPrice,
             'home_keyword_slug' => $discount->getAttribute('home_keyword_slug'),
