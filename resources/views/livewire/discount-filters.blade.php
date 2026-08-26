@@ -4,7 +4,7 @@
     // FILTER_ROW_HEIGHT_CLASS='min-h-[40px]' FILTER_ROW_TEXT_CLASS='text-[16px] leading-snug'
     // FILTER_LIST_GAP_CLASS='gap-0.5', and its active/hover row colors.
     $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[40px] text-[16px] leading-snug text-left transition-colors '
-        . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-normal text-gray-900 hover:bg-[#f2f2f2]');
+        . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
     $selectedStores = array_values(array_filter(explode(',', $storeFilter)));
     $selectedCategories = array_values(array_filter(explode(',', $categoryFilter)));
     $activeCount = count($selectedStores) + count($selectedCategories);
