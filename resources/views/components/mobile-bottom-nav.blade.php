@@ -30,14 +30,20 @@
         storesOpen: false,
         init() {
             this.lastScrollY = window.scrollY;
+            let ticking = false;
             window.addEventListener('scroll', () => {
                 if (this.categoriesOpen || this.storesOpen) { return; }
-                const currentY = window.scrollY;
-                const delta = currentY - this.lastScrollY;
-                if (currentY <= 12) { this.navVisible = true; }
-                else if (delta > 10) { this.navVisible = false; }
-                else if (delta < -10) { this.navVisible = true; }
-                this.lastScrollY = currentY;
+                if (ticking) { return; }
+                ticking = true;
+                requestAnimationFrame(() => {
+                    const currentY = window.scrollY;
+                    const delta = currentY - this.lastScrollY;
+                    if (currentY <= 12) { this.navVisible = true; }
+                    else if (delta > 10) { this.navVisible = false; }
+                    else if (delta < -10) { this.navVisible = true; }
+                    this.lastScrollY = currentY;
+                    ticking = false;
+                });
             }, { passive: true });
         },
     }"
