@@ -127,7 +127,7 @@
 
             <div class="relative" @click.outside="productsOpen = false">
                 <button type="button" @click="productsOpen = !productsOpen; categoriesOpen = false" class="inline-flex h-11 shrink-0 cursor-pointer items-center gap-1 border-b-2 px-3 text-sm transition-colors hover:text-dark-green {{ $isProductKeywordPath ? 'border-green font-bold text-gray-900' : 'border-transparent font-medium text-gray-700' }}">
-                    Populiarios akcijos
+                    Populiarios prekės
                     <span :class="productsOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-4" /></span>
                 </button>
                 <div x-show="productsOpen" x-cloak class="absolute left-0 top-full z-50 max-h-[70vh] w-[320px] overflow-y-auto rounded-xl border border-gray-200 bg-white p-4 shadow-lg">
@@ -136,7 +136,7 @@
             </div>
 
             <a href="/leidiniai" class="{{ $navLinkClass($leafletsActive) }}">Leidiniai</a>
-            <a href="/akcijos?order=price_discount_proc_max" class="{{ $navLinkClass($topTodayActive) }}">Top akcijos</a>
+            <a href="/akcijos?order=price_discount_proc_max" class="{{ $navLinkClass($topTodayActive) }}">Didžiausios nuolaidos</a>
         </nav>
     </div>
 
@@ -167,7 +167,7 @@
                     <div class="space-y-1">
                         <a href="/parduotuves" @click="menuOpen = false" class="flex w-full rounded-lg px-1 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50 {{ $storesActive ? 'text-green' : 'text-gray-900' }}">Parduotuvės</a>
                         <a href="/leidiniai" @click="menuOpen = false" class="flex w-full rounded-lg px-1 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50 {{ $leafletsActive ? 'text-green' : 'text-gray-900' }}">Leidiniai</a>
-                        <a href="/akcijos?order=price_discount_proc_max" @click="menuOpen = false" class="flex w-full rounded-lg px-1 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50 {{ $topTodayActive ? 'text-green' : 'text-gray-900' }}">Top akcijos</a>
+                        <a href="/akcijos?order=price_discount_proc_max" @click="menuOpen = false" class="flex w-full rounded-lg px-1 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50 {{ $topTodayActive ? 'text-green' : 'text-gray-900' }}">Didžiausios nuolaidos</a>
                     </div>
                     <div class="space-y-1 border-t pt-4">
                         @auth
@@ -200,7 +200,7 @@
                         <x-category-links-list :categories="$categories" />
                     </div>
                     <div class="border-t pt-4">
-                        <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Populiarios akcijos</p>
+                        <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Populiarios prekės</p>
                         <x-product-keyword-links-list />
                     </div>
                 </div>
