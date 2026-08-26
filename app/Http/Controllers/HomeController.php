@@ -55,6 +55,14 @@ class HomeController extends Controller
             return $b['discounts_count'] <=> $a['discounts_count'];
         });
 
+        // buildAllLeaflets() is already ordered current-per-store first, newest
+        // valid_from first within that (StoreFlyer::scopeOrdered()) — so the
+        // first N are exactly "newest leaflets across every store", no extra
+        // sorting needed. Reuses ProductController::getAllLeaflets()'s own
+        // 1h cache, same in-process pattern as AkcijosController/LeafletController.
+        $leafletsPayload = json_decode(app(ProductController::class)->getAllLeaflets()->getContent(), true);
+        $latestLeaflets = array_slice($leafletsPayload['leaflets'] ?? [], 0, 12);
+
         $seo = $pageMeta['seo'];
         $title = $seo['meta_title'] ?: 'Akcijos ir nuolaidos Lietuvoje | SuperAkcijos.lt';
         $description = $seo['meta_description'] ?: 'Rask visas akcijas ir nuolaidas Lietuvoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai.';
@@ -66,6 +74,7 @@ class HomeController extends Controller
             'sections' => $sections,
             'pageMeta' => $pageMeta,
             'stores' => $stores,
+            'latestLeaflets' => $latestLeaflets,
         ]);
     }
 }

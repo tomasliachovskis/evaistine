@@ -84,6 +84,8 @@
                 layout="carousel"
             />
 
+            <x-landing-leaflets-carousel :leaflets="$latestLeaflets" />
+
             {{-- LandingPopularCategories --}}
             <x-landing-popular-categories
                 :categories="array_slice($pageMeta['category_highlights'], 0, 8)"

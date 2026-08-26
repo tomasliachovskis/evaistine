@@ -81,11 +81,11 @@
                             @else
                                 <div class="flex flex-col gap-2">
                                     @foreach ($otherLeaflets->take(6) as $other)
-                                        <a href="{{ $other['view_url'] ?? "/leidinys/{$storeSlug}" }}" class="flex items-center gap-2.5 rounded-lg border border-gray-200 p-2 transition-colors hover:border-green hover:bg-green/5">
+                                        <a href="{{ $other['view_url'] ?? "/leidinys/{$storeSlug}" }}" class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 transition-colors hover:border-green hover:bg-green/5">
                                             @if (!empty($other['image_url']))
-                                                <img src="{{ $other['image_url'] }}" alt="" class="h-12 w-10 shrink-0 rounded object-cover">
+                                                <img src="{{ $other['image_url'] }}" alt="" class="h-20 w-16 shrink-0 rounded-md object-cover">
                                             @endif
-                                            <span class="line-clamp-2 text-xs font-medium text-gray-900">{{ $other['title'] }}</span>
+                                            <span class="line-clamp-2 text-sm font-medium text-gray-900">{{ $other['title'] }}</span>
                                         </a>
                                     @endforeach
                                 </div>
