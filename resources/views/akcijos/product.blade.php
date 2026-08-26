@@ -313,27 +313,33 @@ use App\Support\ProductPageMeta;
 
         @if ($hasHistory)
             @php
-                $historyPrices = array_values(array_filter(array_map(fn ($h) => (float) ($h['discounted_price'] ?? 0), $history), fn ($p) => $p > 0));
-                if ($bestPrice > 0) { $historyPrices[] = $bestPrice; }
+                // Same "current price counts as a history point too" fix the old
+                // min/avg/max block had ($bestPrice isn't in $history — that table
+                // only has past discount records, not the live current one).
+                $priceHistoryPoints = collect($history)
+                    ->filter(fn ($h) => (float) ($h['discounted_price'] ?? 0) > 0 && !empty($h['from_date']) && !empty($h['store']['slug']))
+                    ->map(fn ($h) => [
+                        'store_slug' => $h['store']['slug'],
+                        'store_name' => $h['store']['name'],
+                        'price' => (float) $h['discounted_price'],
+                        'date' => $h['from_date'],
+                    ]);
+
+                if ($bestPrice > 0 && $bestOffer && !empty($bestOffer['store']['slug'])) {
+                    $priceHistoryPoints->push([
+                        'store_slug' => $bestOffer['store']['slug'],
+                        'store_name' => $bestOffer['store']['name'],
+                        'price' => (float) $bestPrice,
+                        'date' => $bestOffer['from_date'] ?? now()->format('Y-m-d'),
+                    ]);
+                }
+
+                $priceHistoryPoints = $priceHistoryPoints->sortBy('date')->values();
             @endphp
-            @if ($historyPrices !== [])
+            @if ($priceHistoryPoints->isNotEmpty())
                 <section id="kainu-istorija" class="scroll-mt-32 border-t border-gray-200 bg-white py-6 sm:py-8">
                     <div class="base-container">
-                        <h2 class="mb-4 text-lg font-bold text-gray-900">{{ \App\Support\ProductPageMeta::historyTitle($product['name']) }}</h2>
-                        <div class="grid grid-cols-3 gap-3 sm:max-w-md">
-                            <div class="rounded-xl border border-gray-100 p-3 text-center">
-                                <p class="text-xs font-medium text-gray-500">Mažiausia</p>
-                                <p class="mt-1 text-base font-bold text-dark-green">{{ number_format(min($historyPrices), 2, ',', ' ') }} €</p>
-                            </div>
-                            <div class="rounded-xl border border-gray-100 p-3 text-center">
-                                <p class="text-xs font-medium text-gray-500">Vidutinė</p>
-                                <p class="mt-1 text-base font-bold text-gray-900">{{ number_format(array_sum($historyPrices) / count($historyPrices), 2, ',', ' ') }} €</p>
-                            </div>
-                            <div class="rounded-xl border border-gray-100 p-3 text-center">
-                                <p class="text-xs font-medium text-gray-500">Didžiausia</p>
-                                <p class="mt-1 text-base font-bold text-gray-900">{{ number_format(max($historyPrices), 2, ',', ' ') }} €</p>
-                            </div>
-                        </div>
+                        <x-price-history-chart :points="$priceHistoryPoints" :product-name="$product['name']" />
                     </div>
                 </section>
             @endif
