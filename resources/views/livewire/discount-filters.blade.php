@@ -29,6 +29,15 @@
     $allHref = $sidebarMode === 'categories' && $primarySlug !== null
         ? '/akcijos/' . $primarySlug . ($order !== 'popular' ? '?order=' . $order : '')
         : null;
+
+    // Store+category combo page (/akcijos/{store}/{category}) — the store is
+    // fixed by the URL path, not a toggleable query-string filter, so it
+    // needs its own removable chip: "x" navigates to the category alone
+    // rather than a Livewire state change.
+    $isStoreCategoryCombo = $mode === 'discounts' && $primarySlug !== null && $secondarySlug !== null;
+    $removeStoreHref = $isStoreCategoryCombo
+        ? '/akcijos/' . $secondarySlug . ($order !== 'popular' ? '?order=' . $order : '')
+        : null;
 @endphp
 
 {{-- Verified against production: the sort/action bar is visible in carousel
@@ -56,6 +65,12 @@
                         Filtrai{{ $activeCount > 0 ? " ({$activeCount})" : '' }}
                     </button>
                     <div class="hidden min-w-0 flex-wrap gap-2 sm:flex">
+                        @if ($isStoreCategoryCombo)
+                            <a href="{{ $removeStoreHref }}" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
+                                {{ $primaryStoreName ?? $primarySlug }}
+                                <x-app-icon name="x" class="size-4" />
+                            </a>
+                        @endif
                         @foreach ($selectedStores as $slug)
                             <button type="button" wire:click="toggleStore('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
                                 {{ collect($allStores)->firstWhere('slug', $slug)['name'] ?? $slug }}
@@ -94,6 +109,12 @@
             </div>
 
             <div class="mb-3 flex flex-wrap gap-2 sm:hidden">
+                @if ($isStoreCategoryCombo)
+                    <a href="{{ $removeStoreHref }}" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
+                        {{ $primaryStoreName ?? $primarySlug }}
+                        <x-app-icon name="x" class="size-4" />
+                    </a>
+                @endif
                 @foreach ($selectedStores as $slug)
                     <button type="button" wire:click="toggleStore('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
                         {{ collect($allStores)->firstWhere('slug', $slug)['name'] ?? $slug }}

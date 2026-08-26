@@ -30,9 +30,11 @@
                 @if ($product['image_url'])
                     <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" loading="lazy" class="h-full w-full object-contain p-3 sm:p-3.5">
                 @endif
-                <div class="absolute bottom-2 left-2 z-10 sm:bottom-2.5 sm:left-2.5">
-                    <x-discount-badge :percent="$deal['discount_percent'] ?? null" size="sm" />
-                </div>
+                @if ($discountPrice > 0)
+                    <div class="absolute bottom-2 left-2 z-10 sm:bottom-2.5 sm:left-2.5">
+                        <x-discount-badge :percent="$discountPercent" size="sm" />
+                    </div>
+                @endif
             </div>
         </div>
 

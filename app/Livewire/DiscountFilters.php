@@ -27,6 +27,13 @@ class DiscountFilters extends Component
     #[Locked]
     public ?string $secondarySlug = null;
 
+    // Only set on a store+category combo page (both slugs from the URL path,
+    // e.g. /akcijos/lidl/bakaleja) — lets the selected-filters row show a
+    // removable "Lidl" chip without an extra store lookup, since allStores
+    // stays empty in that mode (see mount()).
+    #[Locked]
+    public ?string $primaryStoreName = null;
+
     // 'categories' when browsing a store (pick a category) or 'stores' when
     // browsing a category/keyword page (pick a store) — see AkcijosController.
     #[Locked]
@@ -67,12 +74,13 @@ class DiscountFilters extends Component
     // the original's CategoryCarouselsLayout, just without a full page nav.
     public array $sections = [];
 
-    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, array $initialSections = [], string $sidebarMode = 'categories'): void
+    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, array $initialSections = [], string $sidebarMode = 'categories', ?string $primaryStoreName = null): void
     {
         $this->mode = $mode;
         $this->primarySlug = $primarySlug;
         $this->secondarySlug = $secondarySlug;
         $this->sidebarMode = $sidebarMode;
+        $this->primaryStoreName = $primaryStoreName;
         $this->deals = $initialDeals;
         $this->pagination = $initialPagination;
         $this->sections = $initialSections;

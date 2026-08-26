@@ -139,6 +139,7 @@
             :initial-pagination="$pagination"
             :initial-sections="$sections ?? []"
             :sidebar-mode="$sidebarMode"
+            :primary-store-name="$listingMeta['store_name'] ?? null"
             :key="'filters-'.$basePath"
         />
 
