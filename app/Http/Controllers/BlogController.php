@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BlogPost;
 use App\Support\BreadcrumbSchema;
+use App\Support\CanonicalUrl;
 
 class BlogController extends Controller
 {
@@ -19,7 +20,7 @@ class BlogController extends Controller
         return view('blog.index', [
             'title' => 'Naujienos',
             'description' => 'Naujausi straipsniai apie akcijas, nuolaidas ir taupymą. Naudingi patarimai ir gairės geriausiems pasiūlymams.',
-            'canonical' => url('/naujienos'),
+            'canonical' => CanonicalUrl::build('/naujienos'),
             'posts' => $posts,
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
@@ -39,7 +40,7 @@ class BlogController extends Controller
         return view('blog.show', [
             'title' => $post->meta_title ?: $post->title,
             'description' => $post->meta_description ?: '',
-            'canonical' => url("/naujienos/{$slug}"),
+            'canonical' => CanonicalUrl::build("/naujienos/{$slug}"),
             'post' => $post,
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),

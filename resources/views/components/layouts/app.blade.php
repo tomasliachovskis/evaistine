@@ -3,7 +3,18 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Rask visas akcijas ir nuolaidas Lietuvoje | SuperAkcijos.lt' }}</title>
+    @php
+        // Every controller except HomeController passes a bare title with no
+        // "| SuperAkcijos.lt" suffix — confirmed against production, where
+        // every single page type carries it. Centralized here instead of in
+        // every controller (HomePageMetaService already bakes the suffix
+        // into its own generated title, so guard against double-suffixing).
+        $pageTitle = $title ?? 'Rask visas akcijas ir nuolaidas Lietuvoje';
+        if (!str_ends_with($pageTitle, '| SuperAkcijos.lt')) {
+            $pageTitle .= ' | SuperAkcijos.lt';
+        }
+    @endphp
+    <title>{{ $pageTitle }}</title>
     <meta name="description" content="{{ $description ?? 'Akcijos ir nuolaidos iš Maxima, Lidl, Iki, Rimi ir kitų tinklų vienoje vietoje. Peržiūrėkite šviežiausius savaitės pasiūlymus.' }}">
     <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
     <meta name="robots" content="{{ $robots ?? 'index, follow' }}">
