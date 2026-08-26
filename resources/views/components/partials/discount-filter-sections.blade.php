@@ -29,7 +29,12 @@
         <div class="flex flex-col gap-0.5">
             @foreach ($allStores as $store)
                 <a href="{{ $mode !== 'keyword' && $primarySlug !== null ? '/akcijos/'.$store['slug'].'/'.$primarySlug : '/akcijos/'.$store['slug'] }}" class="{{ $rowClass($store['slug'] === $primarySlug) }}">
-                    <x-store-logo :slug="$store['slug']" :name="$store['name']" size="xs" />
+                    {{-- Fixed-width icon column (unlike <x-store-logo>'s auto-width
+                         tiers) so every row's name starts at the same x position
+                         regardless of that store's own logo aspect ratio. --}}
+                    <span class="flex h-5 w-6 shrink-0 items-center justify-center">
+                        <img src="/assets/stores/{{ $store['slug'] }}.svg?v=2" alt="" class="max-h-full max-w-full object-contain" onerror="this.style.display='none'">
+                    </span>
                     <span class="truncate">{{ $store['name'] }}</span>
                 </a>
             @endforeach
