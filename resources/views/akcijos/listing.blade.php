@@ -90,9 +90,9 @@
                             class="relative flex min-w-[148px] shrink-0 flex-col items-center rounded-xl border bg-white px-2.5 py-2.5 text-center transition-colors sm:min-w-[160px] sm:px-3 sm:py-3 {{ $index === 0 ? 'border-green/40 bg-green/5' : 'border-gray-200 hover:border-green/30' }}"
                         >
                             <div class="flex h-10 items-center justify-center sm:h-11">
-                                <img src="/assets/stores/{{ $row['store_slug'] }}.svg" alt="" class="h-10 w-16 shrink-0 object-contain sm:h-11 sm:w-[4.75rem]">
+                                <x-store-logo :slug="$row['store_slug']" size="md" />
                             </div>
-                            <p class="mb-1 text-sm font-bold leading-tight text-gray-900 sm:text-[0.9375rem]">{{ $row['store'] }}</p>
+                            <p class="mb-1 text-sm font-bold leading-tight text-gray-900 sm:text-base">{{ $row['store'] }}</p>
                             <div class="mb-1.5">
                                 @if (!empty($row['min_price']))
                                     <p class="flex items-baseline justify-center gap-1 leading-tight">
@@ -100,15 +100,18 @@
                                         <span class="text-xl font-extrabold tabular-nums text-green sm:text-2xl">{{ number_format($row['min_price'], 2, ',', ' ') }} €</span>
                                     </p>
                                 @elseif (!empty($row['max_discount_percent']))
+                                    {{-- Not run through <x-discount-badge>: that component applies
+                                         the >=20% promotion threshold, but this badge always shows
+                                         the store's actual max discount regardless of size. --}}
                                     <p class="flex items-baseline justify-center gap-1 leading-tight">
                                         <span class="text-xs font-medium text-gray-500 sm:text-sm">iki</span>
-                                        <span class="inline-flex h-[1.6rem] items-center rounded-lg bg-[#ffdb4d] px-2.5 text-[17.6px] font-bold leading-none text-gray-900 sm:h-[2rem] sm:px-3 sm:text-[19px]">-{{ $row['max_discount_percent'] }}%</span>
+                                        <span class="inline-flex h-[1.6rem] items-center rounded-lg bg-[#ffdb4d] px-2.5 text-base font-bold leading-none text-gray-900 sm:h-8">-{{ $row['max_discount_percent'] }}%</span>
                                     </p>
                                 @else
                                     <p class="text-sm font-semibold text-gray-500">Tik nuolaida</p>
                                 @endif
                             </div>
-                            <span class="rounded-full bg-green/10 px-2 py-0.5 text-[11px] font-medium text-green sm:text-xs">{{ $row['offers_count'] }} {{ \App\Support\LithuanianPlural::offerWord($row['offers_count']) }}</span>
+                            <span class="rounded-full bg-green/10 px-2 py-0.5 text-xs font-medium text-green">{{ $row['offers_count'] }} {{ \App\Support\LithuanianPlural::offerWord($row['offers_count']) }}</span>
                         </a>
                     @endforeach
                 </div>
