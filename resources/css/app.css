@@ -71,6 +71,13 @@
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) + 4px);
+
+    /* Hero/price numbers don't fit the sm/base/lg label scale — named tokens
+       instead of the scattered text-[1.75rem]/text-[2rem]/etc. arbitrary
+       values previously duplicated across akcijos/product.blade.php and
+       akcijos/listing.blade.php. */
+    --text-price-lg: 1.75rem;
+    --text-price-hero: 2rem;
 }
 
 body {

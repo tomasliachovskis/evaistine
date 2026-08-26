@@ -79,7 +79,7 @@ use App\Support\ProductPageMeta;
              product-social-proof.ts), and the price-deal signal badge
              (resolvePriceDealSignal). --}}
         <div class="base-container pb-3 pt-1 sm:pt-2">
-            <div class="rounded-2xl border border-gray-200 bg-white p-3 max-lg:border-gray-100 sm:p-6 lg:p-5">
+            <div class="rounded-2xl border border-gray-200 bg-white p-4 max-lg:border-gray-100 sm:p-6">
                 <div class="grid grid-cols-[128px_minmax(0,1fr)] items-start gap-x-4 gap-y-6 sm:grid-cols-[144px_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-7 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-x-8">
                     <div class="flex min-w-0 items-start justify-center self-start overflow-hidden pt-2 pl-1.5 sm:pt-3 sm:pl-2 lg:p-3">
                         @if ($product['image_url'])
@@ -111,17 +111,14 @@ use App\Support\ProductPageMeta;
                                 <div class="flex flex-col gap-1 py-2 sm:py-3">
                                     @if ($heroDiscountedPrice > 0)
                                         <div class="flex flex-wrap items-end gap-x-1.5">
-                                            <span class="text-[1.75rem] font-bold leading-none text-gray-900 lg:text-[2rem]">{{ number_format($heroDiscountedPrice, 2, ',', ' ') }} €</span>
-                                            {{-- MIN_PROMOTION_BADGE_PERCENT in promotion-percent-badge.tsx. --}}
-                                            @if (!empty($bestOffer['discount_percent']) && $bestOffer['discount_percent'] >= 20)
-                                                <span class="inline-flex h-[1.6rem] items-center rounded-lg bg-[#ffdb4d] px-2.5 text-[17.6px] font-bold leading-none tabular-nums text-gray-900 sm:h-[2rem] sm:px-3 sm:text-[19px]">-{{ round($bestOffer['discount_percent']) }}%</span>
-                                            @endif
+                                            <span class="text-price-lg font-bold leading-none text-gray-900 lg:text-price-hero">{{ number_format($heroDiscountedPrice, 2, ',', ' ') }} €</span>
+                                            <x-discount-badge :percent="$bestOffer['discount_percent'] ?? null" size="lg" />
                                             @if (!empty($bestOffer['original_price']) && $bestOffer['original_price'] > $heroDiscountedPrice)
-                                                <del class="hidden text-[0.8rem] font-medium tabular-nums text-gray-400 sm:text-[1rem] lg:inline">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del>
+                                                <del class="hidden text-xs font-medium tabular-nums text-gray-400 sm:text-sm lg:inline">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del>
                                             @endif
                                         </div>
                                     @elseif ($heroPriceSlotPct !== null)
-                                        <span class="inline-flex w-fit max-w-full items-center justify-center whitespace-nowrap rounded-lg bg-[#ffdb4d] px-2 py-1 text-[1.75rem] font-bold leading-none tabular-nums text-gray-900 lg:text-[2rem]">Sutaupyk iki {{ $heroPriceSlotPct }}%</span>
+                                        <span class="inline-flex w-fit max-w-full items-center justify-center whitespace-nowrap rounded-lg bg-[#ffdb4d] px-2 py-1 text-price-lg font-bold leading-none tabular-nums text-gray-900 lg:text-price-hero">Sutaupyk iki {{ $heroPriceSlotPct }}%</span>
                                     @endif
                                 </div>
                             @endif
@@ -233,7 +230,7 @@ use App\Support\ProductPageMeta;
                             class="relative flex w-full rounded-xl border border-green/35 bg-white p-4 transition-colors hover:border-green/45 sm:p-5 {{ $showBestPriceBadge ? 'pt-6 sm:pt-7' : '' }} {{ $validityLabel ? 'pr-24 sm:pr-28' : '' }}"
                         >
                             @if ($showBestPriceBadge)
-                                <span class="absolute left-3 top-0 z-10 inline-flex -translate-y-1/2 items-center rounded-full bg-green px-3 py-1 text-[11px] font-bold leading-none text-white sm:left-3.5 sm:px-3.5 sm:text-xs">
+                                <span class="absolute left-3 top-0 z-10 inline-flex -translate-y-1/2 items-center rounded-full bg-green px-3 py-1 text-xs font-bold leading-none text-white sm:left-3.5 sm:px-3.5">
                                     <x-app-icon name="star" class="mr-1 size-3" fill="currentColor" />
                                     Geriausia kaina
                                 </span>
@@ -242,9 +239,7 @@ use App\Support\ProductPageMeta;
                                 <span class="absolute right-3 top-3 rounded-full bg-[#e8eef3] px-3 py-1 text-xs font-medium text-gray-700 sm:right-4 sm:top-4">{{ $validityLabel }}</span>
                             @endif
                             <div class="flex min-w-0 items-start gap-3 sm:gap-4">
-                                <div class="flex h-9 w-14 shrink-0 items-center justify-center sm:h-11 sm:w-[4.75rem]">
-                                    <img src="/assets/stores/{{ $store['slug'] ?? '' }}.svg" alt="" class="max-h-full max-w-full object-contain">
-                                </div>
+                                <x-store-logo :slug="$store['slug'] ?? ''" :name="$store['name'] ?? ''" size="md" class="shrink-0" />
                                 <div class="flex min-w-0 flex-1 flex-col gap-1.5 sm:gap-2">
                                     {{-- Deliberately simpler than the ported original here (user
                                          request): when there's a real price, show only that price
@@ -254,12 +249,12 @@ use App\Support\ProductPageMeta;
                                         @if (!empty($offer['discounted_price']) && $offer['discounted_price'] > 0)
                                             <span class="shrink-0 text-xl font-bold tabular-nums text-gray-900 sm:text-2xl">{{ number_format($offer['discounted_price'], 2, ',', ' ') }} €</span>
                                         @elseif ($pct !== null)
-                                            <span class="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#ffdb4d] px-2 py-1 text-[13px] font-bold leading-none text-gray-900 tabular-nums">-{{ $pct }}%</span>
+                                            <x-discount-badge :percent="$pct" size="sm" />
                                         @else
                                             <span class="text-sm text-gray-500">Kaina nežinoma</span>
                                         @endif
                                     </div>
-                                    <div class="inline-flex min-w-0 items-center gap-1.5 text-xs font-normal leading-snug text-gray-500 sm:text-[13px]">
+                                    <div class="inline-flex min-w-0 items-center gap-1.5 text-xs font-normal leading-snug text-gray-500">
                                         <x-app-icon name="info" class="size-3.5 shrink-0 text-gray-400 sm:size-4" />
                                         <span class="min-w-0">{{ \App\Support\ProductPageMeta::offerOriginLabel($store['slug'] ?? '', $store['name'] ?? '') }}</span>
                                     </div>
