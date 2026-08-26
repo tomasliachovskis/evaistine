@@ -100,10 +100,14 @@ use App\Support\ProductPageMeta;
                         @else
                             @if ($bestOffer)
                                 <div class="flex flex-col gap-1 py-2 sm:py-3">
-                                    <div class="flex flex-wrap items-baseline gap-x-1.5">
+                                    <div class="flex flex-wrap items-end gap-x-1.5">
                                         <span class="text-[1.75rem] font-bold leading-none text-gray-900 lg:text-[2rem]">{{ number_format($bestOffer['discounted_price'], 2, ',', ' ') }} €</span>
+                                        {{-- MIN_PROMOTION_BADGE_PERCENT in promotion-percent-badge.tsx. --}}
+                                        @if (!empty($bestOffer['discount_percent']) && $bestOffer['discount_percent'] >= 20)
+                                            <span class="inline-flex h-[1.6rem] items-center rounded-lg bg-[#ffdb4d] px-2.5 text-[17.6px] font-bold leading-none tabular-nums text-gray-900 sm:h-[2rem] sm:px-3 sm:text-[19px]">-{{ round($bestOffer['discount_percent']) }}%</span>
+                                        @endif
                                         @if (!empty($bestOffer['original_price']) && $bestOffer['original_price'] > $bestOffer['discounted_price'])
-                                            <del class="text-sm font-medium text-gray-400">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del>
+                                            <del class="hidden text-[0.8rem] font-medium tabular-nums text-gray-400 sm:text-[1rem] lg:inline">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del>
                                         @endif
                                     </div>
                                 </div>
@@ -114,19 +118,28 @@ use App\Support\ProductPageMeta;
                             @if (!empty($primaryDeal['to_date']) && now()->diffInDays($primaryDeal['to_date'], false) <= 1)
                                 <x-countdown :to-date="$primaryDeal['to_date']" />
                             @endif
+
+                            {{-- Desktop: ProductPriceWatchBanner folds inline here, right
+                                 after price/countdown, matching product-hero.tsx's
+                                 ActiveOffersHeroCard (hidden ... lg:flex). The component
+                                 itself already swaps its own mobile/desktop button
+                                 internally — the outer div here just decides WHERE it
+                                 renders per breakpoint. Rendering it only here at every
+                                 breakpoint (previous attempt) put it on its own grid row
+                                 even at lg+, showing as a stray gap below the price. --}}
+                            <div class="hidden lg:block">
+                                <x-product-price-watch-banner :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
+                            </div>
                         @endif
                     </div>
 
-                    {{-- Ported from product-hero.tsx's ProductPriceWatchBanner (variant
-                         "offersHero") placement: a grid SIBLING of the image/title
-                         columns (not nested inside the title column), spanning both
-                         columns as its own full-width row below them on mobile/tablet —
-                         folded back into the title column only at lg+. Nesting it inside
-                         the narrow title column at every breakpoint (as before) squeezed
-                         it into ~half the viewport width on mobile, which is what looked
-                         broken/collapsed there. --}}
+                    {{-- Mobile/tablet: same banner, its own full-width row spanning both
+                         grid columns below image+title (product-hero.tsx: col-span-2
+                         col-start-1 row-start-2 ... lg:hidden) — a grid SIBLING of the
+                         image/title columns, not nested inside the narrow title column,
+                         which is what looked squeezed/collapsed there. --}}
                     @if (!$isExpired)
-                        <div class="col-span-2 pt-1 lg:col-span-1 lg:col-start-2">
+                        <div class="col-span-2 pt-1 lg:hidden">
                             <x-product-price-watch-banner :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
                         </div>
                     @endif
