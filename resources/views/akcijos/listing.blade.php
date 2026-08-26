@@ -1,5 +1,12 @@
 @php
-    $introDescription = $listingMeta['intro']['description'] ?? null;
+    $headerType = $listingMeta['type'] ?? null;
+    $isRichHeader = in_array($headerType, ['store', 'category', 'store_category'], true);
+    $isStoreHeader = $headerType === 'store' || $headerType === 'store_category';
+
+    // The short intro.description is shown up in the new rich header for
+    // store/category/store_category pages (see below) — skip it here so it
+    // doesn't also render a second time in the bottom SEO block.
+    $introDescription = $isRichHeader ? null : ($listingMeta['intro']['description'] ?? null);
     $faqItems = $listingMeta['sections']['faq'] ?? [];
     $isKeyword = $filtersMode === 'keyword';
 
@@ -51,23 +58,78 @@
     </div>
 
     <div class="base-container gap-4 pb-4 pt-2 sm:pb-5 sm:pt-3">
-        <div class="mb-2 flex flex-col gap-2 sm:mb-4">
-            <div class="mb-3 min-w-0">
-                @if (!empty($filtersPrimarySlug) && $filtersMode === 'discounts' && \App\Support\StoreDisplayMeta::isStoreSlug($filtersPrimarySlug))
-                    <a href="/parduotuves" class="mb-2 hidden items-center gap-1 text-base font-medium text-gray-600 transition-colors hover:text-gray-900 sm:inline-flex">
-                        <x-app-icon name="chevron-right" class="size-4 shrink-0 rotate-180" />
-                        Grįžti į parduotuves
-                    </a>
-                @endif
-                <h1 class="flex min-w-0 flex-wrap items-baseline gap-x-1.5 font-semibold text-gray-900">
-                    <span class="text-gray-900">{{ $pageTitle }}</span>
-                    @php $total = $pagination['total'] ?? count($deals); @endphp
-                    @if ($total > 0)
-                        <span class="whitespace-nowrap tabular-nums text-gray-500">({{ number_format($total, 0, ',', ' ') }})</span>
+        @php $total = $pagination['total'] ?? count($deals); @endphp
+
+        @if ($isRichHeader)
+            {{-- Ported from leidinys/{store} hub page's header (logo + title,
+                 stats subtitle, description, scrollable chip row) — same
+                 principle reused here, with content adapted per page type:
+                 store pages get the Leidiniai/Akcijos/categories nav-tabs
+                 (identical to the leaflet hub page), category pages get
+                 related keyword-page chips instead (there's no store-style
+                 "Leidiniai" tab to switch to for a category). --}}
+            <div class="mb-2 flex flex-col gap-4 sm:mb-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                        <span class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-white p-1.5 shadow-sm sm:size-12">
+                            @if ($isStoreHeader)
+                                <img src="/assets/stores/{{ $listingMeta['store_slug'] }}.svg" alt="" class="h-full w-full object-contain">
+                            @else
+                                <img src="/assets/categories/{{ $listingMeta['category_slug'] }}.svg" alt="" class="h-full w-full object-contain" onerror="this.style.visibility='hidden'">
+                            @endif
+                        </span>
+                        <h1 class="min-w-0 truncate font-semibold text-gray-900">{{ $pageTitle }}</h1>
+                    </div>
+
+                    @if ($isStoreHeader)
+                        <x-store-subscribe-button />
                     @endif
-                </h1>
+                </div>
+
+                <p class="text-xs text-gray-500 sm:text-sm">
+                    @if ($isStoreHeader)
+                        @if ($total > 0)
+                            {{ number_format($total, 0, ',', ' ') }} aktyvios {{ $listingMeta['store_name'] }} akcijos ·
+                        @endif
+                        {{ \App\Support\StoreSocialProof::followerLabel($listingMeta['store_slug'], $listingMeta['store_name']) }} ·
+                        <a href="/leidinys/{{ $listingMeta['store_slug'] }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
+                            Žiūrėti visus leidinius
+                            <x-app-icon name="arrow-right" class="size-3 shrink-0" />
+                        </a>
+                    @else
+                        {{ collect($listingMeta['intro']['quick_stats'] ?? [])->map(fn ($stat) => $stat['value'] . ' ' . mb_strtolower($stat['label']))->join(' · ') }}
+                    @endif
+                </p>
+
+                @if (!empty($listingMeta['intro']['description']))
+                    <p class="text-sm leading-relaxed text-gray-600 sm:text-base">{{ $listingMeta['intro']['description'] }}</p>
+                @endif
+
+                @if ($isStoreHeader)
+                    <x-store-nav-tabs
+                        :store-slug="$listingMeta['store_slug']"
+                        :leaflets-count="$listingMeta['leaflets_count'] ?? 0"
+                        :total-offers="$listingMeta['total_offers'] ?? $total"
+                        :categories="$listingMeta['sections']['top_categories'] ?? []"
+                        :aria-label="$listingMeta['store_name'] . ' skiltys'"
+                        active="akcijos"
+                    />
+                @else
+                    <x-keyword-chips-row :pages="$listingMeta['keyword_pages'] ?? []" />
+                @endif
             </div>
-        </div>
+        @else
+            <div class="mb-2 flex flex-col gap-2 sm:mb-4">
+                <div class="mb-3 min-w-0">
+                    <h1 class="flex min-w-0 flex-wrap items-baseline gap-x-1.5 font-semibold text-gray-900">
+                        <span class="text-gray-900">{{ $pageTitle }}</span>
+                        @if ($total > 0)
+                            <span class="whitespace-nowrap tabular-nums text-gray-500">({{ number_format($total, 0, ',', ' ') }})</span>
+                        @endif
+                    </h1>
+                </div>
+            </div>
+        @endif
 
         <livewire:discount-filters
             :mode="$filtersMode"

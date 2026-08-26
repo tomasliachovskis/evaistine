@@ -46,6 +46,7 @@
                 :total-offers="$totalOffers"
                 :categories="$listingMeta['top_categories'] ?? []"
                 :aria-label="$storeName . ' skiltys'"
+                active="leidiniai"
             />
 
             <div class="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
