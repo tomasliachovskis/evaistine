@@ -11,6 +11,7 @@
     $discountPrice = (float) ($deal['discounted_price'] ?? 0);
     $originalPrice = (float) ($deal['original_price'] ?? 0);
     $showOriginal = $originalPrice > 0 && $originalPrice !== $discountPrice && $discountPrice > 0;
+    $discountPercent = $deal['discount_percent'] ?? null;
     $infoLabel = trim($deal['info'] ?? '') ?: null;
 
     $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €';
@@ -49,6 +50,13 @@
                             <del class="text-sm font-medium tabular-nums text-gray-400">{{ $euro($originalPrice) }}</del>
                         @endif
                     </div>
+                @elseif ($discountPercent)
+                    {{-- Ported from the product page hero's same fallback — some
+                         flyer-scraped offers (multi-variant packs, "7 rūšių")
+                         never get a clean per-item price, only a discount %. --}}
+                    <span class="inline-flex items-center rounded-lg bg-[#ffdb4d] px-2 py-1 text-sm font-bold leading-none tabular-nums text-gray-900">
+                        Sutaupyk iki {{ (int) round($discountPercent) }}%
+                    </span>
                 @endif
             </div>
 
