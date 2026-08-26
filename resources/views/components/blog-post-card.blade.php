@@ -27,7 +27,7 @@
         @endunless
     </div>
     <div class="flex flex-1 flex-col p-4 sm:p-5">
-        <h2 class="line-clamp-2 text-base font-bold leading-snug text-gray-900 group-hover:text-green sm:text-[1.05rem]">
+        <h2 class="line-clamp-2 text-base font-bold leading-snug text-gray-900 group-hover:text-green">
             {{ $post->title }}
         </h2>
         <time datetime="{{ $post->published_at?->toDateString() }}" class="mt-1.5 inline-flex w-fit items-center gap-1.5 text-xs font-medium text-gray-500">

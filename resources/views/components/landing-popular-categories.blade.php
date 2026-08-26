@@ -36,7 +36,7 @@
                                 <img src="/assets/products/{{ $category['category_slug'] }}.png" alt="" class="size-[4.5rem] object-contain transition-transform group-hover:scale-105 sm:size-20">
                             </div>
                         </div>
-                        <p class="mt-3 line-clamp-2 w-full text-sm font-semibold leading-snug text-gray-900 group-hover:text-dark-green sm:text-[15px]">
+                        <p class="mt-3 line-clamp-2 w-full text-sm font-semibold leading-snug text-gray-900 group-hover:text-dark-green">
                             {{ $category['category_name'] }}
                         </p>
                         <p class="mt-1.5 text-xs text-gray-500 sm:text-sm">

@@ -53,8 +53,8 @@
                         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/35 bg-transparent text-white hover:bg-white/10"
                         aria-label="Meniu"
                     >
-                        <x-app-icon x-show="!menuOpen" name="equal" class="size-[22px]" style="stroke-width:1.75" />
-                        <x-app-icon x-show="menuOpen" x-cloak name="x" class="size-[22px]" style="stroke-width:1.75" />
+                        <x-app-icon x-show="!menuOpen" name="equal" class="size-6" style="stroke-width:1.75" />
+                        <x-app-icon x-show="menuOpen" x-cloak name="x" class="size-6" style="stroke-width:1.75" />
                     </button>
                 </div>
 

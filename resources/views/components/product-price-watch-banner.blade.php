@@ -78,7 +78,7 @@
     </button>
 
     <div class="flex items-center gap-1.5">
-        <x-app-icon name="users" class="size-[18px] shrink-0 text-gray-500" style="stroke-width:1.75" />
+        <x-app-icon name="users" class="size-5 shrink-0 text-gray-500" style="stroke-width:1.75" />
         <p class="text-xs text-gray-600">{{ \App\Support\ProductPageMeta::followerLabel($productId) }}</p>
     </div>
 </div>

@@ -17,8 +17,8 @@
         $activeTab = ($segment && StoreDisplayMeta::isStoreSlug($segment)) ? 'stores' : 'categories';
     }
 
-    $itemClass = fn (bool $active) => 'relative flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2.5 text-[11px] font-medium leading-none transition-colors '
-        . ($active ? 'text-green' : 'text-[#4b5563]');
+    $itemClass = fn (bool $active) => 'relative flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2.5 text-xs font-medium leading-none transition-colors '
+        . ($active ? 'text-green' : 'text-gray-600');
 @endphp
 
 {{-- Ported from discount/src/components/common/mobile-bottom-nav.tsx --}}
@@ -54,33 +54,33 @@
 >
     <div class="grid grid-cols-5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <a href="/" class="{{ $itemClass($activeTab === 'home') }}">
-            <span class="relative inline-flex"><x-app-icon name="home" class="size-[22px]" style="{{ $activeTab === 'home' ? 'stroke-width:2.25' : '' }}" /></span>
+            <span class="relative inline-flex"><x-app-icon name="home" class="size-6" style="{{ $activeTab === 'home' ? 'stroke-width:2.25' : '' }}" /></span>
             <span class="truncate">Pagrindinis</span>
         </a>
         <button type="button" @click="categoriesOpen = true; storesOpen = false" class="{{ $itemClass(false) }}" :class="(categoriesOpen || '{{ $activeTab }}' === 'categories') && 'text-green'">
-            <span class="relative inline-flex"><x-app-icon name="layout-grid" class="size-[22px]" /></span>
+            <span class="relative inline-flex"><x-app-icon name="layout-grid" class="size-6" /></span>
             <span class="truncate">Kategorijos</span>
         </button>
         @auth
             <a href="/favorites" class="{{ $itemClass($activeTab === 'favorites') }}">
                 <span class="relative inline-flex">
-                    <x-app-icon name="heart" class="size-[22px]" style="{{ $activeTab === 'favorites' ? 'stroke-width:2.25' : '' }}" />
+                    <x-app-icon name="heart" class="size-6" style="{{ $activeTab === 'favorites' ? 'stroke-width:2.25' : '' }}" />
                     <livewire:favorites-badge />
                 </span>
                 <span class="truncate">Stebimos</span>
             </a>
         @else
             <button type="button" @click="$store.authModal.open = true" class="{{ $itemClass(false) }}">
-                <span class="relative inline-flex"><x-app-icon name="heart" class="size-[22px]" /></span>
+                <span class="relative inline-flex"><x-app-icon name="heart" class="size-6" /></span>
                 <span class="truncate">Stebimos</span>
             </button>
         @endauth
         <button type="button" @click="storesOpen = true; categoriesOpen = false" class="{{ $itemClass(false) }}" :class="(storesOpen || '{{ $activeTab }}' === 'stores') && 'text-green'">
-            <span class="relative inline-flex"><x-app-icon name="store" class="size-[22px]" /></span>
+            <span class="relative inline-flex"><x-app-icon name="store" class="size-6" /></span>
             <span class="truncate">Parduotuvės</span>
         </button>
         <a href="/akcijos" class="{{ $itemClass($activeTab === 'products') }}">
-            <span class="relative inline-flex"><x-app-icon name="package" class="size-[22px]" style="{{ $activeTab === 'products' ? 'stroke-width:2.25' : '' }}" /></span>
+            <span class="relative inline-flex"><x-app-icon name="package" class="size-6" style="{{ $activeTab === 'products' ? 'stroke-width:2.25' : '' }}" /></span>
             <span class="truncate">Produktai</span>
         </a>
     </div>
