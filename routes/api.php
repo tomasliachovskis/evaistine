@@ -23,6 +23,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/scrapers', [ScrapingController::class, 'storeDiscountTemp']);
 Route::get('/scrapers/active-discounts/{storeName}', [ScrapingController::class, 'getActiveDiscountsByStore']);
 Route::post('/scrapers/check-discount', [ScrapingController::class, 'checkValidDiscount']);
+Route::post('/scrapers/store-flyer', [ScrapingController::class, 'storeFlyer']);
+Route::post('/scrapers/extract-flyer-info', [ScrapingController::class, 'extractFlyerInfo']);
+Route::post('/scrapers/store-locations', [ScrapingController::class, 'storeLocations']);
 
 Route::get('/discount', [ProductController::class, 'getAllDiscounts']);
 Route::get('/discount/best-by-category', [ProductController::class, 'getBestDiscountsByCategory']);
@@ -43,6 +46,7 @@ Route::get('/keyword/{slug}', [KeywordPageController::class, 'show']);
 
 Route::get('/categories', [ProductController::class, 'getCategories']);
 Route::get('/stores', [ProductController::class, 'getStores']);
+Route::get('/store-locations/{slug}', [ProductController::class, 'getStoreLocations']);
 Route::get('/sitemap', [ProductController::class, 'getSitemap']);
 Route::get('/sitemap/products', [ProductController::class, 'getSitemapProducts']);
 Route::get('/favorite/product/{slug}', [ProductController::class, 'getFavoriteProduct']);

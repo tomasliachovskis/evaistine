@@ -1,0 +1,89 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Api\ProductController;
+use App\Support\BreadcrumbSchema;
+use App\Support\CanonicalUrl;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+// Ported from discount/src/app/leidiniai/page.tsx and leidinys/[store]/(page,[leafletSlug]/page).tsx.
+class LeafletController extends Controller
+{
+    public function index(ProductController $api)
+    {
+        $payload = json_decode($api->getAllLeaflets()->getContent(), true);
+        $path = '/leidiniai';
+        $breadcrumbs = $this->mapBreadcrumbs($payload['breadcrumbs']);
+
+        return view('leaflets.index', [
+            'leaflets' => $payload['leaflets'],
+            'seo' => $payload['seo'],
+            'canonical' => CanonicalUrl::build($path),
+            'robots' => CanonicalUrl::robotsMeta($path),
+            'breadcrumbs' => $breadcrumbs,
+            'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
+        ]);
+    }
+
+    public function hub(ProductController $api, string $store)
+    {
+        try {
+            $response = $api->getStoreLeafletHub($store);
+        } catch (ModelNotFoundException $e) {
+            abort(404);
+        }
+
+        $payload = json_decode($response->getContent(), true);
+        $path = "/leidinys/{$store}";
+        $breadcrumbs = $this->mapBreadcrumbs($payload['breadcrumbs']);
+
+        // Ported from listing-store-hub-page.tsx: the hub also shows the same
+        // per-category "best deals" carousels as a plain store page.
+        $sections = json_decode($api->getBestDiscountsByCategoryForStore($store)->getContent(), true);
+
+        return view('leaflets.hub', [
+            'listingMeta' => $payload['listing_meta'],
+            'seo' => $payload['seo'],
+            'totalOffers' => $payload['total_offers'],
+            'storeSlug' => $store,
+            'sections' => $sections,
+            'canonical' => CanonicalUrl::build($path),
+            'robots' => CanonicalUrl::robotsMeta($path),
+            'breadcrumbs' => $breadcrumbs,
+            'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
+        ]);
+    }
+
+    public function show(ProductController $api, string $store, string $flyerSlug)
+    {
+        try {
+            $response = $api->getStoreLeaflet($store, $flyerSlug);
+        } catch (ModelNotFoundException $e) {
+            abort(404);
+        }
+
+        $payload = json_decode($response->getContent(), true);
+        $path = "/leidinys/{$store}/{$flyerSlug}";
+        $breadcrumbs = $this->mapBreadcrumbs($payload['breadcrumbs']);
+
+        return view('leaflets.show', [
+            'listingMeta' => $payload['listing_meta'],
+            'seo' => $payload['seo'],
+            'totalOffers' => $payload['total_offers'],
+            'storeSlug' => $store,
+            'canonical' => CanonicalUrl::build($path),
+            'robots' => CanonicalUrl::robotsMeta($path),
+            'breadcrumbs' => $breadcrumbs,
+            'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
+        ]);
+    }
+
+    private function mapBreadcrumbs(array $breadcrumbs): array
+    {
+        return collect($breadcrumbs)->map(fn ($b) => [
+            'name' => $b['name'],
+            'href' => $b['slug'] === '/' ? '/' : '/' . ltrim($b['slug'], '/'),
+        ])->all();
+    }
+}

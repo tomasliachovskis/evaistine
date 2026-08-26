@@ -36,9 +36,12 @@ class StoreFlyerTitleBuilder
         // current/expired status is derived from valid_to instead, not it.
         $validTo = $flyer->valid_to;
         $isExpired = $validTo !== null && $validTo->lt(Carbon::today());
+        // +1 because diffInDays is exclusive — on the flyer's actual last
+        // valid day (valid_to == today) it returns 0, which reads as
+        // "already over" even though today is still fully valid.
         $daysRemaining = $isExpired || $validTo === null
             ? null
-            : (int) Carbon::today()->diffInDays($validTo);
+            : (int) Carbon::today()->diffInDays($validTo) + 1;
 
         return [
             'title' => $this->build($flyer, $store),

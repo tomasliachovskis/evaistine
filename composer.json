@@ -12,7 +12,9 @@
         "intervention/image": "^3.11",
         "laravel/framework": "^11.31",
         "laravel/sanctum": "^4.2",
+        "laravel/socialite": "^5.30",
         "laravel/tinker": "^2.9",
+        "livewire/livewire": "^4.4",
         "meilisearch/meilisearch-php": "^1.16",
         "spatie/pdf-to-image": "^1.2"
     },

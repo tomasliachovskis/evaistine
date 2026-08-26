@@ -34,9 +34,36 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->environments(['dev']);
 
+        $schedule->command('flyers:scrape --all')
+            ->dailyAt('05:00')
+            ->withoutOverlapping()
+            ->environments(['dev']);
+
+        // flyers:store-flyer creates StoreFlyer rows (shared prod DB, hit
+        // from local scrapers) with pdf_url left null and no job dispatched
+        // — the PDF file itself only exists on whichever machine handled the
+        // upload until deploy.sh rsyncs storage/app/public/flyers/pdfs/ to
+        // production. This finalizes pdf_url (using production's own
+        // APP_URL) and dispatches the page-split job once the file has
+        // actually landed here — restricted to production so it never fires
+        // against local's own copy of the file with local's own domain.
+        $schedule->command('flyers:process-pages --pending')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->environments(['production']);
+
         $schedule->command('discounts:dispatch-store-processing')
             ->everyFiveMinutes()
             ->withoutOverlapping();
+
+        // Store working hours change rarely (unlike flyers/discounts), so
+        // weekly is plenty. No file-transfer complexity here (unlike
+        // flyers) — it's plain JSON straight into the shared DB — so this
+        // just needs the ['dev'] restriction all scrapers share.
+        $schedule->command('hours:scrape --all')
+            ->weeklyOn(1, '06:00')
+            ->withoutOverlapping()
+            ->environments(['dev']);
     }
 
     /**

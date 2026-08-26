@@ -82,10 +82,14 @@ class ProcessStoreFlyerPages extends Command
         }
 
         if ($this->option('pending')) {
+            // Includes rows with pdf_url still null (e.g. scraped locally,
+            // not yet deployed to this machine) — the loop below attempts
+            // FlyerStorage::finalizeFlyerPdf() for those, and just skips
+            // (without marking failed) whichever ones still have no file on
+            // disk here, so the next scheduled run retries them once the
+            // file actually arrives.
             return StoreFlyer::query()
                 ->where('processing_status', StoreFlyer::STATUS_PENDING)
-                ->whereNotNull('pdf_url')
-                ->where('pdf_url', '!=', '')
                 ->get();
         }
 

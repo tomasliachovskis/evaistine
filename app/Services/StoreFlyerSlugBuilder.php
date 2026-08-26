@@ -12,15 +12,15 @@ class StoreFlyerSlugBuilder
     public function build(
         Store $store,
         string $title,
-        string $validFrom,
-        string $validTo,
+        ?string $validFrom,
+        ?string $validTo,
         ?int $excludeFlyerId = null
     ): string {
-        $base = Str::slug($title)
-            . '-'
-            . Carbon::parse($validFrom)->format('Ymd')
-            . '-'
-            . Carbon::parse($validTo)->format('Ymd');
+        $base = Str::slug($title);
+
+        if ($validFrom && $validTo) {
+            $base .= '-' . Carbon::parse($validFrom)->format('Ymd') . '-' . Carbon::parse($validTo)->format('Ymd');
+        }
 
         $slug = $base;
         $counter = 2;

@@ -247,6 +247,10 @@ class DiscountResponseFormatter
             return $product->image_url;
         }
 
-        return '/assets/product/' . $filename;
+        // Was '/assets/product/' + filename, a path the old separate Next.js
+        // frontend served via its own symlink (set up by deploy.sh's now-removed
+        // images-only rsync step). Now that this app serves the frontend too,
+        // the file is already reachable at its real storage:link path.
+        return '/storage/products/' . $filename;
     }
 }

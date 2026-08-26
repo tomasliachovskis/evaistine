@@ -372,30 +372,125 @@ class ProductController extends Controller
 
     public function getCategories()
     {
-        $categories = \App\Models\Category::whereNull('parent_id')
-            ->select('id', 'name', 'slug', 'description', 'hide')
-            ->withCount([
-                'discounts' => function ($query) {
-                    $query->select(\DB::raw('count(distinct discounts.id)'));
-                }
-            ])->get();
+        $cacheKey = 'categories_' . CacheVersion::suffix(['discounts']);
+
+        $categories = Cache::remember($cacheKey, 3600, function () {
+            return \App\Models\Category::whereNull('parent_id')
+                ->select('id', 'name', 'slug', 'description', 'hide')
+                ->withCount([
+                    'discounts' => function ($query) {
+                        $query->select(\DB::raw('count(distinct discounts.id)'));
+                    }
+                ])->get();
+        });
 
         return response()->json($categories);
     }
 
     public function getStores()
     {
-        $stores = \App\Models\Store::select('id', 'name', 'slug')
-            ->withCount([
-                'discounts' => function ($query) {
-                    $query->select(\DB::raw('count(distinct discounts.id)'));
-                }
-            ])->get();
+        $cacheKey = 'stores_' . CacheVersion::suffix(['discounts']);
 
-        return response()->json([
-            'data' => $this->storesPageMetaService->formatStore($stores),
-            'page_meta' => $this->storesPageMetaService->buildPageMeta($stores),
-        ]);
+        $payload = Cache::remember($cacheKey, 3600, function () {
+            $stores = \App\Models\Store::select('id', 'name', 'slug')
+                ->withCount([
+                    'discounts' => function ($query) {
+                        $query->select(\DB::raw('count(distinct discounts.id)'));
+                    }
+                ])->get();
+
+            return [
+                'data' => $this->storesPageMetaService->formatStore($stores),
+                'page_meta' => $this->storesPageMetaService->buildPageMeta($stores),
+            ];
+        });
+
+        return response()->json($payload);
+    }
+
+    // Scoped sidebar variants of getCategories()/getStores(): production only
+    // lists the categories a given store actually has discounts in (and vice
+    // versa for a category's stores) rather than every category/store site-wide.
+    public function getCategoriesForStore(string $storeSlug)
+    {
+        $store = \App\Models\Store::where('slug', $storeSlug)->first();
+
+        if (!$store) {
+            return response()->json([]);
+        }
+
+        $cacheKey = "categories_for_store_{$store->id}_" . CacheVersion::suffix(['discounts']);
+
+        $categories = Cache::remember($cacheKey, 3600, function () use ($store) {
+            return Category::whereNull('parent_id')
+                ->select('id', 'name', 'slug', 'description', 'hide')
+                ->withCount([
+                    'discounts' => function ($query) use ($store) {
+                        $query->select(\DB::raw('count(distinct discounts.id)'))
+                            ->where('discounts.store_id', $store->id);
+                    }
+                ])
+                ->having('discounts_count', '>', 0)
+                ->get();
+        });
+
+        return response()->json($categories);
+    }
+
+    public function getStoresForCategory(string $categorySlug)
+    {
+        $category = Category::where('slug', $categorySlug)->first();
+
+        if (!$category) {
+            return response()->json(['data' => []]);
+        }
+
+        $cacheKey = "stores_for_category_{$category->id}_" . CacheVersion::suffix(['discounts']);
+
+        $payload = Cache::remember($cacheKey, 3600, function () use ($category) {
+            $stores = \App\Models\Store::select('id', 'name', 'slug')
+                ->withCount([
+                    'discounts' => function ($query) use ($category) {
+                        $query->select(\DB::raw('count(distinct discounts.id)'))
+                            ->whereHas('product', function ($productQuery) use ($category) {
+                                $productQuery->where('category_id', $category->id);
+                            });
+                    }
+                ])
+                ->having('discounts_count', '>', 0)
+                ->get();
+
+            return ['data' => $this->storesPageMetaService->formatStore($stores)];
+        });
+
+        return response()->json($payload);
+    }
+
+    public function getStoreLocations($slug)
+    {
+        $store = \App\Models\Store::where('slug', $slug)->first();
+
+        if (!$store) {
+            return response()->json(['error' => 'Store not found'], 404);
+        }
+
+        $cacheKey = "store_locations_{$store->id}_" . CacheVersion::suffix(['discounts']);
+
+        $payload = Cache::remember($cacheKey, 3600, function () use ($store) {
+            $locations = \App\Models\StoreLocation::where('store_id', $store->id)
+                ->active()
+                ->orderBy('city')
+                ->orderBy('address')
+                ->get(['city', 'address', 'lat', 'lng', 'phone', 'hours']);
+
+            return [
+                'store' => ['name' => $store->name, 'slug' => $store->slug],
+                'locations' => $locations,
+                'total' => $locations->count(),
+            ];
+        });
+
+        return response()->json($payload);
     }
 
     public function search(Request $request, $query)
@@ -980,27 +1075,37 @@ class ProductController extends Controller
 
     public function getAllLeaflets()
     {
-        $leaflets = $this->listingPageMetaService->buildAllLeaflets();
+        $cacheKey = 'all_leaflets_' . CacheVersion::suffix(['discounts']);
 
-        return response()->json([
-            'leaflets' => $leaflets,
-            'total' => count($leaflets),
-            'breadcrumbs' => $this->generateBreadcrumbs('leaflets_index'),
-            'seo' => $this->generateSeoData('leaflets_index'),
-        ]);
+        $payload = Cache::remember($cacheKey, 3600, function () {
+            $leaflets = $this->listingPageMetaService->buildAllLeaflets();
+
+            return [
+                'leaflets' => $leaflets,
+                'total' => count($leaflets),
+                'breadcrumbs' => $this->generateBreadcrumbs('leaflets_index'),
+                'seo' => $this->generateSeoData('leaflets_index'),
+            ];
+        });
+
+        return response()->json($payload);
     }
 
     public function getStoreLeafletHub(string $store)
     {
         $storeModel = \App\Models\Store::where('slug', $store)->firstOrFail();
-        $totalOffers = Discount::where('store_id', $storeModel->id)->count();
+        $cacheKey = "store_leaflet_hub_{$storeModel->id}_" . CacheVersion::suffix(['discounts']);
 
-        return response()->json([
-            'listing_meta' => $this->listingPageMetaService->buildForStore($storeModel),
-            'breadcrumbs' => $this->generateBreadcrumbs('store_leaflet', $storeModel),
-            'seo' => $this->generateSeoData('store_leaflet', $storeModel),
-            'total_offers' => $totalOffers,
-        ]);
+        $payload = Cache::remember($cacheKey, 3600, function () use ($storeModel) {
+            return [
+                'listing_meta' => $this->listingPageMetaService->buildForStore($storeModel),
+                'breadcrumbs' => $this->generateBreadcrumbs('store_leaflet', $storeModel),
+                'seo' => $this->generateSeoData('store_leaflet', $storeModel),
+                'total_offers' => Discount::where('store_id', $storeModel->id)->count(),
+            ];
+        });
+
+        return response()->json($payload);
     }
 
     public function getStoreLeaflet(string $store, string $flyerSlug)
@@ -1014,20 +1119,26 @@ class ProductController extends Controller
             ->with('pages')
             ->firstOrFail();
 
-        $listingMeta = $this->listingPageMetaService->buildForStoreFlyer($storeModel, $flyer);
-        $title = $listingMeta['flyer']['title'];
+        $cacheKey = "store_leaflet_{$flyer->id}_" . CacheVersion::suffix(['discounts']);
 
-        return response()->json([
-            'listing_meta' => $listingMeta,
-            'breadcrumbs' => $this->generateBreadcrumbs('store_flyer_detail', $storeModel, $flyer),
-            'seo' => [
-                'seo_title' => $title,
-                'seo_description' => "{$title} – {$storeModel->name} akcijų leidinys.",
-                'meta_title' => $title,
-                'meta_description' => "{$title} – peržiūrėkite visus {$storeModel->name} leidinio puslapius.",
-            ],
-            'total_offers' => Discount::where('store_id', $storeModel->id)->count(),
-        ]);
+        $payload = Cache::remember($cacheKey, 3600, function () use ($storeModel, $flyer) {
+            $listingMeta = $this->listingPageMetaService->buildForStoreFlyer($storeModel, $flyer);
+            $title = $listingMeta['flyer']['title'];
+
+            return [
+                'listing_meta' => $listingMeta,
+                'breadcrumbs' => $this->generateBreadcrumbs('store_flyer_detail', $storeModel, $flyer),
+                'seo' => [
+                    'seo_title' => $title,
+                    'seo_description' => "{$title} – {$storeModel->name} akcijų leidinys.",
+                    'meta_title' => $title,
+                    'meta_description' => "{$title} – peržiūrėkite visus {$storeModel->name} leidinio puslapius.",
+                ],
+                'total_offers' => Discount::where('store_id', $storeModel->id)->count(),
+            ];
+        });
+
+        return response()->json($payload);
     }
 
     private function sitemapProductsQuery()
@@ -1040,7 +1151,7 @@ class ProductController extends Controller
 
     public function getSitemap()
     {
-        $cacheKey = 'sitemap_entries_v5_' . CacheVersion::suffix(['sitemap']);
+        $cacheKey = 'sitemap_entries_v6_' . CacheVersion::suffix(['sitemap']);
 
         return Cache::remember($cacheKey, 3600, function () {
             $freshness = $this->pageFreshnessService->build();
@@ -1095,8 +1206,27 @@ class ProductController extends Controller
                 ->values()
                 ->all();
 
+            // One entry per (store, city) with active locations — the frontend's
+            // slugifyCity() must produce byte-identical slugs to Str::slug() here
+            // (verified against real Lithuanian city names), or these URLs won't
+            // resolve to the actual /parduotuves/{store}/{city} pages.
+            $storeLocationCities = \App\Models\StoreLocation::query()
+                ->where('is_active', true)
+                ->join('stores', 'stores.id', '=', 'store_locations.store_id')
+                ->select('stores.slug as store_slug', 'store_locations.city')
+                ->distinct()
+                ->get()
+                ->map(fn ($row) => [
+                    'store_slug' => $row->store_slug,
+                    'city_slug' => \Illuminate\Support\Str::slug($row->city),
+                ])
+                ->unique(fn ($row) => "{$row['store_slug']}|{$row['city_slug']}")
+                ->values()
+                ->all();
+
             return response()->json([
                 'lastmod' => $defaultLastmod,
+                'store_location_cities' => $storeLocationCities,
                 'stores' => $stores,
                 'leaflet_stores' => $stores,
                 'leaflets' => $leafletEntries,

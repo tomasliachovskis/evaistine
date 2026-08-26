@@ -40,6 +40,11 @@ class Store extends Model
         return $this->hasMany(StoreFlyer::class);
     }
 
+    public function locations()
+    {
+        return $this->hasMany(StoreLocation::class);
+    }
+
     public function latestFlyerValidity(): ?array
     {
         $flyer = $this->flyers()

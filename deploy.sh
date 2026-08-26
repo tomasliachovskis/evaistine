@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Define server and project details
-#SERVER="root@84.247.186.143"
-SERVER="root@195.181.245.125"
+SERVER="deploy@84.247.186.143"
+#SERVER="root@195.181.245.125"
 REMOTE_DIR="/var/www/api"
 
 ensure_rsync() {
@@ -49,6 +49,10 @@ rsync -avz -e "ssh $SSH_OPTS" \
   --include='storage/app/' \
   --include='storage/app/flyers-incoming/' \
   --include='storage/app/flyers-incoming/***' \
+  --include='storage/app/public/' \
+  --include='storage/app/public/flyers/' \
+  --include='storage/app/public/flyers/pdfs/' \
+  --include='storage/app/public/flyers/pdfs/***' \
   --exclude='storage/logs/**' \
   --exclude='storage/framework/cache/**' \
   --exclude='storage/framework/sessions/**' \
@@ -63,12 +67,6 @@ rsync -avz -e "ssh $SSH_OPTS" \
   --exclude='.idea' \
   --exclude='.git' \
   . "$SERVER:$REMOTE_DIR"
-
-# Upload flyer images
-FRONTEND_SERVER="deploy@84.247.186.143"
-REMOTE_IMAGES_DIR="/var/www/images"
-ssh $SSH_OPTS $FRONTEND_SERVER "mkdir -p $REMOTE_IMAGES_DIR"
-rsync -avz --omit-dir-times --no-perms --no-owner --no-group -e "ssh $SSH_OPTS" storage/app/public/products/ $FRONTEND_SERVER:$REMOTE_IMAGES_DIR/
 
 # Run Laravel commands on the server
 ssh $SSH_OPTS $SERVER << 'EOF'
@@ -91,6 +89,19 @@ ssh $SSH_OPTS $SERVER << 'EOF'
         echo 'APP_DEBUG=false' >> .env
     fi
 
+    # Group-based permissions (one-time server setup: `deploy` added to the
+    # www-data group, setgid set on storage/bootstrap/cache/vendor so new
+    # files/dirs inherit the www-data group automatically) — this replaces
+    # the old chown-to-www-data-on-every-deploy approach entirely. That
+    # approach needed root (deploy has no passwordless sudo, and an
+    # automated SSH script has no TTY to prompt for one), and even with
+    # root it raced against php-fpm continuously creating new session files
+    # on a live site. umask 0002 here means every file this script creates
+    # from now on is group-writable by default, so php-fpm (www-data) can
+    # always read/write what deploy creates and vice versa — no chown, no
+    # sudo, nothing to race.
+    umask 0002
+
     mkdir -p storage/app/flyers-incoming
     mkdir -p storage/app/temp/flyers
     mkdir -p storage/logs
@@ -98,47 +109,40 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     mkdir -p storage/framework/sessions
     mkdir -p storage/framework/views
     mkdir -p bootstrap/cache
-
-    chown -R www-data:www-data storage bootstrap/cache
-    chmod -R ug+rwx storage bootstrap/cache
+    mkdir -p vendor
 
     if [ -f deploy_key ]; then
-        chown www-data:www-data deploy_key
         chmod 600 deploy_key
     fi
 
-    if [ -d scripts ]; then
-        chown -R www-data:www-data scripts
-    fi
-
-    mkdir -p vendor
-    chown -R www-data:www-data vendor storage bootstrap/cache
-    chmod -R ug+rwx storage bootstrap/cache
-
     composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-    chown -R www-data:www-data vendor
-    chmod -R u+rwX vendor
-    sudo -u www-data php artisan optimize:clear
-    sudo -u www-data php artisan migrate --force
-    sudo -u www-data php artisan config:cache
-    sudo -u www-data php artisan route:cache
-    sudo -u www-data php artisan event:cache
-    sudo -u www-data php artisan view:cache
-    sudo -u www-data php artisan queue:restart
+    php artisan optimize:clear
+    php artisan migrate --force
+    php artisan config:cache
+    php artisan route:cache
+    php artisan event:cache
+
+    # Frontend now lives in this repo (Blade/Alpine/Livewire) — build its Vite
+    # assets before view:cache, since @vite() needs public/build/manifest.json
+    # present or the cached views bake in a stale/missing manifest reference.
+    npm ci
+    npm run build
+
+    php artisan view:cache
+    php artisan queue:restart
 
     sudo systemctl restart php8.4-fpm
 
-    supervisorctl restart nuolaidos-flyers || true
+    sudo supervisorctl restart nuolaidos-flyers || true
 EOF
 
-# Restart frontend + clear Next.js cache (in-memory stores cache + ISR)
-ssh $SSH_OPTS $FRONTEND_SERVER << 'EOF'
-    cd /var/www/nuolaidos-front/
-    mkdir -p /var/www/nuolaidos-front/public/assets
-    ln -sfn /var/www/images /var/www/nuolaidos-front/public/assets/product
-    ./scripts/production-deploy.sh restart
-    ./scripts/production-deploy.sh revalidate
-EOF
+# NOTE (Phase 7, manual/one-time, not automated here): the public domain's
+# nginx vhost still needs to be pointed at this app (deploy/nginx-public-domain.conf)
+# instead of proxying to the old Next.js/PM2 app on port 3000. That vhost swap
+# is a deliberate server-side step for whenever cutover happens — deploy.sh
+# does not touch nginx config or DNS. Until then, /var/www/nuolaidos-front and
+# its PM2 process are left running untouched by this script, by design, so
+# the old and new frontends can be compared side by side before cutover.
 
 mkdir -p storage/app/flyers-incoming
 find storage/app/flyers-incoming -mindepth 1 -delete 2>/dev/null || true

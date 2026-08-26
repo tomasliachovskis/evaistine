@@ -47,8 +47,22 @@ return [
         'key' => env('MEILISEARCH_KEY'),
     ],
 
+    // Still used by AuthController::oauth() for the old Next.js app (discount
+    // repo) during its Phase 7 parallel run — see that method's docblock.
     'nextauth' => [
         'secret' => env('NEXTAUTH_SECRET'),
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
+    ],
+
+    'facebook' => [
+        'client_id' => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI', '/auth/facebook/callback'),
     ],
 
     'frontend' => [

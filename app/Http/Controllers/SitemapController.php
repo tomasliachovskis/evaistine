@@ -1,0 +1,151 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Api\ProductController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
+
+// Ported from discount's robots.ts / sitemap.ts / product-sitemap/[page]/route.ts.
+// Reuses ProductController::getSitemap()/getSitemapProducts() in-process (same
+// CacheVersion-backed cache those already have) instead of re-deriving the
+// underlying queries here.
+class SitemapController extends Controller
+{
+    private const PRODUCTS_PER_PAGE = 20000;
+
+    private const BLOCKED_BOTS = [
+        'Exabot', 'Jetbot', 'AskJeeves', 'Copernic', 'CherryPicker',
+        'EmailCollector', 'EmailSiphon', 'WebBandit', 'WebCopier', 'ia_archiver',
+    ];
+
+    public function robots()
+    {
+        $productSitemapCount = $this->productSitemapPageCount();
+
+        $lines = [
+            'User-agent: *',
+            'Disallow: /api/',
+            'Disallow: /private/',
+            'Disallow: /akcijos/paieska/',
+            'Disallow: /*?store=*',
+            'Disallow: /*?category=*',
+            'Disallow: /*?card=*',
+            'Disallow: /*?plus=*',
+            'Disallow: /*?order=*',
+            'Disallow: /*&*',
+            '',
+        ];
+
+        foreach (self::BLOCKED_BOTS as $bot) {
+            $lines[] = "User-agent: {$bot}";
+            $lines[] = 'Disallow: /';
+            $lines[] = '';
+        }
+
+        $lines[] = 'Sitemap: ' . url('/sitemap.xml');
+        for ($page = 1; $page <= $productSitemapCount; $page++) {
+            $lines[] = 'Sitemap: ' . url("/product-sitemap/{$page}");
+        }
+
+        return response(implode("\n", $lines), 200, ['Content-Type' => 'text/plain']);
+    }
+
+    public function sitemap()
+    {
+        $data = $this->sitemapData();
+        $defaultLastmod = $data['lastmod'] ?? now()->format('Y-m-d');
+
+        $urls = [
+            ['loc' => url('/'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '1.0'],
+            ['loc' => url('/akcijos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.9'],
+            ['loc' => url('/parduotuves'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'],
+            ['loc' => url('/naujienos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'],
+            ['loc' => url('/privatumo-politika'), 'lastmod' => $defaultLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
+        ];
+
+        $leafletStoreSlugs = $data['leaflet_stores'] ?? $data['stores'] ?? [];
+        foreach ($leafletStoreSlugs as $slug) {
+            $urls[] = ['loc' => url("/leidinys/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'];
+        }
+
+        foreach ($data['leaflets'] ?? [] as $leaflet) {
+            $urls[] = ['loc' => url("/{$leaflet['path']}"), 'lastmod' => $leaflet['lastmod'] ?? $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.8'];
+        }
+
+        foreach ($data['stores'] ?? [] as $slug) {
+            $urls[] = ['loc' => url("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'];
+        }
+
+        foreach ($data['categories'] ?? [] as $slug) {
+            $urls[] = ['loc' => url("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.7'];
+        }
+
+        foreach ($data['keywords'] ?? [] as $slug) {
+            $urls[] = ['loc' => url("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'];
+        }
+
+        foreach ($data['blog_posts'] ?? [] as $post) {
+            $urls[] = ['loc' => url("/naujienos/{$post['slug']}"), 'lastmod' => $post['lastmod'] ?? $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.5'];
+        }
+
+        $storeLocationCities = $data['store_location_cities'] ?? [];
+        $overviewSlugs = collect($storeLocationCities)->pluck('store_slug')->unique();
+        foreach ($overviewSlugs as $slug) {
+            $urls[] = ['loc' => url("/parduotuves/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
+        }
+        foreach ($storeLocationCities as $entry) {
+            $urls[] = ['loc' => url("/parduotuves/{$entry['store_slug']}/{$entry['city_slug']}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
+        }
+
+        return response()
+            ->view('sitemap.urlset', ['urls' => $urls])
+            ->header('Content-Type', 'application/xml');
+    }
+
+    public function productSitemap(Request $request, int $page)
+    {
+        $products = $this->productSitemapProducts($page);
+
+        if (count($products) === 0) {
+            // Same reasoning as the Next.js route this replaces: an in-range
+            // page with zero products, or a fetch failure, is a signal
+            // something's wrong upstream -- not a legitimately empty sitemap.
+            // Serve a real error so crawlers back off and retry instead of
+            // Search Console recording a false "0 pages discovered".
+            return response('Service temporarily unavailable', 503);
+        }
+
+        $urls = array_map(fn ($p) => [
+            'loc' => url('/akcijos/' . $p['path']),
+            'lastmod' => $p['lastmod'],
+            'changefreq' => 'weekly',
+            'priority' => '0.6',
+        ], $products);
+
+        return response()
+            ->view('sitemap.urlset', ['urls' => $urls])
+            ->header('Content-Type', 'application/xml')
+            ->header('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
+    }
+
+    private function sitemapData(): array
+    {
+        return App::make(ProductController::class)->getSitemap()->getData(true);
+    }
+
+    private function productSitemapProducts(int $page): array
+    {
+        $request = Request::create('/', 'GET', ['page' => $page]);
+        $data = App::make(ProductController::class)->getSitemapProducts($request)->getData(true);
+
+        return $data['products'] ?? [];
+    }
+
+    private function productSitemapPageCount(): int
+    {
+        $total = $this->sitemapData()['products_total'] ?? 0;
+
+        return max(1, (int) ceil($total / self::PRODUCTS_PER_PAGE));
+    }
+}

@@ -16,6 +16,7 @@ class Product extends Model
         'slug',
         'description',
         'category_id',
+        'generic_product_id',
         'image_url',
         'image_from_flyer',
         'seo_title',
@@ -30,6 +31,11 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function genericProduct()
+    {
+        return $this->belongsTo(GenericProduct::class);
     }
 
     public function discount()

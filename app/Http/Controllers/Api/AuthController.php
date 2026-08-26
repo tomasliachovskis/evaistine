@@ -70,6 +70,10 @@ class AuthController extends Controller
         ], 201);
     }
 
+    // Kept for the old Next.js app (discount repo), which stays deployed
+    // side by side with this one until cutover (see the migration plan's
+    // Phase 7 parallel-run step) and still calls this via its NextAuth
+    // callback. Safe to delete once that app is retired.
     public function oauth(Request $request)
     {
         $validator = Validator::make($request->all(), [

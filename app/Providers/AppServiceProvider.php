@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\View\Composers\MobileNavComposer;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,5 +28,7 @@ class AppServiceProvider extends ServiceProvider
         if (class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
             \Barryvdh\Debugbar\Facades\Debugbar::disable();
         }
+
+        View::composer(['components.mobile-bottom-nav', 'components.site-header'], MobileNavComposer::class);
     }
 }
