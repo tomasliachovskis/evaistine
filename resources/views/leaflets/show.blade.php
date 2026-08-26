@@ -46,24 +46,18 @@
             <nav aria-label="{{ $storeName }} skiltys" class="flex flex-wrap items-center gap-2.5">
                 <a href="/leidinys/{{ $storeSlug }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white">
                     Leidiniai
-                    @if (($listingMeta['leaflets_count'] ?? 0) > 0)
-                        <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full bg-white/25 px-1.5 text-sm font-bold">{{ $listingMeta['leaflets_count'] }}</span>
-                    @endif
+                    <x-count-pill :count="$listingMeta['leaflets_count'] ?? 0" color="white" />
                 </a>
                 <a href="/akcijos/{{ $storeSlug }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-green px-4 py-2 text-base font-bold text-green transition-colors hover:bg-green/5">
                     Akcijos
-                    @if ($totalOffers > 0)
-                        <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full bg-green/10 px-1.5 text-sm font-bold text-green">{{ number_format($totalOffers, 0, ',', ' ') }}</span>
-                    @endif
+                    <x-count-pill :count="$totalOffers" color="green" />
                 </a>
                 @if (!empty($listingMeta['top_categories']))
                     <span class="mx-0.5 hidden h-6 w-px bg-gray-300 sm:block" aria-hidden="true"></span>
                     @foreach (array_slice($listingMeta['top_categories'], 0, 5) as $category)
                         <a href="{{ $category['href'] }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-gray-300 px-4 py-2 text-base font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green">
                             {{ $category['name'] }}
-                            @if (!empty($category['offers_count']))
-                                <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full bg-gray-200 px-1.5 text-sm font-bold text-gray-600">{{ $category['offers_count'] }}</span>
-                            @endif
+                            <x-count-pill :count="$category['offers_count'] ?? 0" color="gray" />
                         </a>
                     @endforeach
                 @endif

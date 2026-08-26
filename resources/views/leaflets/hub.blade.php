@@ -57,17 +57,7 @@
                         <h1 class="min-w-0 truncate font-semibold text-gray-900">{{ $pageTitle }}</h1>
                     </div>
 
-                    @auth
-                        <a href="/favorites" class="inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white hover:bg-dark-green">
-                            <x-app-icon name="bell" class="size-4 shrink-0" />
-                            Sekti akcijas
-                        </a>
-                    @else
-                        <button type="button" @click="$store.authModal.open = true; $store.authModal.mode = 'register'" class="inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white hover:bg-dark-green">
-                            <x-app-icon name="bell" class="size-4 shrink-0" />
-                            Sekti akcijas
-                        </button>
-                    @endauth
+                    <x-store-subscribe-button />
                 </div>
 
                 <p class="mt-1.5 text-xs text-gray-500 sm:text-sm">
@@ -88,24 +78,18 @@
             <nav aria-label="{{ $storeName }} skiltys" class="flex flex-wrap items-center gap-2.5">
                 <a href="/leidinys/{{ $storeSlug }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white">
                     Leidiniai
-                    @if (count($leaflets) > 0)
-                        <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full bg-white/25 px-1.5 text-sm font-bold">{{ count($leaflets) }}</span>
-                    @endif
+                    <x-count-pill :count="count($leaflets)" color="white" />
                 </a>
                 <a href="/akcijos/{{ $storeSlug }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-green px-4 py-2 text-base font-bold text-green transition-colors hover:bg-green/5">
                     Akcijos
-                    @if ($totalOffers > 0)
-                        <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full bg-green/10 px-1.5 text-sm font-bold text-green">{{ number_format($totalOffers, 0, ',', ' ') }}</span>
-                    @endif
+                    <x-count-pill :count="$totalOffers" color="green" />
                 </a>
                 @if (count($topCategories) > 0)
                     <span class="mx-0.5 hidden h-6 w-px bg-gray-300 sm:block" aria-hidden="true"></span>
                     @foreach (array_slice($topCategories, 0, 5) as $category)
                         <a href="{{ $category['href'] }}" class="inline-flex items-center gap-2 rounded-lg border-2 border-gray-300 px-4 py-2 text-base font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green">
                             {{ $category['name'] }}
-                            @if (!empty($category['offers_count']))
-                                <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full bg-gray-200 px-1.5 text-sm font-bold text-gray-600">{{ $category['offers_count'] }}</span>
-                            @endif
+                            <x-count-pill :count="$category['offers_count'] ?? 0" color="gray" />
                         </a>
                     @endforeach
                 @endif

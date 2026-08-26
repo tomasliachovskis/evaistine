@@ -10,9 +10,6 @@
     $showOriginal = $originalPrice > 0 && $originalPrice !== $discountPrice && $discountPrice > 0;
     $infoLabel = trim($deal['info'] ?? '') ?: null;
 
-    // MIN_PROMOTION_BADGE_PERCENT in promotion-percent-badge.tsx.
-    $pct = !empty($deal['discount_percent']) && $deal['discount_percent'] >= 20 ? (int) round($deal['discount_percent']) : null;
-
     $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €';
 @endphp
 
@@ -29,13 +26,9 @@
                 @if ($product['image_url'])
                     <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" loading="lazy" class="h-full w-full object-contain p-3 sm:p-3.5">
                 @endif
-                @if ($pct !== null)
-                    <div class="absolute bottom-2 left-2 z-10 sm:bottom-2.5 sm:left-2.5">
-                        <span class="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#ffdb4d] px-2 py-1 text-[13px] font-bold leading-none text-gray-900 tabular-nums">
-                            -{{ $pct }}%
-                        </span>
-                    </div>
-                @endif
+                <div class="absolute bottom-2 left-2 z-10 sm:bottom-2.5 sm:left-2.5">
+                    <x-discount-badge :percent="$deal['discount_percent'] ?? null" size="sm" />
+                </div>
             </div>
         </div>
 
@@ -68,7 +61,7 @@
 
             @if ($store)
                 <div class="mt-auto flex min-w-0 items-center pt-3">
-                    <img src="/assets/stores/{{ $store['slug'] }}.svg" alt="{{ $store['name'] }}" class="h-6 w-auto max-w-[4.5rem] shrink-0 object-contain object-left sm:h-7 sm:max-w-[5rem]">
+                    <x-store-logo :slug="$store['slug']" :name="$store['name']" size="sm" class="object-left" />
                 </div>
             @endif
         </div>
