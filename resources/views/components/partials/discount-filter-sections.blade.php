@@ -26,7 +26,7 @@
     </section>
 @else
     <section>
-        <div class="flex flex-col gap-0.5">
+        <div class="flex flex-col gap-2">
             @foreach ($allStores as $store)
                 <a href="{{ $mode !== 'keyword' && $primarySlug !== null ? '/akcijos/'.$store['slug'].'/'.$primarySlug : '/akcijos/'.$store['slug'] }}" class="{{ $rowClass($store['slug'] === $primarySlug) }}">
                     {{-- Fixed-width icon column (unlike <x-store-logo>'s auto-width
