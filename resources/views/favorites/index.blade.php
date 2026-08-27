@@ -81,6 +81,22 @@
             </div>
         @endif
 
+        @if ($dropped->isNotEmpty())
+            <div class="mb-8">
+                <h2 class="mb-4 text-lg font-semibold sm:text-xl">Atpigo nuo paskutinio karto</h2>
+                <div class="scroll-cards-x -mx-1 flex min-w-0 gap-3 px-1 sm:mx-0 sm:px-0">
+                    @foreach ($dropped as $deal)
+                        <div class="relative w-[160px] shrink-0 sm:w-[186px]">
+                            <span class="absolute left-2 top-2 z-20 rounded-lg bg-green px-2 py-1 text-xs font-bold text-white">
+                                −{{ $euro($deal['price_change_amount']) }}
+                            </span>
+                            <x-deal-card :deal="$deal" />
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         @if (count($storeTotals) > 0)
             <div class="mb-8 flex flex-row flex-wrap justify-start gap-2 sm:gap-3">
                 @foreach ($storeTotals as $total)
@@ -107,22 +123,6 @@
                         </div>
                     </button>
                 @endforeach
-            </div>
-        @endif
-
-        @if ($dropped->isNotEmpty())
-            <div class="mb-8">
-                <h2 class="mb-4 text-lg font-semibold sm:text-xl">Atpigo nuo paskutinio karto</h2>
-                <div class="scroll-cards-x -mx-1 flex min-w-0 gap-3 px-1 sm:mx-0 sm:px-0">
-                    @foreach ($dropped as $deal)
-                        <div class="relative w-[160px] shrink-0 sm:w-[186px]">
-                            <span class="absolute left-2 top-2 z-20 rounded-lg bg-green px-2 py-1 text-xs font-bold text-white">
-                                −{{ $euro($deal['price_change_amount']) }}
-                            </span>
-                            <x-deal-card :deal="$deal" />
-                        </div>
-                    @endforeach
-                </div>
             </div>
         @endif
 
