@@ -102,6 +102,27 @@ body {
         @apply bg-background text-font;
     }
 
+    /* Browsers don't give <button>/<select> a pointer cursor by default
+       (unlike <a>, which already gets one natively) — the codebase had been
+       adding `cursor-pointer` to individual buttons ad hoc, inconsistently.
+       One global rule instead of hunting down every missed call site. */
+    button:not(:disabled),
+    [type='button']:not(:disabled),
+    [type='reset']:not(:disabled),
+    [type='submit']:not(:disabled),
+    select:not(:disabled),
+    [role='button'] {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [type='button']:disabled,
+    [type='reset']:disabled,
+    [type='submit']:disabled,
+    select:disabled {
+        cursor: not-allowed;
+    }
+
     h1 {
         @apply text-[22px] sm:text-[32px] font-bold leading-tight tracking-tight;
     }
