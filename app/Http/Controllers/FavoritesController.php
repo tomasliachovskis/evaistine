@@ -41,6 +41,25 @@ class FavoritesController extends Controller
     // session) middleware, same guard chain the API method expects.
     public function index(Request $request, ProductController $api)
     {
+        return view('favorites.index', $this->buildViewData($request, $api) + [
+            'title' => 'Stebimos prekės | SuperAkcijos.lt',
+            'robots' => 'noindex, nofollow',
+        ]);
+    }
+
+    // Same data, different template — an experimental larger-text/simplified
+    // layout at a separate URL so it can be tried without touching the main
+    // dashboard. See resources/views/favorites/senior.blade.php.
+    public function senior(Request $request, ProductController $api)
+    {
+        return view('favorites.senior', $this->buildViewData($request, $api) + [
+            'title' => 'Stebimos prekės | SuperAkcijos.lt',
+            'robots' => 'noindex, nofollow',
+        ]);
+    }
+
+    private function buildViewData(Request $request, ProductController $api): array
+    {
         $payload = json_decode($api->getFavoriteProducts($request)->getContent(), true);
 
         // calculateStoreTotals() (private, inside Api\ProductController) doesn't
@@ -57,13 +76,11 @@ class FavoritesController extends Controller
             $storeTotals
         ));
 
-        return view('favorites.index', [
-            'title' => 'Stebimos prekės | SuperAkcijos.lt',
-            'robots' => 'noindex, nofollow',
+        return [
             'products' => $payload['products'],
             'storeTotals' => $storeTotals,
             'savingsSummary' => $this->resolveSavingsSummary($payload['products']),
-        ]);
+        ];
     }
 
     // Ported from discount/src/components/favorites/favorites-content.tsx's

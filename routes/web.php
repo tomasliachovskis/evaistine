@@ -60,4 +60,5 @@ Route::get('/auth/{provider}/redirect', [AuthController::class, 'redirectToProvi
 Route::get('/auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->whereIn('provider', ['google', 'facebook']);
 
 Route::middleware('auth')->get('/favorites', [FavoritesController::class, 'index']);
+Route::middleware('auth')->get('/favorites/senjorams', [FavoritesController::class, 'senior']);
 Route::post('/favorites/toggle/{product}', [FavoritesController::class, 'toggle'])->where('product', '[0-9]+');
