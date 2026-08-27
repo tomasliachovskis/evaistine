@@ -1541,7 +1541,11 @@ class ProductController extends Controller
         foreach ($productIds as $productId) {
             $productDiscounts = $discounts->where('product_id', $productId);
 
-            $storePrices = [];
+            // Keep the whole cheapest discount per store (not just its price)
+            // so total_savings below can compare it against its own
+            // original_price — same cheapest-offer selection product_count
+            // already uses, just carrying one more field along.
+            $storeDiscounts = [];
             foreach ($productDiscounts as $discount) {
                 $storeId = $discount->store_id;
 
@@ -1549,23 +1553,25 @@ class ProductController extends Controller
                     $storeInfo[$storeId] = $discount->store;
                 }
 
-                if (!isset($storePrices[$storeId])) {
-                    $storePrices[$storeId] = $discount->discounted_price;
-                } else {
-                    $storePrices[$storeId] = min($storePrices[$storeId], $discount->discounted_price);
+                if (!isset($storeDiscounts[$storeId]) || $discount->discounted_price < $storeDiscounts[$storeId]->discounted_price) {
+                    $storeDiscounts[$storeId] = $discount;
                 }
             }
 
-            foreach ($storePrices as $storeId => $price) {
+            foreach ($storeDiscounts as $storeId => $discount) {
                 if (!isset($storeTotals[$storeId])) {
                     $storeTotals[$storeId] = [
                         'store_id' => $storeId,
                         'store_name' => $storeInfo[$storeId]->name,
                         'total_price' => 0,
+                        'total_savings' => 0,
                         'product_count' => 0
                     ];
                 }
-                $storeTotals[$storeId]['total_price'] += $price;
+                $storeTotals[$storeId]['total_price'] += $discount->discounted_price;
+                if ($discount->original_price > $discount->discounted_price) {
+                    $storeTotals[$storeId]['total_savings'] += $discount->original_price - $discount->discounted_price;
+                }
                 $storeTotals[$storeId]['product_count']++;
             }
         }

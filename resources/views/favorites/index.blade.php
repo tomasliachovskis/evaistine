@@ -38,9 +38,29 @@
         $hasActiveDiscount = fn (array $deal) => ($deal['discounted_price'] ?? 0) > 0 || !empty($deal['discount_percent']);
         $sortedProducts = collect($products)->sortBy(fn ($deal) => $hasActiveDiscount($deal) ? 0 : 1)->values();
         $activeCount = $sortedProducts->filter($hasActiveDiscount)->count();
+
+        // Primary store per card for the store dropdown filter — the active
+        // offer matching this deal's own store_id when there is one, else the
+        // first offer, else (no active discount left at all) the last known
+        // store from price history, so even faded-out cards stay filterable.
+        $dealStore = function (array $deal) {
+            $offers = collect($deal['offers'] ?? []);
+            $storeId = $deal['store_id'] ?? null;
+            $match = $storeId ? $offers->firstWhere('store.id', $storeId) : null;
+
+            return $match['store'] ?? $offers->first()['store'] ?? collect($deal['history'] ?? [])->first()['store'] ?? null;
+        };
+        $dealCategory = fn (array $deal) => $deal['product']['category'] ?? null;
+
+        $storeFilterOptions = $sortedProducts->map($dealStore)->filter()->groupBy('slug')
+            ->map(fn ($g) => ['slug' => $g->first()['slug'], 'name' => $g->first()['name'], 'count' => $g->count()])
+            ->sortBy('name')->values();
+        $categoryFilterOptions = $sortedProducts->map($dealCategory)->filter()->groupBy('slug')
+            ->map(fn ($g) => ['slug' => $g->first()['slug'], 'name' => $g->first()['name'], 'count' => $g->count()])
+            ->sortBy('name')->values();
     @endphp
 
-    <section class="base-container py-8 sm:py-16" x-data="{ filter: 'all' }">
+    <section class="base-container py-8 sm:py-16" x-data="{ filter: 'all', storeFilter: '', categoryFilter: '' }">
         <h1 class="mb-4 text-2xl font-extrabold text-gray-900 sm:text-3xl">Stebimos prekės</h1>
 
         @if ($savingsSummary['total_savings'] > 0)
@@ -58,6 +78,35 @@
                         @endif
                     </p>
                 </div>
+            </div>
+        @endif
+
+        @if (count($storeTotals) > 0)
+            <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                @foreach ($storeTotals as $total)
+                    <a
+                        href="{{ $total['store_slug'] ? '/akcijos/' . $total['store_slug'] : '#' }}"
+                        class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 transition-colors hover:border-green/40"
+                    >
+                        @if ($total['store_slug'])
+                            <img
+                                src="/assets/stores/{{ $total['store_slug'] }}.svg"
+                                alt=""
+                                class="h-8 w-auto max-w-[3.5rem] shrink-0 object-contain"
+                            >
+                        @else
+                            <span class="shrink-0 text-sm font-semibold text-gray-700">{{ $total['store_name'] }}</span>
+                        @endif
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-gray-900">
+                                {{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'prekė' : 'prekės' }}
+                            </p>
+                            @if ($total['total_savings'] > 0)
+                                <p class="text-xs font-semibold text-dark-green">−{{ $euro($total['total_savings']) }}</p>
+                            @endif
+                        </div>
+                    </a>
+                @endforeach
             </div>
         @endif
 
@@ -104,35 +153,44 @@
                         Tik su akcija <span class="tabular-nums">({{ $activeCount }})</span>
                     </button>
                 @endif
+                @if ($storeFilterOptions->isNotEmpty())
+                    <div class="relative shrink-0">
+                        <select x-model="storeFilter" class="appearance-none rounded-full border border-gray-200 py-1.5 pl-3 pr-7 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none">
+                            <option value="">Visos parduotuvės</option>
+                            @foreach ($storeFilterOptions as $option)
+                                <option value="{{ $option['slug'] }}">{{ $option['name'] }} ({{ $option['count'] }})</option>
+                            @endforeach
+                        </select>
+                        <x-app-icon name="chevron-down" x-show="storeFilter === ''" class="pointer-events-none absolute right-2 top-1/2 size-3.5 -translate-y-1/2 text-gray-400" />
+                        <button type="button" x-show="storeFilter !== ''" x-cloak @click="storeFilter = ''" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <x-app-icon name="x" class="size-3.5" />
+                        </button>
+                    </div>
+                @endif
+                @if ($categoryFilterOptions->isNotEmpty())
+                    <div class="relative shrink-0">
+                        <select x-model="categoryFilter" class="appearance-none rounded-full border border-gray-200 py-1.5 pl-3 pr-7 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none">
+                            <option value="">Visos kategorijos</option>
+                            @foreach ($categoryFilterOptions as $option)
+                                <option value="{{ $option['slug'] }}">{{ $option['name'] }} ({{ $option['count'] }})</option>
+                            @endforeach
+                        </select>
+                        <x-app-icon name="chevron-down" x-show="categoryFilter === ''" class="pointer-events-none absolute right-2 top-1/2 size-3.5 -translate-y-1/2 text-gray-400" />
+                        <button type="button" x-show="categoryFilter !== ''" x-cloak @click="categoryFilter = ''" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <x-app-icon name="x" class="size-3.5" />
+                        </button>
+                    </div>
+                @endif
             </div>
-
-            @if (count($storeTotals) > 0)
-                <div class="mb-6 flex flex-wrap items-center gap-1.5">
-                    <span class="mr-0.5 text-xs font-medium text-gray-400">Parduotuvės:</span>
-                    @foreach ($storeTotals as $total)
-                        <a
-                            href="{{ $total['store_slug'] ? '/akcijos/' . $total['store_slug'] : '#' }}"
-                            class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white py-1 pl-2 pr-2.5 text-xs font-medium text-gray-700 transition-colors hover:border-green/40 hover:text-dark-green"
-                        >
-                            @if ($total['store_slug'])
-                                <img
-                                    src="/assets/stores/{{ $total['store_slug'] }}.svg"
-                                    alt=""
-                                    class="h-3.5 w-auto max-w-[2.75rem] object-contain"
-                                >
-                            @else
-                                {{ $total['store_name'] }}
-                            @endif
-                            <span class="tabular-nums text-gray-400">({{ $total['product_count'] }})</span>
-                        </a>
-                    @endforeach
-                </div>
-            @endif
 
             <div class="grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-6">
                 @foreach ($sortedProducts as $deal)
+                    @php
+                        $cardStoreSlug = $dealStore($deal)['slug'] ?? '';
+                        $cardCategorySlug = $dealCategory($deal)['slug'] ?? '';
+                    @endphp
                     <div
-                        x-show="filter === 'all' || (filter === 'drops' && {{ ($deal['price_change_amount'] ?? 0) > 0 ? 'true' : 'false' }}) || (filter === 'expiring' && {{ $isExpiringSoon($deal) ? 'true' : 'false' }}) || (filter === 'active' && {{ $hasActiveDiscount($deal) ? 'true' : 'false' }})"
+                        x-show="(filter === 'all' || (filter === 'drops' && {{ ($deal['price_change_amount'] ?? 0) > 0 ? 'true' : 'false' }}) || (filter === 'expiring' && {{ $isExpiringSoon($deal) ? 'true' : 'false' }}) || (filter === 'active' && {{ $hasActiveDiscount($deal) ? 'true' : 'false' }})) && (storeFilter === '' || storeFilter === '{{ $cardStoreSlug }}') && (categoryFilter === '' || categoryFilter === '{{ $cardCategorySlug }}')"
                         @if (!$hasActiveDiscount($deal)) class="relative opacity-60" @endif
                     >
                         @unless ($hasActiveDiscount($deal))
