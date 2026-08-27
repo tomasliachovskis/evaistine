@@ -2,28 +2,17 @@
     @php
         $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €';
 
-        // price_change_amount is already computed server-side per product
-        // (Api\ProductController::getFavoriteProducts() ->
-        // HomePageSectionsService::resolvePriceChangeAmount()).
-        $dropped = collect($products)
-            ->filter(fn ($deal) => ($deal['price_change_amount'] ?? 0) > 0)
-            ->sortByDesc('price_change_amount')
-            ->take(8)
-            ->values();
-
-        $today = \Illuminate\Support\Carbon::today();
-        $isExpiringSoon = function (array $deal) use ($today) {
-            if (empty($deal['to_date'])) {
-                return false;
-            }
-            $end = \Illuminate\Support\Carbon::parse($deal['to_date'])->endOfDay();
-            $daysLeft = (int) ceil(($end->timestamp - $today->timestamp) / 86400);
-
-            return $daysLeft >= 0 && $daysLeft <= 1;
-        };
-
         $hasActiveDiscount = fn (array $deal) => ($deal['discounted_price'] ?? 0) > 0 || !empty($deal['discount_percent']);
-        $sortedProducts = collect($products)->sortBy(fn ($deal) => $hasActiveDiscount($deal) ? 0 : 1)->values();
+
+        // Default order: biggest price drops first (what got cheaper since
+        // last time — the whole point of favoriting something), then other
+        // active discounts, then no-longer-discounted products last.
+        $sortedProducts = collect($products)->sortBy(function ($deal) use ($hasActiveDiscount) {
+            $dropAmount = (float) ($deal['price_change_amount'] ?? 0);
+            $group = $dropAmount > 0 ? 0 : ($hasActiveDiscount($deal) ? 1 : 2);
+
+            return [$group, -$dropAmount];
+        })->values();
         $activeCount = $sortedProducts->filter($hasActiveDiscount)->count();
 
         $dealStore = function (array $deal) {
@@ -54,8 +43,8 @@
     @endphp
 
     <section class="base-container pb-12 pt-4 sm:pt-6" x-data="{
-        filter: 'all', storeFilter: '', categoryFilter: '',
-        storesOpen: false, statusOpen: false, categoryOpen: false,
+        storeFilter: '', categoryFilter: '',
+        storesOpen: false, categoryOpen: false,
         storeNames: { @foreach ($storeTotals as $total) '{{ $total['store_slug'] }}': @js($total['store_name']), @endforeach },
         categoryNames: { @foreach ($categoryFilterOptions as $option) '{{ $option['slug'] }}': @js($option['name']), @endforeach },
     }">
@@ -84,18 +73,25 @@
             </div>
         @endif
 
+        <div class="mb-3 flex justify-end" x-show="storesOpen || categoryOpen" x-cloak>
+            <button type="button" @click="storesOpen = false; categoryOpen = false" class="inline-flex items-center gap-1.5 text-base font-semibold text-gray-500 hover:text-dark-green">
+                <x-app-icon name="x" class="size-4" />
+                Suskleisti filtrus
+            </button>
+        </div>
+
         @if (count($storeTotals) > 0)
             @php
                 $gridCellBase = 'flex flex-col items-start gap-1 rounded-xl border-2 bg-white p-3 text-left transition-colors';
             @endphp
-            <button type="button" @click="storesOpen = !storesOpen" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
+            <button type="button" @click="storesOpen = !storesOpen; categoryOpen = false" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
                 <span>
                     <span class="block text-lg font-bold text-gray-900">Jūsų parduotuvės</span>
                     <span class="block text-sm text-gray-600" x-text="storeFilter === '' ? 'Visos parduotuvės' : (storeNames[storeFilter] || storeFilter)"></span>
                 </span>
                 <x-app-icon name="chevron-down" class="size-6 shrink-0 text-gray-400 transition-transform" x-bind:class="storesOpen ? 'rotate-180' : ''" />
             </button>
-            <div x-show="storesOpen" x-cloak class="mb-8 grid grid-cols-2 gap-2">
+            <div x-show="storesOpen" x-cloak class="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 <button
                     type="button"
                     @click="storeFilter = ''; storesOpen = false; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
@@ -143,59 +139,15 @@
                 </p>
             </div>
         @else
-            <button type="button" id="favorites-grid" @click="statusOpen = !statusOpen" class="mb-2 flex w-full scroll-mt-24 items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
-                <span>
-                    <span class="block text-lg font-bold text-gray-900">Rodyti</span>
-                    <span class="block text-sm text-gray-600" x-text="filter === 'all' ? 'Visos prekės' : (filter === 'drops' ? 'Krenta kaina' : (filter === 'expiring' ? 'Baigiasi greitai' : 'Tik su akcija'))"></span>
-                </span>
-                <x-app-icon name="chevron-down" class="size-6 shrink-0 text-gray-400 transition-transform" x-bind:class="statusOpen ? 'rotate-180' : ''" />
-            </button>
-            <div x-show="statusOpen" x-cloak class="mb-5 flex flex-col gap-2">
-                <button type="button" @click="filter = 'all'; statusOpen = false" class="{{ $rowBase }}" :class="filter === 'all' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
-                    <span class="{{ $checkBase }}" :class="filter === 'all' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
-                        <x-app-icon name="check" x-show="filter === 'all'" class="size-4 text-white" />
-                    </span>
-                    <span class="flex-1 text-base font-bold text-gray-900">Visos prekės</span>
-                    <span class="shrink-0 text-base font-semibold text-gray-500">{{ count($products) }}</span>
-                </button>
-                @if ($dropped->isNotEmpty())
-                    <button type="button" @click="filter = 'drops'; statusOpen = false" class="{{ $rowBase }}" :class="filter === 'drops' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
-                        <span class="{{ $checkBase }}" :class="filter === 'drops' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
-                            <x-app-icon name="check" x-show="filter === 'drops'" class="size-4 text-white" />
-                        </span>
-                        <span class="flex-1 text-base font-bold text-gray-900">Krenta kaina</span>
-                        <span class="shrink-0 text-base font-semibold text-gray-500">{{ $dropped->count() }}</span>
-                    </button>
-                @endif
-                @if ($savingsSummary['expiring_soon_count'] > 0)
-                    <button type="button" @click="filter = 'expiring'; statusOpen = false" class="{{ $rowBase }}" :class="filter === 'expiring' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
-                        <span class="{{ $checkBase }}" :class="filter === 'expiring' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
-                            <x-app-icon name="check" x-show="filter === 'expiring'" class="size-4 text-white" />
-                        </span>
-                        <span class="flex-1 text-base font-bold text-gray-900">Baigiasi greitai</span>
-                        <span class="shrink-0 text-base font-semibold text-gray-500">{{ $savingsSummary['expiring_soon_count'] }}</span>
-                    </button>
-                @endif
-                @if ($activeCount < count($sortedProducts))
-                    <button type="button" @click="filter = 'active'; statusOpen = false" class="{{ $rowBase }}" :class="filter === 'active' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
-                        <span class="{{ $checkBase }}" :class="filter === 'active' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
-                            <x-app-icon name="check" x-show="filter === 'active'" class="size-4 text-white" />
-                        </span>
-                        <span class="flex-1 text-base font-bold text-gray-900">Tik su akcija</span>
-                        <span class="shrink-0 text-base font-semibold text-gray-500">{{ $activeCount }}</span>
-                    </button>
-                @endif
-            </div>
-
             @if ($categoryFilterOptions->isNotEmpty())
-                <button type="button" @click="categoryOpen = !categoryOpen" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
+                <button type="button" @click="categoryOpen = !categoryOpen; storesOpen = false" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
                     <span>
                         <span class="block text-lg font-bold text-gray-900">Kategorija</span>
                         <span class="block text-sm text-gray-600" x-text="categoryFilter === '' ? 'Visos kategorijos' : (categoryNames[categoryFilter] || categoryFilter)"></span>
                     </span>
                     <x-app-icon name="chevron-down" class="size-6 shrink-0 text-gray-400 transition-transform" x-bind:class="categoryOpen ? 'rotate-180' : ''" />
                 </button>
-                <div x-show="categoryOpen" x-cloak class="mb-8 grid grid-cols-2 gap-2">
+                <div x-show="categoryOpen" x-cloak class="mb-8 grid grid-cols-2 gap-2 md:grid-cols-4">
                     <button type="button" @click="categoryFilter = ''; categoryOpen = false" class="{{ $rowBase }}" :class="categoryFilter === '' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
                         <span class="{{ $checkBase }}" :class="categoryFilter === '' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
                             <x-app-icon name="check" x-show="categoryFilter === ''" class="size-4 text-white" />
@@ -214,17 +166,22 @@
                 </div>
             @endif
 
-            <h2 class="mb-4 text-2xl font-bold text-gray-900">Prekės</h2>
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <h2 id="favorites-grid" class="mb-4 scroll-mt-24 text-2xl font-bold text-gray-900">Prekės</h2>
+            <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
                 @foreach ($sortedProducts as $deal)
                     @php
                         $cardStoreSlug = $dealStore($deal)['slug'] ?? '';
                         $cardCategorySlug = $dealCategory($deal)['slug'] ?? '';
                     @endphp
                     <div
-                        x-show="(filter === 'all' || (filter === 'drops' && {{ ($deal['price_change_amount'] ?? 0) > 0 ? 'true' : 'false' }}) || (filter === 'expiring' && {{ $isExpiringSoon($deal) ? 'true' : 'false' }}) || (filter === 'active' && {{ $hasActiveDiscount($deal) ? 'true' : 'false' }})) && (storeFilter === '' || storeFilter === '{{ $cardStoreSlug }}') && (categoryFilter === '' || categoryFilter === '{{ $cardCategorySlug }}')"
-                        @if (!$hasActiveDiscount($deal)) class="relative opacity-60" @endif
+                        x-show="(storeFilter === '' || storeFilter === '{{ $cardStoreSlug }}') && (categoryFilter === '' || categoryFilter === '{{ $cardCategorySlug }}')"
+                        class="relative {{ !$hasActiveDiscount($deal) ? 'opacity-60' : '' }}"
                     >
+                        @if (($deal['price_change_amount'] ?? 0) > 0)
+                            <span class="absolute left-2 top-2 z-20 rounded-lg bg-green px-2 py-1 text-xs font-bold text-white">
+                                −{{ $euro($deal['price_change_amount']) }}
+                            </span>
+                        @endif
                         @unless ($hasActiveDiscount($deal))
                             <span class="absolute left-1/2 top-1 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-900/80 px-3 py-1 text-sm font-semibold text-white">
                                 Nėra akcijos šiuo metu
