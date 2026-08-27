@@ -28,6 +28,15 @@
 
             return $daysLeft >= 0 && $daysLeft <= 1;
         };
+
+        // A favorited product can currently have no active discount at all
+        // (Api\ProductController::getFavoriteProducts() still includes it,
+        // via formatProduct() rather than the Discount-backed formatter, with
+        // discounted_price/discount_percent both null) — push those to the
+        // end instead of leaving them mixed in among products actually on
+        // sale right now, and flag them so it's obvious why there's no price.
+        $hasActiveDiscount = fn (array $deal) => ($deal['discounted_price'] ?? 0) > 0 || !empty($deal['discount_percent']);
+        $sortedProducts = collect($products)->sortBy(fn ($deal) => $hasActiveDiscount($deal) ? 0 : 1)->values();
     @endphp
 
     <section class="base-container py-8 sm:py-16" x-data="{ filter: 'all' }">
@@ -120,10 +129,16 @@
             </div>
 
             <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                @foreach ($products as $deal)
+                @foreach ($sortedProducts as $deal)
                     <div
                         x-show="filter === 'all' || (filter === 'drops' && {{ ($deal['price_change_amount'] ?? 0) > 0 ? 'true' : 'false' }}) || (filter === 'expiring' && {{ $isExpiringSoon($deal) ? 'true' : 'false' }})"
+                        @if (!$hasActiveDiscount($deal)) class="relative opacity-60" @endif
                     >
+                        @unless ($hasActiveDiscount($deal))
+                            <span class="absolute left-1/2 top-1 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-gray-900/80 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                Nėra akcijos šiuo metu
+                            </span>
+                        @endunless
                         <x-deal-card :deal="$deal" />
                     </div>
                 @endforeach
