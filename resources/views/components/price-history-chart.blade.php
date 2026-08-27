@@ -37,7 +37,7 @@
                 class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-colors"
             >
                 Visos parduotuvės
-                <span class="text-xs font-semibold opacity-75">{{ $points->count() }}</span>
+                <span class="text-xs font-semibold opacity-75">{{ $storeCounts->count() }}</span>
             </button>
             @foreach ($storeCounts as $store)
                 <button
