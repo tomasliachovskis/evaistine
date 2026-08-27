@@ -138,7 +138,7 @@ use App\Support\ProductPageMeta;
                                  breakpoint (previous attempt) put it on its own grid row
                                  even at lg+, showing as a stray gap below the price. --}}
                             <div class="hidden lg:block">
-                                <x-product-price-watch-banner :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
+                                <x-product-price-watch-banner :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" :product-name="$product['name']" :category-name="$product['category']['name'] ?? ''" />
                             </div>
                         @endif
                     </div>
@@ -150,7 +150,7 @@ use App\Support\ProductPageMeta;
                          which is what looked squeezed/collapsed there. --}}
                     @if (!$isExpired)
                         <div class="col-span-2 pt-1 lg:hidden">
-                            <x-product-price-watch-banner :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
+                            <x-product-price-watch-banner :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" :product-name="$product['name']" :category-name="$product['category']['name'] ?? ''" />
                         </div>
                     @endif
                 </div>
@@ -303,7 +303,7 @@ use App\Support\ProductPageMeta;
                                  so a class prop passed straight to <x-deal-card> is silently
                                  dropped — wrap it instead of touching that shared component. --}}
                             <div class="{{ $loop->index >= 4 ? 'hidden sm:block' : '' }}">
-                                <x-deal-card :deal="$deal" class="h-full" />
+                                <x-deal-card :deal="$deal" class="h-full" source="similar_products" />
                             </div>
                         @endforeach
                     </div>

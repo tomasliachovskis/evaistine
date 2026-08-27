@@ -15,6 +15,19 @@ L.Icon.Default.mergeOptions({
     shadowUrl: markerShadow,
 });
 
+// Ported from discount/src/lib/google-analytics.ts's sendGaEvent() — same
+// silent no-op if gtag hasn't loaded (ad blockers, consent tooling) instead
+// of throwing. Exposed globally so Blade/Alpine call sites (@click="...",
+// Livewire component methods via $dispatch) can fire events without each
+// needing its own <script> module.
+window.trackGaEvent = function (eventName, params) {
+    if (typeof window.gtag !== 'function') {
+        return;
+    }
+
+    window.gtag('event', eventName, params);
+};
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('storeLocatorMap', (locations) => ({
         map: null,

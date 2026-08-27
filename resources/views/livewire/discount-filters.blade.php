@@ -72,13 +72,13 @@
                             </a>
                         @endif
                         @foreach ($selectedStores as $slug)
-                            <button type="button" wire:click="toggleStore('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
+                            <button type="button" @click="window.trackGaEvent && window.trackGaEvent('filter_apply', { filter_type: 'store', filter_value: '{{ $slug }}', action: 'toggle_off' })" wire:click="toggleStore('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
                                 {{ collect($allStores)->firstWhere('slug', $slug)['name'] ?? $slug }}
                                 <x-app-icon name="x" class="size-4" />
                             </button>
                         @endforeach
                         @foreach ($selectedCategories as $slug)
-                            <button type="button" wire:click="toggleCategory('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
+                            <button type="button" @click="window.trackGaEvent && window.trackGaEvent('filter_apply', { filter_type: 'category', filter_value: '{{ $slug }}', action: 'toggle_off' })" wire:click="toggleCategory('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
                                 {{ collect($allCategories)->firstWhere('slug', $slug)['name'] ?? $slug }}
                                 <x-app-icon name="x" class="size-4" />
                             </button>
@@ -93,7 +93,7 @@
                     </button>
                     <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
                         @foreach ($orderOptions as $value => $label)
-                            <button type="button" wire:click="setOrder('{{ $value }}')" @click="sortOpen = false" class="{{ $rowClass($order === $value) }}">
+                            <button type="button" wire:click="setOrder('{{ $value }}')" @click="sortOpen = false; window.trackGaEvent && window.trackGaEvent('sort_change', { sort_value: '{{ $value }}' })" class="{{ $rowClass($order === $value) }}">
                                 <x-app-icon :name="$orderIcons[$value]" class="size-3.5 shrink-0 opacity-90" />
                                 {{ $label }}
                             </button>

@@ -49,6 +49,26 @@
 
     @stack('head')
 
+    {{-- Ported from discount/src/app/layout.tsx — never carried over in the
+         Blade rebuild, so GA4 (even automatic page_view events) and Clarity
+         hadn't been recording anything on this site at all. Loaded
+         unconditionally regardless of the cookie-consent banner's choice,
+         same as the original. --}}
+    <script src="https://www.googletagmanager.com/gtag/js?id=G-WD8DH3ZRD3" async></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-WD8DH3ZRD3');
+    </script>
+    <script>
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "v3dr99seco");
+    </script>
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])

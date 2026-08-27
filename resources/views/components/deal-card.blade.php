@@ -1,4 +1,4 @@
-@props(['deal'])
+@props(['deal', 'source' => 'grid'])
 
 @php
     $product = $deal['product'];
@@ -15,6 +15,13 @@
     $infoLabel = trim($deal['info'] ?? '') ?: null;
 
     $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €';
+
+    // product_card_click in discount/src/lib/google-analytics.ts.
+    $gaClick = 'window.trackGaEvent && window.trackGaEvent(\'product_card_click\', ' . json_encode([
+        'product_id' => $product['id'],
+        'product_name' => $product['name'],
+        'source' => $source,
+    ], JSON_UNESCAPED_UNICODE) . ')';
 @endphp
 
 {{-- Ported from discount/src/components/common/discount-card.tsx's grid
@@ -24,7 +31,7 @@
      favorite toggle is a positioned sibling of the link, not a child of it —
      the outer <div> here stands in for React's shared shell className. --}}
 <div class="group relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl bg-white p-2.5 transition-opacity hover:opacity-95 sm:p-3">
-    <a href="{{ $href }}" class="flex h-full min-h-0 flex-1 flex-col">
+    <a href="{{ $href }}" class="flex h-full min-h-0 flex-1 flex-col" onclick="{{ $gaClick }}">
         <div class="relative shrink-0">
             <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-white">
                 @if ($product['image_url'])
