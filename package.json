@@ -18,6 +18,7 @@
     },
     "dependencies": {
         "@fontsource/inter": "^5.3.0",
+        "axios": "^1.20.0",
         "leaflet": "^1.9.4",
         "pdf-lib": "^1.17.1",
         "puppeteer": "^21.0.0",
