@@ -158,13 +158,13 @@ use App\Support\ProductPageMeta;
         </div>
 
         @if (count($tabs) > 1)
-            {{-- Ported from product-page-tabs.tsx — desktop-only (hidden below
-                 lg:), with per-tab icons, a green active-underline, and
-                 IntersectionObserver-driven active-tab tracking as you scroll.
-                 Was previously visible on mobile too, with no icons and no
-                 active state at all. --}}
+            {{-- Ported from product-page-tabs.tsx, with per-tab icons, a green
+                 active-underline, and IntersectionObserver-driven active-tab
+                 tracking as you scroll. Visible at every breakpoint — mobile
+                 uses each tab's shortLabel + a tighter sticky offset (no
+                 breadcrumb/hero-stats row above it like desktop has). --}}
             <nav
-                class="sticky top-[calc(6.25rem+env(safe-area-inset-top,0px))] z-40 hidden border-b border-gray-200 bg-white lg:block"
+                class="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-40 border-b border-gray-200 bg-white lg:top-[calc(6.25rem+env(safe-area-inset-top,0px))]"
                 aria-label="Produkto skyriai"
                 x-data="{
                     activeId: '{{ $tabs[array_key_first($tabs)]['id'] }}',
