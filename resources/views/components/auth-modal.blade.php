@@ -1,10 +1,11 @@
 {{-- Global login/register modal, toggled via the Alpine $store.authModal
      store (registered in the layout's alpine:init listener). Ported from
-     discount/src/components/auth/{login,register}-dialog.tsx — plain POST
-     forms with full-page redirect-back-with-errors so it degrades without
-     JS, unlike the original's client-side next-auth signIn() calls. The
-     store's initial `open`/`mode` are seeded from session validation state
-     so a failed submit reopens the right tab after reload.
+     discount/src/components/auth/{login,register}-dialog.tsx, then reworked
+     to submit via fetch() instead of a plain form POST — a real login/
+     register error used to be a full page reload (confirmed live: the whole
+     page flashed white and the email/password fields collapsed back behind
+     "Prisijungti su el. paštu", hiding the just-typed email along with the
+     error). Now errors render inline without leaving the modal.
 
      x-data="{}" is required here even though this element owns no local
      store-independent state: Livewire's initial-page morph (it ships
@@ -15,7 +16,43 @@
      never fire — even though it renders with no errors and looks identical
      in the DOM. --}}
 <div
-    x-data="{ showEmailForm: false }"
+    x-data="{
+        submitting: false,
+        showLoginPw: false,
+        showRegisterPw: false,
+        loginErrors: {},
+        registerErrors: {},
+        firstError(errors) {
+            const values = Object.values(errors);
+            return values.length ? values[0][0] : null;
+        },
+        async submitAuthForm(form, errorsKey) {
+            if (this.submitting) return;
+            this.submitting = true;
+            this[errorsKey] = {};
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body: new FormData(form),
+                });
+                if (res.status === 422) {
+                    const data = await res.json();
+                    this[errorsKey] = data.errors || {};
+                    this.submitting = false;
+                    return;
+                }
+                if (!res.ok) {
+                    this.submitting = false;
+                    return;
+                }
+                const data = await res.json();
+                window.location.href = data.redirect || '/';
+            } catch (e) {
+                this.submitting = false;
+            }
+        },
+    }"
     x-show="$store.authModal.open"
     x-cloak
     @keydown.escape.window="$store.authModal.open = false"
@@ -46,14 +83,6 @@
         </div>
 
         <div class="space-y-4 px-6 py-5">
-            {{-- $errors is only auto-shared by ShareErrorsFromSession, which runs on
-                 matched routes — a 404 (no route matched) renders this layout without
-                 it ever having bound, so guard with isset() rather than assuming it's
-                 always present. --}}
-            @if (isset($errors) && $errors->any())
-                <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{{ $errors->first() }}</p>
-            @endif
-
             <div class="space-y-2.5">
                 <a href="/auth/facebook/redirect" class="flex h-11 w-full cursor-pointer items-center justify-center gap-3 rounded-lg border border-[#1877F2]/25 bg-white text-sm font-semibold text-gray-900 transition-colors hover:border-[#1877F2]/40 hover:bg-[#1877F2]/5">
                     <svg class="size-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true"><path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
@@ -75,55 +104,77 @@
                 <div class="relative flex justify-center"><span class="bg-white px-3 text-xs font-medium uppercase tracking-wide text-gray-500">Arba</span></div>
             </div>
 
-            {{-- Login: social-first, email form revealed on demand (mirrors LoginDialog's showEmailForm state). --}}
+            {{-- Login: email/password always visible now — hiding it behind a
+                 "Prisijungti su el. paštu" reveal button meant a failed login's
+                 error banner and the field it referred to weren't visible at
+                 the same time, since the fields collapsed back on reload. --}}
             <template x-if="$store.authModal.mode !== 'register'">
-                <div>
-                    <button type="button" x-show="!showEmailForm" @click="showEmailForm = true" class="h-11 w-full rounded-lg bg-green text-sm font-semibold text-white shadow-sm transition-colors hover:bg-dark-green">
-                        Prisijungti su el. paštu
+                <form @submit.prevent="submitAuthForm($el, 'loginErrors')" method="POST" action="/login" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="form" value="login">
+                    <template x-if="firstError(loginErrors)">
+                        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700" x-text="firstError(loginErrors)"></p>
+                    </template>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-900">El. paštas</label>
+                        <input type="email" name="email" value="{{ old('email') }}" required placeholder="jusu@pastas.lt" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-green focus:outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-900">Slaptažodis</label>
+                        <div class="relative">
+                            <input :type="showLoginPw ? 'text' : 'password'" name="password" required placeholder="••••••••" class="h-11 w-full rounded-lg border border-gray-200 px-3 pr-11 text-sm focus:border-green focus:outline-none">
+                            <button type="button" @click="showLoginPw = !showLoginPw" class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600" :aria-label="showLoginPw ? 'Slėpti slaptažodį' : 'Rodyti slaptažodį'">
+                                <x-app-icon :name="'eye'" class="size-4" x-show="!showLoginPw" />
+                                <x-app-icon :name="'eye-off'" class="size-4" x-show="showLoginPw" x-cloak />
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" :disabled="submitting" class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-green text-sm font-semibold text-white shadow-sm transition-colors hover:bg-dark-green disabled:cursor-not-allowed disabled:opacity-60">
+                        <span x-show="submitting" class="size-4 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                        Prisijungti
                     </button>
-
-                    <form x-show="showEmailForm" method="POST" action="/login" class="space-y-4">
-                        @csrf
-                        <input type="hidden" name="form" value="login">
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-900">El. paštas</label>
-                            <input type="email" name="email" value="{{ old('email') }}" required placeholder="jusu@pastas.lt" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-green focus:outline-none">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-sm font-medium text-gray-900">Slaptažodis</label>
-                            <input type="password" name="password" required placeholder="••••••••" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-green focus:outline-none">
-                        </div>
-                        <button type="submit" class="h-11 w-full rounded-lg bg-green text-sm font-semibold text-white shadow-sm transition-colors hover:bg-dark-green">Prisijungti</button>
-                        <button type="button" @click="showEmailForm = false" class="h-11 w-full rounded-lg border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50">Atgal</button>
-                    </form>
-                </div>
+                </form>
             </template>
 
-            {{-- Register: email form always visible. --}}
-            <form x-show="$store.authModal.mode === 'register'" method="POST" action="/register" class="space-y-4">
-                @csrf
-                <input type="hidden" name="form" value="register">
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-900">El. paštas</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required placeholder="jusu@pastas.lt" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-green focus:outline-none">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-900">Slaptažodis</label>
-                    <input type="password" name="password" required minlength="8" placeholder="••••••••" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-green focus:outline-none">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-gray-900">Pakartoti slaptažodį</label>
-                    <input type="password" name="password_confirmation" required minlength="8" placeholder="••••••••" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-green focus:outline-none">
-                </div>
-                <button type="submit" class="h-11 w-full rounded-lg bg-green text-sm font-semibold text-white shadow-sm transition-colors hover:bg-dark-green">Registruotis</button>
-            </form>
+            {{-- Register: single password field + show/hide toggle instead of
+                 a second "Pakartoti slaptažodį" field — a confirm-password
+                 field doesn't meaningfully cut typo-driven failed signups
+                 (Baymard/NN Group), it just adds a field before the CTA. --}}
+            <template x-if="$store.authModal.mode === 'register'">
+                <form @submit.prevent="submitAuthForm($el, 'registerErrors')" method="POST" action="/register" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="form" value="register">
+                    <template x-if="firstError(registerErrors)">
+                        <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700" x-text="firstError(registerErrors)"></p>
+                    </template>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-900">El. paštas</label>
+                        <input type="email" name="email" value="{{ old('email') }}" required placeholder="jusu@pastas.lt" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-green focus:outline-none">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-medium text-gray-900">Slaptažodis</label>
+                        <div class="relative">
+                            <input :type="showRegisterPw ? 'text' : 'password'" name="password" required minlength="8" placeholder="••••••••" class="h-11 w-full rounded-lg border border-gray-200 px-3 pr-11 text-sm focus:border-green focus:outline-none">
+                            <button type="button" @click="showRegisterPw = !showRegisterPw" class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-gray-400 hover:text-gray-600" :aria-label="showRegisterPw ? 'Slėpti slaptažodį' : 'Rodyti slaptažodį'">
+                                <x-app-icon :name="'eye'" class="size-4" x-show="!showRegisterPw" />
+                                <x-app-icon :name="'eye-off'" class="size-4" x-show="showRegisterPw" x-cloak />
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500">Bent 8 simboliai</p>
+                    </div>
+                    <button type="submit" :disabled="submitting" class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-green text-sm font-semibold text-white shadow-sm transition-colors hover:bg-dark-green disabled:cursor-not-allowed disabled:opacity-60">
+                        <span x-show="submitting" class="size-4 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                        Registruotis
+                    </button>
+                </form>
+            </template>
         </div>
 
         <template x-if="$store.authModal.mode !== 'register'">
-            <div x-show="!showEmailForm" class="space-y-2 border-t border-gray-100 bg-gray-50/80 px-6 py-4 text-center text-sm leading-relaxed">
+            <div class="space-y-2 border-t border-gray-100 bg-gray-50/80 px-6 py-4 text-center text-sm leading-relaxed">
                 <p class="text-gray-600">
-                    Nenaudoji Facebook arba Gmail? Ir neturi paskyros?
-                    <button type="button" @click="$store.authModal.mode = 'register'" class="font-semibold text-green transition-colors hover:text-dark-green hover:underline">Registruotis su el. paštu</button>
+                    Neturi paskyros?
+                    <button type="button" @click="$store.authModal.mode = 'register'" class="font-semibold text-green transition-colors hover:text-dark-green hover:underline">Registruotis</button>
                 </p>
             </div>
         </template>

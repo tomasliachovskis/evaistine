@@ -38,7 +38,14 @@ class AuthController extends Controller
     // there's no other "account home" in this app. If it was triggered by
     // the price-watch button's login-required popup, complete that pending
     // favorite first so the product they clicked is already there.
-    private function redirectAfterAuth(): RedirectResponse
+    //
+    // JSON-aware: the auth modal submits via fetch(Accept: application/json)
+    // now instead of a plain form POST, so it can show errors inline without
+    // a full page reload — but the modal still finishes a real navigation on
+    // success (window.location.href = data.redirect), same end state as the
+    // old back()/redirect() responses, just told via JSON instead of a
+    // redirect response. A no-JS <form> submit still gets a real redirect.
+    private function redirectAfterAuth(Request $request): RedirectResponse|JsonResponse
     {
         $productId = session()->pull(self::PENDING_FAVORITE_SESSION_KEY);
 
@@ -46,38 +53,70 @@ class AuthController extends Controller
             ProductFavorite::firstOrCreate(['user_id' => auth()->id(), 'product_id' => $productId]);
         }
 
+        if ($request->wantsJson()) {
+            return response()->json(['redirect' => '/favorites']);
+        }
+
         return redirect('/favorites');
     }
 
-    public function login(Request $request): RedirectResponse
+    private function validationFailed(Request $request, $validator): RedirectResponse|JsonResponse
     {
+        if ($request->wantsJson()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        return back()->withErrors($validator)->withInput($request->only('email'));
+    }
+
+    public function login(Request $request): RedirectResponse|JsonResponse
+    {
+        // App locale is 'en' (config/app.php) — Laravel's default validation
+        // messages come out in English on every form site-wide otherwise, an
+        // unrelated pre-existing bug noticed while adding inline errors here.
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string',
+        ], [
+            'email.required' => 'Įveskite el. paštą.',
+            'email.email' => 'Neteisingas el. pašto formatas.',
+            'password.required' => 'Įveskite slaptažodį.',
         ]);
 
         if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput($request->only('email'));
+            return $this->validationFailed($request, $validator);
         }
 
         if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'Neteisingas el. paštas arba slaptažodis.'])->withInput($request->only('email'));
+            $validator->errors()->add('email', 'Neteisingas el. paštas arba slaptažodis.');
+
+            return $this->validationFailed($request, $validator);
         }
 
         $request->session()->regenerate();
 
-        return $this->redirectAfterAuth();
+        return $this->redirectAfterAuth($request);
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request): RedirectResponse|JsonResponse
     {
+        // No "confirm password" field anymore — a show/hide toggle on the
+        // single field does the same typo-prevention job with less friction
+        // (Baymard/NN Group both find confirm-password fields don't
+        // meaningfully cut lockouts, just add a field before signup).
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8',
+        ], [
+            'email.required' => 'Įveskite el. paštą.',
+            'email.email' => 'Neteisingas el. pašto formatas.',
+            'email.unique' => 'Šis el. paštas jau užregistruotas.',
+            'password.required' => 'Įveskite slaptažodį.',
+            'password.min' => 'Slaptažodis turi būti bent 8 simbolių.',
         ]);
 
         if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput($request->only('email'));
+            return $this->validationFailed($request, $validator);
         }
 
         $user = User::create([
@@ -89,7 +128,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return $this->redirectAfterAuth();
+        return $this->redirectAfterAuth($request);
     }
 
     public function logout(Request $request): RedirectResponse
@@ -106,7 +145,7 @@ class AuthController extends Controller
         return Socialite::driver($provider)->redirect();
     }
 
-    public function handleProviderCallback(string $provider): RedirectResponse
+    public function handleProviderCallback(Request $request, string $provider): RedirectResponse
     {
         $socialUser = Socialite::driver($provider)->user();
 
@@ -137,6 +176,6 @@ class AuthController extends Controller
 
         Auth::login($user, remember: true);
 
-        return $this->redirectAfterAuth();
+        return $this->redirectAfterAuth($request);
     }
 }
