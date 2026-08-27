@@ -60,12 +60,12 @@
             ->sortBy('name')->values();
     @endphp
 
-    <section class="base-container py-8 sm:py-16" x-data="{ filter: 'all', storeFilter: '', categoryFilter: '' }">
+    <section class="base-container pb-8 pt-4 sm:pb-16 sm:pt-6" x-data="{ filter: 'all', storeFilter: '', categoryFilter: '' }">
         <h1 class="mb-4 text-2xl font-extrabold text-gray-900 sm:text-3xl">Stebimos prekės</h1>
 
         @if ($savingsSummary['total_savings'] > 0)
-            <div class="mb-6 flex items-center gap-4 rounded-2xl border border-green/20 bg-green/5 p-4 sm:p-5">
-                <div class="flex size-12 shrink-0 items-center justify-center rounded-full bg-green/15 sm:size-14">
+            <div class="mb-6 flex items-center gap-4 rounded-2xl border-2 border-green/30 bg-green/10 p-4 shadow-sm sm:p-5">
+                <div class="flex size-12 shrink-0 items-center justify-center rounded-full bg-green/20 sm:size-14">
                     <x-app-icon name="wallet" class="size-6 text-dark-green sm:size-7" />
                 </div>
                 <div class="min-w-0">
@@ -82,30 +82,30 @@
         @endif
 
         @if (count($storeTotals) > 0)
-            <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            <div class="mb-8 flex flex-row flex-wrap justify-start gap-2 sm:gap-3">
                 @foreach ($storeTotals as $total)
-                    <a
-                        href="{{ $total['store_slug'] ? '/akcijos/' . $total['store_slug'] : '#' }}"
-                        class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 transition-colors hover:border-green/40"
+                    <button
+                        type="button"
+                        @click="storeFilter = '{{ $total['store_slug'] }}'; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
+                        class="w-[calc(33.333%-6px)] rounded-xl border border-gray-200 bg-white p-1.5 text-left transition-colors hover:border-gray-400 sm:w-[140px] sm:p-2"
                     >
-                        @if ($total['store_slug'])
-                            <img
-                                src="/assets/stores/{{ $total['store_slug'] }}.svg"
-                                alt=""
-                                class="h-8 w-auto max-w-[3.5rem] shrink-0 object-contain"
-                            >
-                        @else
-                            <span class="shrink-0 text-sm font-semibold text-gray-700">{{ $total['store_name'] }}</span>
-                        @endif
-                        <div class="min-w-0">
-                            <p class="truncate text-sm font-semibold text-gray-900">
-                                {{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'prekė' : 'prekės' }}
-                            </p>
-                            @if ($total['total_savings'] > 0)
-                                <p class="text-xs font-semibold text-dark-green">−{{ $euro($total['total_savings']) }}</p>
+                        <div class="mb-1 flex h-5 items-center justify-center sm:h-8 sm:justify-start">
+                            @if ($total['store_slug'])
+                                <x-store-logo :slug="$total['store_slug']" :name="$total['store_name']" size="xs" class="object-left sm:hidden" />
+                                <x-store-logo :slug="$total['store_slug']" :name="$total['store_name']" size="sm" class="hidden object-left sm:block" />
+                            @else
+                                <span class="text-xs font-semibold text-gray-700 sm:text-sm">{{ $total['store_name'] }}</span>
                             @endif
                         </div>
-                    </a>
+                        <div class="flex flex-col gap-0.5 sm:gap-1">
+                            <div class="text-xs text-gray-600 sm:text-sm">
+                                <span class="font-medium">{{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'akcija' : 'akcijos' }}</span>
+                            </div>
+                            <div class="text-sm font-bold text-green sm:text-lg">
+                                {{ number_format($total['total_price'], 2, ',', ' ') }}€
+                            </div>
+                        </div>
+                    </button>
                 @endforeach
             </div>
         @endif
@@ -134,50 +134,58 @@
                 </p>
             </div>
         @else
-            <div class="mb-4 flex items-center gap-2 overflow-x-auto">
-                <button type="button" @click="filter = 'all'" :class="filter === 'all' ? 'bg-dark-green text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'" class="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors">
-                    Visos <span class="tabular-nums">({{ count($products) }})</span>
+            @php
+                $chipFilled = 'inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white';
+                $chipOutline = 'inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green px-4 py-2 text-base font-bold text-green transition-colors hover:bg-green/5';
+            @endphp
+            <div id="favorites-grid" class="mb-4 flex scroll-mt-24 flex-nowrap items-center gap-2.5 overflow-x-auto">
+                <button type="button" @click="filter = 'all'" :class="filter === 'all' ? '{{ $chipFilled }}' : '{{ $chipOutline }}'">
+                    Visos
+                    <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full px-1.5 text-sm font-bold tabular-nums" :class="filter === 'all' ? 'bg-white/25 text-white' : 'bg-green/10 text-green'">{{ count($products) }}</span>
                 </button>
                 @if ($dropped->isNotEmpty())
-                    <button type="button" @click="filter = 'drops'" :class="filter === 'drops' ? 'bg-dark-green text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'" class="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors">
-                        Krenta kaina <span class="tabular-nums">({{ $dropped->count() }})</span>
+                    <button type="button" @click="filter = 'drops'" :class="filter === 'drops' ? '{{ $chipFilled }}' : '{{ $chipOutline }}'">
+                        Krenta kaina
+                        <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full px-1.5 text-sm font-bold tabular-nums" :class="filter === 'drops' ? 'bg-white/25 text-white' : 'bg-green/10 text-green'">{{ $dropped->count() }}</span>
                     </button>
                 @endif
                 @if ($savingsSummary['expiring_soon_count'] > 0)
-                    <button type="button" @click="filter = 'expiring'" :class="filter === 'expiring' ? 'bg-dark-green text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'" class="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors">
-                        Baigiasi greitai <span class="tabular-nums">({{ $savingsSummary['expiring_soon_count'] }})</span>
+                    <button type="button" @click="filter = 'expiring'" :class="filter === 'expiring' ? '{{ $chipFilled }}' : '{{ $chipOutline }}'">
+                        Baigiasi greitai
+                        <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full px-1.5 text-sm font-bold tabular-nums" :class="filter === 'expiring' ? 'bg-white/25 text-white' : 'bg-green/10 text-green'">{{ $savingsSummary['expiring_soon_count'] }}</span>
                     </button>
                 @endif
                 @if ($activeCount < count($sortedProducts))
-                    <button type="button" @click="filter = 'active'" :class="filter === 'active' ? 'bg-dark-green text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'" class="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors">
-                        Tik su akcija <span class="tabular-nums">({{ $activeCount }})</span>
+                    <button type="button" @click="filter = 'active'" :class="filter === 'active' ? '{{ $chipFilled }}' : '{{ $chipOutline }}'">
+                        Tik su akcija
+                        <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full px-1.5 text-sm font-bold tabular-nums" :class="filter === 'active' ? 'bg-white/25 text-white' : 'bg-green/10 text-green'">{{ $activeCount }}</span>
                     </button>
                 @endif
                 @if ($storeFilterOptions->isNotEmpty())
                     <div class="relative shrink-0">
-                        <select x-model="storeFilter" class="appearance-none rounded-full border border-gray-200 py-1.5 pl-3 pr-7 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none">
+                        <select x-model="storeFilter" class="appearance-none rounded-lg border-2 py-2 pl-4 pr-8 text-base font-bold transition-colors focus:outline-none" :class="storeFilter !== '' ? 'border-green text-green' : 'border-gray-300 text-gray-700 hover:border-green hover:text-dark-green'">
                             <option value="">Visos parduotuvės</option>
                             @foreach ($storeFilterOptions as $option)
                                 <option value="{{ $option['slug'] }}">{{ $option['name'] }} ({{ $option['count'] }})</option>
                             @endforeach
                         </select>
-                        <x-app-icon name="chevron-down" x-show="storeFilter === ''" class="pointer-events-none absolute right-2 top-1/2 size-3.5 -translate-y-1/2 text-gray-400" />
-                        <button type="button" x-show="storeFilter !== ''" x-cloak @click="storeFilter = ''" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                            <x-app-icon name="x" class="size-3.5" />
+                        <x-app-icon name="chevron-down" x-show="storeFilter === ''" class="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+                        <button type="button" x-show="storeFilter !== ''" x-cloak @click="storeFilter = ''" class="absolute right-2 top-1/2 -translate-y-1/2 text-green hover:text-dark-green">
+                            <x-app-icon name="x" class="size-4" />
                         </button>
                     </div>
                 @endif
                 @if ($categoryFilterOptions->isNotEmpty())
                     <div class="relative shrink-0">
-                        <select x-model="categoryFilter" class="appearance-none rounded-full border border-gray-200 py-1.5 pl-3 pr-7 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none">
+                        <select x-model="categoryFilter" class="appearance-none rounded-lg border-2 py-2 pl-4 pr-8 text-base font-bold transition-colors focus:outline-none" :class="categoryFilter !== '' ? 'border-green text-green' : 'border-gray-300 text-gray-700 hover:border-green hover:text-dark-green'">
                             <option value="">Visos kategorijos</option>
                             @foreach ($categoryFilterOptions as $option)
                                 <option value="{{ $option['slug'] }}">{{ $option['name'] }} ({{ $option['count'] }})</option>
                             @endforeach
                         </select>
-                        <x-app-icon name="chevron-down" x-show="categoryFilter === ''" class="pointer-events-none absolute right-2 top-1/2 size-3.5 -translate-y-1/2 text-gray-400" />
-                        <button type="button" x-show="categoryFilter !== ''" x-cloak @click="categoryFilter = ''" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                            <x-app-icon name="x" class="size-3.5" />
+                        <x-app-icon name="chevron-down" x-show="categoryFilter === ''" class="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+                        <button type="button" x-show="categoryFilter !== ''" x-cloak @click="categoryFilter = ''" class="absolute right-2 top-1/2 -translate-y-1/2 text-green hover:text-dark-green">
+                            <x-app-icon name="x" class="size-4" />
                         </button>
                     </div>
                 @endif
