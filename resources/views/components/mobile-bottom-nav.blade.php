@@ -23,6 +23,7 @@
 
 {{-- Ported from discount/src/components/common/mobile-bottom-nav.tsx --}}
 <nav
+    @open-categories-sheet.window="categoriesOpen = true"
     x-data="{
         navVisible: true,
         lastScrollY: 0,

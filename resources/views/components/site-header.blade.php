@@ -168,17 +168,26 @@
             </div>
             <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
                 <div class="space-y-5">
-                    <div class="space-y-1">
+                    <div>
+                        @auth
+                            <a href="/favorites" @click="menuOpen = false" class="flex w-full items-center gap-2.5 rounded-lg bg-green/10 px-3 py-3 text-sm font-bold text-dark-green transition-colors hover:bg-green/15">
+                                <x-app-icon name="heart" class="size-5 shrink-0 fill-dark-green" />
+                                <span class="flex-1 text-left">Mano favoritai</span>
+                            </a>
+                        @else
+                            <button type="button" @click="menuOpen = false; $store.authModal.open = true" class="flex w-full items-center gap-2.5 rounded-lg bg-green/10 px-3 py-3 text-sm font-bold text-dark-green transition-colors hover:bg-green/15">
+                                <x-app-icon name="heart" class="size-5 shrink-0 fill-dark-green" />
+                                <span class="flex-1 text-left">Mano favoritai</span>
+                            </button>
+                        @endauth
+                    </div>
+                    <div class="space-y-1 border-t pt-4">
                         <a href="/parduotuves" @click="menuOpen = false" class="flex w-full rounded-lg px-1 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50 {{ $storesActive ? 'text-green' : 'text-gray-900' }}">Parduotuvės</a>
                         <a href="/leidiniai" @click="menuOpen = false" class="flex w-full rounded-lg px-1 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50 {{ $leafletsActive ? 'text-green' : 'text-gray-900' }}">Leidiniai</a>
                         <a href="/akcijos?order=price_discount_proc_max" @click="menuOpen = false" class="flex w-full rounded-lg px-1 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50 {{ $topTodayActive ? 'text-green' : 'text-gray-900' }}">Didžiausios nuolaidos</a>
                     </div>
-                    <div class="space-y-1 border-t pt-4">
+                    <div class="border-t pt-4">
                         @auth
-                            <a href="/favorites" @click="menuOpen = false" class="flex w-full items-center gap-3 rounded-lg px-1 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50">
-                                <x-app-icon name="heart" class="size-5 shrink-0" />
-                                <span class="flex-1 text-left">Mano favoritai</span>
-                            </a>
                             <form method="POST" action="/logout" class="rounded-lg border border-gray-200 px-3 py-3">
                                 @csrf
                                 <p class="text-sm font-semibold text-gray-900">{{ auth()->user()->name ?? auth()->user()->email }}</p>
@@ -190,22 +199,30 @@
                             </form>
                         @else
                             <button type="button" @click="menuOpen = false; $store.authModal.open = true" class="flex w-full items-center gap-3 rounded-lg px-1 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50">
-                                <x-app-icon name="heart" class="size-5 shrink-0" />
-                                <span>Mano favoritai</span>
-                            </button>
-                            <button type="button" @click="menuOpen = false; $store.authModal.open = true" class="flex w-full items-center gap-3 rounded-lg px-1 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50">
                                 <x-app-icon name="user" class="size-5 shrink-0" />
                                 <span>Prisijungti</span>
                             </button>
                         @endauth
                     </div>
+                    {{-- Full category/keyword lists dropped — both duplicate what
+                         the bottom nav's own "Kategorijos" tab already shows;
+                         this is just a quick jump into that same sheet. --}}
                     <div class="border-t pt-4">
-                        <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Kategorijos</p>
-                        <x-category-links-list :categories="$categories" />
-                    </div>
-                    <div class="border-t pt-4">
-                        <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Populiarios prekės</p>
-                        <x-product-keyword-links-list />
+                        <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Populiariausios kategorijos</p>
+                        <div class="flex items-center gap-2">
+                            @foreach (array_slice($categories, 0, 2) as $category)
+                                <a href="/akcijos/{{ $category['slug'] }}" @click="menuOpen = false" class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50">
+                                    <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-4 shrink-0 opacity-70" onerror="this.style.display='none'">
+                                    {{ $category['name'] }}
+                                </a>
+                            @endforeach
+                            @if (count($categories) > 2)
+                                <button type="button" @click="menuOpen = false; $dispatch('open-categories-sheet')" class="inline-flex shrink-0 items-center gap-1 rounded-full bg-green/10 px-3 py-1.5 text-sm font-semibold text-dark-green hover:bg-green/15">
+                                    +{{ count($categories) - 2 }}
+                                    <x-app-icon name="chevron-right" class="size-3.5" />
+                                </button>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
