@@ -48,6 +48,15 @@ class FavoritesController extends Controller
         $storeSlugs = Store::whereIn('id', array_column($payload['store_totals'], 'store_id'))->pluck('slug', 'id');
         $storeTotals = array_map(fn ($total) => $total + ['store_slug' => $storeSlugs[$total['store_id']] ?? null], $payload['store_totals']);
 
+        // Same editorial priority order as the home hero chips / store
+        // directory — StoreListPriority::sort() expects 'slug'/'discounts_count'
+        // keys and drops anything with a zero count, so map this array's own
+        // field names onto those rather than duplicating the ranking logic.
+        $storeTotals = \App\Support\StoreListPriority::sort(array_map(
+            fn ($total) => $total + ['slug' => $total['store_slug'], 'discounts_count' => $total['product_count']],
+            $storeTotals
+        ));
+
         return view('favorites.index', [
             'title' => 'Stebimos prekės | SuperAkcijos.lt',
             'robots' => 'noindex, nofollow',

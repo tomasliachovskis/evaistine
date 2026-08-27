@@ -98,13 +98,34 @@
         @endif
 
         @if (count($storeTotals) > 0)
-            <h2 class="mb-4 text-lg font-semibold sm:text-xl">Parduotuvės</h2>
+            @php
+                $storeCardBase = 'w-[calc(33.333%-6px)] rounded-xl bg-white p-1.5 text-left transition-colors sm:w-[140px] sm:p-2';
+                $storeCardActive = 'border-2 border-green shadow-sm';
+                $storeCardInactive = 'border border-gray-200 hover:border-gray-400';
+            @endphp
+            <h2 class="mb-4 text-lg font-semibold sm:text-xl">Jūsų sekamos prekės</h2>
             <div class="mb-8 flex flex-row flex-wrap justify-start gap-2 sm:gap-3">
+                <button
+                    type="button"
+                    @click="storeFilter = ''; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
+                    class="{{ $storeCardBase }}"
+                    :class="storeFilter === '' ? '{{ $storeCardActive }}' : '{{ $storeCardInactive }}'"
+                >
+                    <div class="mb-1 flex h-5 items-center justify-center sm:h-8 sm:justify-start">
+                        <span class="text-xs font-semibold text-gray-700 sm:text-sm">Visos</span>
+                    </div>
+                    <div class="flex flex-col gap-0.5 sm:gap-1">
+                        <div class="text-xs text-gray-600 sm:text-sm">
+                            <span class="font-medium">{{ $activeCount }} {{ $activeCount === 1 ? 'akcija' : 'akcijos' }}</span>
+                        </div>
+                    </div>
+                </button>
                 @foreach ($storeTotals as $total)
                     <button
                         type="button"
                         @click="storeFilter = '{{ $total['store_slug'] }}'; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
-                        class="w-[calc(33.333%-6px)] rounded-xl border border-gray-200 bg-white p-1.5 text-left transition-colors hover:border-gray-400 sm:w-[140px] sm:p-2"
+                        class="{{ $storeCardBase }}"
+                        :class="storeFilter === '{{ $total['store_slug'] }}' ? '{{ $storeCardActive }}' : '{{ $storeCardInactive }}'"
                     >
                         <div class="mb-1 flex h-5 items-center justify-center sm:h-8 sm:justify-start">
                             @if ($total['store_slug'])
