@@ -7,10 +7,54 @@ use App\Support\ProductPageMeta;
     $history = $primaryDeal['history'] ?? [];
 
     $hasOffers = !$isExpired && count($offers) > 0;
-    $hasHistory = count($history) > 0;
     $hasAbout = $product && !empty(trim((string) ($product['description'] ?? '')));
     $hasSimilar = !empty($similar);
     $hasFaq = count($faqItems ?? []) > 0;
+
+    // Same "current price counts as a history point too" fix the old
+    // min/avg/max block had ($bestPrice isn't in $history — that table only
+    // has past discount records, not the live current one). Computed up here
+    // (not just before the section further down) so $hasHistory reflects
+    // whether there's actually anything to show — some flyer-scraped offers
+    // (multi-variant packs, "7 rūšių") only ever get a discount %, never a
+    // clean per-item price, so every row here can filter out to nothing even
+    // when $history itself has rows. Gating the "Kainų istorija" tab on the
+    // raw row count instead of this filtered result showed a tab that led to
+    // a blank section — confirmed on /akcijos/gyvunu-prekes/kaciu-sunu-dubeneliams,
+    // whose single history row + single active discount both have no price,
+    // discount_percent only.
+    $priceHistoryPoints = collect($history)
+        ->filter(fn ($h) => (float) ($h['discounted_price'] ?? 0) > 0 && !empty($h['from_date']) && !empty($h['store']['slug']))
+        ->map(fn ($h) => [
+            'store_slug' => $h['store']['slug'],
+            'store_name' => $h['store']['name'],
+            'price' => (float) $h['discounted_price'],
+            'date' => $h['from_date'],
+        ]);
+
+    // Every store CURRENTLY selling it counts as a history point too, not
+    // just the cheapest one — $offers isn't in $history (that table only has
+    // past discount records), so without this a product on sale at 2 stores
+    // right now only showed one of them in the chart/table. Always dated
+    // today (not the discount's own from_date) so the chart visibly extends
+    // to "now" for every current store, even one whose price hasn't changed
+    // since a from_date that's already its own history point — otherwise
+    // that store's line looked like it stopped weeks ago instead of still
+    // being valid today.
+    $today = now()->format('Y-m-d');
+    collect($offers ?? [])
+        ->filter(fn ($o) => (float) ($o['discounted_price'] ?? 0) > 0 && !empty($o['store']['slug']))
+        ->each(function ($offer) use ($priceHistoryPoints, $today) {
+            $priceHistoryPoints->push([
+                'store_slug' => $offer['store']['slug'],
+                'store_name' => $offer['store']['name'],
+                'price' => (float) $offer['discounted_price'],
+                'date' => $today,
+            ]);
+        });
+
+    $priceHistoryPoints = $priceHistoryPoints->sortBy('date')->values();
+    $hasHistory = $priceHistoryPoints->isNotEmpty();
 
     // product-page-tabs.tsx's tab list — was missing the "about" tab and every
     // tab's icon/shortLabel entirely.
@@ -312,50 +356,11 @@ use App\Support\ProductPageMeta;
         @endif
 
         @if ($hasHistory)
-            @php
-                // Same "current price counts as a history point too" fix the old
-                // min/avg/max block had ($bestPrice isn't in $history — that table
-                // only has past discount records, not the live current one).
-                $priceHistoryPoints = collect($history)
-                    ->filter(fn ($h) => (float) ($h['discounted_price'] ?? 0) > 0 && !empty($h['from_date']) && !empty($h['store']['slug']))
-                    ->map(fn ($h) => [
-                        'store_slug' => $h['store']['slug'],
-                        'store_name' => $h['store']['name'],
-                        'price' => (float) $h['discounted_price'],
-                        'date' => $h['from_date'],
-                    ]);
-
-                // Every store CURRENTLY selling it counts as a history point
-                // too, not just the cheapest one — $offers isn't in $history
-                // (that table only has past discount records), so without
-                // this a product on sale at 2 stores right now only showed
-                // one of them in the chart/table. Always dated today (not the
-                // discount's own from_date) so the chart visibly extends to
-                // "now" for every current store, even one whose price hasn't
-                // changed since a from_date that's already its own history
-                // point — otherwise that store's line looked like it stopped
-                // weeks ago instead of still being valid today.
-                $today = now()->format('Y-m-d');
-                collect($offers ?? [])
-                    ->filter(fn ($o) => (float) ($o['discounted_price'] ?? 0) > 0 && !empty($o['store']['slug']))
-                    ->each(function ($offer) use ($priceHistoryPoints, $today) {
-                        $priceHistoryPoints->push([
-                            'store_slug' => $offer['store']['slug'],
-                            'store_name' => $offer['store']['name'],
-                            'price' => (float) $offer['discounted_price'],
-                            'date' => $today,
-                        ]);
-                    });
-
-                $priceHistoryPoints = $priceHistoryPoints->sortBy('date')->values();
-            @endphp
-            @if ($priceHistoryPoints->isNotEmpty())
-                <section id="kainu-istorija" class="scroll-mt-32 border-t border-gray-200 bg-white py-6 sm:py-8">
-                    <div class="base-container">
-                        <x-price-history-chart :points="$priceHistoryPoints" :product-name="$product['name']" />
-                    </div>
-                </section>
-            @endif
+            <section id="kainu-istorija" class="scroll-mt-32 border-t border-gray-200 bg-white py-6 sm:py-8">
+                <div class="base-container">
+                    <x-price-history-chart :points="$priceHistoryPoints" :product-name="$product['name']" />
+                </div>
+            </section>
         @endif
 
         @if ($hasAbout)
