@@ -34,15 +34,20 @@
         <h1 class="mb-4 text-2xl font-extrabold text-gray-900 sm:text-3xl">Stebimos prekės</h1>
 
         @if ($savingsSummary['total_savings'] > 0)
-            <div class="mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-green to-dark-green p-4 text-white sm:p-5">
-                <p class="text-sm text-white/80">Galite sutaupyti dabar</p>
-                <p class="text-2xl font-bold leading-tight sm:text-3xl">{{ $euro($savingsSummary['total_savings']) }}</p>
-                <p class="mt-2 text-sm text-white/80">
-                    {{ count($products) }} {{ count($products) === 1 ? 'stebima prekė' : 'stebimos prekės' }}
-                    @if ($savingsSummary['expiring_soon_count'] > 0)
-                        · {{ $savingsSummary['expiring_soon_count'] === 1 ? '1 akcija baigiasi per 24 val.' : $savingsSummary['expiring_soon_count'] . ' akcijos baigiasi per 24 val.' }}
-                    @endif
-                </p>
+            <div class="mb-6 flex items-center gap-4 rounded-2xl border border-green/20 bg-green/5 p-4 sm:p-5">
+                <div class="flex size-12 shrink-0 items-center justify-center rounded-full bg-green/15 sm:size-14">
+                    <x-app-icon name="wallet" class="size-6 text-dark-green sm:size-7" />
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm text-gray-600">Galite sutaupyti dabar</p>
+                    <p class="text-2xl font-bold leading-tight text-dark-green sm:text-3xl">{{ $euro($savingsSummary['total_savings']) }}</p>
+                    <p class="mt-1 text-sm text-gray-600">
+                        {{ count($products) }} {{ count($products) === 1 ? 'stebima prekė' : 'stebimos prekės' }}
+                        @if ($savingsSummary['expiring_soon_count'] > 0)
+                            · {{ $savingsSummary['expiring_soon_count'] === 1 ? '1 akcija baigiasi per 24 val.' : $savingsSummary['expiring_soon_count'] . ' akcijos baigiasi per 24 val.' }}
+                        @endif
+                    </p>
+                </div>
             </div>
         @endif
 
@@ -65,28 +70,24 @@
         @if (count($storeTotals) > 0)
             <div class="mb-8">
                 <h2 class="mb-4 text-lg font-semibold sm:text-xl">Parduotuvių suvestinė</h2>
-                <div class="mb-8 flex flex-row flex-wrap justify-start gap-2 sm:gap-3">
+                <div class="scroll-cards-x -mx-1 flex min-w-0 gap-2 px-1 sm:mx-0 sm:gap-3 sm:px-0">
                     @foreach ($storeTotals as $total)
                         <a
                             href="{{ $total['store_slug'] ? '/akcijos/' . $total['store_slug'] : '#' }}"
-                            class="w-[calc(50%-4px)] gap-0 rounded-xl border bg-card p-2 py-0 transition-colors hover:border-green/40 sm:w-[140px] sm:py-2"
+                            class="flex w-[108px] shrink-0 flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 transition-colors hover:border-green/40"
                         >
-                            <div class="flex flex-col items-center gap-0 px-2 pb-1 sm:items-start">
+                            <span class="flex h-8 items-center">
                                 @if ($total['store_slug'])
                                     <img
                                         src="/assets/stores/{{ $total['store_slug'] }}.svg"
                                         alt="{{ $total['store_name'] }}"
-                                        class="mb-1 h-[57px] w-auto max-w-[100px] object-contain object-left"
+                                        class="h-full w-auto max-w-full object-contain object-left"
                                     >
                                 @endif
-                            </div>
-                            <div class="px-2 pb-1 pt-0">
-                                <div class="flex flex-col gap-1">
-                                    <div class="text-xs text-gray-600 sm:text-sm">
-                                        <span class="font-medium">{{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'prekė' : 'prekės' }}</span>
-                                    </div>
-                                    <div class="text-base font-bold text-green sm:text-lg">{{ number_format($total['total_price'], 2) }}€</div>
-                                </div>
+                            </span>
+                            <div class="flex flex-col gap-0.5">
+                                <span class="text-xs text-gray-500">{{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'prekė' : 'prekės' }}</span>
+                                <span class="text-base font-bold text-green">{{ number_format($total['total_price'], 2) }}€</span>
                             </div>
                         </a>
                     @endforeach
