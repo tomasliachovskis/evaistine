@@ -16,7 +16,7 @@
     <div class="border-b border-gray-100 bg-white">
         <div class="base-container mx-auto py-2 sm:py-5 lg:py-5">
             <section class="relative min-w-0">
-                <div class="mb-4 min-w-0 sm:mb-0">
+                <div class="min-w-0">
                     <div class="mb-4 flex items-start justify-between gap-3 sm:mb-5">
                         <div class="min-w-0">
                             <h1 class="font-extrabold text-gray-900">Daug akcijų ir nuolaidų vienoje vietoje</h1>

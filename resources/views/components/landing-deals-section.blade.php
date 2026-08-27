@@ -36,9 +36,14 @@
         @if ($layout === 'grid')
             <div class="grid grid-cols-2 items-stretch gap-1.5 sm:grid-cols-5 sm:gap-2 lg:gap-3">
                 @foreach (array_slice($deals, 0, 10) as $deal)
-                    <x-deal-card :deal="$deal" />
+                    <div class="{{ $loop->index >= 4 ? 'hidden sm:block' : '' }}">
+                        <x-deal-card :deal="$deal" />
+                    </div>
                 @endforeach
             </div>
+            <a href="/akcijos" class="mt-3 flex h-10 w-full items-center justify-center rounded-lg border border-green bg-white text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green sm:hidden">
+                Rodyti daugiau
+            </a>
         @else
             <div
                 x-data="{
