@@ -45,12 +45,12 @@
 @endphp
 
 <div class="flex w-full flex-col items-start gap-1.5 lg:w-auto lg:shrink-0" x-data="{ {{ $toggleHandler }} }">
-    {{-- Mobile: full-width, bell icon, "Stebėkite kainą" / "Sekama" --}}
+    {{-- Mobile: shrink-wrapped (not full-width), bell icon, "Stebėkite kainą" / "Sekama" —
+         matches the desktop button's shape, just sized for touch. --}}
     <button
         type="button"
         @click="toggle()"
-        class="flex w-full items-center gap-2 rounded-lg border-0 px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
-        :class="favorited ? 'justify-center bg-green hover:bg-dark-green' : 'justify-between bg-green hover:bg-dark-green'"
+        class="flex items-center gap-2 rounded-lg border-0 bg-green px-5 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-dark-green disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
         :disabled="busy"
     >
         <template x-if="favorited">
@@ -62,7 +62,6 @@
         <template x-if="!favorited">
             <span class="flex items-center gap-2"><x-app-icon name="bell" class="size-4 fill-none text-white" /> Stebėkite kainą</span>
         </template>
-        <x-app-icon name="chevron-right" class="size-4 shrink-0" x-show="!favorited" />
     </button>
 
     {{-- Desktop: shrink-wrapped, heart icon, "Sekti kainą" / "Sekama" --}}
@@ -76,9 +75,4 @@
         <x-app-icon name="heart" class="size-4 transition-colors" x-bind:class="favorited ? 'fill-amber-500 text-amber-500' : 'fill-none text-white'" />
         <span x-text="favorited ? 'Sekama' : 'Sekti kainą'"></span>
     </button>
-
-    <div class="flex items-center gap-1.5">
-        <x-app-icon name="users" class="size-5 shrink-0 text-gray-500" style="stroke-width:1.75" />
-        <p class="text-xs text-gray-600">{{ \App\Support\ProductPageMeta::followerLabel($productId) }}</p>
-    </div>
 </div>
