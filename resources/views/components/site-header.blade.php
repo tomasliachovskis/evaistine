@@ -37,9 +37,11 @@
                 <div class="flex items-center gap-1 sm:hidden">
                     <livewire:site-search mode="mobile" />
                     @auth
-                        <a href="/favorites" class="relative flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10" aria-label="Mano favoritai">
-                            <x-app-icon name="heart" class="size-6" />
-                            <livewire:favorites-badge />
+                        <a href="/favorites" class="flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10" aria-label="Mano favoritai">
+                            <span class="relative inline-flex">
+                                <x-app-icon name="heart" class="size-6" />
+                                <livewire:favorites-badge />
+                            </span>
                         </a>
                     @else
                         <button type="button" @click="$store.authModal.open = true" class="relative flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10" aria-label="Mano favoritai">
@@ -89,9 +91,11 @@
                     @endauth
 
                     @auth
-                        <a href="/favorites" class="relative flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10" aria-label="Mano favoritai">
-                            <x-app-icon name="heart" class="size-6" />
-                            <livewire:favorites-badge />
+                        <a href="/favorites" class="flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10" aria-label="Mano favoritai">
+                            <span class="relative inline-flex">
+                                <x-app-icon name="heart" class="size-6" />
+                                <livewire:favorites-badge />
+                            </span>
                         </a>
                     @else
                         <button type="button" @click="$store.authModal.open = true" class="relative flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10" aria-label="Mano favoritai">
