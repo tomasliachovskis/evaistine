@@ -87,12 +87,23 @@ class CacheWarmingService
         }
     }
 
-    public function warmPopularProductsCache()
+    // $onlySlugs scopes the warm to a specific set of products (e.g. only
+    // the ones a single store-processing batch actually touched) instead of
+    // the whole catalog — product_with_similar's cache key isn't wired into
+    // CacheVersion at all (see productWithSimilarCacheKey(), a flat 7-day
+    // TTL), so without scoping, every batch re-warms every product site-wide
+    // regardless of whether that batch changed it.
+    public function warmPopularProductsCache(?array $onlySlugs = null)
     {
-        $productsWithDiscounts = Product::withCount('discounts')
-            ->having('discounts_count', '>=', 1)
-            ->orderBy('discounts_count', 'desc')
-            ->get();
+        $query = Product::withCount('discounts')->having('discounts_count', '>=', 1);
+
+        if ($onlySlugs !== null) {
+            $query->whereIn('slug', $onlySlugs);
+        } else {
+            $query->orderBy('discounts_count', 'desc');
+        }
+
+        $productsWithDiscounts = $query->get();
 
         $this->section('products with-similar', $productsWithDiscounts->count());
 

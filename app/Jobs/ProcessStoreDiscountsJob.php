@@ -3,7 +3,9 @@
 namespace App\Jobs;
 
 use App\Models\DiscountTemp;
+use App\Models\Product;
 use App\Models\ScraperRun;
+use App\Services\CacheWarmingService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -25,10 +27,17 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
 
     public $uniqueFor = 3600;
 
-    public function __construct(public string $store)
+    // Takes every store that's ready to process in one dispatch instead of
+    // one job per store — cache:clear-discounts/cache:warm are global (not
+    // scoped to a single store anyway, see CacheVersion), so running them
+    // once after the whole batch instead of once per store cuts a 40-store
+    // day from 40 full cache warms down to however many batches actually
+    // ran. Also incidentally fixes a real bug: uniqueId() below is a
+    // constant, so under the old one-job-per-store dispatch, ShouldBeUnique
+    // would silently drop every store past the first if more than one
+    // became ready in the same dispatch-store-processing tick.
+    public function __construct(public array $stores)
     {
-        // Reuses the existing 'flyers' queue worker (already running via
-        // supervisor) instead of standing up a new queue/worker for this.
         $this->onQueue('flyers');
     }
 
@@ -46,18 +55,51 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
 
     public function handle(): void
     {
+        $batchStartedAt = now();
+
+        foreach ($this->stores as $store) {
+            $this->processStore($store);
+        }
+
+        // Once for the whole batch, not once per store — see class docblock.
+        Artisan::call('cache:clear-discounts');
+
+        // product_with_similar isn't wired into CacheVersion (flat 7-day TTL
+        // key, see CacheWarmingService::warmPopularProductsCache()), so it's
+        // the one warm scoped down to just what this batch actually touched
+        // — everything else (stores/categories/store+category pairs/best-by-
+        // category/favorites) is cheap enough (bounded by store/category
+        // count, not product count) to just fully rewarm every batch.
+        $touchedProductSlugs = Product::whereHas('discounts', function ($query) use ($batchStartedAt) {
+            $query->where('updated_at', '>=', $batchStartedAt);
+        })->pluck('slug')->all();
+
+        $cacheWarmingService = app(CacheWarmingService::class);
+        $cacheWarmingService->warmStoreCaches();
+        $cacheWarmingService->warmCategoryCaches();
+        $cacheWarmingService->warmStoreCategoryCaches();
+        $cacheWarmingService->warmBestByCategoryCaches();
+        $cacheWarmingService->warmAllDiscountsCache();
+        $cacheWarmingService->warmFavoritesCache();
+        $cacheWarmingService->warmPopularProductsCache($touchedProductSlugs);
+
+        $this->revalidateFrontend();
+    }
+
+    private function processStore(string $store): void
+    {
         $startedAt = now();
 
         $run = ScraperRun::create([
             'type' => ScraperRun::TYPE_PROCESS,
-            'store' => $this->store,
+            'store' => $store,
             'status' => ScraperRun::STATUS_RUNNING,
             'started_at' => $startedAt,
         ]);
 
-        $step = function (string $step) use ($run) {
+        $step = function (string $step) use ($run, $store) {
             $run->update(['step' => $step]);
-            Log::info("ProcessStoreDiscountsJob[{$this->store}]: {$step}");
+            Log::info("ProcessStoreDiscountsJob[{$store}]: {$step}");
         };
 
         try {
@@ -69,7 +111,7 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
             // rest of the pipeline.
             $step('discounts:process --map-categories');
             $exitCode = Artisan::call('discounts:process', [
-                '--only-store' => $this->store,
+                '--only-store' => $store,
                 '--map-categories' => 1,
             ]);
 
@@ -86,21 +128,12 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
             $step('discounts:archive-expired');
             Artisan::call('discounts:archive-expired');
 
-             $step('discounts:index-meilisearch');
-             Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
-
-             $step('cache:clear-discounts');
-             Artisan::call('cache:clear-discounts');
-
-             $step('cache:warm');
-             Artisan::call('cache:warm', ['--type' => 'all']);
-
-            $step('revalidate frontend');
-            $this->revalidateFrontend();
+            $step('discounts:index-meilisearch');
+            Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
 
             $step('done');
 
-            $itemsCount = DiscountTemp::whereRaw('LOWER(store) = ?', [mb_strtolower($this->store)])
+            $itemsCount = DiscountTemp::whereRaw('LOWER(store) = ?', [mb_strtolower($store)])
                 ->where('processed', true)
                 ->where('updated_at', '>=', $startedAt)
                 ->count();
@@ -112,7 +145,7 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
             ]);
         } catch (\Throwable $e) {
             $trace = $e->getMessage() . "\n" . $e->getTraceAsString();
-            Log::error("ProcessStoreDiscountsJob[{$this->store}] failed: {$trace}");
+            Log::error("ProcessStoreDiscountsJob[{$store}] failed: {$trace}");
 
             $run->update([
                 'status' => ScraperRun::STATUS_FAILED,
@@ -133,7 +166,7 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
         $secret = config('services.frontend.revalidate_secret');
 
         if (!$secret) {
-            Log::info("ProcessStoreDiscountsJob[{$this->store}]: REVALIDATE_SECRET not configured, skipping frontend revalidation.");
+            Log::info('ProcessStoreDiscountsJob: REVALIDATE_SECRET not configured, skipping frontend revalidation.');
 
             return;
         }
@@ -144,10 +177,10 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
                 ->post(config('services.frontend.revalidate_url'));
 
             if (!$response->successful()) {
-                Log::warning("ProcessStoreDiscountsJob[{$this->store}]: frontend revalidation returned {$response->status()}.");
+                Log::warning("ProcessStoreDiscountsJob: frontend revalidation returned {$response->status()}.");
             }
         } catch (\Throwable $e) {
-            Log::warning("ProcessStoreDiscountsJob[{$this->store}]: frontend revalidation request failed: {$e->getMessage()}");
+            Log::warning("ProcessStoreDiscountsJob: frontend revalidation request failed: {$e->getMessage()}");
         }
     }
 }

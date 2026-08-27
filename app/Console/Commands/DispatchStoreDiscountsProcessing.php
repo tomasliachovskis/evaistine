@@ -27,6 +27,8 @@ class DispatchStoreDiscountsProcessing extends Command
             return 0;
         }
 
+        $readyStores = [];
+
         foreach ($stores as $store) {
             $latestUnprocessed = DiscountTemp::query()
                 ->where('processed', false)
@@ -44,9 +46,20 @@ class DispatchStoreDiscountsProcessing extends Command
                 continue;
             }
 
-            ProcessStoreDiscountsJob::dispatch($store);
-            $this->info("Queued processing for {$store}");
+            $readyStores[] = $store;
         }
+
+        if (empty($readyStores)) {
+            $this->info('No stores ready to process yet.');
+
+            return 0;
+        }
+
+        // One job for every ready store instead of one job per store — see
+        // ProcessStoreDiscountsJob's docblock for why (cache:clear-discounts/
+        // cache:warm are global, so batching them cuts redundant full warms).
+        ProcessStoreDiscountsJob::dispatch($readyStores);
+        $this->info('Queued processing for: ' . implode(', ', $readyStores));
 
         return 0;
     }
