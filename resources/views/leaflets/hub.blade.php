@@ -6,7 +6,11 @@
     $topCategories = $sectionsData['top_categories'] ?? [];
     $storeName = $listingMeta['store_name'] ?? $storeSlug;
     $leafletNoun = $storeSlug === 'iki' ? 'leidynys' : 'leidinys';
-    $pageTitle = $storeName . ' ' . $leafletNoun . 'iai';
+    // "leidinys" -> "leidiniai" is a stem swap (drop "ys", add "iai"), not a
+    // plain suffix append — naively concatenating 'iai' onto the singular
+    // produced "leidinysiai" instead of "leidiniai" for every non-iki store.
+    $leafletNounPlural = substr($leafletNoun, 0, -2) . 'iai';
+    $pageTitle = $storeName . ' ' . $leafletNounPlural;
     $seoAboutParagraphs = array_values(array_filter(explode("\n\n", $intro['seo_about'] ?? '')));
     $hasAbout = count($seoAboutParagraphs) > 0 || count($faq) > 0;
 
@@ -50,7 +54,11 @@
                     @if ($totalOffers > 0)
                         {{ number_format($totalOffers, 0, ',', ' ') }} aktyvios {{ $storeName }} akcijos ·
                     @endif
-                    {{ $followersLabel }} ·
+                    {{ $followersLabel }}
+                    @if ($lastUpdated = \App\Support\StoreDataFreshness::lastUpdatedLabel($storeName))
+                        · {{ $lastUpdated }}
+                    @endif
+                    ·
                     <a href="/akcijos/{{ $storeSlug }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
                         Žiūrėti visas akcijas
                         <x-app-icon name="arrow-right" class="size-3 shrink-0" />

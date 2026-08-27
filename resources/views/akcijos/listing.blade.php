@@ -91,7 +91,11 @@
                         @if ($total > 0)
                             {{ number_format($total, 0, ',', ' ') }} aktyvios {{ $listingMeta['store_name'] }} akcijos ·
                         @endif
-                        {{ \App\Support\StoreSocialProof::followerLabel($listingMeta['store_slug'], $listingMeta['store_name']) }} ·
+                        {{ \App\Support\StoreSocialProof::followerLabel($listingMeta['store_slug'], $listingMeta['store_name']) }}
+                        @if ($lastUpdated = \App\Support\StoreDataFreshness::lastUpdatedLabel($listingMeta['store_name']))
+                            · {{ $lastUpdated }}
+                        @endif
+                        ·
                         <a href="/leidinys/{{ $listingMeta['store_slug'] }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
                             Žiūrėti visus leidinius
                             <x-app-icon name="arrow-right" class="size-3 shrink-0" />
