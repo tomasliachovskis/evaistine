@@ -43,17 +43,11 @@ class HomeController extends Controller
             return $this->storesMetaService->formatStore($stores);
         });
 
-        // Empty-discount stores last, else most-discounted first — sortStores()
-        // in landing-hero-store-slider.tsx.
-        usort($stores, function ($a, $b) {
-            $aEmpty = $a['discounts_count'] === 0;
-            $bEmpty = $b['discounts_count'] === 0;
-            if ($aEmpty !== $bEmpty) {
-                return $aEmpty ? 1 : -1;
-            }
-
-            return $b['discounts_count'] <=> $a['discounts_count'];
-        });
+        // Hero chip row only makes sense for stores currently on sale — most
+        // discounts first (sortStores() in landing-hero-store-slider.tsx no
+        // longer needs to push empty stores last, since they're dropped).
+        $stores = array_values(array_filter($stores, fn ($store) => $store['discounts_count'] > 0));
+        usort($stores, fn ($a, $b) => $b['discounts_count'] <=> $a['discounts_count']);
 
         // buildAllLeaflets() is already ordered current-per-store first, newest
         // valid_from first within that (StoreFlyer::scopeOrdered()) — so the
