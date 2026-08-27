@@ -39,7 +39,7 @@
         $sortedProducts = collect($products)->sortBy(fn ($deal) => $hasActiveDiscount($deal) ? 0 : 1)->values();
         $activeCount = $sortedProducts->filter($hasActiveDiscount)->count();
 
-        // Primary store per card for the store dropdown filter — the active
+        // Primary store per card for the store-card filter — the active
         // offer matching this deal's own store_id when there is one, else the
         // first offer, else (no active discount left at all) the last known
         // store from price history, so even faded-out cards stay filterable.
@@ -52,9 +52,6 @@
         };
         $dealCategory = fn (array $deal) => $deal['product']['category'] ?? null;
 
-        $storeFilterOptions = $sortedProducts->map($dealStore)->filter()->groupBy('slug')
-            ->map(fn ($g) => ['slug' => $g->first()['slug'], 'name' => $g->first()['name'], 'count' => $g->count()])
-            ->sortBy('name')->values();
         $categoryFilterOptions = $sortedProducts->map($dealCategory)->filter()->groupBy('slug')
             ->map(fn ($g) => ['slug' => $g->first()['slug'], 'name' => $g->first()['name'], 'count' => $g->count()])
             ->sortBy('name')->values();
@@ -183,20 +180,6 @@
                         <span class="inline-flex min-w-[1.375rem] items-center justify-center rounded-full px-1.5 text-sm font-bold tabular-nums" :class="filter === 'active' ? 'bg-white/25 text-white' : 'bg-green/10 text-green'">{{ $activeCount }}</span>
                     </button>
                 @endif
-                @if ($storeFilterOptions->isNotEmpty())
-                    <div class="relative shrink-0">
-                        <select x-model="storeFilter" class="appearance-none rounded-lg border-2 py-2 pl-4 pr-8 text-base font-bold transition-colors focus:outline-none" :class="storeFilter !== '' ? 'border-green text-green' : 'border-gray-300 text-gray-700 hover:border-green hover:text-dark-green'">
-                            <option value="">Visos parduotuvės</option>
-                            @foreach ($storeFilterOptions as $option)
-                                <option value="{{ $option['slug'] }}">{{ $option['name'] }} ({{ $option['count'] }})</option>
-                            @endforeach
-                        </select>
-                        <x-app-icon name="chevron-down" x-show="storeFilter === ''" class="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
-                        <button type="button" x-show="storeFilter !== ''" x-cloak @click="storeFilter = ''" class="absolute right-2 top-1/2 -translate-y-1/2 text-green hover:text-dark-green">
-                            <x-app-icon name="x" class="size-4" />
-                        </button>
-                    </div>
-                @endif
                 @if ($categoryFilterOptions->isNotEmpty())
                     <div class="relative shrink-0">
                         <select x-model="categoryFilter" class="appearance-none rounded-lg border-2 py-2 pl-4 pr-8 text-base font-bold transition-colors focus:outline-none" :class="categoryFilter !== '' ? 'border-green text-green' : 'border-gray-300 text-gray-700 hover:border-green hover:text-dark-green'">
@@ -213,7 +196,7 @@
                 @endif
             </div>
 
-            <div class="grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-6">
+            <div class="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
                 @foreach ($sortedProducts as $deal)
                     @php
                         $cardStoreSlug = $dealStore($deal)['slug'] ?? '';
