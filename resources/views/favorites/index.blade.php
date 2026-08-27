@@ -77,34 +77,6 @@
             </div>
         @endif
 
-        @if (count($storeTotals) > 0)
-            <div class="mb-8">
-                <h2 class="mb-4 text-lg font-semibold sm:text-xl">Parduotuvių suvestinė</h2>
-                <div class="scroll-cards-x -mx-1 flex min-w-0 gap-2 px-1 sm:mx-0 sm:gap-3 sm:px-0">
-                    @foreach ($storeTotals as $total)
-                        <a
-                            href="{{ $total['store_slug'] ? '/akcijos/' . $total['store_slug'] : '#' }}"
-                            class="flex w-[108px] shrink-0 flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 transition-colors hover:border-green/40"
-                        >
-                            <span class="flex h-8 items-center">
-                                @if ($total['store_slug'])
-                                    <img
-                                        src="/assets/stores/{{ $total['store_slug'] }}.svg"
-                                        alt="{{ $total['store_name'] }}"
-                                        class="h-full w-auto max-w-full object-contain object-left"
-                                    >
-                                @endif
-                            </span>
-                            <div class="flex flex-col gap-0.5">
-                                <span class="text-xs text-gray-500">{{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'prekė' : 'prekės' }}</span>
-                                <span class="text-base font-bold text-green">{{ number_format($total['total_price'], 2) }}€</span>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
         @if (count($products) === 0)
             <div class="rounded-xl border bg-card p-8 text-center">
                 <x-app-icon name="heart" class="mx-auto size-8 text-gray-300" />
@@ -134,7 +106,30 @@
                 @endif
             </div>
 
-            <div class="mt-6 grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-6">
+            @if (count($storeTotals) > 0)
+                <div class="mb-6 flex flex-wrap items-center gap-1.5">
+                    <span class="mr-0.5 text-xs font-medium text-gray-400">Parduotuvės:</span>
+                    @foreach ($storeTotals as $total)
+                        <a
+                            href="{{ $total['store_slug'] ? '/akcijos/' . $total['store_slug'] : '#' }}"
+                            class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white py-1 pl-2 pr-2.5 text-xs font-medium text-gray-700 transition-colors hover:border-green/40 hover:text-dark-green"
+                        >
+                            @if ($total['store_slug'])
+                                <img
+                                    src="/assets/stores/{{ $total['store_slug'] }}.svg"
+                                    alt=""
+                                    class="h-3.5 w-auto max-w-[2.75rem] object-contain"
+                                >
+                            @else
+                                {{ $total['store_name'] }}
+                            @endif
+                            <span class="tabular-nums text-gray-400">({{ $total['product_count'] }})</span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+
+            <div class="grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-6">
                 @foreach ($sortedProducts as $deal)
                     <div
                         x-show="filter === 'all' || (filter === 'drops' && {{ ($deal['price_change_amount'] ?? 0) > 0 ? 'true' : 'false' }}) || (filter === 'expiring' && {{ $isExpiringSoon($deal) ? 'true' : 'false' }}) || (filter === 'active' && {{ $hasActiveDiscount($deal) ? 'true' : 'false' }})"
