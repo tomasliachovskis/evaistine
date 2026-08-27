@@ -30,11 +30,8 @@
 
         $allStoresTotalPrice = collect($storeTotals)->sum('total_price');
 
-        // Shared building blocks for the "big row item with a checkmark" pattern
-        // used everywhere on this page (store rows, status filters, category
-        // filters) — a single visual language instead of cards/chips/dropdowns
-        // mixed together like the regular /favorites page.
-        $rowBase = 'flex w-full items-center gap-3 rounded-xl border-2 bg-white px-4 py-3 text-left transition-colors';
+        // Shared building blocks for the "checkmark + active border" pattern
+        // used across store rows and the category chip strip.
         $rowActive = 'border-green bg-green/10';
         $rowInactive = 'border-gray-200 hover:border-gray-400';
         $checkBase = 'flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors';
@@ -44,8 +41,7 @@
 
     <section class="base-container pb-12 pt-4 sm:pt-6" x-data="{
         storeFilter: '', categoryFilter: '',
-        storesOpen: false, categoryOpen: false,
-        storeNames: { @foreach ($storeTotals as $total) '{{ $total['store_slug'] }}': @js($total['store_name']), @endforeach },
+        categoryOpen: false,
         categoryNames: { @foreach ($categoryFilterOptions as $option) '{{ $option['slug'] }}': @js($option['name']), @endforeach },
     }">
         <div class="mb-5 flex items-center justify-between gap-3">
@@ -73,28 +69,15 @@
             </div>
         @endif
 
-        <div class="mb-3 flex justify-end" x-show="storesOpen || categoryOpen" x-cloak>
-            <button type="button" @click="storesOpen = false; categoryOpen = false" class="inline-flex items-center gap-1.5 text-base font-semibold text-gray-500 hover:text-dark-green">
-                <x-app-icon name="x" class="size-4" />
-                Suskleisti filtrus
-            </button>
-        </div>
-
         @if (count($storeTotals) > 0)
             @php
                 $gridCellBase = 'flex flex-col items-start gap-1 rounded-xl border-2 bg-white p-3 text-left transition-colors';
             @endphp
-            <button type="button" @click="storesOpen = !storesOpen; categoryOpen = false" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
-                <span>
-                    <span class="block text-lg font-bold text-gray-900">Jūsų parduotuvės</span>
-                    <span class="block text-sm text-gray-600" x-text="storeFilter === '' ? 'Visos parduotuvės' : (storeNames[storeFilter] || storeFilter)"></span>
-                </span>
-                <x-app-icon name="chevron-down" class="size-6 shrink-0 text-gray-400 transition-transform" x-bind:class="storesOpen ? 'rotate-180' : ''" />
-            </button>
-            <div x-show="storesOpen" x-cloak class="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            <h2 class="mb-2 text-lg font-bold text-gray-900">Jūsų parduotuvės</h2>
+            <div class="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 <button
                     type="button"
-                    @click="storeFilter = ''; storesOpen = false; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
+                    @click="storeFilter = ''; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
                     class="{{ $gridCellBase }}"
                     :class="storeFilter === '' ? '{{ $rowActive }}' : '{{ $rowInactive }}'"
                 >
@@ -110,7 +93,7 @@
                 @foreach ($storeTotals as $total)
                     <button
                         type="button"
-                        @click="storeFilter = '{{ $total['store_slug'] }}'; storesOpen = false; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
+                        @click="storeFilter = '{{ $total['store_slug'] }}'; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
                         class="{{ $gridCellBase }}"
                         :class="storeFilter === '{{ $total['store_slug'] }}' ? '{{ $rowActive }}' : '{{ $rowInactive }}'"
                     >
@@ -140,26 +123,29 @@
             </div>
         @else
             @if ($categoryFilterOptions->isNotEmpty())
-                <button type="button" @click="categoryOpen = !categoryOpen; storesOpen = false" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
+                @php
+                    $categoryChipBase = 'flex shrink-0 items-center gap-2 rounded-xl border-2 bg-white px-4 py-3 text-left transition-colors';
+                @endphp
+                <button type="button" @click="categoryOpen = !categoryOpen" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
                     <span>
                         <span class="block text-lg font-bold text-gray-900">Kategorija</span>
                         <span class="block text-sm text-gray-600" x-text="categoryFilter === '' ? 'Visos kategorijos' : (categoryNames[categoryFilter] || categoryFilter)"></span>
                     </span>
                     <x-app-icon name="chevron-down" class="size-6 shrink-0 text-gray-400 transition-transform" x-bind:class="categoryOpen ? 'rotate-180' : ''" />
                 </button>
-                <div x-show="categoryOpen" x-cloak class="mb-8 grid grid-cols-2 gap-2 md:grid-cols-4">
-                    <button type="button" @click="categoryFilter = ''; categoryOpen = false" class="{{ $rowBase }}" :class="categoryFilter === '' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
+                <div x-show="categoryOpen" x-cloak class="mb-8 flex flex-nowrap gap-2 overflow-x-auto pb-1">
+                    <button type="button" @click="categoryFilter = ''; categoryOpen = false" class="{{ $categoryChipBase }}" :class="categoryFilter === '' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
                         <span class="{{ $checkBase }}" :class="categoryFilter === '' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
                             <x-app-icon name="check" x-show="categoryFilter === ''" class="size-4 text-white" />
                         </span>
-                        <span class="min-w-0 flex-1 truncate text-base font-bold text-gray-900">Visos</span>
+                        <span class="whitespace-nowrap text-base font-bold text-gray-900">Visos</span>
                     </button>
                     @foreach ($categoryFilterOptions as $option)
-                        <button type="button" @click="categoryFilter = '{{ $option['slug'] }}'; categoryOpen = false" class="{{ $rowBase }}" :class="categoryFilter === '{{ $option['slug'] }}' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
+                        <button type="button" @click="categoryFilter = '{{ $option['slug'] }}'; categoryOpen = false" class="{{ $categoryChipBase }}" :class="categoryFilter === '{{ $option['slug'] }}' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
                             <span class="{{ $checkBase }}" :class="categoryFilter === '{{ $option['slug'] }}' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
                                 <x-app-icon name="check" x-show="categoryFilter === '{{ $option['slug'] }}'" class="size-4 text-white" />
                             </span>
-                            <span class="min-w-0 flex-1 truncate text-base font-bold text-gray-900">{{ $option['name'] }}</span>
+                            <span class="whitespace-nowrap text-base font-bold text-gray-900">{{ $option['name'] }}</span>
                             <span class="shrink-0 text-sm font-semibold text-gray-500">{{ $option['count'] }}</span>
                         </button>
                     @endforeach
