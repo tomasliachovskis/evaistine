@@ -2,7 +2,7 @@
 
 - This is a Laravel app run via Sail (Docker). Always prefix PHP/artisan/composer commands with `sail` (e.g. `sail artisan tinker`, `sail composer install`) instead of running `php`/`composer` directly — the host PHP version does not satisfy this project's requirements.
 - Follow existing project patterns and reuse existing components/helpers instead of introducing new ones when something equivalent already exists.
-- Backend (this repo) pairs with a Next.js frontend at `/Users/tomas/www/discount`. Adding a store touches both repos — see checklist below.
+- The old Next.js frontend at `/Users/tomas/www/discount` is a legacy parallel-run app being phased out by the Blade rebuild in this repo — this repo (`resources/views/`, `public/assets/`) is the single source of truth going forward. Don't add/copy store logos, category icons, or other static assets into `discount/public/assets` anymore; add them only here.
 
 ## Blade frontend: reuse styles across pages, don't reinvent them per page
 
@@ -54,13 +54,9 @@ Based on onboarding Gulbelė, Vynoteka, and Thomas Philipps. Do these in order �
 
 - `discounts:process` wraps discount creation in `Discount::withoutEvents()`, so it does **not** bump the versioned discount cache (`App\Support\CacheVersion`, group `discounts`) or sync to Meilisearch. Run `sail artisan cache:clear-discounts` after processing or the frontend will keep showing stale counts. `sail artisan discounts:index-meilisearch` (Meilisearch sync) is a separate step, unreachable in local dev without an SSH tunnel — not needed for basic local verification.
 
-### 5. Frontend (`/Users/tomas/www/discount`)
+### 5. Store logo (this repo only)
 
-The backend `Store` model has no logo/color field — the frontend keeps its own static per-store metadata in `src/lib/stores.ts`, independent of the API:
+The backend `Store` model has no logo field — logos are resolved purely by convention, `<slug>.svg` under `public/assets/stores/`, via `<x-store-logo>` and every raw `<img src="/assets/stores/{slug}.svg">` call site.
 
-1. Add `{ name: '{Store}', slug: '{slug}' }` to the `STORES` array.
-2. Add a brand color to `STORE_BRAND_COLORS` (falls back to gray if omitted — pick the store's real brand color, e.g. from their logo).
-3. Add the logo file at `public/assets/stores/{slug}.svg` — filename must exactly equal the slug. **No fallback exists**: a missing file renders as a plain broken image, doesn't crash or hide the store. Prefer grabbing the store's real logo SVG from their own live site (check page source for an `<img>`/`<svg>` in the header brand/logo area) over inventing one; wrap a raster logo in a minimal SVG (viewBox + `<image>` data-URI) only if no vector is available, matching the pattern already used for some smaller stores' logos in that folder.
-4. `STORES`/`isStoreSlug()` gate real routing behavior (e.g. `/akcijos/{slug}` is only recognized as a store page, not a category page, if the slug is registered) — this step isn't cosmetic-only.
-5. Verify in a browser: `/parduotuves` (store directory card + logo), `/akcijos/{slug}` (store listing, breadcrumb shows the store name not "category"), `/leidinys/{slug}` (leaflet/validity-date page).
-6. If backend data changes don't show up on the frontend even after restarting `next dev` — Next's on-disk cache (`.next/cache`, including cached `fetch()` responses under a page's `revalidate`) survives a plain server restart. Delete `.next/cache` and restart when this happens; don't assume the backend fix didn't work.
+1. Add the logo file at `public/assets/stores/{slug}.svg` — filename must exactly equal the store's slug. **No fallback exists**: a missing file renders as a plain broken image, doesn't crash or hide the store. Prefer grabbing the store's real logo SVG from their own live site (check page source for an `<img>`/`<svg>` in the header brand/logo area) over inventing one; wrap a raster logo in a minimal SVG (viewBox + `<image>` data-URI) only if no vector is available, matching the pattern already used for some smaller stores' logos in that folder.
+2. Verify in a browser: `/parduotuves` (store directory card + logo), `/akcijos/{slug}` (store listing, breadcrumb shows the store name not "category"), `/leidinys/{slug}` (leaflet/validity-date page).

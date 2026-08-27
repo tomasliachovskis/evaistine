@@ -16,6 +16,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        // ProcessPdfFlyerJob is a queued job (ShouldQueue), so this only ever
+        // dispatches — it never runs the actual work inline in the scheduler
+        // process, no runInBackground() needed.
         $schedule->job(new ProcessPdfFlyerJob)
             ->everyMinute()
             ->withoutOverlapping();
@@ -24,19 +27,30 @@ class Kernel extends ConsoleKernel
         // aren't installed on the production server, and scraping should
         // happen from the local IP, not prod's) — this codebase deploys to
         // both, so these two are explicitly restricted to the 'dev' env.
+        //
+        // Both runInBackground() (so a long scrape can't delay whatever else
+        // is due in the same schedule:run tick — 03:00 and scrapers:retry-
+        // failed's :00/:15/:30/:45 marks collide daily) and a bounded
+        // withoutOverlapping() expiry (so a crashed/hung Puppeteer process
+        // that never releases the lock can't wedge this command for the
+        // default 24h — these are exactly the flaky, network-dependent
+        // processes prone to hanging, per this repo's own scraper notes).
         $schedule->command('scrapers:run --all')
             ->dailyAt('03:00')
-            ->withoutOverlapping()
+            ->withoutOverlapping(180)
+            ->runInBackground()
             ->environments(['dev']);
 
         $schedule->command('scrapers:retry-failed')
             ->everyFifteenMinutes()
-            ->withoutOverlapping()
+            ->withoutOverlapping(10)
+            ->runInBackground()
             ->environments(['dev']);
 
         $schedule->command('flyers:scrape --all')
             ->dailyAt('05:00')
-            ->withoutOverlapping()
+            ->withoutOverlapping(120)
+            ->runInBackground()
             ->environments(['dev']);
 
         // flyers:store-flyer creates StoreFlyer rows (shared prod DB, hit
@@ -47,14 +61,17 @@ class Kernel extends ConsoleKernel
         // APP_URL) and dispatches the page-split job once the file has
         // actually landed here — restricted to production so it never fires
         // against local's own copy of the file with local's own domain.
+        // Only ever queues jobs (queue.default isn't 'sync'), so it's quick
+        // — a short overlap expiry is enough.
         $schedule->command('flyers:process-pages --pending')
             ->everyFiveMinutes()
-            ->withoutOverlapping()
+            ->withoutOverlapping(5)
             ->environments(['production']);
 
+        // Only queries + dispatches to the queue, no heavy inline work.
         $schedule->command('discounts:dispatch-store-processing')
             ->everyFiveMinutes()
-            ->withoutOverlapping();
+            ->withoutOverlapping(5);
 
         // Store working hours change rarely (unlike flyers/discounts), so
         // weekly is plenty. No file-transfer complexity here (unlike
@@ -62,7 +79,8 @@ class Kernel extends ConsoleKernel
         // just needs the ['dev'] restriction all scrapers share.
         $schedule->command('hours:scrape --all')
             ->weeklyOn(1, '06:00')
-            ->withoutOverlapping()
+            ->withoutOverlapping(60)
+            ->runInBackground()
             ->environments(['dev']);
     }
 
