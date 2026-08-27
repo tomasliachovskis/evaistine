@@ -49,6 +49,11 @@ document.addEventListener('alpine:init', () => {
     // this only re-derives to update on a store filter click, never to
     // first-paint them.
     const SVG_NS = 'http://www.w3.org/2000/svg';
+    // lt-LT's Intl 'short' month style renders as a zero-padded number
+    // (toLocaleDateString(..., {month:'short'}) => "05", not "geg") in this
+    // browser's ICU data, not the abbreviated month name a reader expects —
+    // spelling these out by hand is the only reliable way to get "22 geg".
+    const LT_MONTHS_SHORT = ['saus', 'vas', 'kov', 'bal', 'geg', 'bir', 'lie', 'rgp', 'rgs', 'spa', 'lap', 'gr'];
 
     Alpine.data('priceHistoryChart', (points) => ({
         allPoints: points,
@@ -99,7 +104,7 @@ document.addEventListener('alpine:init', () => {
                 svg.appendChild(label);
             });
 
-            this.monthTicks.forEach((tick) => {
+            this.dateTicks.forEach((tick) => {
                 const label = mk('text', { x: tick.x, y: this.H - 6, 'text-anchor': 'middle', class: 'fill-gray-400 text-[10.5px]' });
                 label.textContent = tick.label;
                 svg.appendChild(label);
@@ -199,18 +204,24 @@ document.addEventListener('alpine:init', () => {
                 return { price, y: this.yFor(price) };
             });
         },
-        get monthTicks() {
-            const start = new Date(this.t0);
-            const end = new Date(this.t1);
+        get dateTicks() {
+            // Evenly spaced by pixel position (not by fixed calendar interval,
+            // like the old month-start ticks were) so a narrow date range
+            // still gets several readable "D mon" labels instead of just one.
+            const count = 6;
+            const innerW = this.W - this.padL - this.padR;
+            const span = this.t1 - this.t0 || 1;
+            const seen = new Set();
             const ticks = [];
-            const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
 
-            while (cursor <= end) {
-                const x = this.xFor(cursor.toISOString().slice(0, 10));
-                if (x >= this.padL && x <= this.W - this.padR) {
-                    ticks.push({ label: cursor.toLocaleDateString('lt-LT', { month: 'short' }), x });
-                }
-                cursor.setMonth(cursor.getMonth() + 1);
+            for (let i = 0; i < count; i++) {
+                const x = this.padL + (i / (count - 1)) * innerW;
+                const t = this.t0 + (i / (count - 1)) * span;
+                const d = new Date(t);
+                const label = `${d.getDate()} ${LT_MONTHS_SHORT[d.getMonth()]}`;
+                if (seen.has(label)) continue;
+                seen.add(label);
+                ticks.push({ label, x });
             }
 
             return ticks;
@@ -231,7 +242,8 @@ document.addEventListener('alpine:init', () => {
             return price.toFixed(2).replace('.', ',') + ' €';
         },
         fmtDate(date) {
-            return new Date(date).toLocaleDateString('lt-LT', { day: 'numeric', month: 'short' });
+            const d = new Date(date);
+            return `${d.getDate()} ${LT_MONTHS_SHORT[d.getMonth()]}`;
         },
     }));
 });

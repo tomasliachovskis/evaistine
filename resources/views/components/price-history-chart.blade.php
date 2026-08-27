@@ -47,7 +47,6 @@
                     class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-colors"
                 >
                     {{ $store['name'] }}
-                    <span class="text-xs font-semibold opacity-75">{{ $store['count'] }}</span>
                 </button>
             @endforeach
         </nav>
