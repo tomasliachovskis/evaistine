@@ -124,7 +124,7 @@
         @else
             @if ($categoryFilterOptions->isNotEmpty())
                 @php
-                    $categoryChipBase = 'flex shrink-0 items-center gap-2 rounded-xl border-2 bg-white px-4 py-3 text-left transition-colors';
+                    $categoryRowBase = 'flex w-full items-center gap-3 rounded-xl border-2 bg-white px-4 py-3 text-left transition-colors';
                 @endphp
                 <button type="button" @click="categoryOpen = !categoryOpen" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
                     <span>
@@ -133,19 +133,19 @@
                     </span>
                     <x-app-icon name="chevron-down" class="size-6 shrink-0 text-gray-400 transition-transform" x-bind:class="categoryOpen ? 'rotate-180' : ''" />
                 </button>
-                <div x-show="categoryOpen" x-cloak class="mb-8 flex flex-nowrap gap-2 overflow-x-auto pb-1">
-                    <button type="button" @click="categoryFilter = ''; categoryOpen = false" class="{{ $categoryChipBase }}" :class="categoryFilter === '' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
+                <div x-show="categoryOpen" x-cloak class="mb-8 flex flex-col gap-2">
+                    <button type="button" @click="categoryFilter = ''; categoryOpen = false" class="{{ $categoryRowBase }}" :class="categoryFilter === '' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
                         <span class="{{ $checkBase }}" :class="categoryFilter === '' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
                             <x-app-icon name="check" x-show="categoryFilter === ''" class="size-4 text-white" />
                         </span>
-                        <span class="whitespace-nowrap text-base font-bold text-gray-900">Visos</span>
+                        <span class="flex-1 text-base font-bold text-gray-900">Visos</span>
                     </button>
                     @foreach ($categoryFilterOptions as $option)
-                        <button type="button" @click="categoryFilter = '{{ $option['slug'] }}'; categoryOpen = false" class="{{ $categoryChipBase }}" :class="categoryFilter === '{{ $option['slug'] }}' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
+                        <button type="button" @click="categoryFilter = '{{ $option['slug'] }}'; categoryOpen = false" class="{{ $categoryRowBase }}" :class="categoryFilter === '{{ $option['slug'] }}' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
                             <span class="{{ $checkBase }}" :class="categoryFilter === '{{ $option['slug'] }}' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
                                 <x-app-icon name="check" x-show="categoryFilter === '{{ $option['slug'] }}'" class="size-4 text-white" />
                             </span>
-                            <span class="whitespace-nowrap text-base font-bold text-gray-900">{{ $option['name'] }}</span>
+                            <span class="flex-1 text-base font-bold text-gray-900">{{ $option['name'] }}</span>
                             <span class="shrink-0 text-sm font-semibold text-gray-500">{{ $option['count'] }}</span>
                         </button>
                     @endforeach
