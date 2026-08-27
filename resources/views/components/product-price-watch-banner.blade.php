@@ -45,12 +45,12 @@
 @endphp
 
 <div class="flex w-full flex-col items-start gap-1.5 lg:w-auto lg:shrink-0" x-data="{ {{ $toggleHandler }} }">
-    {{-- Mobile: shrink-wrapped (not full-width), bell icon, "Stebėkite kainą" / "Sekama" —
-         matches the desktop button's shape, just sized for touch. --}}
+    {{-- Mobile: full-width, same slim CTA shape as <x-leaflet-card>'s
+         "Peržiūrėti" button (h-11, rounded-lg, text-base). --}}
     <button
         type="button"
         @click="toggle()"
-        class="flex items-center gap-2 rounded-lg border-0 bg-green px-5 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-dark-green disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
+        class="flex h-11 w-full items-center justify-center gap-2 rounded-lg border-0 bg-green text-base font-bold text-white transition-colors hover:bg-dark-green disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
         :disabled="busy"
     >
         <template x-if="favorited">
