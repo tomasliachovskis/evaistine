@@ -201,15 +201,20 @@
                         $cardStoreSlug = $dealStore($deal)['slug'] ?? '';
                         $cardCategorySlug = $dealCategory($deal)['slug'] ?? '';
                         $pid = $deal['product']['id'];
+                        // Current savings (original vs discounted price right now) —
+                        // not the same as price_change_amount, which only reflects a
+                        // drop since our last recorded snapshot. A product can be on
+                        // sale at the same price for weeks with no "change" to show.
+                        $currentSavings = (float) ($deal['original_price'] ?? 0) - (float) ($deal['discounted_price'] ?? 0);
                     @endphp
                     <div
                         x-show="(storeFilter === '' || storeFilter === '{{ $cardStoreSlug }}') && (categoryFilter === '' || categoryFilter === '{{ $cardCategorySlug }}')"
                         :style="'order:' + ({ @foreach ($sortRanks as $mode => $ranks) '{{ $mode }}': {{ $ranks[$pid] ?? 999 }}, @endforeach }[sort])"
                         class="relative {{ !$hasActiveDiscount($deal) ? 'opacity-60' : '' }}"
                     >
-                        @if (($deal['price_change_amount'] ?? 0) > 0)
+                        @if ($currentSavings > 0)
                             <span class="absolute left-2 top-2 z-20 rounded-lg bg-green px-2 py-1 text-xs font-bold text-white">
-                                −{{ $euro($deal['price_change_amount']) }}
+                                −{{ $euro($currentSavings) }}
                             </span>
                         @endif
                         @unless ($hasActiveDiscount($deal))
