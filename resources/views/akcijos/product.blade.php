@@ -325,14 +325,27 @@ use App\Support\ProductPageMeta;
                         'date' => $h['from_date'],
                     ]);
 
-                if ($bestPrice > 0 && $bestOffer && !empty($bestOffer['store']['slug'])) {
-                    $priceHistoryPoints->push([
-                        'store_slug' => $bestOffer['store']['slug'],
-                        'store_name' => $bestOffer['store']['name'],
-                        'price' => (float) $bestPrice,
-                        'date' => $bestOffer['from_date'] ?? now()->format('Y-m-d'),
-                    ]);
-                }
+                // Every store CURRENTLY selling it counts as a history point
+                // too, not just the cheapest one — $offers isn't in $history
+                // (that table only has past discount records), so without
+                // this a product on sale at 2 stores right now only showed
+                // one of them in the chart/table. Always dated today (not the
+                // discount's own from_date) so the chart visibly extends to
+                // "now" for every current store, even one whose price hasn't
+                // changed since a from_date that's already its own history
+                // point — otherwise that store's line looked like it stopped
+                // weeks ago instead of still being valid today.
+                $today = now()->format('Y-m-d');
+                collect($offers ?? [])
+                    ->filter(fn ($o) => (float) ($o['discounted_price'] ?? 0) > 0 && !empty($o['store']['slug']))
+                    ->each(function ($offer) use ($priceHistoryPoints, $today) {
+                        $priceHistoryPoints->push([
+                            'store_slug' => $offer['store']['slug'],
+                            'store_name' => $offer['store']['name'],
+                            'price' => (float) $offer['discounted_price'],
+                            'date' => $today,
+                        ]);
+                    });
 
                 $priceHistoryPoints = $priceHistoryPoints->sortBy('date')->values();
             @endphp
