@@ -30,33 +30,13 @@
                         </a>
                     </div>
 
-                    <div
-                        x-data="{
-                            activePage: 0,
-                            pageCount: {{ max(1, (int) ceil(count($stores) / 4)) }},
-                            update() {
-                                const el = $refs.track;
-                                const maxScroll = el.scrollWidth - el.clientWidth;
-                                if (maxScroll <= 0 || this.pageCount <= 1) { this.activePage = 0; return; }
-                                const progress = el.scrollLeft / maxScroll;
-                                this.activePage = Math.min(this.pageCount - 1, Math.max(0, Math.round(progress * (this.pageCount - 1))));
-                            },
-                        }"
-                        x-init="update()"
-                        class="relative min-w-0"
-                    >
-                        <div x-ref="track" @scroll.passive="update()" class="scroll-cards-x -mx-1 flex min-w-0 snap-x snap-mandatory items-stretch gap-2 px-1 sm:mx-0 sm:gap-4 sm:px-0">
-                            @foreach ($stores as $store)
-                                <x-store-card :store="$store" layout="slider" />
-                            @endforeach
-                        </div>
-                        <template x-if="pageCount > 1">
-                            <div class="mt-2 flex items-center justify-center gap-1.5 sm:hidden">
-                                <template x-for="index in pageCount" :key="index">
-                                    <span :class="index - 1 === activePage ? 'size-2 rounded-full bg-green' : 'size-1.5 rounded-full bg-gray-300'"></span>
-                                </template>
-                            </div>
-                        </template>
+                    {{-- Quick-access chip row ("Variant A" from the mobile mockup) —
+                         dense enough (5+ visible on a phone, vs ~2.3 with the old
+                         slider cards) that a page-dot indicator isn't needed. --}}
+                    <div class="scroll-cards-x -mx-1 flex min-w-0 items-start gap-3 px-1 sm:mx-0 sm:gap-4 sm:px-0">
+                        @foreach ($stores as $store)
+                            <x-store-card :store="$store" layout="chip" />
+                        @endforeach
                     </div>
                 </div>
             </section>
