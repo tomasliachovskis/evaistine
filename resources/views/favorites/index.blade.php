@@ -98,6 +98,7 @@
         @endif
 
         @if (count($storeTotals) > 0)
+            <h2 class="mb-4 text-lg font-semibold sm:text-xl">Parduotuvės</h2>
             <div class="mb-8 flex flex-row flex-wrap justify-start gap-2 sm:gap-3">
                 @foreach ($storeTotals as $total)
                     <button
