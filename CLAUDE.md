@@ -2,6 +2,7 @@
 
 - This is a Laravel app run via Sail (Docker). Always prefix PHP/artisan/composer commands with `sail` (e.g. `sail artisan tinker`, `sail composer install`) instead of running `php`/`composer` directly — the host PHP version does not satisfy this project's requirements.
 - Follow existing project patterns and reuse existing components/helpers instead of introducing new ones when something equivalent already exists.
+- **Never use emoji anywhere in this project** — not in UI copy, mockups, code, comments, or commit messages. Where a mockup or UI needs an icon, use `<x-app-icon>` (the existing Lucide-derived icon set) or a real asset (product photo, `/assets/stores/{slug}.svg`, `/assets/categories/{slug}.svg`) — if neither covers it, build a new SVG matching the existing icon style rather than reaching for an emoji.
 - The old Next.js frontend at `/Users/tomas/www/discount` is a legacy parallel-run app being phased out by the Blade rebuild in this repo — this repo (`resources/views/`, `public/assets/`) is the single source of truth going forward. Don't add/copy store logos, category icons, or other static assets into `discount/public/assets` anymore; add them only here.
 
 ## Blade frontend: reuse styles across pages, don't reinvent them per page
