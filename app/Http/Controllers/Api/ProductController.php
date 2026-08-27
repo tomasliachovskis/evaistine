@@ -713,7 +713,7 @@ class ProductController extends Controller
 
     public static function productWithSimilarCacheKey(string $slug): string
     {
-        return "product_with_similar_v8_{$slug}";
+        return "product_with_similar_v9_{$slug}";
     }
 
     public function resolveDiscountsCacheKey($storeOrCategory, $category = null): string
@@ -1335,12 +1335,24 @@ class ProductController extends Controller
             . $this->pageFreshnessService->formatLtDate($validTo);
     }
 
+    // The 5 nationally recognizable chains — when a product is on sale at
+    // both one of these and a smaller/less-known store, the title favors
+    // showing the recognizable name(s) first rather than whatever order the
+    // discounts relation happens to load in.
+    private const MAIN_STORE_SLUGS = ['maxima', 'norfa', 'lidl', 'iki', 'rimi'];
+
     private function getStoreNamesForProduct($product): string
     {
         $names = $product->discounts
-            ->pluck('store.name')
+            ->pluck('store')
             ->filter()
-            ->unique()
+            ->unique('id')
+            ->sortBy(function ($store) {
+                $rank = array_search($store->slug, self::MAIN_STORE_SLUGS, true);
+
+                return $rank === false ? 99 : $rank;
+            })
+            ->pluck('name')
             ->take(4)
             ->values()
             ->all();
