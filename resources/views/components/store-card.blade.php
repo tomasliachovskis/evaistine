@@ -7,13 +7,6 @@
     $widthClass = $layout === 'slider'
         ? 'w-[calc((100%-0.75rem)/2.2)] min-w-[calc((100%-0.75rem)/2.2)] max-w-[calc((100%-0.75rem)/2.2)] shrink-0 grow-0 basis-[calc((100%-0.75rem)/2.2)] sm:w-[200px] sm:min-w-[200px] sm:max-w-none sm:basis-auto lg:w-[210px]'
         : '';
-
-    // "5 386" -> "5,4k" — only used by the chip layout's corner badge, where
-    // full counts don't fit; formatCount()'s thousand-separator form is used
-    // everywhere else.
-    $abbreviateCount = function (int $n): string {
-        return $n >= 1000 ? number_format($n / 1000, 1, ',', '') . 'k' : (string) $n;
-    };
 @endphp
 
 @if ($layout === 'chip')
@@ -26,8 +19,8 @@
         <span class="relative flex size-20 shrink-0 items-center justify-center rounded-2xl border border-gray-100 bg-white p-3 shadow-sm sm:size-24">
             <img src="/assets/stores/{{ $store['slug'] }}.svg?v=2" alt="" class="max-h-full max-w-full object-contain">
             @if ($hasOffers)
-                <span class="absolute -right-1.5 -top-1.5 rounded-full border-2 border-white bg-[#ffdb4d] px-1.5 py-0.5 text-xs font-extrabold leading-none tabular-nums text-gray-900">
-                    {{ $abbreviateCount($store['discounts_count']) }}
+                <span class="absolute -right-1.5 -top-1.5 rounded-full border-2 border-white bg-[#ffdb4d] px-2 py-1 text-xs font-extrabold leading-none tabular-nums text-gray-900">
+                    {{ $store['discounts_count'] }}
                 </span>
             @endif
         </span>
