@@ -56,14 +56,14 @@
         </div>
 
         @if ($savingsSummary['total_savings'] > 0)
-            <div class="mb-8 flex items-center gap-5 rounded-2xl border-2 border-green bg-green/10 p-6">
-                <div class="flex size-16 shrink-0 items-center justify-center rounded-full bg-green/20">
-                    <x-app-icon name="wallet" class="size-8 text-dark-green" />
+            <div class="mb-6 flex items-center gap-4 rounded-2xl border-2 border-green bg-green/10 p-4">
+                <div class="flex size-12 shrink-0 items-center justify-center rounded-full bg-green/20">
+                    <x-app-icon name="wallet" class="size-6 text-dark-green" />
                 </div>
                 <div class="min-w-0">
-                    <p class="text-lg text-gray-700">Galite sutaupyti dabar</p>
-                    <p class="text-4xl font-extrabold leading-tight text-dark-green sm:text-5xl">{{ $euro($savingsSummary['total_savings']) }}</p>
-                    <p class="mt-1 text-base text-gray-700">
+                    <p class="text-base text-gray-700">Galite sutaupyti dabar</p>
+                    <p class="text-3xl font-extrabold leading-tight text-dark-green sm:text-4xl">{{ $euro($savingsSummary['total_savings']) }}</p>
+                    <p class="mt-1 text-sm text-gray-700">
                         {{ count($products) }} {{ count($products) === 1 ? 'stebima prekė' : 'stebimos prekės' }}
                         @if ($savingsSummary['expiring_soon_count'] > 0)
                             · {{ $savingsSummary['expiring_soon_count'] === 1 ? '1 akcija baigiasi per 24 val.' : $savingsSummary['expiring_soon_count'] . ' akcijos baigiasi per 24 val.' }}
