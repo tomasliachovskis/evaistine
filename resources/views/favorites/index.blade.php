@@ -37,6 +37,7 @@
         // sale right now, and flag them so it's obvious why there's no price.
         $hasActiveDiscount = fn (array $deal) => ($deal['discounted_price'] ?? 0) > 0 || !empty($deal['discount_percent']);
         $sortedProducts = collect($products)->sortBy(fn ($deal) => $hasActiveDiscount($deal) ? 0 : 1)->values();
+        $activeCount = $sortedProducts->filter($hasActiveDiscount)->count();
     @endphp
 
     <section class="base-container py-8 sm:py-16" x-data="{ filter: 'all' }">
@@ -126,12 +127,17 @@
                         Baigiasi greitai <span class="tabular-nums">({{ $savingsSummary['expiring_soon_count'] }})</span>
                     </button>
                 @endif
+                @if ($activeCount < count($sortedProducts))
+                    <button type="button" @click="filter = 'active'" :class="filter === 'active' ? 'bg-dark-green text-white' : 'border border-gray-200 text-gray-600 hover:bg-gray-50'" class="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors">
+                        Tik su akcija <span class="tabular-nums">({{ $activeCount }})</span>
+                    </button>
+                @endif
             </div>
 
-            <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            <div class="mt-6 grid grid-cols-3 gap-3 md:grid-cols-4 lg:grid-cols-6">
                 @foreach ($sortedProducts as $deal)
                     <div
-                        x-show="filter === 'all' || (filter === 'drops' && {{ ($deal['price_change_amount'] ?? 0) > 0 ? 'true' : 'false' }}) || (filter === 'expiring' && {{ $isExpiringSoon($deal) ? 'true' : 'false' }})"
+                        x-show="filter === 'all' || (filter === 'drops' && {{ ($deal['price_change_amount'] ?? 0) > 0 ? 'true' : 'false' }}) || (filter === 'expiring' && {{ $isExpiringSoon($deal) ? 'true' : 'false' }}) || (filter === 'active' && {{ $hasActiveDiscount($deal) ? 'true' : 'false' }})"
                         @if (!$hasActiveDiscount($deal)) class="relative opacity-60" @endif
                     >
                         @unless ($hasActiveDiscount($deal))
