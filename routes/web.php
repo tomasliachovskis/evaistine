@@ -52,6 +52,7 @@ Route::get('/login', function () {
     return redirect('/?login=1');
 })->name('login');
 
+Route::post('/auth/pending-favorite', [AuthController::class, 'rememberPendingFavorite']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

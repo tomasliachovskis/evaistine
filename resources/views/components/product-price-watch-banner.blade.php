@@ -1,4 +1,4 @@
-@props(['productId', 'favorited' => false])
+@props(['productId', 'favorited' => false, 'productName' => '', 'categoryName' => ''])
 
 @php
     // Ported from product-price-watch-banner.tsx's variant="offersHero" — the
@@ -9,11 +9,24 @@
     // Follower count sits BELOW the button (flex-col), not beside it.
     $productId = (int) $productId;
     $favoritedJs = $favorited ? 'true' : 'false';
+    $gaPayload = json_encode([
+        'product_id' => $productId,
+        'product_name' => $productName,
+        'category' => $categoryName,
+        'is_logged_in' => auth()->check(),
+        'position' => 'hero',
+    ], JSON_UNESCAPED_UNICODE);
     $toggleHandler = <<<JS
         busy: false,
         favorited: {$favoritedJs},
         toggle() {
             if (this.busy) return;
+            // price_alert_subscribe in discount/src/lib/google-analytics.ts
+            // — only on the subscribe transition, not on unfavoriting, and
+            // fired regardless of whether the toggle itself succeeds.
+            if (!this.favorited && window.trackGaEvent) {
+                window.trackGaEvent('price_alert_subscribe', {$gaPayload});
+            }
             this.busy = true;
             const prev = this.favorited;
             this.favorited = !this.favorited;
@@ -27,6 +40,18 @@
                 .then((r) => {
                     if (r.status === 401) {
                         this.favorited = prev;
+                        // So the login/register/OAuth flow that's about to
+                        // open can finish this favorite for them and land on
+                        // /favorites — see AuthController::redirectAfterAuth().
+                        fetch('/auth/pending-favorite', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector("meta[name='csrf-token']").content,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ product_id: {$productId} }),
+                        }).catch(() => {});
                         window.dispatchEvent(new CustomEvent('open-auth-modal'));
                         return null;
                     }

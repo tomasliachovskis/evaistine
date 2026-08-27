@@ -27,6 +27,18 @@
                 .then((r) => {
                     if (r.status === 401) {
                         this.favorited = prev;
+                        // So the login/register/OAuth flow that's about to
+                        // open can finish this favorite for them and land on
+                        // /favorites — see AuthController::redirectAfterAuth().
+                        fetch('/auth/pending-favorite', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector("meta[name='csrf-token']").content,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ product_id: {$productId} }),
+                        }).catch(() => {});
                         window.dispatchEvent(new CustomEvent('open-auth-modal'));
                         return null;
                     }
