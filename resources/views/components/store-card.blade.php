@@ -22,16 +22,16 @@
          below, no separate CTA button since the whole tile is clickable.
          Built for the home hero's store row specifically; the taller
          slider/grid cards above are untouched for /parduotuves etc. --}}
-    <a href="/akcijos/{{ $store['slug'] }}" class="flex w-[72px] shrink-0 snap-start flex-col items-center gap-1.5 sm:w-20 {{ !$hasOffers ? 'opacity-75' : '' }}">
-        <span class="relative flex size-16 shrink-0 items-center justify-center rounded-2xl border border-gray-100 bg-white p-2.5 shadow-sm sm:size-[4.5rem]">
+    <a href="/akcijos/{{ $store['slug'] }}" class="flex w-24 shrink-0 snap-start flex-col items-center gap-1.5 sm:w-28 {{ !$hasOffers ? 'opacity-75' : '' }}">
+        <span class="relative flex size-20 shrink-0 items-center justify-center rounded-2xl border border-gray-100 bg-white p-3 shadow-sm sm:size-24">
             <img src="/assets/stores/{{ $store['slug'] }}.svg?v=2" alt="" class="max-h-full max-w-full object-contain">
             @if ($hasOffers)
-                <span class="absolute -right-1.5 -top-1.5 rounded-full border-2 border-white bg-amber-400 px-1.5 py-0.5 text-[10px] font-extrabold leading-none tabular-nums text-amber-950">
+                <span class="absolute -right-1.5 -top-1.5 rounded-full border-2 border-white bg-amber-400 px-1.5 py-0.5 text-xs font-extrabold leading-none tabular-nums text-amber-950">
                     {{ $abbreviateCount($store['discounts_count']) }}
                 </span>
             @endif
         </span>
-        <span class="line-clamp-1 text-center text-xs font-semibold leading-tight text-gray-900">{{ $store['name'] }}</span>
+        <span class="line-clamp-1 text-center text-sm font-semibold leading-tight text-gray-900">{{ $store['name'] }}</span>
     </a>
 @else
     {{-- Ported from discount/src/components/stores/store-card.tsx (slider layout, view-only actions). --}}
