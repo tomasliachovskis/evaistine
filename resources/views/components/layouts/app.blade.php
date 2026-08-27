@@ -15,6 +15,7 @@
         }
     @endphp
     <title>{{ $pageTitle }}</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="32x32">
     <meta name="description" content="{{ $description ?? 'Akcijos ir nuolaidos iš Maxima, Lidl, Iki, Rimi ir kitų tinklų vienoje vietoje. Peržiūrėkite šviežiausius savaitės pasiūlymus.' }}">
     <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
     <meta name="robots" content="{{ $robots ?? 'index, follow' }}">

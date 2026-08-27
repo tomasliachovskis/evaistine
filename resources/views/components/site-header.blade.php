@@ -66,7 +66,7 @@
                         <div class="relative" @click.outside="accountOpen = false" x-data="{ accountOpen: false }">
                             <button type="button" @click="accountOpen = !accountOpen" class="flex h-auto items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-white hover:bg-white/10">
                                 <x-app-icon name="user" class="size-5" />
-                                <span>Paskyra</span>
+                                <span>{{ Str::limit(auth()->user()->name, 5, '') }}</span>
                             </button>
                             <div x-show="accountOpen" x-cloak class="absolute right-0 top-full z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
                                 <div class="px-2 py-1.5">

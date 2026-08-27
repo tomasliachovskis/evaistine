@@ -137,6 +137,10 @@
                 <p class="mt-4 text-lg text-gray-600">
                     Jūs dar neturite mėgstamiausių prekių. Pridėkite prekes prie mėgstamiausių, paspaudę ant širdelės ikonos.
                 </p>
+                <a href="/akcijos" class="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-green bg-green px-5 py-3 text-base font-bold text-white transition-colors hover:bg-dark-green hover:border-dark-green">
+                    Žiūrėti visas akcijas
+                    <x-app-icon name="arrow-right" class="size-4" />
+                </a>
             </div>
         @else
             @if ($showCategoryFilter && $categoryFilterOptions->isNotEmpty())

@@ -11,11 +11,16 @@
     // not a fresh query per request.
     $footerCacheSuffix = CacheVersion::suffix(['discounts']);
 
-    $footerStores = Cache::remember("footer_stores_{$footerCacheSuffix}", 1800, fn () => Store::query()
-        ->withCount('discounts')
-        ->having('discounts_count', '>', 0)
-        ->orderByDesc('discounts_count')
-        ->get());
+    // Same editorial priority order as the home hero chips / store directory
+    // / favorites store cards, instead of a raw discounts_count sort.
+    $footerStores = Cache::remember("footer_stores_{$footerCacheSuffix}", 1800, fn () => \App\Support\StoreListPriority::sort(
+        Store::query()
+            ->withCount('discounts')
+            ->having('discounts_count', '>', 0)
+            ->get()
+            ->map(fn ($store) => ['slug' => $store->slug, 'name' => $store->name, 'discounts_count' => $store->discounts_count])
+            ->all()
+    ));
 
     $footerCategories = Cache::remember("footer_categories_{$footerCacheSuffix}", 1800, fn () => Category::query()
         ->whereNull('parent_id')
@@ -82,8 +87,9 @@
                     <h2 class="mb-4 text-lg font-bold">Parduotuvės</h2>
                     <ul class="flex flex-col gap-2">
                         @foreach ($footerStores as $store)
-                            <li><a href="/akcijos/{{ $store->slug }}" class="text-base text-white/80 transition-colors hover:text-green">{{ $store->name }}</a></li>
+                            <li><a href="/akcijos/{{ $store['slug'] }}" class="text-base text-white/80 transition-colors hover:text-green">{{ $store['name'] }}</a></li>
                         @endforeach
+                        <li><a href="/parduotuves" class="text-base text-white/80 transition-colors hover:text-green">Visos parduotuvės</a></li>
                     </ul>
                 </div>
 
