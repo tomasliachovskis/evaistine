@@ -39,7 +39,7 @@ class FlyerStorage
 
     public static function pagePath(int $flyerId, int $pageNumber): string
     {
-        return "flyers/pages/{$flyerId}/page-{$pageNumber}.png";
+        return "flyers/pages/{$flyerId}/page-{$pageNumber}.jpg";
     }
 
     public static function pagesDirectory(int $flyerId): string

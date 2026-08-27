@@ -125,13 +125,26 @@ class StoreFlyerPageProcessingService
                 'total' => $numberOfPages,
             ]);
 
-            $tempImagePath = $tempDir . '/flyer_' . $flyerId . '_page_' . $pageNumber . '.png';
+            // JPEG, not PNG — a flattened, photo-heavy flyer page has no use
+            // for lossless/alpha, and PNG was producing 1-2MB per page.
+            // getImageData() (not saveImage()) so we can set compression
+            // quality + strip EXIF/color-profile metadata before writing —
+            // the library itself has no quality knob.
+            $tempImagePath = $tempDir . '/flyer_' . $flyerId . '_page_' . $pageNumber . '.jpg';
 
             if (method_exists($pdf, 'setResolution')) {
-                $pdf->setPage($pageNumber)->setResolution(200)->saveImage($tempImagePath);
+                $pdf->setPage($pageNumber)->setResolution(200);
             } else {
-                $pdf->setPage($pageNumber)->saveImage($tempImagePath);
+                $pdf->setPage($pageNumber);
             }
+
+            $imagick = $pdf->getImageData($tempImagePath);
+            $imagick->setImageCompression(\Imagick::COMPRESSION_JPEG);
+            $imagick->setImageCompressionQuality(82);
+            $imagick->stripImage();
+            $imagick->writeImage($tempImagePath);
+            $imagick->clear();
+            $imagick->destroy();
 
             if (!file_exists($tempImagePath)) {
                 $this->reportProgress($onProgress, "Flyer #{$flyerId}: puslapis {$pageNumber}/{$numberOfPages} praleistas (failas nesukurtas)", [
