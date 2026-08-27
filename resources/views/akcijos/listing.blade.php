@@ -69,7 +69,7 @@
                  related keyword-page chips instead (there's no store-style
                  "Leidiniai" tab to switch to for a category). --}}
             <div class="mb-2 flex flex-col gap-4 sm:mb-4">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center justify-between gap-3">
                     <div class="flex min-w-0 items-center gap-2.5 sm:gap-3">
                         <span class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-white p-1.5 shadow-sm sm:size-12">
                             @if ($isStoreHeader)
@@ -78,11 +78,11 @@
                                 <img src="/assets/categories/{{ $listingMeta['category_slug'] }}.svg" alt="" class="h-full w-full object-contain" onerror="this.style.visibility='hidden'">
                             @endif
                         </span>
-                        <h1 class="min-w-0 font-semibold text-gray-900 sm:truncate">{{ $pageTitle }}</h1>
+                        <h1 class="min-w-0 truncate font-semibold text-gray-900">{{ $pageTitle }}</h1>
                     </div>
 
                     @if ($isStoreHeader)
-                        <x-store-subscribe-button class="w-full justify-center sm:w-auto" />
+                        <x-store-subscribe-button />
                     @endif
                 </div>
 
