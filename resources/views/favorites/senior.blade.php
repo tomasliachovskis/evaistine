@@ -80,42 +80,45 @@
         @endif
 
         @if (count($storeTotals) > 0)
+            @php
+                $gridCellBase = 'flex flex-col items-start gap-2 rounded-2xl border-2 bg-white p-4 text-left transition-colors';
+            @endphp
             <h2 class="mb-4 text-2xl font-bold text-gray-900">Jūsų parduotuvės</h2>
-            <div class="mb-10 flex flex-col gap-3">
+            <div class="mb-10 grid grid-cols-2 gap-3">
                 <button
                     type="button"
                     @click="storeFilter = ''; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
-                    class="{{ $rowBase }}"
+                    class="{{ $gridCellBase }}"
                     :class="storeFilter === '' ? '{{ $rowActive }}' : '{{ $rowInactive }}'"
                 >
-                    <span class="{{ $checkBase }}" :class="storeFilter === '' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
-                        <x-app-icon name="check" x-show="storeFilter === ''" class="size-5 text-white" />
+                    <span class="flex w-full items-center gap-2">
+                        <span class="{{ $checkBase }}" :class="storeFilter === '' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
+                            <x-app-icon name="check" x-show="storeFilter === ''" class="size-5 text-white" />
+                        </span>
+                        <span class="min-w-0 flex-1 truncate text-lg font-bold text-gray-900">Visos</span>
                     </span>
-                    <span class="min-w-0 flex-1">
-                        <span class="block text-lg font-bold text-gray-900">Visos parduotuvės</span>
-                        <span class="block text-base text-gray-600">{{ $activeCount }} {{ $activeCount === 1 ? 'akcija' : 'akcijos' }}</span>
-                    </span>
-                    <span class="shrink-0 text-xl font-extrabold text-green">{{ number_format($allStoresTotalPrice, 2, ',', ' ') }}€</span>
+                    <span class="text-base text-gray-600">{{ $activeCount }} {{ $activeCount === 1 ? 'akcija' : 'akcijos' }}</span>
+                    <span class="text-lg font-extrabold text-green">{{ number_format($allStoresTotalPrice, 2, ',', ' ') }}€</span>
                 </button>
                 @foreach ($storeTotals as $total)
                     <button
                         type="button"
                         @click="storeFilter = '{{ $total['store_slug'] }}'; $nextTick(() => document.getElementById('favorites-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))"
-                        class="{{ $rowBase }}"
+                        class="{{ $gridCellBase }}"
                         :class="storeFilter === '{{ $total['store_slug'] }}' ? '{{ $rowActive }}' : '{{ $rowInactive }}'"
                     >
-                        <span class="{{ $checkBase }}" :class="storeFilter === '{{ $total['store_slug'] }}' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
-                            <x-app-icon name="check" x-show="storeFilter === '{{ $total['store_slug'] }}'" class="size-5 text-white" />
-                        </span>
-                        <span class="flex min-w-0 flex-1 items-center gap-3">
+                        <span class="flex w-full items-center gap-2">
+                            <span class="{{ $checkBase }}" :class="storeFilter === '{{ $total['store_slug'] }}' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
+                                <x-app-icon name="check" x-show="storeFilter === '{{ $total['store_slug'] }}'" class="size-5 text-white" />
+                            </span>
                             @if ($total['store_slug'])
                                 <x-store-logo :slug="$total['store_slug']" :name="$total['store_name']" size="sm" class="shrink-0 object-contain" />
                             @else
-                                <span class="text-lg font-bold text-gray-900">{{ $total['store_name'] }}</span>
+                                <span class="min-w-0 flex-1 truncate text-lg font-bold text-gray-900">{{ $total['store_name'] }}</span>
                             @endif
-                            <span class="block text-base text-gray-600">{{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'akcija' : 'akcijos' }}</span>
                         </span>
-                        <span class="shrink-0 text-xl font-extrabold text-green">{{ number_format($total['total_price'], 2, ',', ' ') }}€</span>
+                        <span class="text-base text-gray-600">{{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'akcija' : 'akcijos' }}</span>
+                        <span class="text-lg font-extrabold text-green">{{ number_format($total['total_price'], 2, ',', ' ') }}€</span>
                     </button>
                 @endforeach
             </div>
@@ -169,20 +172,20 @@
 
             @if ($categoryFilterOptions->isNotEmpty())
                 <h2 class="mb-4 text-2xl font-bold text-gray-900">Kategorija</h2>
-                <div class="mb-10 flex flex-col gap-3">
+                <div class="mb-10 grid grid-cols-2 gap-3">
                     <button type="button" @click="categoryFilter = ''" class="{{ $rowBase }}" :class="categoryFilter === '' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
                         <span class="{{ $checkBase }}" :class="categoryFilter === '' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
                             <x-app-icon name="check" x-show="categoryFilter === ''" class="size-5 text-white" />
                         </span>
-                        <span class="flex-1 text-lg font-bold text-gray-900">Visos kategorijos</span>
+                        <span class="min-w-0 flex-1 truncate text-lg font-bold text-gray-900">Visos</span>
                     </button>
                     @foreach ($categoryFilterOptions as $option)
                         <button type="button" @click="categoryFilter = '{{ $option['slug'] }}'" class="{{ $rowBase }}" :class="categoryFilter === '{{ $option['slug'] }}' ? '{{ $rowActive }}' : '{{ $rowInactive }}'">
                             <span class="{{ $checkBase }}" :class="categoryFilter === '{{ $option['slug'] }}' ? '{{ $checkActive }}' : '{{ $checkInactive }}'">
                                 <x-app-icon name="check" x-show="categoryFilter === '{{ $option['slug'] }}'" class="size-5 text-white" />
                             </span>
-                            <span class="flex-1 text-lg font-bold text-gray-900">{{ $option['name'] }}</span>
-                            <span class="shrink-0 text-lg font-semibold text-gray-500">{{ $option['count'] }}</span>
+                            <span class="min-w-0 flex-1 truncate text-lg font-bold text-gray-900">{{ $option['name'] }}</span>
+                            <span class="shrink-0 text-base font-semibold text-gray-500">{{ $option['count'] }}</span>
                         </button>
                     @endforeach
                 </div>
