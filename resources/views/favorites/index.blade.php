@@ -15,6 +15,24 @@
         })->values();
         $activeCount = $sortedProducts->filter($hasActiveDiscount)->count();
 
+        // Standard sort dropdown (same options/UI pattern as the /akcijos
+        // listing pages) — client-side via CSS `order`, since this list is
+        // small enough that a full page reload per sort isn't needed. One
+        // rank map per mode, keyed by product id.
+        $rankOf = fn ($collection) => $collection->values()->mapWithKeys(fn ($deal, $i) => [$deal['product']['id'] => $i])->all();
+        $sortRanks = [
+            'default' => $rankOf($sortedProducts),
+            'price_min' => $rankOf($sortedProducts->sortBy(fn ($deal) => (float) ($deal['discounted_price'] ?: PHP_INT_MAX))),
+            'price_max' => $rankOf($sortedProducts->sortByDesc(fn ($deal) => (float) ($deal['discounted_price'] ?? 0))),
+            'discount_percent' => $rankOf($sortedProducts->sortByDesc(fn ($deal) => (float) ($deal['discount_percent'] ?? 0))),
+        ];
+        $sortOptions = [
+            'default' => ['label' => 'Numatytasis', 'icon' => 'trending-up'],
+            'price_min' => ['label' => 'Mažiausia kaina', 'icon' => 'arrow-down'],
+            'price_max' => ['label' => 'Didžiausia kaina', 'icon' => 'arrow-up'],
+            'discount_percent' => ['label' => 'Didž. nuolaida (%)', 'icon' => 'percent'],
+        ];
+
         $dealStore = function (array $deal) {
             $offers = collect($deal['offers'] ?? []);
             $storeId = $deal['store_id'] ?? null;
@@ -45,7 +63,7 @@
 
     <section class="base-container pb-12 pt-4 sm:pt-6" x-data="{
         storeFilter: '', categoryFilter: '',
-        categoryOpen: false,
+        categoryOpen: false, sort: 'default', sortOpen: false,
         categoryNames: { @foreach ($categoryFilterOptions as $option) '{{ $option['slug'] }}': @js($option['name']), @endforeach },
     }">
         <h1 class="mb-5 text-3xl font-extrabold text-gray-900 sm:text-4xl">Stebimos prekės</h1>
@@ -151,15 +169,38 @@
                 </div>
             @endif
 
-            <h2 id="favorites-grid" class="mb-4 scroll-mt-24 text-2xl font-bold text-gray-900">Prekės</h2>
+            <div class="mb-4 flex items-center justify-between gap-3">
+                <h2 id="favorites-grid" class="scroll-mt-24 text-2xl font-bold text-gray-900">Prekės</h2>
+                <div class="relative shrink-0" @click.outside="sortOpen = false">
+                    <button type="button" @click="sortOpen = !sortOpen" class="inline-flex items-center gap-2 rounded-2xl bg-[#e8e8e8] px-3 py-2 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
+                        <x-app-icon name="arrow-down-up" class="size-4 shrink-0" />
+                        <span class="hidden sm:inline">
+                            @foreach ($sortOptions as $value => $option)
+                                <span x-show="sort === '{{ $value }}'">{{ $option['label'] }}</span>
+                            @endforeach
+                        </span>
+                        <x-app-icon name="chevron-down" class="size-4 shrink-0 opacity-70" />
+                    </button>
+                    <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[220px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                        @foreach ($sortOptions as $value => $option)
+                            <button type="button" @click="sort = '{{ $value }}'; sortOpen = false" class="flex w-full items-center gap-2 rounded-2xl px-3 py-2.5 text-left text-base font-semibold text-gray-900 transition-colors hover:bg-gray-100" :class="sort === '{{ $value }}' ? 'bg-gray-100' : ''">
+                                <x-app-icon name="{{ $option['icon'] }}" class="size-4 shrink-0 opacity-90" />
+                                {{ $option['label'] }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
             <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
                 @foreach ($sortedProducts as $deal)
                     @php
                         $cardStoreSlug = $dealStore($deal)['slug'] ?? '';
                         $cardCategorySlug = $dealCategory($deal)['slug'] ?? '';
+                        $pid = $deal['product']['id'];
                     @endphp
                     <div
                         x-show="(storeFilter === '' || storeFilter === '{{ $cardStoreSlug }}') && (categoryFilter === '' || categoryFilter === '{{ $cardCategorySlug }}')"
+                        :style="'order:' + ({ @foreach ($sortRanks as $mode => $ranks) '{{ $mode }}': {{ $ranks[$pid] ?? 999 }}, @endforeach }[sort])"
                         class="relative {{ !$hasActiveDiscount($deal) ? 'opacity-60' : '' }}"
                     >
                         @if (($deal['price_change_amount'] ?? 0) > 0)
