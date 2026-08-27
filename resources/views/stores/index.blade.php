@@ -7,10 +7,7 @@
         'elimart', 'ermitazas', 'eurokos', 'eurovaistine', 'gintarine-vaistine', 'jupoja', 'jysk',
         'moki-vezi', 'pepco', 'senukai'];
 
-    $sortedStores = collect($stores)->sortBy([
-        fn ($a, $b) => ($a['discounts_count'] === 0) <=> ($b['discounts_count'] === 0),
-        fn ($a, $b) => $b['discounts_count'] <=> $a['discounts_count'],
-    ])->values();
+    $sortedStores = collect(\App\Support\StoreListPriority::sort($stores));
 
     $withLocations = $sortedStores->filter(fn ($s) => in_array($s['slug'], $storesWithLocations, true));
 @endphp

@@ -43,11 +43,10 @@ class HomeController extends Controller
             return $this->storesMetaService->formatStore($stores);
         });
 
-        // Hero chip row only makes sense for stores currently on sale — most
-        // discounts first (sortStores() in landing-hero-store-slider.tsx no
-        // longer needs to push empty stores last, since they're dropped).
-        $stores = array_values(array_filter($stores, fn ($store) => $store['discounts_count'] > 0));
-        usort($stores, fn ($a, $b) => $b['discounts_count'] <=> $a['discounts_count']);
+        // Hero chip row only makes sense for stores currently on sale —
+        // named chains first (App\Support\StoreListPriority), then the rest
+        // by discount count.
+        $stores = \App\Support\StoreListPriority::sort($stores);
 
         // buildAllLeaflets() is already ordered current-per-store first, newest
         // valid_from first within that (StoreFlyer::scopeOrdered()) — so the
