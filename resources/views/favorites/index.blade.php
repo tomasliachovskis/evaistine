@@ -55,6 +55,8 @@
         $categoryFilterOptions = $sortedProducts->map($dealCategory)->filter()->groupBy('slug')
             ->map(fn ($g) => ['slug' => $g->first()['slug'], 'name' => $g->first()['name'], 'count' => $g->count()])
             ->sortBy('name')->values();
+
+        $allStoresTotalPrice = collect($storeTotals)->sum('total_price');
     @endphp
 
     <section class="base-container pb-8 pt-4 sm:pb-16 sm:pt-6" x-data="{ filter: 'all', storeFilter: '', categoryFilter: '' }">
@@ -109,11 +111,14 @@
                     :class="storeFilter === '' ? '{{ $storeCardActive }}' : '{{ $storeCardInactive }}'"
                 >
                     <div class="mb-1 flex h-5 items-center justify-center sm:h-8 sm:justify-start">
-                        <span class="text-xs font-semibold text-gray-700 sm:text-sm">Visos</span>
+                        <span class="text-sm font-semibold text-gray-700">Visos</span>
                     </div>
                     <div class="flex flex-col gap-0.5 sm:gap-1">
-                        <div class="text-xs text-gray-600 sm:text-sm">
+                        <div class="text-sm text-gray-600">
                             <span class="font-medium">{{ $activeCount }} {{ $activeCount === 1 ? 'akcija' : 'akcijos' }}</span>
+                        </div>
+                        <div class="text-sm font-bold text-green sm:text-lg">
+                            {{ number_format($allStoresTotalPrice, 2, ',', ' ') }}€
                         </div>
                     </div>
                 </button>
@@ -129,11 +134,11 @@
                                 <x-store-logo :slug="$total['store_slug']" :name="$total['store_name']" size="xs" class="object-left sm:hidden" />
                                 <x-store-logo :slug="$total['store_slug']" :name="$total['store_name']" size="sm" class="hidden object-left sm:block" />
                             @else
-                                <span class="text-xs font-semibold text-gray-700 sm:text-sm">{{ $total['store_name'] }}</span>
+                                <span class="text-sm font-semibold text-gray-700">{{ $total['store_name'] }}</span>
                             @endif
                         </div>
                         <div class="flex flex-col gap-0.5 sm:gap-1">
-                            <div class="text-xs text-gray-600 sm:text-sm">
+                            <div class="text-sm text-gray-600">
                                 <span class="font-medium">{{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'akcija' : 'akcijos' }}</span>
                             </div>
                             <div class="text-sm font-bold text-green sm:text-lg">
