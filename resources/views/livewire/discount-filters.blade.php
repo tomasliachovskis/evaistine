@@ -130,7 +130,7 @@
             </div>
         @endif
 
-        <div wire:loading.class="opacity-50" class="flex w-full min-w-0 flex-col transition-opacity">
+        <div wire:loading.class="opacity-50" wire:target="toggleStore,toggleCategory,setOrder,toggleCard,togglePlus" class="flex w-full min-w-0 flex-col transition-opacity">
             @if (count($sections))
                 @foreach ($sections as $section)
                     <x-landing-deals-section
@@ -150,17 +150,20 @@
             @endif
         </div>
 
-        @if (!count($sections) && ($pagination['last_page'] ?? 1) > 1)
-            <nav class="mt-8 flex items-center justify-center gap-3 text-sm" aria-label="Puslapiavimas">
-                @php $current = (int) ($pagination['current_page'] ?? 1); $last = (int) ($pagination['last_page'] ?? 1); @endphp
-                @if ($current > 1)
-                    <button type="button" wire:click="goToPage({{ $current - 1 }})" class="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-700 hover:bg-gray-50">← Ankstesni</button>
-                @endif
-                <span class="px-2 text-gray-600">{{ $current }} / {{ $last }}</span>
-                @if ($current < $last)
-                    <button type="button" wire:click="goToPage({{ $current + 1 }})" class="rounded-lg border border-gray-200 px-3 py-1.5 text-gray-700 hover:bg-gray-50">Kiti →</button>
-                @endif
-            </nav>
+        @php $current = (int) ($pagination['current_page'] ?? 1); $last = (int) ($pagination['last_page'] ?? 1); @endphp
+        @if (!count($sections) && $current < $last)
+            <div class="mt-6 flex justify-center">
+                <button
+                    type="button"
+                    wire:click="loadMore"
+                    wire:loading.attr="disabled"
+                    wire:target="loadMore"
+                    class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-green bg-white px-6 text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    <span wire:loading.remove wire:target="loadMore">Rodyti daugiau</span>
+                    <span wire:loading wire:target="loadMore">Kraunama...</span>
+                </button>
+            </div>
         @endif
     </div>
 </div>

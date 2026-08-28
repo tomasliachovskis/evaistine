@@ -54,7 +54,9 @@ class DiscountFilters extends Component
     #[Url(as: 'plus', except: false)]
     public bool $plusOnly = false;
 
-    #[Url(as: 'page', except: 1)]
+    // Not URL-synced: loadMore() accumulates pages into $deals, so a bookmarked
+    // ?page=N would only reproduce that single page, not everything shown by
+    // then — same reasoning as not persisting scroll position.
     public int $page = 1;
 
     public array $deals = [];
@@ -146,11 +148,11 @@ class DiscountFilters extends Component
         $this->refreshResults();
     }
 
-    public function goToPage(int $page): void
+    public function loadMore(): void
     {
-        $this->page = max(1, $page);
-        $this->refreshResults();
-        $this->dispatch('discount-filters-page-changed');
+        $this->page++;
+        $this->pagination = $this->fetchPage();
+        $this->deals = [...$this->deals, ...($this->pagination['data'] ?? [])];
     }
 
     private function toggleInCommaList(string $list, string $slug): string
@@ -166,7 +168,7 @@ class DiscountFilters extends Component
         return implode(',', $items);
     }
 
-    private function refreshResults(): void
+    private function fetchPage(): array
     {
         $filters = array_filter([
             'order' => $this->order,
@@ -196,8 +198,13 @@ class DiscountFilters extends Component
             $payload = json_decode($response->getContent(), true);
         }
 
-        $this->deals = $payload['data']['data'] ?? [];
-        $this->pagination = $payload['data'] ?? [];
+        return $payload['data'] ?? [];
+    }
+
+    private function refreshResults(): void
+    {
+        $this->pagination = $this->fetchPage();
+        $this->deals = $this->pagination['data'] ?? [];
     }
 
     public function render()
