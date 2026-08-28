@@ -69,13 +69,20 @@ class StoreController extends Controller
             $breadcrumbs[] = ['name' => $cityName, 'href' => $path];
         }
 
+        // A single-city store's /{city} page shows the exact same locations as
+        // the no-city overview (which already lists every city) — duplicate
+        // content, so canonicalize to the parent instead of self and keep it
+        // out of the index. Sitemap generation mirrors this (ProductController).
+        $isSingleCityDuplicate = $city !== null && $cities->count() <= 1;
+        $canonicalPath = $isSingleCityDuplicate ? "/parduotuves/{$slug}" : $path;
+
         return view('stores.show', [
             'store' => $store,
             'locations' => $locations,
             'cities' => $cities,
             'citySlug' => $city,
-            'canonical' => CanonicalUrl::build($path),
-            'robots' => CanonicalUrl::robotsMeta($path),
+            'canonical' => CanonicalUrl::build($canonicalPath),
+            'robots' => $isSingleCityDuplicate ? 'noindex, follow' : CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
         ]);

@@ -1250,6 +1250,17 @@ class ProductController extends Controller
                     'city_slug' => \Illuminate\Support\Str::slug($row->city),
                 ])
                 ->unique(fn ($row) => "{$row['store_slug']}|{$row['city_slug']}")
+                ->values();
+
+            // A store present in only one city has a /parduotuves/{store}/{city}
+            // page that is byte-identical to /parduotuves/{store} (no-city shows
+            // all locations, which is just that one city's) — only the overview
+            // URL should be sitemapped/indexed for those, see
+            // StoreController::show()'s matching canonical-to-parent handling.
+            $storeLocationCities = $storeLocationCities
+                ->groupBy('store_slug')
+                ->filter(fn ($rows) => $rows->count() > 1)
+                ->flatten(1)
                 ->values()
                 ->all();
 
