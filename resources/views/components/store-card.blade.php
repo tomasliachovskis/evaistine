@@ -19,7 +19,7 @@
         <span class="relative flex size-20 shrink-0 items-center justify-center rounded-2xl border border-gray-100 bg-white p-3 shadow-sm sm:size-24">
             <img src="/assets/stores/{{ $store['slug'] }}.svg?v=2" alt="" class="max-h-full max-w-full object-contain">
             @if ($hasOffers)
-                <span class="absolute -right-1.5 -top-1.5 rounded-full border-2 border-white bg-[#ffdb4d] px-2 py-1 text-xs font-extrabold leading-none tabular-nums text-gray-900">
+                <span class="absolute -right-1.5 -top-1.5 rounded-full border-2 border-white bg-gray-200 px-2 py-1 text-xs font-extrabold leading-none tabular-nums text-gray-600">
                     {{ $store['discounts_count'] }}
                 </span>
             @endif
