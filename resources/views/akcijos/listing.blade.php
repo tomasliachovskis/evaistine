@@ -95,11 +95,6 @@
                         @if ($lastUpdated = \App\Support\StoreDataFreshness::lastUpdatedLabel($listingMeta['store_name']))
                             · {{ $lastUpdated }}
                         @endif
-                        ·
-                        <a href="/leidinys/{{ $listingMeta['store_slug'] }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
-                            Žiūrėti visus leidinius
-                            <x-app-icon name="arrow-right" class="size-3 shrink-0" />
-                        </a>
                         @if (($listingMeta['locations_count'] ?? 0) > 0)
                             ·
                             <a href="/parduotuves/{{ $listingMeta['store_slug'] }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">

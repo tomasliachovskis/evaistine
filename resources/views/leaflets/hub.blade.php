@@ -61,11 +61,6 @@
                     @if ($lastUpdated = \App\Support\StoreDataFreshness::lastUpdatedLabel($storeName))
                         · {{ $lastUpdated }}
                     @endif
-                    ·
-                    <a href="/akcijos/{{ $storeSlug }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
-                        Žiūrėti visas akcijas
-                        <x-app-icon name="arrow-right" class="size-3 shrink-0" />
-                    </a>
                     @if ($locationsCount > 0)
                         ·
                         <a href="/parduotuves/{{ $storeSlug }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
