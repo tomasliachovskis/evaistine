@@ -1,4 +1,30 @@
 <x-layouts.app :title="'Paieška: ' . $query" :canonical="$canonical" :robots="$robots">
+    @php
+        // Same order options/icons/row styling as
+        // livewire/discount-filters.blade.php's sort dropdown, ported here as
+        // plain <a href> links (query-param navigation) since this page isn't
+        // a Livewire component — deal-grid's pagination already preserves any
+        // extra query params (request()->except('page')), so ?order=... keeps
+        // working across "Kiti"/"Ankstesni".
+        $orderOptions = [
+            'popular' => 'Populiariausi',
+            'price_min' => 'Mažiausia kaina',
+            'price_max' => 'Didžiausia kaina',
+            'price_discount_max' => 'Didž. nuolaida (€)',
+            'price_discount_proc_max' => 'Didž. nuolaida (%)',
+        ];
+        $orderIcons = [
+            'popular' => 'trending-up',
+            'price_min' => 'arrow-down',
+            'price_max' => 'arrow-up',
+            'price_discount_max' => 'euro',
+            'price_discount_proc_max' => 'percent',
+        ];
+        $currentOrder = request('order', 'popular');
+        $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[40px] text-[16px] leading-snug text-left transition-colors '
+            . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
+    @endphp
+
     {{-- Title block matches discounts-layout.tsx's <h1> treatment used by every
          other listing page, for visual consistency. --}}
     <div class="base-container gap-4 pb-4 pt-4 sm:pb-5">
@@ -9,7 +35,30 @@
             @endif
         </h1>
 
-        <div class="mt-6 flex w-full flex-wrap gap-8">
+        @if (!empty($deals))
+            <div class="mt-4 flex w-full items-center justify-end rounded-2xl bg-[#e8e8e8] px-4 min-h-[40px]" x-data="{ sortOpen: false }" @click.outside="sortOpen = false">
+                <div class="relative shrink-0">
+                    <button type="button" @click="sortOpen = !sortOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
+                        <x-app-icon name="arrow-down-up" class="size-4 shrink-0" />
+                        <span class="max-w-[160px] truncate">{{ $orderOptions[$currentOrder] ?? $orderOptions['popular'] }}</span>
+                        <x-app-icon name="chevron-down" class="size-4 shrink-0 opacity-70" />
+                    </button>
+                    <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                        @foreach ($orderOptions as $value => $label)
+                            <a
+                                href="{{ $basePath }}?{{ http_build_query(array_merge(request()->except(['page', 'order']), $value === 'popular' ? [] : ['order' => $value])) }}"
+                                class="{{ $rowClass($currentOrder === $value) }}"
+                            >
+                                <x-app-icon :name="$orderIcons[$value]" class="size-3.5 shrink-0 opacity-90" />
+                                {{ $label }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <div class="mt-4 flex w-full flex-wrap gap-8">
             <x-deal-grid :deals="$deals" :pagination="$pagination" :base-path="$basePath" />
         </div>
     </div>
