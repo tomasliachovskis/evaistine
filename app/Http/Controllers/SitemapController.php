@@ -20,8 +20,19 @@ class SitemapController extends Controller
         'EmailCollector', 'EmailSiphon', 'WebBandit', 'WebCopier', 'ia_archiver',
     ];
 
-    public function robots()
+    public function robots(Request $request)
     {
+        // This app is currently also reachable at its staging host
+        // (api.superakcijos.lt) ahead of the public-domain nginx cutover —
+        // block crawling there entirely rather than risk it getting indexed
+        // as duplicate content. CanonicalUrl::BASE_URL already hardcodes the
+        // real public domain, so anything else request()->getHost() returns
+        // is by definition not-yet-cut-over staging.
+        $canonicalHost = parse_url(CanonicalUrl::build('/'), PHP_URL_HOST);
+        if (!in_array($request->getHost(), [$canonicalHost, "www.{$canonicalHost}"], true)) {
+            return response("User-agent: *\nDisallow: /\n", 200, ['Content-Type' => 'text/plain']);
+        }
+
         $productSitemapCount = $this->productSitemapPageCount();
 
         $lines = [
