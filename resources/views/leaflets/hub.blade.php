@@ -4,6 +4,9 @@
     $leaflets = $sectionsData['leaflets'] ?? [];
     $faq = $sectionsData['faq'] ?? [];
     $topCategories = $sectionsData['top_categories'] ?? [];
+    $featuredCategory = $sectionsData['featured_category'] ?? null;
+    $allCategoriesCount = count($sectionsData['available_categories'] ?? []);
+    $locationsCount = $listingMeta['locations_count'] ?? 0;
     $storeName = $listingMeta['store_name'] ?? $storeSlug;
     $leafletNoun = $storeSlug === 'iki' ? 'leidynys' : 'leidinys';
     // "leidinys" -> "leidiniai" is a stem swap (drop "ys", add "iai"), not a
@@ -63,6 +66,13 @@
                         Žiūrėti visas akcijas
                         <x-app-icon name="arrow-right" class="size-3 shrink-0" />
                     </a>
+                    @if ($locationsCount > 0)
+                        ·
+                        <a href="/parduotuves/{{ $storeSlug }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
+                            {{ number_format($locationsCount, 0, ',', ' ') }} parduotuvės Lietuvoje
+                            <x-app-icon name="arrow-right" class="size-3 shrink-0" />
+                        </a>
+                    @endif
                 </p>
                 @if (!empty($intro['description']))
                     <p class="mt-3 text-sm leading-relaxed text-gray-600 sm:text-base">{{ $intro['description'] }}</p>
@@ -74,6 +84,8 @@
                 :leaflets-count="count($leaflets)"
                 :total-offers="$totalOffers"
                 :categories="$topCategories"
+                :featured-category="$featuredCategory"
+                :all-categories-count="$allCategoriesCount"
                 :aria-label="$storeName . ' skiltys'"
                 active="leidiniai"
             />

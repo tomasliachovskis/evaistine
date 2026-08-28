@@ -77,6 +77,7 @@ class ListingPageMetaService
             'type' => 'store',
             'store_slug' => $store->slug,
             'store_name' => $storeName,
+            'locations_count' => $store->locations()->active()->count(),
             'intro' => $intro,
             'popular_this_week' => $this->mapPopularCategoriesForStore($store->slug, $topCategories),
             'popular_carousel_title' => 'Daugiausia sutaupoma šiandien',
@@ -84,6 +85,7 @@ class ListingPageMetaService
             'sections' => [
                 'featured_category' => $this->getFeaturedFoodCategoryForStore($store),
                 'top_categories' => $topCategories,
+                'available_categories' => $this->getAllCategoriesWithCountsForStore($store),
                 'latest_leaflet' => $leaflets[0] ?? null,
                 'leaflets' => $leaflets,
                 'top_deals' => $this->getTopDealsForStore($store),
@@ -106,10 +108,12 @@ class ListingPageMetaService
             'store_name' => $store->name,
             'total_offers' => Discount::where('store_id', $store->id)->count(),
             'leaflets_count' => $leafletsCount,
+            'locations_count' => $store->locations()->active()->count(),
             'intro' => $this->buildStoreIntro($store->name, $store->slug, $this->resolveStoreValidity($store), $leafletsCount),
             'popular_carousel_title' => 'TOP pasiūlymai pagal kategorijas',
             'sections' => [
                 'top_categories' => $this->getTopCategoriesForStore($store),
+                'featured_category' => $this->getFeaturedFoodCategoryForStore($store),
                 'available_categories' => $this->getAllCategoriesWithCountsForStore($store),
                 'faq' => $store->faq ?? [],
             ],
@@ -182,6 +186,7 @@ class ListingPageMetaService
             'keyword_pages' => $this->keywordPageService->listPublishedPagesForCategory($category->slug),
             'total_offers' => Discount::where('store_id', $store->id)->count(),
             'leaflets_count' => $store->flyers()->ready()->count(),
+            'locations_count' => $store->locations()->active()->count(),
             'intro' => [
                 'description' => "Visos {$storeName} " . mb_strtolower($categoryName) . ' akcijos vienoje vietoje. Peržiūrėkite savaitės pasiūlymus ir sutaupykite apsipirkdami sezoninius produktus.',
                 'valid_from' => $validity['valid_from'],
@@ -191,6 +196,7 @@ class ListingPageMetaService
             'popular_carousel_title' => 'Populiaru šią savaitę',
             'sections' => [
                 'top_categories' => $this->getTopCategoriesForStore($store),
+                'featured_category' => $this->getFeaturedFoodCategoryForStore($store),
                 'faq' => $this->buildStoreFaq($store, $category, $this->getTopCategoriesForStore($store, false)),
                 'available_categories' => $this->getAllCategoriesWithCountsForStore($store),
             ],

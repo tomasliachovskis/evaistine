@@ -100,6 +100,13 @@
                             Žiūrėti visus leidinius
                             <x-app-icon name="arrow-right" class="size-3 shrink-0" />
                         </a>
+                        @if (($listingMeta['locations_count'] ?? 0) > 0)
+                            ·
+                            <a href="/parduotuves/{{ $listingMeta['store_slug'] }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
+                                {{ number_format($listingMeta['locations_count'], 0, ',', ' ') }} parduotuvės Lietuvoje
+                                <x-app-icon name="arrow-right" class="size-3 shrink-0" />
+                            </a>
+                        @endif
                     @else
                         {{ collect($listingMeta['intro']['quick_stats'] ?? [])->map(fn ($stat) => $stat['value'] . ' ' . mb_strtolower($stat['label']))->join(' · ') }}
                     @endif
@@ -115,6 +122,8 @@
                         :leaflets-count="$listingMeta['leaflets_count'] ?? 0"
                         :total-offers="$listingMeta['total_offers'] ?? $total"
                         :categories="$listingMeta['sections']['top_categories'] ?? []"
+                        :featured-category="$listingMeta['sections']['featured_category'] ?? null"
+                        :all-categories-count="count($listingMeta['sections']['available_categories'] ?? [])"
                         :aria-label="$listingMeta['store_name'] . ' skiltys'"
                         active="akcijos"
                     />
