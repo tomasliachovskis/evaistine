@@ -10,21 +10,24 @@
 @endphp
 
 @if ($layout === 'chip')
-    {{-- Quick-access tile, ported from the "Variant A" mobile mockup —
-         compact rounded square (logo + corner count badge) with the name
-         below, no separate CTA button since the whole tile is clickable.
-         Built for the home hero's store row specifically; the taller
-         slider/grid cards above are untouched for /parduotuves etc. --}}
-    <a href="/akcijos/{{ $store['slug'] }}" class="flex w-24 shrink-0 snap-start flex-col items-center gap-1.5 sm:w-28 {{ !$hasOffers ? 'opacity-75' : '' }}">
-        <span class="relative flex size-20 shrink-0 items-center justify-center rounded-2xl border border-gray-100 bg-white p-3 shadow-sm sm:size-24">
-            <img src="/assets/stores/{{ $store['slug'] }}.svg?v=2" alt="" class="max-h-full max-w-full object-contain">
-            @if ($hasOffers)
-                <span class="absolute -right-1.5 -top-1.5 rounded-full border-2 border-white bg-gray-200 px-2 py-1 text-xs font-extrabold leading-none tabular-nums text-gray-600">
-                    {{ $store['discounts_count'] }}
-                </span>
-            @endif
-        </span>
-        <span class="line-clamp-1 text-center text-sm font-semibold leading-tight text-gray-900">{{ $store['name'] }}</span>
+    {{-- Quick-access tile for the home hero's store row — same bordered
+         card look as the /parduotuves grid card below (logo, bold name,
+         count as plain text), just narrower and without the "Žiūrėti
+         akcijas" CTA since the whole tile is already clickable. --}}
+    <a href="/akcijos/{{ $store['slug'] }}" class="flex w-28 shrink-0 snap-start flex-col rounded-xl border border-gray-200 bg-white p-3 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:w-32 sm:rounded-2xl sm:p-3.5 {{ !$hasOffers ? 'opacity-75' : '' }}">
+        <div class="flex h-14 items-center justify-center sm:h-16">
+            <x-store-logo :slug="$store['slug']" :name="$store['name']" size="md" />
+        </div>
+        <div class="mt-2 flex min-w-0 flex-col gap-0.5 sm:mt-2.5">
+            <p class="whitespace-nowrap text-center text-sm font-bold leading-snug text-gray-900 sm:text-base">{{ $store['name'] }}</p>
+            <p class="truncate text-center text-xs leading-snug text-gray-600 sm:text-sm">
+                @if ($hasOffers)
+                    {{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::discountWord($store['discounts_count']) }}
+                @else
+                    Nėra akcijų
+                @endif
+            </p>
+        </div>
     </a>
 @else
     {{-- Ported from discount/src/components/stores/store-card.tsx (slider layout, view-only actions). --}}

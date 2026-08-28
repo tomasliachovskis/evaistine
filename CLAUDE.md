@@ -4,6 +4,7 @@
 - Follow existing project patterns and reuse existing components/helpers instead of introducing new ones when something equivalent already exists.
 - **Never use emoji anywhere in this project** — not in UI copy, mockups, code, comments, or commit messages. Where a mockup or UI needs an icon, use `<x-app-icon>` (the existing Lucide-derived icon set) or a real asset (product photo, `/assets/stores/{slug}.svg`, `/assets/categories/{slug}.svg`) — if neither covers it, build a new SVG matching the existing icon style rather than reaching for an emoji.
 - The old Next.js frontend at `/Users/tomas/www/discount` is a legacy parallel-run app being phased out by the Blade rebuild in this repo — this repo (`resources/views/`, `public/assets/`) is the single source of truth going forward. Don't add/copy store logos, category icons, or other static assets into `discount/public/assets` anymore; add them only here.
+- **Do not edit files in `/Users/tomas/www/discount` at all**, even for changes that look equivalent to something being done here — that repo has its own in-progress uncommitted work and is out of scope. All work now happens only in this repo (Laravel/Sail).
 
 ## Blade frontend: reuse styles across pages, don't reinvent them per page
 
