@@ -66,20 +66,6 @@
                 <h2 class="text-lg font-bold text-gray-900" x-text="$store.authModal.mode === 'register' ? 'Registruotis' : 'Prisijunkite'"></h2>
                 <button type="button" @click="$store.authModal.open = false" class="text-gray-400 hover:text-gray-700" aria-label="Uždaryti">&times;</button>
             </div>
-            <div class="rounded-lg border border-green/20 bg-green/5 px-3.5 py-3 text-sm leading-relaxed text-gray-700">
-                <template x-if="$store.authModal.mode === 'register'">
-                    <div>
-                        <p>Sukurkite naują paskyrą ir prisijunkite prie sumanių pirkėjų bendruomenės!</p>
-                        <p class="mt-1">Registruojantis galėsite žymėtis norimas prekes.</p>
-                    </div>
-                </template>
-                <template x-if="$store.authModal.mode !== 'register'">
-                    <div>
-                        <p>Prisijunkite prie sumanių pirkėjų bendruomenės!</p>
-                        <p class="mt-1">Prisijungę galėsite žymėtis norimas prekes.</p>
-                    </div>
-                </template>
-            </div>
         </div>
 
         <div class="space-y-4 px-6 py-5">
