@@ -5,12 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\BlogPost;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
+use Illuminate\Http\Request;
 
 class BlogController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $posts = BlogPost::published()->orderByDesc('published_at')->paginate(15);
+
+        // Real crawlable <a href="?page=N"> links (see blog/index.blade.php's
+        // paginator), unlike /akcijos's Livewire-only pagination — so page 2+
+        // must actually be noindexed, and self-canonical rather than pointing
+        // back at page 1, or Googlebot gets contradictory signals.
+        $query = $request->query();
 
         $breadcrumbs = [
             ['name' => 'Akcijos', 'href' => '/'],
@@ -20,7 +27,8 @@ class BlogController extends Controller
         return view('blog.index', [
             'title' => 'Naujienos',
             'description' => 'Naujausi straipsniai apie akcijas, nuolaidas ir taupymą. Naudingi patarimai ir gairės geriausiems pasiūlymams.',
-            'canonical' => CanonicalUrl::build('/naujienos'),
+            'canonical' => CanonicalUrl::build('/naujienos', $query),
+            'robots' => CanonicalUrl::robotsMeta('/naujienos', $query),
             'posts' => $posts,
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
