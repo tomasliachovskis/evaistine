@@ -1,14 +1,19 @@
-@props(['productId', 'favorited' => false, 'productName' => '', 'categoryName' => ''])
+@props([
+    'productId',
+    'favorited' => false,
+    'productName' => '',
+    'categoryName' => '',
+    'variant' => 'offersHero',
+])
 
 @php
-    // Ported from product-price-watch-banner.tsx's variant="offersHero" — the
-    // product hero's follow/price-watch banner. Two DIFFERENT buttons (not
-    // one button restyled): mobile gets a full-width "Stebėkite kainą" (bell
-    // icon, chevron) button, desktop gets a shrink-wrapped "Sekti kainą"
-    // (heart icon) button — swapped via lg:hidden/lg:flex, not just resized.
-    // Follower count sits BELOW the button (flex-col), not beside it.
+    // Ported from product-price-watch-banner.tsx — offersHero for active
+    // products, noOffers when there is no live promotion.
     $productId = (int) $productId;
     $favoritedJs = $favorited ? 'true' : 'false';
+    $mobileLabel = $variant === 'noOffers' ? 'Pranešti, kai bus akcija' : 'Stebėkite kainą';
+    $desktopLabel = $variant === 'noOffers' ? 'Pranešti, kai bus akcija' : 'Sekti kainą';
+    $desktopIcon = $variant === 'noOffers' ? 'bell' : 'heart';
     $gaPayload = json_encode([
         'product_id' => $productId,
         'product_name' => $productName,
@@ -85,7 +90,7 @@
             </span>
         </template>
         <template x-if="!favorited">
-            <span class="flex items-center gap-2"><x-app-icon name="bell" class="size-4 fill-none text-white" /> Stebėkite kainą</span>
+            <span class="flex items-center gap-2"><x-app-icon name="bell" class="size-4 fill-none text-white" /> {{ $mobileLabel }}</span>
         </template>
     </button>
 
@@ -97,7 +102,8 @@
         :class="favorited ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'bg-green text-white hover:bg-dark-green'"
         :disabled="busy"
     >
-        <x-app-icon name="heart" class="size-4 transition-colors" x-bind:class="favorited ? 'fill-amber-500 text-amber-500' : 'fill-none text-white'" />
-        <span x-text="favorited ? 'Sekama' : 'Sekti kainą'"></span>
+        <x-app-icon :name="$desktopIcon" class="size-4 transition-colors" x-bind:class="favorited ? 'fill-amber-500 text-amber-500' : 'fill-none text-white'" />
+        <span x-show="favorited" x-cloak>Sekama</span>
+        <span x-show="!favorited" x-cloak>{{ $desktopLabel }}</span>
     </button>
 </div>

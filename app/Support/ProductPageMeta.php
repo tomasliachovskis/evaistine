@@ -278,6 +278,15 @@ class ProductPageMeta
         return $percent !== null && $percent >= 20 ? (int) round($percent) : null;
     }
 
+    public static function offerIsActive(?string $toDate): bool
+    {
+        if (empty($toDate)) {
+            return true;
+        }
+
+        return \Illuminate\Support\Carbon::parse($toDate)->endOfDay()->gte(now());
+    }
+
     // Ported from formatProductValidDateRange in product-page-meta.ts. Offer
     // rows only ever have a from/to pair where "from" is already in the past
     // (it's an active discount), so this only implements that branch — not
@@ -304,5 +313,49 @@ class ProductPageMeta
     private static function euro(float $amount): string
     {
         return number_format($amount, 2, ',', ' ') . ' €';
+    }
+
+    /**
+     * Ported from buildProductNoOffersDisplay in product-page-meta.ts — dated
+     * history rows for products with no active offer, shaped like live offer
+     * cards so the UI can reuse the same component.
+     *
+     * @param  array<int, array<string, mixed>>  $history
+     * @return array{mode: 'none'|'priced', history: array<int, array<string, mixed>>, best_offer: array<string, mixed>|null}
+     */
+    public static function buildNoOffersDisplay(array $history): array
+    {
+        $normalized = collect($history)
+            ->filter(fn ($offer) => (float) ($offer['discounted_price'] ?? 0) > 0
+                && ! empty($offer['store']['slug'])
+                && ! empty($offer['id']))
+            ->values();
+
+        if ($normalized->isEmpty()) {
+            return ['mode' => 'none', 'history' => [], 'best_offer' => null];
+        }
+
+        $seen = [];
+        $deduped = $normalized
+            ->filter(function ($offer) use (&$seen) {
+                $key = ($offer['store']['slug'] ?? '') . '|' . ($offer['discounted_price'] ?? '') . '|' . ($offer['valid_date'] ?? '');
+                if (isset($seen[$key])) {
+                    return false;
+                }
+                $seen[$key] = true;
+
+                return true;
+            })
+            ->sortByDesc('id')
+            ->values();
+
+        $minPrice = (float) $deduped->min('discounted_price');
+        $bestOffer = $deduped->first(fn ($offer) => (float) $offer['discounted_price'] === $minPrice);
+
+        return [
+            'mode' => 'priced',
+            'history' => $deduped->all(),
+            'best_offer' => $bestOffer,
+        ];
     }
 }

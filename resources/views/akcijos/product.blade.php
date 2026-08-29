@@ -6,7 +6,28 @@ use App\Support\ProductPageMeta;
     $isExpired = $primaryDeal['is_expired'] ?? false;
     $history = $primaryDeal['history'] ?? [];
 
-    $hasOffers = !$isExpired && count($offers) > 0;
+    $allOffers = collect($offers ?? []);
+    $activeOffers = $allOffers
+        ->filter(fn ($offer) => ProductPageMeta::offerIsActive($offer['to_date'] ?? null))
+        ->values();
+    $expiredOffers = $allOffers
+        ->reject(fn ($offer) => ProductPageMeta::offerIsActive($offer['to_date'] ?? null))
+        ->values();
+    $offers = $activeOffers->all();
+
+    $primaryDealStillActive = ! $isExpired
+        && ProductPageMeta::offerIsActive($primaryDeal['to_date'] ?? null)
+        && (float) ($primaryDeal['discounted_price'] ?? $primaryDeal['min_price'] ?? 0) > 0;
+    $isNoActivePromotion = $isExpired || ($activeOffers->isEmpty() && ! $primaryDealStillActive);
+
+    if (! empty($offers)) {
+        usort($offers, fn ($a, $b) => (float) ($a['discounted_price'] ?? PHP_INT_MAX) <=> (float) ($b['discounted_price'] ?? PHP_INT_MAX));
+        $bestOffer = $offers[0];
+    } elseif ($isNoActivePromotion) {
+        $bestOffer = null;
+    }
+
+    $hasOffers = ! $isNoActivePromotion && count($offers) > 0;
     $hasAbout = $product && !empty(trim((string) ($product['description'] ?? '')));
     $hasSimilar = !empty($similar);
     $hasFaq = count($faqItems ?? []) > 0;
@@ -87,6 +108,16 @@ use App\Support\ProductPageMeta;
         })
         ->sortBy(fn ($group) => $group['bestOffer']['discounted_price'] > 0 ? $group['bestOffer']['discounted_price'] : PHP_INT_MAX)
         ->values();
+
+    $noOffersDisplay = $isNoActivePromotion
+        ? ProductPageMeta::buildNoOffersDisplay(
+            collect($history)
+                ->merge($expiredOffers)
+                ->unique(fn ($offer) => ($offer['id'] ?? 0) . '|' . ($offer['store']['slug'] ?? ''))
+                ->values()
+                ->all()
+        )
+        : ['mode' => 'none', 'history' => [], 'best_offer' => null];
 @endphp
 
 <x-layouts.app
@@ -139,7 +170,7 @@ use App\Support\ProductPageMeta;
                             <h1 class="m-0 text-[1.35rem] font-semibold leading-[1.15] text-gray-900 sm:text-3xl lg:text-4xl">{{ ProductPageMeta::heroTitle($product['name'], $product['description'] ?? null) }}</h1>
                         </div>
 
-                        @if ($isExpired)
+                        @if ($isNoActivePromotion)
                             <p class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">Šiuo metu akcija nebegalioja. Žemiau matote paskutines žinomas kainas.</p>
                         @else
                             @if ($bestOffer)
@@ -172,19 +203,20 @@ use App\Support\ProductPageMeta;
                             @if (!empty($primaryDeal['to_date']) && now()->diffInDays($primaryDeal['to_date'], false) <= 1)
                                 <x-countdown :to-date="$primaryDeal['to_date']" />
                             @endif
-
-                            {{-- Desktop: ProductPriceWatchBanner folds inline here, right
-                                 after price/countdown, matching product-hero.tsx's
-                                 ActiveOffersHeroCard (hidden ... lg:flex). The component
-                                 itself already swaps its own mobile/desktop button
-                                 internally — the outer div here just decides WHERE it
-                                 renders per breakpoint. Rendering it only here at every
-                                 breakpoint (previous attempt) put it on its own grid row
-                                 even at lg+, showing as a stray gap below the price. --}}
-                            <div class="hidden lg:block">
-                                <x-product-price-watch-banner :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" :product-name="$product['name']" :category-name="$product['category']['name'] ?? ''" />
-                            </div>
                         @endif
+
+                        {{-- Desktop: ProductPriceWatchBanner folds inline here, right
+                             after price/countdown (or the expired notice), matching
+                             product-hero.tsx's ActiveOffersHeroCard (hidden ... lg:flex). --}}
+                        <div class="hidden lg:block">
+                            <x-product-price-watch-banner
+                                :product-id="$product['id']"
+                                :favorited="\App\Support\FavoritedProducts::has($product['id'])"
+                                :product-name="$product['name']"
+                                :category-name="$product['category']['name'] ?? ''"
+                                :variant="$isNoActivePromotion ? 'noOffers' : 'offersHero'"
+                            />
+                        </div>
                     </div>
 
                     {{-- Mobile/tablet: same banner, its own full-width row spanning both
@@ -192,11 +224,15 @@ use App\Support\ProductPageMeta;
                          col-start-1 row-start-2 ... lg:hidden) — a grid SIBLING of the
                          image/title columns, not nested inside the narrow title column,
                          which is what looked squeezed/collapsed there. --}}
-                    @if (!$isExpired)
-                        <div class="col-span-2 pt-1 lg:hidden">
-                            <x-product-price-watch-banner :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" :product-name="$product['name']" :category-name="$product['category']['name'] ?? ''" />
-                        </div>
-                    @endif
+                    <div class="col-span-2 pt-1 lg:hidden">
+                        <x-product-price-watch-banner
+                            :product-id="$product['id']"
+                            :favorited="\App\Support\FavoritedProducts::has($product['id'])"
+                            :product-name="$product['name']"
+                            :category-name="$product['category']['name'] ?? ''"
+                            :variant="$isNoActivePromotion ? 'noOffers' : 'offersHero'"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
@@ -261,50 +297,11 @@ use App\Support\ProductPageMeta;
                      for the rest, scraped from a leaflet). --}}
                 <div class="flex w-full flex-col gap-3 sm:gap-4">
                     @foreach ($offerGroups as $index => $group)
-                        @php
-                            $offer = $group['bestOffer'];
-                            $store = $group['store'];
-                            $showBestPriceBadge = $offerGroups->count() > 1 && $index === 0;
-                            $validityLabel = \App\Support\ProductPageMeta::validUntilLabel($offer['to_date'] ?? null);
-                            $pct = \App\Support\ProductPageMeta::promotionBadgePercent($offer['discount_percent'] ?? null);
-                            $showOriginal = !empty($offer['original_price']) && !empty($offer['discounted_price']) && $offer['original_price'] > $offer['discounted_price'];
-                        @endphp
-                        <a
-                            href="/akcijos/{{ $store['slug'] ?? '' }}"
-                            class="relative flex w-full rounded-xl border border-green/35 bg-white p-4 transition-colors hover:border-green/45 sm:p-5 {{ $showBestPriceBadge ? 'pt-6 sm:pt-7' : '' }} {{ $validityLabel ? 'pr-24 sm:pr-28' : '' }}"
-                        >
-                            @if ($showBestPriceBadge)
-                                <span class="absolute left-3 top-0 z-10 inline-flex -translate-y-1/2 items-center rounded-full bg-green px-3 py-1 text-xs font-bold leading-none text-white sm:left-3.5 sm:px-3.5">
-                                    <x-app-icon name="star" class="mr-1 size-3" fill="currentColor" />
-                                    Geriausia kaina
-                                </span>
-                            @endif
-                            @if ($validityLabel)
-                                <span class="absolute right-3 top-3 rounded-full bg-[#e8eef3] px-3 py-1 text-xs font-medium text-gray-700 sm:right-4 sm:top-4">{{ $validityLabel }}</span>
-                            @endif
-                            <div class="flex min-w-0 items-start gap-3 sm:gap-4">
-                                <x-store-logo :slug="$store['slug'] ?? ''" :name="$store['name'] ?? ''" size="md" class="shrink-0" />
-                                <div class="flex min-w-0 flex-1 flex-col gap-1.5 sm:gap-2">
-                                    {{-- Deliberately simpler than the ported original here (user
-                                         request): when there's a real price, show only that price
-                                         — no badge, no strikethrough original. The badge is only a
-                                         fallback for when there's no price to show at all. --}}
-                                    <div class="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-                                        @if (!empty($offer['discounted_price']) && $offer['discounted_price'] > 0)
-                                            <span class="shrink-0 text-xl font-bold tabular-nums text-gray-900 sm:text-2xl">{{ number_format($offer['discounted_price'], 2, ',', ' ') }} €</span>
-                                        @elseif ($pct !== null)
-                                            <x-discount-badge :percent="$pct" size="sm" />
-                                        @else
-                                            <span class="text-sm text-gray-500">Kaina nežinoma</span>
-                                        @endif
-                                    </div>
-                                    <div class="inline-flex min-w-0 items-center gap-1.5 text-xs font-normal leading-snug text-gray-500">
-                                        <x-app-icon name="info" class="size-3.5 shrink-0 text-gray-400 sm:size-4" />
-                                        <span class="min-w-0">{{ \App\Support\ProductPageMeta::offerOriginLabel($store['slug'] ?? '', $store['name'] ?? '') }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
+                        <x-product-store-offer-card
+                            :store="$group['store']"
+                            :offer="$group['bestOffer']"
+                            :show-best-price-badge="$offerGroups->count() > 1 && $index === 0"
+                        />
                     @endforeach
                 </div>
 
@@ -318,15 +315,17 @@ use App\Support\ProductPageMeta;
                     </div>
                 @endif
             </section>
-        @elseif ($isExpired)
+        @elseif ($isNoActivePromotion && ($noOffersDisplay['mode'] ?? 'none') === 'priced')
             <section class="base-container pb-6 pt-5 sm:pt-6 lg:pt-8">
-                <h2 class="mb-4 text-lg font-bold text-gray-900">Paskutinės žinomos kainos</h2>
-                <div class="space-y-2">
-                    @foreach ($history as $offer)
-                        <div class="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-3">
-                            <span class="font-semibold text-gray-900">{{ $offer['store']['name'] ?? '' }}</span>
-                            <span class="text-lg font-bold text-gray-700">{{ number_format($offer['discounted_price'], 2, ',', ' ') }} €</span>
-                        </div>
+                <h2 class="mb-4 text-lg font-bold text-gray-900">
+                    {{ count($noOffersDisplay['history']) === 1 ? 'Paskutinė žinoma kaina' : 'Paskutinės žinomos kainos' }}
+                </h2>
+                <div class="flex w-full flex-col gap-3 sm:gap-4" style="filter: grayscale(0.55) saturate(0.7)">
+                    @foreach ($noOffersDisplay['history'] as $offer)
+                        <x-product-store-offer-card
+                            :store="$offer['store']"
+                            :offer="$offer"
+                        />
                     @endforeach
                 </div>
             </section>
