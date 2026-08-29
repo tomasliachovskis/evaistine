@@ -82,6 +82,11 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(60)
             ->runInBackground()
             ->environments(['dev']);
+
+        $schedule->command('db:backup')
+            ->dailyAt('02:00')
+            ->withoutOverlapping(120)
+            ->environments(['production']);
     }
 
     /**
