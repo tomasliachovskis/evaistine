@@ -27,6 +27,7 @@ class StoreFlyer extends Model
         'issue_number',
         'title',
         'image_url',
+        'thumbnail_url',
         'pdf_url',
         'view_url',
         'valid_from',

@@ -70,6 +70,15 @@ class FlyerStorage
         return "flyers/pages/{$flyerId}";
     }
 
+    // Small cover-only derivative for hub/listing/carousel cards — those
+    // render many flyers' covers at once at a small display size, so
+    // reusing the full page (sized for the actual page-by-page reader)
+    // wastes a lot of decode memory. See StoreFlyerPageProcessingService.
+    public static function thumbnailPath(int $flyerId): string
+    {
+        return "flyers/thumbs/{$flyerId}.webp";
+    }
+
     public static function finalizeFlyerPdf(StoreFlyer $flyer, mixed $pdfUpload = null): bool
     {
         $store = $flyer->store ?? Store::find($flyer->store_id);

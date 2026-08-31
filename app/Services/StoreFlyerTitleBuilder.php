@@ -48,6 +48,10 @@ class StoreFlyerTitleBuilder
             'title' => $this->build($flyer, $store),
             'slug' => $slug,
             'image_url' => FlyerStorage::normalizePublicUrl($flyer->image_url ?? '') ?? '',
+            // Falls back to the full-size image_url for flyers processed
+            // before thumbnail_url existed — cards render fine either way,
+            // just heavier until flyers:regenerate-images backfills it.
+            'thumbnail_url' => FlyerStorage::normalizePublicUrl($flyer->thumbnail_url ?? $flyer->image_url ?? '') ?? '',
             'view_url' => $slug
                 ? "/leidinys/{$store->slug}/{$slug}"
                 : ($flyer->view_url ?: "/leidinys/{$store->slug}"),

@@ -13,9 +13,9 @@
 
 <article {{ $attributes->merge(['class' => 'group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg']) }}>
     <a href="{{ $href }}" class="relative block aspect-[6/5] w-full overflow-hidden bg-gray-50">
-        @if (!empty($leaflet['image_url']))
+        @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
             <img
-                src="{{ $leaflet['image_url'] }}"
+                src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}"
                 alt="{{ $leaflet['title'] ?? $leaflet['store_name'] }}"
                 loading="lazy"
                 class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.03] {{ $isExpired ? 'grayscale' : '' }}"

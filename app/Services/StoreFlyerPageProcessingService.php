@@ -55,8 +55,11 @@ class StoreFlyerPageProcessingService
                 ]);
             }
 
+            $thumbnailUrl = $this->generateThumbnail($flyer->id, $pages[0]['image_url']);
+
             $flyer->update([
                 'image_url' => $pages[0]['image_url'],
+                'thumbnail_url' => $thumbnailUrl,
                 'processing_status' => StoreFlyer::STATUS_READY,
                 'processing_error' => null,
             ]);
@@ -74,6 +77,100 @@ class StoreFlyerPageProcessingService
             ], 'error');
 
             throw $e;
+        }
+    }
+
+    // Generates the small cover thumbnail (see FlyerStorage::thumbnailPath's
+    // docblock) from the already-resized page-1 WebP — no need to re-decode
+    // the original PDF/large image, page 1's file is already the source of
+    // truth for the flyer's cover everywhere.
+    public function generateThumbnail(int $flyerId, string $page1ImageUrl): ?string
+    {
+        $sourcePath = FlyerStorage::urlToStoragePath($page1ImageUrl);
+
+        if (!$sourcePath || !Storage::disk('public')->exists($sourcePath)) {
+            return null;
+        }
+
+        $tempDir = storage_path('app/temp/flyers');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $tempSource = $tempDir . '/thumb_src_' . $flyerId . '.webp';
+        $tempOutput = $tempDir . '/thumb_out_' . $flyerId . '.webp';
+        file_put_contents($tempSource, Storage::disk('public')->get($sourcePath));
+
+        try {
+            $imagick = new \Imagick($tempSource);
+
+            if ($imagick->getImageWidth() > 400) {
+                $imagick->resizeImage(400, 0, \Imagick::FILTER_LANCZOS, 1);
+            }
+
+            $imagick->setImageFormat('webp');
+            $imagick->setImageCompressionQuality(75);
+            $imagick->stripImage();
+            $imagick->writeImage($tempOutput);
+            $imagick->clear();
+            $imagick->destroy();
+
+            $thumbPath = FlyerStorage::thumbnailPath($flyerId);
+            Storage::disk('public')->put($thumbPath, file_get_contents($tempOutput));
+
+            return FlyerStorage::publicUrl($thumbPath);
+        } finally {
+            @unlink($tempSource);
+            @unlink($tempOutput);
+        }
+    }
+
+    // Backfill for pages processed before the resize+WebP pipeline existed
+    // (flyers:regenerate-images) — resizes/reformats the EXISTING stored
+    // image in place rather than re-rendering from the source PDF, so it
+    // works even for flyers whose original PDF is no longer on disk.
+    public function regeneratePageImage(int $flyerId, int $pageNumber, string $currentImageUrl, int $maxWidth = 1400, int $quality = 78): ?string
+    {
+        $sourcePath = FlyerStorage::urlToStoragePath($currentImageUrl);
+
+        if (!$sourcePath || !Storage::disk('public')->exists($sourcePath)) {
+            return null;
+        }
+
+        $tempDir = storage_path('app/temp/flyers');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $tempSource = $tempDir . '/regen_src_' . $flyerId . '_' . $pageNumber;
+        $tempOutput = $tempDir . '/regen_out_' . $flyerId . '_' . $pageNumber . '.webp';
+        file_put_contents($tempSource, Storage::disk('public')->get($sourcePath));
+
+        try {
+            $imagick = new \Imagick($tempSource);
+
+            if ($imagick->getImageWidth() > $maxWidth) {
+                $imagick->resizeImage($maxWidth, 0, \Imagick::FILTER_LANCZOS, 1);
+            }
+
+            $imagick->setImageFormat('webp');
+            $imagick->setImageCompressionQuality($quality);
+            $imagick->stripImage();
+            $imagick->writeImage($tempOutput);
+            $imagick->clear();
+            $imagick->destroy();
+
+            $newPath = FlyerStorage::pagePath($flyerId, $pageNumber);
+            Storage::disk('public')->put($newPath, file_get_contents($tempOutput));
+
+            if ($sourcePath !== $newPath) {
+                Storage::disk('public')->delete($sourcePath);
+            }
+
+            return FlyerStorage::publicUrl($newPath);
+        } finally {
+            @unlink($tempSource);
+            @unlink($tempOutput);
         }
     }
 
