@@ -323,7 +323,12 @@ class ProductController extends Controller
 
     private function buildDiscountQuery($query, $filters, bool $applyOrder = true)
     {
-        $query = $query->with(['product.category', 'store']);
+        // product.discounts.store is eager-loaded here for the same reason as
+        // HomeDealPoolService::baseQuery() — DiscountResponseFormatter::getProductDiscounts()
+        // falls back to one query per product (to compute offer_count/min_price/offers)
+        // when the relation isn't already loaded, so a 24-item listing page
+        // fires ~24 extra queries without it.
+        $query = $query->with(['product.category', 'product.discounts.store', 'store']);
 
         if ($filters['card']) {
             $query = $query->where('card', true);
