@@ -54,6 +54,8 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('listingLoadMore', (config) => ({
         page: config.page,
         lastPage: config.lastPage,
+        shown: config.shown,
+        total: config.total,
         loading: false,
         async loadMore() {
             if (this.loading || this.page >= this.lastPage) {
@@ -87,6 +89,7 @@ document.addEventListener('alpine:init', () => {
                 this.$refs.grid.insertAdjacentHTML('beforeend', data.html);
                 this.page = data.page;
                 this.lastPage = data.last_page;
+                this.shown += data.deals.length;
 
                 const wire = config.wireId && window.Livewire?.find?.(config.wireId);
                 if (wire) {
