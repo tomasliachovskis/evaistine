@@ -724,7 +724,12 @@ class ProductController extends Controller
 
     public static function productWithSimilarCacheKey(string $slug): string
     {
-        return "product_with_similar_v9_{$slug}";
+        // Bump this suffix whenever the cached payload shape changes — this
+        // key is NOT wrapped in CacheVersion::suffix(['discounts']) like most
+        // other caches here, so cache:clear-discounts does not invalidate it.
+        // Its 7-day TTL means a stale shape (e.g. an image_url path change)
+        // would otherwise linger for up to a week after deploy.
+        return "product_with_similar_v10_{$slug}";
     }
 
     public function resolveDiscountsCacheKey($storeOrCategory, $category = null): string
