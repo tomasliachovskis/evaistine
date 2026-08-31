@@ -12,6 +12,7 @@ use App\Support\PageHtmlCache;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 class CacheWarmingService
@@ -211,7 +212,18 @@ class CacheWarmingService
             // script tag at all (Alpine never boots, wire:click/x-data dead
             // in the browser). A separate HTTP round-trip is a separate
             // PHP-FPM worker, so that state can't leak between paths.
-            Http::timeout(30)->get("{$origin}{$path}");
+            //
+            // One slow/timed-out page must not sink the rest of this loop —
+            // an uncaught ConnectionException here used to kill the whole
+            // warm run partway through, silently leaving every path AFTER
+            // whichever one failed un-warmed (confirmed live: half the
+            // page_html cache was hours older than the other half, all
+            // from runs that died at the same page). Log and move on.
+            try {
+                Http::timeout(30)->get("{$origin}{$path}");
+            } catch (\Throwable $e) {
+                Log::warning("cache:warm page-html failed for {$path}: ".$e->getMessage());
+            }
         }
     }
 
