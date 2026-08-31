@@ -44,13 +44,22 @@ use App\Support\ProductPageMeta;
     // a blank section — confirmed on /akcijos/gyvunu-prekes/kaciu-sunu-dubeneliams,
     // whose single history row + single active discount both have no price,
     // discount_percent only.
+    // ~36% of discount_histories rows only ever recorded an end_at (some
+    // stores' scraped listings only expose a validity end date, never a
+    // start date — same root cause as ProcessDiscounts' start_at/end_at
+    // gotcha for the live discounts table). Requiring from_date here hid
+    // the whole chart/tab for a huge share of expired products even though
+    // buildNoOffersDisplay()'s "last known prices" list below tolerates the
+    // same rows fine (it never required from_date at all) — fall back to
+    // to_date so those rows still plot, just anchored to when we stopped
+    // seeing that price instead of when it started.
     $priceHistoryPoints = collect($history)
-        ->filter(fn ($h) => (float) ($h['discounted_price'] ?? 0) > 0 && !empty($h['from_date']) && !empty($h['store']['slug']))
+        ->filter(fn ($h) => (float) ($h['discounted_price'] ?? 0) > 0 && (!empty($h['from_date']) || !empty($h['to_date'])) && !empty($h['store']['slug']))
         ->map(fn ($h) => [
             'store_slug' => $h['store']['slug'],
             'store_name' => $h['store']['name'],
             'price' => (float) $h['discounted_price'],
-            'date' => $h['from_date'],
+            'date' => $h['from_date'] ?? $h['to_date'],
         ]);
 
     // Every store CURRENTLY selling it counts as a history point too, not
