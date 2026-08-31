@@ -292,7 +292,14 @@ class ProductPageMeta
     // (it's an active discount), so this only implements that branch — not
     // the future-start/both-past/single-date cases the source also handles
     // for other contexts (price history, etc).
-    public static function validUntilLabel(?string $toDate): ?string
+    //
+    // $allowPast: product-store-offer-card.blade.php also renders the
+    // "Paskutinė žinoma kaina" (no active promotion) history rows through
+    // this same label — those to_dates are always in the past by
+    // definition (the offer already expired), so without this the date
+    // was always suppressed there. Past tense ("Galiojo iki X") instead of
+    // "Iki X" ("valid until X") since the offer is no longer active.
+    public static function validUntilLabel(?string $toDate, bool $allowPast = false): ?string
     {
         if (empty($toDate)) {
             return null;
@@ -300,12 +307,11 @@ class ProductPageMeta
 
         $to = \Illuminate\Support\Carbon::parse($toDate)->startOfDay();
         $today = \Illuminate\Support\Carbon::today();
+        $format = $to->year < $today->year ? 'Y.m.d' : 'm.d';
 
         if ($to->lt($today)) {
-            return null;
+            return $allowPast ? 'Galiojo iki ' . $to->format($format) : null;
         }
-
-        $format = $to->year < $today->year ? 'Y.m.d' : 'm.d';
 
         return 'Iki ' . $to->format($format);
     }

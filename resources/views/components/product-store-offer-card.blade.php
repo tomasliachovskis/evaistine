@@ -2,10 +2,11 @@
     'store',
     'offer',
     'showBestPriceBadge' => false,
+    'historical' => false,
 ])
 
 @php
-    $validityLabel = \App\Support\ProductPageMeta::validUntilLabel($offer['to_date'] ?? null);
+    $validityLabel = \App\Support\ProductPageMeta::validUntilLabel($offer['to_date'] ?? null, $historical);
     $pct = \App\Support\ProductPageMeta::promotionBadgePercent($offer['discount_percent'] ?? null);
 @endphp
 
@@ -14,7 +15,10 @@
     {{ $attributes->class([
         'relative flex w-full rounded-xl border border-green/35 bg-white p-4 transition-colors hover:border-green/45 sm:p-5',
         'pt-6 sm:pt-7' => $showBestPriceBadge,
-        'pr-24 sm:pr-28' => (bool) $validityLabel,
+        // Historical uses "Galiojo iki X" (longer than active's "Iki X"),
+        // needs more reserved space so it doesn't overlap the price.
+        'pr-32 sm:pr-36' => (bool) $validityLabel && $historical,
+        'pr-24 sm:pr-28' => (bool) $validityLabel && !$historical,
     ]) }}
 >
     @if ($showBestPriceBadge)

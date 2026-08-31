@@ -180,7 +180,7 @@ use App\Support\ProductPageMeta;
                         </div>
 
                         @if ($isNoActivePromotion)
-                            <p class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">Šiuo metu akcija nebegalioja. Žemiau matote paskutines žinomas kainas.</p>
+                            <p class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">Akcija nebegalioja.</p>
                         @else
                             @if ($bestOffer)
                                 @php
@@ -329,6 +329,7 @@ use App\Support\ProductPageMeta;
                         <x-product-store-offer-card
                             :store="$offer['store']"
                             :offer="$offer"
+                            :historical="true"
                         />
                     @endforeach
                 </div>
