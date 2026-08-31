@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Http\Controllers\Api\KeywordPageController;
 use App\Http\Controllers\Api\ProductController;
+use App\Support\ListingDealsFetcher;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -173,35 +174,17 @@ class DiscountFilters extends Component
 
     private function fetchPage(): array
     {
-        $filters = array_filter([
-            'order' => $this->order,
-            'card' => $this->cardOnly ? '1' : null,
-            'plus' => $this->plusOnly ? '1' : null,
-            'page' => $this->page > 1 ? (string) $this->page : null,
-            'store' => $this->storeFilter !== '' ? $this->storeFilter : null,
-            'category' => $this->categoryFilter !== '' ? $this->categoryFilter : null,
-        ], fn ($value) => $value !== null);
-
-        // ProductController/KeywordPageController read filters off the global
-        // request() helper rather than taking them as params — a Livewire
-        // update request has no meaningful query string of its own to clobber,
-        // so replacing it here is how the existing filter-building/caching
-        // logic gets reused unmodified.
-        request()->query->replace($filters);
-
-        if ($this->mode === 'keyword') {
-            $payload = json_decode(app(KeywordPageController::class)->show(request(), $this->primarySlug)->getContent(), true);
-        } elseif ($this->primarySlug === null) {
-            // Plain /akcijos hub — no store or category fixed by the URL.
-            $payload = json_decode(app(ProductController::class)->getAllDiscounts()->getContent(), true);
-        } else {
-            $response = $this->secondarySlug
-                ? app(ProductController::class)->getDiscounts($this->primarySlug, $this->secondarySlug)
-                : app(ProductController::class)->getDiscounts($this->primarySlug);
-            $payload = json_decode($response->getContent(), true);
-        }
-
-        return $payload['data'] ?? [];
+        return ListingDealsFetcher::fetch(
+            mode: $this->mode,
+            primarySlug: $this->primarySlug,
+            secondarySlug: $this->secondarySlug,
+            page: $this->page,
+            order: $this->order,
+            storeFilter: $this->storeFilter,
+            categoryFilter: $this->categoryFilter,
+            cardOnly: $this->cardOnly,
+            plusOnly: $this->plusOnly,
+        );
     }
 
     private function refreshResults(): void

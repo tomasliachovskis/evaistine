@@ -51,6 +51,61 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('alpine:init', () => {
+    Alpine.data('listingLoadMore', (config) => ({
+        page: config.page,
+        lastPage: config.lastPage,
+        loading: false,
+        async loadMore() {
+            if (this.loading || this.page >= this.lastPage) {
+                return;
+            }
+
+            this.loading = true;
+
+            try {
+                const params = new URLSearchParams();
+                Object.entries({ ...config.params, page: String(this.page + 1) }).forEach(([key, value]) => {
+                    if (value === null || value === undefined || value === '') {
+                        return;
+                    }
+
+                    params.set(key, String(value));
+                });
+                const response = await fetch(`${config.endpoint}?${params}`, {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector("meta[name='csrf-token']")?.content ?? '',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`load-more failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                this.$refs.grid.insertAdjacentHTML('beforeend', data.html);
+                this.page = data.page;
+                this.lastPage = data.last_page;
+
+                const wire = config.wireId && window.Livewire?.find?.(config.wireId);
+                if (wire) {
+                    wire.set('page', data.page);
+                    wire.set('pagination', {
+                        ...wire.get('pagination'),
+                        current_page: data.page,
+                        last_page: data.last_page,
+                    });
+                    wire.set('deals', [...wire.get('deals'), ...data.deals]);
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                this.loading = false;
+            }
+        },
+    }));
+
     Alpine.data('favoriteButton', (productId, favorited = false) => ({
         busy: false,
         favorited: !!favorited,

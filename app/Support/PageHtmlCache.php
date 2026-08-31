@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\URL;
  * Same-site asset URLs are stored as root-relative paths (/build, /livewire,
  * /storage) so the browser always resolves them against whatever host the
  * visitor used. CSRF tokens are still neutralized/re-hydrated per request.
+ * Livewire pages are safe to cache — UI loading states must use CSS :disabled
+ * (e.g. group-disabled:) instead of wire:loading visibility toggles.
  */
 class PageHtmlCache
 {

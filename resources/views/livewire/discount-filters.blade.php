@@ -134,6 +134,8 @@
             </div>
         @endif
 
+        @php $current = (int) ($pagination['current_page'] ?? 1); $last = (int) ($pagination['last_page'] ?? 1); @endphp
+
         <div wire:loading.class="opacity-50" wire:target="toggleStore,toggleCategory,setOrder,toggleCard,togglePlus" class="flex w-full min-w-0 flex-col transition-opacity">
             @if ($showCarousels)
                 {{-- wire:ignore keeps carousel HTML across sort updates; carouselHtml
@@ -143,26 +145,46 @@
                     {!! $carouselHtml !!}
                 </div>
             @else
-                <div class="flex w-full flex-wrap gap-8">
-                    <x-deal-grid :deals="$deals" :context-store-slug="$contextStoreSlug" />
+                <div
+                    class="flex w-full flex-col"
+                    x-data="listingLoadMore(@js([
+                        'endpoint' => route('akcijos.deals.partial'),
+                        'page' => $current,
+                        'lastPage' => $last,
+                        'wireId' => $this->getId(),
+                        'params' => [
+                            'mode' => $mode,
+                            'primary_slug' => $primarySlug,
+                            'secondary_slug' => $secondarySlug,
+                            'order' => $order,
+                            'store' => $storeFilter,
+                            'category' => $categoryFilter,
+                            'card' => $cardOnly ? '1' : '0',
+                            'plus' => $plusOnly ? '1' : '0',
+                        ],
+                    ]))"
+                >
+                    <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-4" x-ref="grid">
+                        @foreach ($deals as $deal)
+                            <x-deal-card :deal="$deal" class="h-full" :context-store-slug="$contextStoreSlug" />
+                        @endforeach
+                    </div>
+
+                    @if ($current < $last)
+                        <div class="mt-6 flex justify-center">
+                            <button
+                                type="button"
+                                @click="loadMore()"
+                                :disabled="loading || page >= lastPage"
+                                class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-green bg-white px-6 text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                <span x-show="!loading">Rodyti daugiau</span>
+                                <span x-show="loading" x-cloak>Kraunama...</span>
+                            </button>
+                        </div>
+                    @endif
                 </div>
             @endif
         </div>
-
-        @php $current = (int) ($pagination['current_page'] ?? 1); $last = (int) ($pagination['last_page'] ?? 1); @endphp
-        @if (! $showCarousels && $current < $last)
-            <div class="mt-6 flex justify-center">
-                <button
-                    type="button"
-                    wire:click="loadMore"
-                    wire:loading.attr="disabled"
-                    wire:target="loadMore"
-                    class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-green bg-white px-6 text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                    <span wire:loading.remove wire:target="loadMore">Rodyti daugiau</span>
-                    <span wire:loading wire:target="loadMore">Kraunama...</span>
-                </button>
-            </div>
-        @endif
     </div>
 </div>

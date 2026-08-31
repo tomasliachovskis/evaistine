@@ -6,6 +6,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LeafletController;
+use App\Http\Controllers\ListingDealsPartialController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\StoreController;
@@ -33,6 +34,7 @@ Route::get('/product-sitemap/{page}', [SitemapController::class, 'productSitemap
 // Order matters: /akcijos/paieska[...] must resolve before the generic
 // {slug1}/{slug2?} catch-all below, or "paieska" would be parsed as a
 // store/category/keyword slug instead.
+Route::get('/akcijos/_deals', ListingDealsPartialController::class)->name('akcijos.deals.partial');
 Route::get('/akcijos', [AkcijosController::class, 'index']);
 Route::get('/akcijos/paieska', [AkcijosController::class, 'searchForm']);
 Route::get('/akcijos/paieska/{query}', [AkcijosController::class, 'search'])->where('query', '.*');
