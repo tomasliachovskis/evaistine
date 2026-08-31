@@ -144,15 +144,25 @@ ssh $SSH_OPTS $SERVER << 'EOF'
 
     php artisan view:cache
 
+    php artisan queue:restart
+
+    # Restart php-fpm BEFORE warming: php-fpm's opcache has
+    # opcache.validate_timestamps=0 (never re-checks file mtimes), so any
+    # page rendered through it keeps using whatever bytecode it already had
+    # compiled for that file path until the pool restarts. cache:warm below
+    # renders every guest page over real HTTP (through nginx -> php-fpm) and
+    # bakes the result into Redis with a 1h TTL — warming before the restart
+    # would silently cache pre-deploy markup for up to an hour on every
+    # deploy that touches a view/controller (caught this deploying a Blade
+    # fix: the fix was on disk and view:cache'd, but every cached page kept
+    # serving the pre-fix HTML until the next unrelated fpm restart).
+    sudo systemctl restart php8.4-fpm
+
     # PageHtmlCache keys include CacheVersion suffix — bump so stale HTML
     # (e.g. baked with wrong APP_URL) is not served after deploy, then warm
     # guest listing HTML here so the first visitor doesn't pay a cold render.
     php artisan cache:clear-discounts
     php artisan cache:warm --type=page-html
-
-    php artisan queue:restart
-
-    sudo systemctl restart php8.4-fpm
 
     sudo supervisorctl restart nuolaidos-flyers || true
 EOF
