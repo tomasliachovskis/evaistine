@@ -210,22 +210,31 @@ class HomeDealPoolService
         $today = Carbon::today()->toDateString();
         $urgencyCutoff = Carbon::now()->copy()->addDays(3)->toDateTimeString();
 
-        $latestHistory = DB::table('discount_histories as dh')
-            ->select('dh.product_id', 'dh.store_id', DB::raw('MAX(dh.id) as max_id'))
-            ->groupBy('dh.product_id', 'dh.store_id');
-
         $query = $this->baseQuery();
         if ($applyTopProductFilters) {
             $this->applyTopProductFilters($query);
         }
         $this->excludeIds($query, $excludeId);
 
+        // "prev" = the discount_history row immediately before this discount's
+        // current price, used for the deal_score "price just dropped" bonus.
+        // A GROUP BY dh.product_id, dh.store_id derived table here used to
+        // aggregate the *entire* discount_histories table (160k+ rows and
+        // growing) on every call — bestForCategory() calls this once per
+        // category (~13x) per store page load, so a cache-miss re-scanned
+        // the whole table over a dozen times (~8s total, confirmed via
+        // EXPLAIN showing "Using temporary" over 80k+ rows for a single
+        // busy store). A correlated per-row subquery instead lets MySQL use
+        // discount_histories' (product_id, store_id, id) index directly per
+        // discount row: ~20x faster once category/store filters shrink the
+        // outer row count (13ms vs 264ms measured), and no slower even
+        // fully unscoped (342ms vs 378ms for all 11.8k active discounts).
         return $query
-            ->leftJoinSub($latestHistory, 'latest_hist', function ($join) {
-                $join->on('discounts.product_id', '=', 'latest_hist.product_id')
-                    ->on('discounts.store_id', '=', 'latest_hist.store_id');
-            })
-            ->leftJoin('discount_histories as prev', 'prev.id', '=', 'latest_hist.max_id')
+            ->leftJoin('discount_histories as prev', 'prev.id', '=', DB::raw(
+                '(SELECT dh.id FROM discount_histories dh
+                    WHERE dh.product_id = discounts.product_id AND dh.store_id = discounts.store_id
+                    ORDER BY dh.id DESC LIMIT 1)'
+            ))
             ->select('discounts.*')
             ->selectRaw(
                 "(
