@@ -202,16 +202,11 @@ use App\Support\ProductPageMeta;
                                             @endif
                                         </div>
                                     @elseif ($heroPriceSlotPct !== null)
-                                        <span class="inline-flex w-fit max-w-full items-center justify-center whitespace-nowrap rounded-lg bg-[#ffdb4d] px-2 py-1 text-price-lg font-bold leading-none tabular-nums text-gray-900 lg:text-price-hero">Sutaupyk iki {{ $heroPriceSlotPct }}%</span>
+                                        <span class="inline-flex w-fit max-w-full items-center justify-center rounded-lg bg-[#ffdb4d] px-2 py-1 text-xl font-bold leading-none tabular-nums text-gray-900 sm:text-2xl">Sutaupyk iki {{ $heroPriceSlotPct }}%</span>
                                     @endif
                                 </div>
                             @endif
 
-                            {{-- resolveCardUrgencyLabel in landing-page-meta.ts: only shown when
-                                 the deal expires within a day, not for every future end date. --}}
-                            @if (!empty($primaryDeal['to_date']) && now()->diffInDays($primaryDeal['to_date'], false) <= 1)
-                                <x-countdown :to-date="$primaryDeal['to_date']" />
-                            @endif
                         @endif
 
                         {{-- Desktop: ProductPriceWatchBanner folds inline here, right
