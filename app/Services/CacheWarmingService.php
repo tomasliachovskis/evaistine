@@ -10,8 +10,8 @@ use App\Models\Store;
 use App\Support\CacheVersion;
 use App\Support\PageHtmlCache;
 use Illuminate\Console\Command;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 class CacheWarmingService
@@ -186,6 +186,8 @@ class CacheWarmingService
         $paths = $paths->unique()->values();
         $this->section('guest page html', $paths->count());
 
+        $origin = rtrim((string) config('app.url'), '/');
+
         foreach ($paths as $path) {
             $cacheKey = PageHtmlCache::cacheKey($path);
             $this->logWarm('page-html', $path, $cacheKey);
@@ -194,8 +196,16 @@ class CacheWarmingService
                 continue;
             }
 
-            $origin = rtrim((string) config('app.url'), '/');
-            app()->handle(Request::create("{$origin}{$path}", 'GET'));
+            // A real loopback HTTP request, not app()->handle() in-process:
+            // Livewire tracks whether it has injected its <script>/<style>
+            // tags via container-scoped state that survives app()->handle()
+            // sub-requests within the same long-running artisan process, so
+            // only the FIRST path warmed here got real @livewireScripts —
+            // every later cached page silently cached HTML with no Livewire
+            // script tag at all (Alpine never boots, wire:click/x-data dead
+            // in the browser). A separate HTTP round-trip is a separate
+            // PHP-FPM worker, so that state can't leak between paths.
+            Http::timeout(30)->get("{$origin}{$path}");
         }
     }
 
