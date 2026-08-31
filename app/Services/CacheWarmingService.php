@@ -8,6 +8,7 @@ use App\Models\Discount;
 use App\Models\Product;
 use App\Models\Store;
 use App\Support\CacheVersion;
+use App\Support\CanonicalUrl;
 use App\Support\PageHtmlCache;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -193,7 +194,16 @@ class CacheWarmingService
         $paths = $paths->unique()->values();
         $this->section('guest page html', $paths->count());
 
-        $origin = rtrim((string) config('app.url'), '/');
+        // Was config('app.url') (api.liachovskis.com, the pre-cutover
+        // staging domain from deploy.sh's PROD_APP_URL default) — the real
+        // HTTP request this makes carries that Host header, and Laravel's
+        // Paginator resolves its own path/first_page_url/next_page_url
+        // straight from the incoming request's URL (not through the URL
+        // facade, so PageHtmlCache's forceRootUrl doesn't cover it) —
+        // confirmed live: every paginated listing's pagination links baked
+        // in api.liachovskis.com. Warming against the real canonical domain
+        // fixes this at the source instead of patching Paginator's resolver.
+        $origin = CanonicalUrl::origin();
 
         foreach ($paths as $path) {
             $cacheKey = PageHtmlCache::cacheKey($path);
