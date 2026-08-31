@@ -276,7 +276,15 @@ class ListingPageMetaService
             }
 
             return $leaflet;
-        })->all();
+        })
+            // Expired leaflets pushed to the end — sortBy is stable (PHP 8+),
+            // so within "still valid" and "expired" each keeps the ordered()
+            // relative order (per-store sort_order, then valid_from desc)
+            // instead of expired leaflets from an early-sort_order store
+            // interleaving with active leaflets from a later one.
+            ->sortBy(fn (array $leaflet) => $leaflet['status'] === 'expired' ? 1 : 0)
+            ->values()
+            ->all();
     }
 
     private function buildLeaflets(Store $store): array
