@@ -166,6 +166,13 @@ class PageHtmlCache
 
     private static function canonicalOrigin(): string
     {
-        return rtrim((string) config('app.url'), '/');
+        // Was config('app.url') — that's whatever deploy.sh's PROD_APP_URL
+        // set .env's APP_URL to (api.liachovskis.com, the pre-cutover
+        // staging domain), not the real public domain. Every route()/url()
+        // call rendered into cached HTML was forced onto that wrong host —
+        // confirmed live: every link on every cached page pointed at
+        // liachovskis.com instead of superakcijos.lt. CanonicalUrl::origin()
+        // is the actual single source of truth for the public domain.
+        return CanonicalUrl::origin();
     }
 }

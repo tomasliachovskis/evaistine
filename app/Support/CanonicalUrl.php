@@ -10,6 +10,11 @@ class CanonicalUrl
 {
     private const BASE_URL = 'https://superakcijos.lt';
 
+    public static function origin(): string
+    {
+        return self::BASE_URL;
+    }
+
     public static function build(string $path, array $query = []): string
     {
         $params = [];
