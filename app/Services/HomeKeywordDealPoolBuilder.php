@@ -27,6 +27,9 @@ class HomeKeywordDealPoolBuilder
     /** @var KeywordPageService */
     private $keywordPageService;
 
+    /** @var array<string, Collection<int, KeywordPage>> */
+    private $allKeywordPagesBySegment = [];
+
     public function __construct(KeywordPageService $keywordPageService)
     {
         $this->keywordPageService = $keywordPageService;
@@ -104,7 +107,14 @@ class HomeKeywordDealPoolBuilder
      */
     private function loadAllKeywordPagesForSegment(string $segment): Collection
     {
-        return KeywordPage::query()
+        // resolveKeywordSlugForDiscount() calls this once per discount that
+        // still needs a keyword slug resolved, so memoize per segment for the
+        // lifetime of this service instance instead of re-querying every time.
+        if (isset($this->allKeywordPagesBySegment[$segment])) {
+            return $this->allKeywordPagesBySegment[$segment];
+        }
+
+        return $this->allKeywordPagesBySegment[$segment] = KeywordPage::query()
             ->published()
             ->where('matching_offers_count', '>=', self::MIN_KEYWORD_OFFERS)
             ->whereNotIn('slug', HomeSectionKeywordBlacklist::SLUGS)

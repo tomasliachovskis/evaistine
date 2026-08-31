@@ -74,42 +74,48 @@ class HomePageSectionsService
             ->having('discounts_count', '>', 0)
             ->get();
 
-        $ranked = [];
-
-        foreach ($stores as $store) {
-            $maxDiscount = (int) round(
-                Discount::query()
-                    ->where('store_id', $store->id)
-                    ->whereNotNull('discount_percent')
-                    ->max('discount_percent') ?? 0
-            );
-
-            if ($maxDiscount <= 0) {
-                continue;
-            }
-
-            $topProducts = $this->getTopProductsForStore($store);
-
-            $ranked[] = [
-                'slug' => $store->slug,
-                'name' => $store->name,
-                'href' => "/leidinys/{$store->slug}",
-                'max_discount_percent' => $maxDiscount,
-                'hot_deals_count' => $store->discounts_count,
-                'top_products' => $topProducts,
-            ];
+        if ($stores->isEmpty()) {
+            return [];
         }
 
-        usort($ranked, fn ($a, $b) => $b['max_discount_percent'] <=> $a['max_discount_percent']);
+        // One batched query for every store's max discount instead of one
+        // query per store — the per-store top_products drill-down below is
+        // then only run for the 8 stores that actually make the final cut,
+        // rather than for every store with any discount at all.
+        $maxDiscounts = Discount::query()
+            ->whereIn('store_id', $stores->pluck('id'))
+            ->whereNotNull('discount_percent')
+            ->groupBy('store_id')
+            ->selectRaw('store_id, MAX(discount_percent) as max_discount')
+            ->pluck('max_discount', 'store_id');
 
-        $ranked = array_slice($ranked, 0, 8);
+        $ranked = $stores
+            ->map(function (Store $store) use ($maxDiscounts) {
+                return [
+                    'store' => $store,
+                    'max_discount_percent' => (int) round($maxDiscounts[$store->id] ?? 0),
+                ];
+            })
+            ->filter(fn (array $row) => $row['max_discount_percent'] > 0)
+            ->sortByDesc('max_discount_percent')
+            ->take(8)
+            ->values();
 
-        foreach ($ranked as $index => &$row) {
-            $row['crown_rank'] = $index < 3 ? $index + 1 : null;
-        }
-        unset($row);
+        return $ranked
+            ->map(function (array $row, int $index) {
+                $store = $row['store'];
 
-        return $ranked;
+                return [
+                    'slug' => $store->slug,
+                    'name' => $store->name,
+                    'href' => "/leidinys/{$store->slug}",
+                    'max_discount_percent' => $row['max_discount_percent'],
+                    'hot_deals_count' => $store->discounts_count,
+                    'top_products' => $this->getTopProductsForStore($store),
+                    'crown_rank' => $index < 3 ? $index + 1 : null,
+                ];
+            })
+            ->all();
     }
 
     private function getTopProductsForStore(Store $store): array

@@ -364,15 +364,16 @@ class HomeDealPoolService
 
     private function baseQuery(): Builder
     {
-        // product.discounts.store is eager-loaded here (not just product.category)
-        // because DiscountResponseFormatter::getProductDiscounts() re-queries
-        // per item to compute offer_count/min_price when the relation isn't
-        // already loaded — without this, formatting N candidates fires N extra
-        // queries (this was the root cause of the home page's and every store's
-        // /akcijos carousel's 600-700 query cold-cache pass).
+        // product.discounts.store and product.discountHistories.store are
+        // eager-loaded here (not just product.category) because
+        // DiscountResponseFormatter::getProductDiscounts()/getProductDiscountHistories()
+        // re-query per item to compute offer_count/min_price/history when the
+        // relation isn't already loaded — without this, formatting N candidates
+        // fires N extra queries (this was the root cause of the home page's and
+        // every store's /akcijos carousel's 600-700 query cold-cache pass).
         return Discount::query()
             ->select('discounts.*')
-            ->with(['product.category', 'product.discounts.store', 'store'])
+            ->with(['product.category', 'product.discounts.store', 'product.discountHistories.store', 'store'])
             ->whereNotNull('discounts.discount_percent')
             ->where('discounts.discount_percent', '>', 0);
     }

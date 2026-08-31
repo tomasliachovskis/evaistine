@@ -240,8 +240,12 @@ class KeywordPageService
             return collect();
         }
 
+        // product.discounts.store and product.discountHistories.store are
+        // eager-loaded here for the same reason as HomeDealPoolService::baseQuery()
+        // — without them, DiscountResponseFormatter falls back to one query per
+        // product to compute offer_count/min_price/history.
         $query = Discount::query()
-            ->with(['product.category', 'store'])
+            ->with(['product.category', 'product.discounts.store', 'product.discountHistories.store', 'store'])
             ->whereNotNull('discounts.discount_percent')
             ->where('discounts.discount_percent', '>', 0)
             ->whereNotNull('discounts.discounted_price')
