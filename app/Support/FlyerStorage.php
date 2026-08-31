@@ -59,7 +59,10 @@ class FlyerStorage
 
     public static function pagePath(int $flyerId, int $pageNumber): string
     {
-        return "flyers/pages/{$flyerId}/page-{$pageNumber}.jpg";
+        // .webp since StoreFlyerPageProcessingService switched formats —
+        // existing .jpg files/URLs already stored for past flyers are
+        // untouched, this only affects newly processed ones.
+        return "flyers/pages/{$flyerId}/page-{$pageNumber}.webp";
     }
 
     public static function pagesDirectory(int $flyerId): string

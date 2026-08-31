@@ -125,22 +125,34 @@ class StoreFlyerPageProcessingService
                 'total' => $numberOfPages,
             ]);
 
-            // JPEG, not PNG — a flattened, photo-heavy flyer page has no use
-            // for lossless/alpha, and PNG was producing 1-2MB per page.
-            // getImageData() (not saveImage()) so we can set compression
-            // quality + strip EXIF/color-profile metadata before writing —
-            // the library itself has no quality knob.
-            $tempImagePath = $tempDir . '/flyer_' . $flyerId . '_page_' . $pageNumber . '.jpg';
+            // WebP, not JPEG/PNG — ~25-35% smaller than JPEG at equivalent
+            // visual quality, universally supported by browsers/CDNs now.
+            // getImageData() (not saveImage()) so we can resize + set
+            // compression quality + strip EXIF/color-profile metadata
+            // before writing — the library itself has no quality knob.
+            $tempImagePath = $tempDir . '/flyer_' . $flyerId . '_page_' . $pageNumber . '.webp';
 
+            // 150 DPI (was 200) since the resize below caps the real output
+            // size anyway — lower DPI just means less work rendering pixels
+            // that would be thrown away.
             if (method_exists($pdf, 'setResolution')) {
-                $pdf->setPage($pageNumber)->setResolution(200);
+                $pdf->setPage($pageNumber)->setResolution(150);
             } else {
                 $pdf->setPage($pageNumber);
             }
 
             $imagick = $pdf->getImageData($tempImagePath);
-            $imagick->setImageCompression(\Imagick::COMPRESSION_JPEG);
-            $imagick->setImageCompressionQuality(82);
+
+            // 200 DPI rendering was producing ~2000x3300px pages (500KB-1.7MB
+            // each) — far past anything the flyer page viewer ever displays
+            // at. Cap the long edge at 1400px: still sharp on any screen
+            // (including pinch-zoom), a fraction of the file size.
+            if ($imagick->getImageWidth() > 1400) {
+                $imagick->resizeImage(1400, 0, \Imagick::FILTER_LANCZOS, 1);
+            }
+
+            $imagick->setImageFormat('webp');
+            $imagick->setImageCompressionQuality(78);
             $imagick->stripImage();
             $imagick->writeImage($tempImagePath);
             $imagick->clear();
