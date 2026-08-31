@@ -58,6 +58,8 @@ rsync -avz -e "ssh $SSH_OPTS" \
   --exclude='storage/framework/sessions/**' \
   --exclude='storage/framework/views/**' \
   --exclude='bootstrap/cache/**' \
+  --exclude='public/build/**' \
+  --exclude='public/hot' \
   --exclude='.phpunit.result.cache' \
   --exclude='.cursor' \
   --exclude='.env' \
@@ -89,6 +91,15 @@ ssh $SSH_OPTS $SERVER << 'EOF'
         echo 'APP_DEBUG=false' >> .env
     fi
 
+    # Wrong APP_URL (e.g. http://localhost) bakes localhost into @vite() asset
+    # URLs and JSON-LD — browsers then block app.js with CORS / LNA prompts.
+    PROD_APP_URL="${PROD_APP_URL:-https://api.liachovskis.com}"
+    if grep -q '^APP_URL=' .env; then
+        sed -i "s|^APP_URL=.*|APP_URL=${PROD_APP_URL}|" .env
+    else
+        echo "APP_URL=${PROD_APP_URL}" >> .env
+    fi
+
     # Group-based permissions (one-time server setup: `deploy` added to the
     # www-data group, setgid set on storage/bootstrap/cache/vendor so new
     # files/dirs inherit the www-data group automatically) — this replaces
@@ -111,6 +122,9 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     mkdir -p bootstrap/cache
     mkdir -p vendor
 
+    # Never serve Vite dev-server URLs in production.
+    rm -f public/hot
+
     if [ -f deploy_key ]; then
         chmod 600 deploy_key
     fi
@@ -129,6 +143,13 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     npm run build
 
     php artisan view:cache
+
+    # PageHtmlCache keys include CacheVersion suffix — bump so stale HTML
+    # (e.g. baked with wrong APP_URL) is not served after deploy, then warm
+    # guest listing HTML here so the first visitor doesn't pay a cold render.
+    php artisan cache:clear-discounts
+    php artisan cache:warm --type=page-html
+
     php artisan queue:restart
 
     sudo systemctl restart php8.4-fpm

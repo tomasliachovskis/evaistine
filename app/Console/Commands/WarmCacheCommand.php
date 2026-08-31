@@ -2,12 +2,13 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Services\CacheWarmingService;
+use Illuminate\Console\Command;
 
 class WarmCacheCommand extends Command
 {
-    protected $signature = 'cache:warm {--type=all : Type of cache to warm (all, stores, categories, store-categories, products, favorites)}';
+    protected $signature = 'cache:warm {--type=all : Type of cache to warm (all, stores, categories, store-categories, products, favorites, page-html)}';
+
     protected $description = 'Warm up application cache for better performance';
 
     public function handle(CacheWarmingService $cacheWarmingService)
@@ -20,11 +21,12 @@ class WarmCacheCommand extends Command
 
         switch ($type) {
             case 'all':
+                $cacheWarmingService->warmCriticalCaches();
                 $this->info('Refreshing keyword offer counts...');
+
                 if ($this->call('keywords:refresh-counts') !== 0) {
                     $this->warn('keywords:refresh-counts failed. Continuing with cache warm...');
                 }
-                $cacheWarmingService->warmCriticalCaches();
                 $cacheWarmingService->warmFavoritesCache();
                 break;
             case 'stores':
@@ -48,12 +50,17 @@ class WarmCacheCommand extends Command
             case 'favorites':
                 $cacheWarmingService->warmFavoritesCache();
                 break;
+            case 'page-html':
+                $cacheWarmingService->warmGuestHtmlCaches();
+                break;
             default:
                 $this->error("Invalid cache type: {$type}");
+
                 return 1;
         }
 
-        $this->info("Cache warming completed successfully!");
+        $this->info('Cache warming completed successfully!');
+
         return 0;
     }
 }

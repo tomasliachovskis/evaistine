@@ -38,6 +38,10 @@
     $removeStoreHref = $isStoreCategoryCombo
         ? '/akcijos/' . $secondarySlug . ($order !== 'popular' ? '?order=' . $order : '')
         : null;
+
+    $contextStoreSlug = $primarySlug && \App\Support\StoreDisplayMeta::isStoreSlug($primarySlug)
+        ? $primarySlug
+        : null;
 @endphp
 
 {{-- Verified against production: the sort/action bar is visible in carousel
@@ -131,27 +135,22 @@
         @endif
 
         <div wire:loading.class="opacity-50" wire:target="toggleStore,toggleCategory,setOrder,toggleCard,togglePlus" class="flex w-full min-w-0 flex-col transition-opacity">
-            @if (count($sections))
-                @foreach ($sections as $section)
-                    <x-landing-deals-section
-                        :id="'category-'.$section['slug']"
-                        :title="$section['name']"
-                        :deals="$section['discounts']"
-                        icon="shopping-basket"
-                        :category-slug="$section['slug']"
-                        layout="carousel"
-                        :see-all-href="$secondarySlug ? null : '/akcijos/'.$primarySlug.'/'.$section['slug']"
-                    />
-                @endforeach
+            @if ($showCarousels)
+                {{-- wire:ignore keeps carousel HTML across sort updates; carouselHtml
+                     is cleared in dehydrate() so the deal payload stays out of
+                     wire:snapshot after the first response. --}}
+                <div wire:ignore>
+                    {!! $carouselHtml !!}
+                </div>
             @else
                 <div class="flex w-full flex-wrap gap-8">
-                    <x-deal-grid :deals="$deals" />
+                    <x-deal-grid :deals="$deals" :context-store-slug="$contextStoreSlug" />
                 </div>
             @endif
         </div>
 
         @php $current = (int) ($pagination['current_page'] ?? 1); $last = (int) ($pagination['last_page'] ?? 1); @endphp
-        @if (!count($sections) && $current < $last)
+        @if (! $showCarousels && $current < $last)
             <div class="mt-6 flex justify-center">
                 <button
                     type="button"

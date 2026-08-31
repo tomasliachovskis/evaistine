@@ -139,13 +139,24 @@
             </div>
         @endif
 
+        @php
+            $carouselHtml = ! empty($sections)
+                ? view('components.partials.listing-category-carousels', [
+                    'sections' => $sections,
+                    'primarySlug' => $filtersPrimarySlug,
+                    'secondarySlug' => $filtersSecondarySlug,
+                ])->render()
+                : '';
+        @endphp
+
         <livewire:discount-filters
             :mode="$filtersMode"
             :primary-slug="$filtersPrimarySlug"
             :secondary-slug="$filtersSecondarySlug"
             :initial-deals="$deals"
             :initial-pagination="$pagination"
-            :initial-sections="$sections ?? []"
+            :carousel-html="$carouselHtml"
+            :show-carousels="! empty($sections)"
             :sidebar-mode="$sidebarMode"
             :primary-store-name="$listingMeta['store_name'] ?? null"
             :key="'filters-'.$basePath"

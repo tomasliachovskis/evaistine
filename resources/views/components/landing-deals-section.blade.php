@@ -1,4 +1,4 @@
-@props(['id', 'title', 'subtitle' => null, 'deals', 'icon', 'categorySlug' => null, 'layout' => 'carousel', 'seeAllHref' => null])
+@props(['id', 'title', 'subtitle' => null, 'deals', 'icon', 'categorySlug' => null, 'layout' => 'carousel', 'seeAllHref' => null, 'contextStoreSlug' => null])
 
 @php
     $pageCount = max(1, (int) ceil(count($deals) / 2));
@@ -37,7 +37,7 @@
             <div class="grid grid-cols-2 items-stretch gap-1.5 sm:grid-cols-5 sm:gap-2 lg:gap-3">
                 @foreach (array_slice($deals, 0, 10) as $deal)
                     <div class="{{ $loop->index >= 4 ? 'hidden sm:block' : '' }}">
-                        <x-deal-card :deal="$deal" />
+                        <x-deal-card :deal="$deal" :context-store-slug="$contextStoreSlug" />
                     </div>
                 @endforeach
             </div>
@@ -61,12 +61,7 @@
             >
                 <div x-ref="track" @scroll.passive="update()" class="scroll-cards-x -mx-0.5 flex w-full min-w-0 snap-x snap-mandatory items-stretch gap-1.5 px-0.5 sm:mx-0 sm:gap-3 sm:px-0">
                     @foreach ($deals as $deal)
-                        {{-- discountCarouselWidthClass in discount-card.tsx — needs explicit
-                             widths at every breakpoint, not just mobile, or the flex item
-                             collapses to content-size and the card's image shrinks to nothing. --}}
-                        <div class="h-full w-[calc((100%-0.75rem)/2.3)] max-w-[164px] min-w-[140px] shrink-0 grow-0 basis-[calc((100%-0.75rem)/2.3)] self-stretch snap-start sm:w-[186px] sm:min-w-[186px] sm:max-w-none sm:basis-auto md:min-w-[214px] lg:min-w-[248px]">
-                            <x-deal-card :deal="$deal" />
-                        </div>
+                        <x-deal-card :deal="$deal" :context-store-slug="$contextStoreSlug" :in-carousel="true" />
                     @endforeach
                 </div>
                 <template x-if="pageCount > 1">

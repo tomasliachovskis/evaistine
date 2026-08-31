@@ -3,18 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
-use App\Models\StoreCategoryDescription;
-use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use App\Support\CacheVersion;
-use App\Models\Discount;
-use App\Models\SearchResult;
-use App\Models\ProductFavorite;
 use App\Models\Category;
+use App\Models\Discount;
+use App\Models\Product;
+use App\Models\ProductFavorite;
+use App\Models\SearchResult;
+use App\Models\StoreCategoryDescription;
 use App\Services\DiscountResponseFormatter;
 use App\Services\HomeDealPoolService;
 use App\Services\HomePageMetaService;
@@ -23,17 +17,30 @@ use App\Services\ListingPageMetaService;
 use App\Services\MeilisearchService;
 use App\Services\PageFreshnessService;
 use App\Services\StoresPageMetaService;
+use App\Support\CacheVersion;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
     protected $formatter;
+
     protected $meilisearchService;
+
     protected $listingPageMetaService;
+
     protected $storesPageMetaService;
+
     protected $homePageMetaService;
+
     protected $homePageSectionsService;
+
     protected $pageFreshnessService;
+
     protected $homeDealPoolService;
 
     public function __construct(
@@ -58,7 +65,7 @@ class ProductController extends Controller
 
     public function getBestDiscountsByCategory()
     {
-        $cacheKey = 'best_discounts_by_category_' . CacheVersion::suffix(['discounts']);
+        $cacheKey = 'best_discounts_by_category_'.CacheVersion::suffix(['discounts']);
 
         return Cache::remember($cacheKey, 3600, function () {
             return response()->json($this->buildBestByCategorySections(null));
@@ -69,11 +76,11 @@ class ProductController extends Controller
     {
         $store = \App\Models\Store::where('slug', $storeSlug)->first();
 
-        if (!$store) {
+        if (! $store) {
             return response()->json(['error' => 'Store not found'], 404);
         }
 
-        $cacheKey = "best_discounts_by_category_store_{$store->id}_" . CacheVersion::suffix(['discounts']);
+        $cacheKey = "best_discounts_by_category_store_{$store->id}_".CacheVersion::suffix(['discounts']);
 
         return Cache::remember($cacheKey, 3600, function () use ($store) {
             return response()->json($this->buildBestByCategorySections($store->id));
@@ -104,7 +111,7 @@ class ProductController extends Controller
         'augalai-geles',
     ];
 
-    private function buildBestByCategorySections(?int $storeId, int $limit = 12)
+    private function buildBestByCategorySections(?int $storeId, int $limit = 8)
     {
         $categories = Category::whereNull('parent_id')
             ->where('hide', false)
@@ -161,7 +168,7 @@ class ProductController extends Controller
             return response()->json([
                 'data' => $this->formatter->format($discounts),
                 'breadcrumbs' => $this->generateBreadcrumbs('all_discounts'),
-                'seo' => $this->generateSeoData('all_discounts')
+                'seo' => $this->generateSeoData('all_discounts'),
             ]);
         });
     }
@@ -335,7 +342,7 @@ class ProductController extends Controller
 
         if ($filters['category']) {
             $categorySlugs = array_values(array_filter(array_map('trim', explode(',', $filters['category']))));
-            if (!empty($categorySlugs)) {
+            if (! empty($categorySlugs)) {
                 $categoryIds = \App\Models\Category::whereIn('slug', $categorySlugs)->pluck('id')->all();
                 if (empty($categoryIds)) {
                     $query->whereRaw('1 = 0');
@@ -347,7 +354,7 @@ class ProductController extends Controller
             }
         }
 
-        if (!$applyOrder) {
+        if (! $applyOrder) {
             return $query;
         }
 
@@ -362,12 +369,12 @@ class ProductController extends Controller
 
         $placeholders = implode(',', array_fill(0, count($discountIds), '?'));
 
-        return $query->orderByRaw('FIELD(discounts.id, ' . $placeholders . ')', $discountIds);
+        return $query->orderByRaw('FIELD(discounts.id, '.$placeholders.')', $discountIds);
     }
 
     private function hasExplicitOrder(): bool
     {
-        if (!request()->has('order')) {
+        if (! request()->has('order')) {
             return false;
         }
 
@@ -395,10 +402,9 @@ class ProductController extends Controller
         }
     }
 
-
     public function getCategories()
     {
-        $cacheKey = 'categories_' . CacheVersion::suffix(['discounts']);
+        $cacheKey = 'categories_'.CacheVersion::suffix(['discounts']);
 
         $categories = Cache::remember($cacheKey, 3600, function () {
             return \App\Models\Category::whereNull('parent_id')
@@ -406,7 +412,7 @@ class ProductController extends Controller
                 ->withCount([
                     'discounts' => function ($query) {
                         $query->select(\DB::raw('count(distinct discounts.id)'));
-                    }
+                    },
                 ])->get();
         });
 
@@ -415,14 +421,14 @@ class ProductController extends Controller
 
     public function getStores()
     {
-        $cacheKey = 'stores_' . CacheVersion::suffix(['discounts']);
+        $cacheKey = 'stores_'.CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () {
             $stores = \App\Models\Store::select('id', 'name', 'slug')
                 ->withCount([
                     'discounts' => function ($query) {
                         $query->select(\DB::raw('count(distinct discounts.id)'));
-                    }
+                    },
                 ])->get();
 
             return [
@@ -441,11 +447,11 @@ class ProductController extends Controller
     {
         $store = \App\Models\Store::where('slug', $storeSlug)->first();
 
-        if (!$store) {
+        if (! $store) {
             return response()->json([]);
         }
 
-        $cacheKey = "categories_for_store_{$store->id}_" . CacheVersion::suffix(['discounts']);
+        $cacheKey = "categories_for_store_{$store->id}_".CacheVersion::suffix(['discounts']);
 
         $categories = Cache::remember($cacheKey, 3600, function () use ($store) {
             return Category::whereNull('parent_id')
@@ -454,7 +460,7 @@ class ProductController extends Controller
                     'discounts' => function ($query) use ($store) {
                         $query->select(\DB::raw('count(distinct discounts.id)'))
                             ->where('discounts.store_id', $store->id);
-                    }
+                    },
                 ])
                 ->having('discounts_count', '>', 0)
                 ->get();
@@ -467,11 +473,11 @@ class ProductController extends Controller
     {
         $category = Category::where('slug', $categorySlug)->first();
 
-        if (!$category) {
+        if (! $category) {
             return response()->json(['data' => []]);
         }
 
-        $cacheKey = "stores_for_category_{$category->id}_" . CacheVersion::suffix(['discounts']);
+        $cacheKey = "stores_for_category_{$category->id}_".CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($category) {
             $stores = \App\Models\Store::select('id', 'name', 'slug')
@@ -481,7 +487,7 @@ class ProductController extends Controller
                             ->whereHas('product', function ($productQuery) use ($category) {
                                 $productQuery->where('category_id', $category->id);
                             });
-                    }
+                    },
                 ])
                 ->having('discounts_count', '>', 0)
                 ->get();
@@ -496,11 +502,11 @@ class ProductController extends Controller
     {
         $store = \App\Models\Store::where('slug', $slug)->first();
 
-        if (!$store) {
+        if (! $store) {
             return response()->json(['error' => 'Store not found'], 404);
         }
 
-        $cacheKey = "store_locations_{$store->id}_" . CacheVersion::suffix(['discounts']);
+        $cacheKey = "store_locations_{$store->id}_".CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($store) {
             $locations = \App\Models\StoreLocation::where('store_id', $store->id)
@@ -522,93 +528,93 @@ class ProductController extends Controller
     public function search(Request $request, $query)
     {
         $filters = $this->getFilters();
-        $cacheKey = 'search_' . md5($query . serialize($this->normalizeFiltersForCacheKey($filters)))
-            . '_' . CacheVersion::suffix(['discounts']);
+        $cacheKey = 'search_'.md5($query.serialize($this->normalizeFiltersForCacheKey($filters)))
+            .'_'.CacheVersion::suffix(['discounts']);
 
         return Cache::remember($cacheKey, 1800, function () use ($query, $filters) {
+            try {
+                $page = $filters['page'] ?? 1;
+                $perPage = 24;
+
+                $meilisearchFilters = [];
+                if ($filters['store']) {
+                    $storeSlugs = explode(',', $filters['store']);
+                    $storeIds = \App\Models\Store::whereIn('slug', $storeSlugs)->pluck('id')->toArray();
+                    if (! empty($storeIds)) {
+                        $meilisearchFilters['store_ids'] = $storeIds;
+                    }
+                }
+
+                $explicitOrder = $this->hasExplicitOrder();
+                $sort = $explicitOrder ? $this->getMeilisearchSort($filters['order']) : [];
+
+                $searchResults = $this->meilisearchService->search($query, $meilisearchFilters, $sort, $page, $perPage);
+
+                if (empty($searchResults['hits'])) {
+                    \Log::warning('Meilisearch returned 0 results', [
+                        'query' => $query,
+                        'filters' => $meilisearchFilters,
+                        'sort' => $sort,
+                    ]);
+                    $discounts = collect();
+                } else {
+                    $discountIds = collect($searchResults['hits'])->pluck('id')->toArray();
+                    $discountQuery = Discount::whereIn('discounts.id', $discountIds);
+                    $discountQuery = $this->buildDiscountQuery($discountQuery, $filters, $explicitOrder);
+
+                    if (! $explicitOrder) {
+                        $discountQuery = $this->orderDiscountsByMeilisearchIds($discountQuery, $discountIds);
+                    }
+
+                    $discounts = $discountQuery->get();
+                }
+
+                $paginator = new LengthAwarePaginator(
+                    $discounts,
+                    $searchResults['total'],
+                    $perPage,
+                    $page,
+                    ['path' => request()->url(), 'query' => request()->query()]
+                );
+
                 try {
-                    $page = $filters['page'] ?? 1;
-                    $perPage = 24;
-
-                    $meilisearchFilters = [];
-                    if ($filters['store']) {
-                        $storeSlugs = explode(',', $filters['store']);
-                        $storeIds = \App\Models\Store::whereIn('slug', $storeSlugs)->pluck('id')->toArray();
-                        if (!empty($storeIds)) {
-                            $meilisearchFilters['store_ids'] = $storeIds;
-                        }
-                    }
-
-                    $explicitOrder = $this->hasExplicitOrder();
-                    $sort = $explicitOrder ? $this->getMeilisearchSort($filters['order']) : [];
-
-                    $searchResults = $this->meilisearchService->search($query, $meilisearchFilters, $sort, $page, $perPage);
-
-                    if (empty($searchResults['hits'])) {
-                        \Log::warning('Meilisearch returned 0 results', [
-                            'query' => $query,
-                            'filters' => $meilisearchFilters,
-                            'sort' => $sort,
-                        ]);
-                        $discounts = collect();
-                    } else {
-                        $discountIds = collect($searchResults['hits'])->pluck('id')->toArray();
-                        $discountQuery = Discount::whereIn('discounts.id', $discountIds);
-                        $discountQuery = $this->buildDiscountQuery($discountQuery, $filters, $explicitOrder);
-
-                        if (!$explicitOrder) {
-                            $discountQuery = $this->orderDiscountsByMeilisearchIds($discountQuery, $discountIds);
-                        }
-
-                        $discounts = $discountQuery->get();
-                    }
-
-                    $paginator = new LengthAwarePaginator(
-                        $discounts,
-                        $searchResults['total'],
-                        $perPage,
-                        $page,
-                        ['path' => request()->url(), 'query' => request()->query()]
-                    );
-
-                    try {
-                        SearchResult::create([
-                            'query' => $query,
-                            'total_results' => $searchResults['total'],
-                        ]);
-                    } catch (\Exception $e) {
-                        \Log::warning('Failed to store search result: ' . $e->getMessage());
-                    }
-
-                    return response()->json([
-                        'data' => $this->formatter->format($paginator),
-                        'breadcrumbs' => $this->generateBreadcrumbs('search', $query, '-'),
-                        'seo' => $this->generateSeoData('search', $query, '-')
+                    SearchResult::create([
+                        'query' => $query,
+                        'total_results' => $searchResults['total'],
                     ]);
                 } catch (\Exception $e) {
-                    try {
-                        SearchResult::create([
-                            'query' => $query,
-                            'total_results' => 0,
-                        ]);
-                    } catch (\Exception $saveException) {
-                        \Log::warning('Failed to store search result: ' . $saveException->getMessage());
-                    }
-
-                    $explicitOrder = $this->hasExplicitOrder();
-
-                    $queryQb = Discount::searchByProductName($query)
-                        ->with(['product', 'store']);
-
-                    $discounts = $this->buildDiscountQuery($queryQb, $filters, $explicitOrder)->paginate(24);
-
-                    return response()->json([
-                        'data' => $this->formatter->format($discounts),
-                        'breadcrumbs' => $this->generateBreadcrumbs('search', $query, '-'),
-                        'seo' => $this->generateSeoData('search', $query, '-')
-                    ]);
+                    \Log::warning('Failed to store search result: '.$e->getMessage());
                 }
-            });
+
+                return response()->json([
+                    'data' => $this->formatter->format($paginator),
+                    'breadcrumbs' => $this->generateBreadcrumbs('search', $query, '-'),
+                    'seo' => $this->generateSeoData('search', $query, '-'),
+                ]);
+            } catch (\Exception $e) {
+                try {
+                    SearchResult::create([
+                        'query' => $query,
+                        'total_results' => 0,
+                    ]);
+                } catch (\Exception $saveException) {
+                    \Log::warning('Failed to store search result: '.$saveException->getMessage());
+                }
+
+                $explicitOrder = $this->hasExplicitOrder();
+
+                $queryQb = Discount::searchByProductName($query)
+                    ->with(['product', 'store']);
+
+                $discounts = $this->buildDiscountQuery($queryQb, $filters, $explicitOrder)->paginate(24);
+
+                return response()->json([
+                    'data' => $this->formatter->format($discounts),
+                    'breadcrumbs' => $this->generateBreadcrumbs('search', $query, '-'),
+                    'seo' => $this->generateSeoData('search', $query, '-'),
+                ]);
+            }
+        });
     }
 
     private function getMeilisearchSort($order)
@@ -638,20 +644,20 @@ class ProductController extends Controller
         }
 
         return Cache::remember($cacheKey, 86400, function () use ($slug, $filters) {
-                $product = Product::where('slug', $slug)->firstOrFail();
+            $product = Product::where('slug', $slug)->firstOrFail();
 
-                $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
-                    $query->where('slug', '!=', $slug)
-                        ->where('category_id', $product->category_id);
-                })
-                    ->with(['product.category', 'store'])
-                    ->orderBy('discount_percent', 'desc')
-                    ->limit(10);
+            $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
+                $query->where('slug', '!=', $slug)
+                    ->where('category_id', $product->category_id);
+            })
+                ->with(['product.category', 'store'])
+                ->orderBy('discount_percent', 'desc')
+                ->limit(10);
 
-                $discounts = $this->buildDiscountQuery($query, $filters)->get();
+            $discounts = $this->buildDiscountQuery($query, $filters)->get();
 
-                return response()->json($this->formatter->format($discounts));
-            });
+            return response()->json($this->formatter->format($discounts));
+        });
     }
 
     public function getFavoriteCategory($id)
@@ -660,31 +666,31 @@ class ProductController extends Controller
         $cacheKey = $this->generateFavoriteCategoryCacheKey($id, $this->normalizeFiltersForCacheKey($filters));
 
         return Cache::remember($cacheKey, 7200, function () use ($id, $filters) {
-                $query = Discount::whereHas('product', function ($q) use ($id) {
-                    $q->where('category_id', $id);
-                })
-                    ->with(['product', 'store']);
+            $query = Discount::whereHas('product', function ($q) use ($id) {
+                $q->where('category_id', $id);
+            })
+                ->with(['product', 'store']);
 
-                $discounts = $this->buildDiscountQuery($query, $filters)
-                    ->inRandomOrder()
-                    ->limit(10)
-                    ->get();
+            $discounts = $this->buildDiscountQuery($query, $filters)
+                ->inRandomOrder()
+                ->limit(10)
+                ->get();
 
-                return response()->json($this->formatter->format($discounts));
-            });
+            return response()->json($this->formatter->format($discounts));
+        });
     }
 
     public function getFavoriteHome()
     {
         $filters = $this->getFilters();
-        $cacheKey = $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)) . '_v15';
+        $cacheKey = $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)).'_v15';
 
         return Cache::remember($cacheKey, 7200, function () {
-                return response()->json([
-                    'sections' => $this->homePageSectionsService->build(),
-                    'page_meta' => $this->homePageMetaService->build(),
-                ]);
-            });
+            return response()->json([
+                'sections' => $this->homePageSectionsService->build(),
+                'page_meta' => $this->homePageMetaService->build(),
+            ]);
+        });
     }
 
     public function getProductBySlug($slug)
@@ -693,22 +699,22 @@ class ProductController extends Controller
             return response()->json(['error' => 'Product not found'], 404);
         }
 
-        $cacheKey = "product_slug_{$slug}_" . CacheVersion::suffix(['discounts']);
+        $cacheKey = "product_slug_{$slug}_".CacheVersion::suffix(['discounts']);
 
         return Cache::remember($cacheKey, 86400, function () use ($slug) {
-                $product = Product::where('slug', $slug)
-                    ->with([
-                        'discounts.store',
-                        'category'
-                    ])
-                    ->firstOrFail();
+            $product = Product::where('slug', $slug)
+                ->with([
+                    'discounts.store',
+                    'category',
+                ])
+                ->firstOrFail();
 
-                return response()->json([
-                    'data' => $this->formatter->format($product->discounts),
-                    'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
-                    'seo' => $this->generateSeoData('product', $product)
-                ]);
-            });
+            return response()->json([
+                'data' => $this->formatter->format($product->discounts),
+                'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
+                'seo' => $this->generateSeoData('product', $product),
+            ]);
+        });
     }
 
     public static function productWithSimilarCacheKey(string $slug): string
@@ -738,7 +744,7 @@ class ProductController extends Controller
     {
         $filters = $this->getFilters();
 
-        return $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)) . '_v15';
+        return $this->generateFavoriteHomeCacheKey($this->normalizeFiltersForCacheKey($filters)).'_v15';
     }
 
     public function resolveFavoriteCategoryCacheKey($id): string
@@ -868,7 +874,7 @@ class ProductController extends Controller
             'data' => $data,
             'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
             'seo' => $this->generateSeoData('product', $product),
-            'similar' => $this->formatter->formatList($similarDiscounts)
+            'similar' => $this->formatter->formatList($similarDiscounts),
         ];
 
         $jsonString = json_encode($responseData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -886,8 +892,8 @@ class ProductController extends Controller
             [
                 'name' => 'Akcijos',
                 'slug' => '/',
-                'type' => 'home'
-            ]
+                'type' => 'home',
+            ],
         ];
 
         switch ($type) {
@@ -895,12 +901,12 @@ class ProductController extends Controller
                 $words = $this->getStoreLeafletWords($entity->slug);
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/' . $entity->slug,
+                    'slug' => 'akcijos/'.$entity->slug,
                     'type' => 'store',
                 ];
                 $breadcrumbs[] = [
                     'name' => ucfirst($words['nominative']),
-                    'slug' => 'leidinys/' . $entity->slug,
+                    'slug' => 'leidinys/'.$entity->slug,
                     'type' => 'store_leaflet',
                 ];
                 break;
@@ -910,78 +916,78 @@ class ProductController extends Controller
                     ?: app(\App\Services\StoreFlyerTitleBuilder::class)->build($secondaryEntity, $entity);
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/' . $entity->slug,
+                    'slug' => 'akcijos/'.$entity->slug,
                     'type' => 'store',
                 ];
                 $breadcrumbs[] = [
                     'name' => ucfirst($words['nominative']),
-                    'slug' => 'leidinys/' . $entity->slug,
+                    'slug' => 'leidinys/'.$entity->slug,
                     'type' => 'store_leaflet',
                 ];
                 $breadcrumbs[] = [
                     'name' => $flyerTitle,
-                    'slug' => 'leidinys/' . $entity->slug . '/' . $secondaryEntity->slug,
+                    'slug' => 'leidinys/'.$entity->slug.'/'.$secondaryEntity->slug,
                     'type' => 'store_flyer',
                 ];
                 break;
             case 'store':
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/' . $entity->slug,
-                    'type' => 'store'
+                    'slug' => 'akcijos/'.$entity->slug,
+                    'type' => 'store',
                 ];
                 break;
             case 'category':
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/' . $entity->slug,
-                    'type' => 'category'
+                    'slug' => 'akcijos/'.$entity->slug,
+                    'type' => 'category',
                 ];
                 break;
             case 'store_category':
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/' . $entity->slug,
-                    'type' => 'store'
+                    'slug' => 'akcijos/'.$entity->slug,
+                    'type' => 'store',
                 ];
                 $breadcrumbs[] = [
                     'name' => $secondaryEntity->name,
-                    'slug' => 'akcijos/' . $entity->slug . '/' . $secondaryEntity->slug,
-                    'type' => 'category'
+                    'slug' => 'akcijos/'.$entity->slug.'/'.$secondaryEntity->slug,
+                    'type' => 'category',
                 ];
                 break;
             case 'product':
                 if ($entity->category) {
                     $breadcrumbs[] = [
                         'name' => $entity->category->name,
-                        'slug' => 'akcijos/' . $entity->category->slug,
-                        'type' => 'category'
+                        'slug' => 'akcijos/'.$entity->category->slug,
+                        'type' => 'category',
                     ];
                 }
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/' . ($entity->category ? $entity->category->slug . '/' : '') . $entity->slug,
-                    'type' => 'product'
+                    'slug' => 'akcijos/'.($entity->category ? $entity->category->slug.'/' : '').$entity->slug,
+                    'type' => 'product',
                 ];
                 break;
             case 'search':
                 $breadcrumbs[] = [
                     'name' => 'Paieška',
-                    'slug' => 'akcijos/paieska/' . $entity,
-                    'type' => 'search'
+                    'slug' => 'akcijos/paieska/'.$entity,
+                    'type' => 'search',
                 ];
             case 'all_discounts':
                 $breadcrumbs[] = [
                     'name' => 'Visos akcijos',
                     'slug' => 'akcijos',
-                    'type' => 'all_discounts'
+                    'type' => 'all_discounts',
                 ];
                 break;
             case 'leaflets_index':
                 $breadcrumbs[] = [
                     'name' => 'Leidiniai',
                     'slug' => 'leidiniai',
-                    'type' => 'leaflets_index'
+                    'type' => 'leaflets_index',
                 ];
                 break;
         }
@@ -1000,9 +1006,9 @@ class ProductController extends Controller
                 $lowerName = mb_strtolower($entity->name);
 
                 return [
-                    'seo_title' => $entity->name . ' akcijos prekybos centruose',
+                    'seo_title' => $entity->name.' akcijos prekybos centruose',
                     'seo_description' => $entity->description,
-                    'meta_title' => $entity->name . " akcijos – pigiausios kainos, iki {$maxDiscount}% nuolaidos",
+                    'meta_title' => $entity->name." akcijos – pigiausios kainos, iki {$maxDiscount}% nuolaidos",
                     'meta_description' => "Palyginkite {$lowerName} akcijas prekybos centruose – {$countLabel}+ pasiūlymų iš {$storeNames}. Iki {$maxDiscount}% nuolaidos šią savaitę!",
                 ];
             case 'store_leaflet':
@@ -1013,11 +1019,11 @@ class ProductController extends Controller
                 $words = $this->getStoreLeafletWords($entity->slug);
                 $storeUpper = mb_strtoupper($entity->name);
                 $validityLong = $this->pageFreshnessService->formatLtDate($validity['valid_from'], true)
-                    . ' – '
-                    . $this->pageFreshnessService->formatLtDate($validity['valid_to'], true);
+                    .' – '
+                    .$this->pageFreshnessService->formatLtDate($validity['valid_to'], true);
 
                 return [
-                    'seo_title' => $entity->name . ' ' . $words['nominative'],
+                    'seo_title' => $entity->name.' '.$words['nominative'],
                     'seo_description' => $entity->description,
                     'meta_title' => "{$storeUpper} {$words['nominative']} – naujas savaitės leidinys, galioja {$validityLabel}",
                     'meta_description' => "Naujausias {$entity->name} akcijų {$words['nominative']} ir katalogas. {$countLabel}+ akcijų, PDF, savaitgalio pasiūlymai. Galioja {$validityLong}.",
@@ -1030,9 +1036,9 @@ class ProductController extends Controller
                 $words = $this->getStoreLeafletWords($entity->slug);
 
                 return [
-                    'seo_title' => $entity->name . ' akcijos',
+                    'seo_title' => $entity->name.' akcijos',
                     'seo_description' => $entity->description,
-                    'meta_title' => "{$storeUpper} akcijos – {$countLabel}+ pasiūlymų" . ($maxDiscount > 0 ? ", iki -{$maxDiscount}%" : ''),
+                    'meta_title' => "{$storeUpper} akcijos – {$countLabel}+ pasiūlymų".($maxDiscount > 0 ? ", iki -{$maxDiscount}%" : ''),
                     'meta_description' => "Visos {$entity->name} akcijos ir nuolaidos. Filtruokite, rūšiuokite ir palyginkite kainas. Naujas {$words['nominative']}: /leidinys/{$entity->slug}",
                 ];
             case 'store_category':
@@ -1046,9 +1052,9 @@ class ProductController extends Controller
                     ->first();
 
                 $seoData = [
-                    'seo_title' => $entity->name . ' akcija ' . $categoryLower,
-                    'seo_description' => "",
-                    'meta_title' => mb_strtoupper($entity->name) . ' akcija ' . $categoryLower . ' – iki ' . $maxDiscount . '% nuolaidos',
+                    'seo_title' => $entity->name.' akcija '.$categoryLower,
+                    'seo_description' => '',
+                    'meta_title' => mb_strtoupper($entity->name).' akcija '.$categoryLower.' – iki '.$maxDiscount.'% nuolaidos',
                     'meta_description' => "Naujausios {$entity->name} {$categoryLower} akcijos – iki {$maxDiscount}% nuolaidos, {$countLabel}+ prekių. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
                 ];
 
@@ -1060,7 +1066,7 @@ class ProductController extends Controller
             case 'product':
                 $minPrice = $entity->discounts->min('discounted_price');
                 $formattedPrice = $minPrice ? (floor($minPrice) == $minPrice ? number_format($minPrice, 0, '.', '') : number_format($minPrice, 2, '.', '')) : null;
-                $priceTextDesc = $formattedPrice ? $formattedPrice . ' €' : '';
+                $priceTextDesc = $formattedPrice ? $formattedPrice.' €' : '';
                 $storeNames = $this->getStoreNamesForProduct($entity);
                 $storeSuffix = $storeNames ? " ({$storeNames})" : '';
                 $productLower = mb_strtolower($entity->name);
@@ -1068,15 +1074,15 @@ class ProductController extends Controller
                 return [
                     'seo_title' => $entity->name,
                     'seo_description' => $entity->description ?? '',
-                    'meta_title' => mb_ucfirst($productLower) . ' akcija' . ($priceTextDesc ? ' – kaina nuo ' . $priceTextDesc : '') . $storeSuffix,
-                    'meta_description' => mb_ucfirst($entity->name) . ($priceTextDesc ? ' ✔ kaina nuo ' . $priceTextDesc . ', palygink akcijas prekybos centruose!' : ''),
+                    'meta_title' => mb_ucfirst($productLower).' akcija'.($priceTextDesc ? ' – kaina nuo '.$priceTextDesc : '').$storeSuffix,
+                    'meta_description' => mb_ucfirst($entity->name).($priceTextDesc ? ' ✔ kaina nuo '.$priceTextDesc.', palygink akcijas prekybos centruose!' : ''),
                 ];
             case 'search':
                 return [
                     'seo_title' => $entity,
-                    'seo_description' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
-                    'meta_title' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
-                    'meta_description' => 'Paieškos rezultatai pagal užklausą: ' . $entity,
+                    'seo_description' => 'Paieškos rezultatai pagal užklausą: '.$entity,
+                    'meta_title' => 'Paieškos rezultatai pagal užklausą: '.$entity,
+                    'meta_description' => 'Paieškos rezultatai pagal užklausą: '.$entity,
                 ];
             case 'all_discounts':
                 return [
@@ -1104,7 +1110,7 @@ class ProductController extends Controller
 
     public function getAllLeaflets()
     {
-        $cacheKey = 'all_leaflets_' . CacheVersion::suffix(['discounts']);
+        $cacheKey = 'all_leaflets_'.CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () {
             $leaflets = $this->listingPageMetaService->buildAllLeaflets();
@@ -1123,7 +1129,7 @@ class ProductController extends Controller
     public function getStoreLeafletHub(string $store)
     {
         $storeModel = \App\Models\Store::where('slug', $store)->firstOrFail();
-        $cacheKey = "store_leaflet_hub_{$storeModel->id}_" . CacheVersion::suffix(['discounts']);
+        $cacheKey = "store_leaflet_hub_{$storeModel->id}_".CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($storeModel) {
             return [
@@ -1148,7 +1154,7 @@ class ProductController extends Controller
             ->with('pages')
             ->firstOrFail();
 
-        $cacheKey = "store_leaflet_{$flyer->id}_" . CacheVersion::suffix(['discounts']);
+        $cacheKey = "store_leaflet_{$flyer->id}_".CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($storeModel, $flyer) {
             $listingMeta = $this->listingPageMetaService->buildForStoreFlyer($storeModel, $flyer);
@@ -1180,7 +1186,7 @@ class ProductController extends Controller
 
     public function getSitemap()
     {
-        $cacheKey = 'sitemap_entries_v6_' . CacheVersion::suffix(['sitemap']);
+        $cacheKey = 'sitemap_entries_v6_'.CacheVersion::suffix(['sitemap']);
 
         return Cache::remember($cacheKey, 3600, function () {
             $freshness = $this->pageFreshnessService->build();
@@ -1282,7 +1288,7 @@ class ProductController extends Controller
     {
         $perPage = 20000;
         $page = max(1, (int) $request->query('page', 1));
-        $cacheKey = "sitemap_products_v1_page_{$page}_" . CacheVersion::suffix(['sitemap']);
+        $cacheKey = "sitemap_products_v1_page_{$page}_".CacheVersion::suffix(['sitemap']);
 
         return Cache::remember($cacheKey, 3600, function () use ($page, $perPage) {
             $products = $this->sitemapProductsQuery()
@@ -1342,8 +1348,8 @@ class ProductController extends Controller
     private function formatValidityRangeLabel(string $validFrom, string $validTo): string
     {
         return $this->pageFreshnessService->formatLtDate($validFrom)
-            . '–'
-            . $this->pageFreshnessService->formatLtDate($validTo);
+            .'–'
+            .$this->pageFreshnessService->formatLtDate($validTo);
     }
 
     // The 5 nationally recognizable chains — when a product is on sale at
@@ -1382,7 +1388,7 @@ class ProductController extends Controller
 
         $last = array_pop($names);
 
-        return implode(', ', $names) . ', ' . $last;
+        return implode(', ', $names).', '.$last;
     }
 
     private function generateDiscountsCacheKey($storeOrCategory, $category = null, $filters = [])
@@ -1393,49 +1399,49 @@ class ProductController extends Controller
             $key .= "_{$category}";
         }
 
-        if (!empty($filters)) {
-            $key .= "_" . md5(serialize($filters));
+        if (! empty($filters)) {
+            $key .= '_'.md5(serialize($filters));
         }
 
-        return $key . '_' . CacheVersion::suffix(['discounts']);
+        return $key.'_'.CacheVersion::suffix(['discounts']);
     }
 
     private function generateAllDiscountsCacheKey($filters = [])
     {
-        return "all_discounts_" . md5(serialize($filters)) . '_' . CacheVersion::suffix(['discounts']);
+        return 'all_discounts_'.md5(serialize($filters)).'_'.CacheVersion::suffix(['discounts']);
     }
 
     private function generateFavoriteProductCacheKey($slug, $filters = [])
     {
         $key = "favorite_product_{$slug}";
 
-        if (!empty($filters)) {
-            $key .= "_" . md5(serialize($filters));
+        if (! empty($filters)) {
+            $key .= '_'.md5(serialize($filters));
         }
 
-        return $key . '_' . CacheVersion::suffix(['discounts']);
+        return $key.'_'.CacheVersion::suffix(['discounts']);
     }
 
     private function generateFavoriteCategoryCacheKey($id, $filters = [])
     {
         $key = "favorite_category_{$id}";
 
-        if (!empty($filters)) {
-            $key .= "_" . md5(serialize($filters));
+        if (! empty($filters)) {
+            $key .= '_'.md5(serialize($filters));
         }
 
-        return $key . '_' . CacheVersion::suffix(['discounts']);
+        return $key.'_'.CacheVersion::suffix(['discounts']);
     }
 
     private function generateFavoriteHomeCacheKey($filters = [])
     {
-        $key = "favorite_home";
+        $key = 'favorite_home';
 
-        if (!empty($filters)) {
-            $key .= "_" . md5(serialize($filters));
+        if (! empty($filters)) {
+            $key .= '_'.md5(serialize($filters));
         }
 
-        return $key . '_' . CacheVersion::suffix(['discounts']);
+        return $key.'_'.CacheVersion::suffix(['discounts']);
     }
 
     public function toggleFavorite(Request $request)
@@ -1447,7 +1453,7 @@ class ProductController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'error' => 'Validation failed',
-                'messages' => $validator->errors()
+                'messages' => $validator->errors(),
             ], 422);
         }
 
@@ -1473,7 +1479,7 @@ class ProductController extends Controller
 
         return response()->json([
             'status' => $favorite ? 'removed' : 'added',
-            'favorites' => $productIds
+            'favorites' => $productIds,
         ]);
     }
 
@@ -1499,7 +1505,7 @@ class ProductController extends Controller
         if ($productIds->isEmpty()) {
             return response()->json([
                 'products' => [],
-                'store_totals' => []
+                'store_totals' => [],
             ]);
         }
 
@@ -1540,7 +1546,7 @@ class ProductController extends Controller
 
         return response()->json([
             'products' => $formattedProducts,
-            'store_totals' => $storeTotals
+            'store_totals' => $storeTotals,
         ]);
     }
 
@@ -1560,23 +1566,23 @@ class ProductController extends Controller
             foreach ($productDiscounts as $discount) {
                 $storeId = $discount->store_id;
 
-                if (!isset($storeInfo[$storeId])) {
+                if (! isset($storeInfo[$storeId])) {
                     $storeInfo[$storeId] = $discount->store;
                 }
 
-                if (!isset($storeDiscounts[$storeId]) || $discount->discounted_price < $storeDiscounts[$storeId]->discounted_price) {
+                if (! isset($storeDiscounts[$storeId]) || $discount->discounted_price < $storeDiscounts[$storeId]->discounted_price) {
                     $storeDiscounts[$storeId] = $discount;
                 }
             }
 
             foreach ($storeDiscounts as $storeId => $discount) {
-                if (!isset($storeTotals[$storeId])) {
+                if (! isset($storeTotals[$storeId])) {
                     $storeTotals[$storeId] = [
                         'store_id' => $storeId,
                         'store_name' => $storeInfo[$storeId]->name,
                         'total_price' => 0,
                         'total_savings' => 0,
-                        'product_count' => 0
+                        'product_count' => 0,
                     ];
                 }
                 $storeTotals[$storeId]['total_price'] += $discount->discounted_price;
@@ -1592,7 +1598,7 @@ class ProductController extends Controller
 
     private function generateRandomSeed($slug)
     {
-        return crc32($slug . date('Y-m-d'));
+        return crc32($slug.date('Y-m-d'));
     }
 
     private function getDiscountCountForCategory($category)
@@ -1669,6 +1675,7 @@ class ProductController extends Controller
     private function getMaxEndAtForStore($store)
     {
         $endAt = Discount::where('store_id', $store->id)->max('end_at');
+
         return $endAt ? Carbon::parse($endAt)->format('Y-m-d') : null;
     }
 
@@ -1678,6 +1685,7 @@ class ProductController extends Controller
             ->whereHas('product', function ($q) use ($category) {
                 $q->where('category_id', $category->id);
             })->max('end_at');
+
         return $endAt ? Carbon::parse($endAt)->format('Y-m-d') : null;
     }
 
@@ -1698,7 +1706,7 @@ class ProductController extends Controller
         }
 
         $lastStore = array_pop($stores);
-        return implode(', ', $stores) . ' ir ' . $lastStore;
+
+        return implode(', ', $stores).' ir '.$lastStore;
     }
 }
-

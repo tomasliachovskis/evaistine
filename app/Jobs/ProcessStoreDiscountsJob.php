@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
+class ProcessStoreDiscountsJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -82,6 +82,7 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
         $cacheWarmingService->warmAllDiscountsCache();
         $cacheWarmingService->warmFavoritesCache();
         $cacheWarmingService->warmPopularProductsCache($touchedProductSlugs);
+        $cacheWarmingService->warmGuestHtmlCaches();
 
         $this->revalidateFrontend();
     }
@@ -116,7 +117,7 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
             ]);
 
             if ($exitCode !== 0) {
-                throw new \RuntimeException('discounts:process exited with code ' . $exitCode);
+                throw new \RuntimeException('discounts:process exited with code '.$exitCode);
             }
 
             $step('products:merge-duplicates');
@@ -144,7 +145,7 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
                 'items_count' => $itemsCount,
             ]);
         } catch (\Throwable $e) {
-            $trace = $e->getMessage() . "\n" . $e->getTraceAsString();
+            $trace = $e->getMessage()."\n".$e->getTraceAsString();
             Log::error("ProcessStoreDiscountsJob[{$store}] failed: {$trace}");
 
             $run->update([
@@ -165,7 +166,7 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
     {
         $secret = config('services.frontend.revalidate_secret');
 
-        if (!$secret) {
+        if (! $secret) {
             Log::info('ProcessStoreDiscountsJob: REVALIDATE_SECRET not configured, skipping frontend revalidation.');
 
             return;
@@ -176,7 +177,7 @@ class ProcessStoreDiscountsJob implements ShouldQueue, ShouldBeUnique
                 ->withToken($secret)
                 ->post(config('services.frontend.revalidate_url'));
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 Log::warning("ProcessStoreDiscountsJob: frontend revalidation returned {$response->status()}.");
             }
         } catch (\Throwable $e) {

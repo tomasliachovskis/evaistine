@@ -28,7 +28,82 @@ window.trackGaEvent = function (eventName, params) {
     window.gtag('event', eventName, params);
 };
 
+document.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-ga-event]');
+    if (!target) {
+        return;
+    }
+
+    const params = {};
+    const { gaProductId, gaProductName, gaSource } = target.dataset;
+
+    if (gaProductId) {
+        params.product_id = Number(gaProductId);
+    }
+    if (gaProductName) {
+        params.product_name = gaProductName;
+    }
+    if (gaSource) {
+        params.source = gaSource;
+    }
+
+    window.trackGaEvent(target.dataset.gaEvent, params);
+});
+
 document.addEventListener('alpine:init', () => {
+    Alpine.data('favoriteButton', (productId, favorited = false) => ({
+        busy: false,
+        favorited: !!favorited,
+        toggle() {
+            if (this.busy) {
+                return;
+            }
+
+            this.busy = true;
+            const prev = this.favorited;
+            this.favorited = !this.favorited;
+
+            fetch(`/favorites/toggle/${productId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector("meta[name='csrf-token']").content,
+                    'Accept': 'application/json',
+                },
+            })
+                .then((r) => {
+                    if (r.status === 401) {
+                        this.favorited = prev;
+                        fetch('/auth/pending-favorite', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector("meta[name='csrf-token']").content,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ product_id: productId }),
+                        }).catch(() => {});
+                        window.dispatchEvent(new CustomEvent('open-auth-modal'));
+
+                        return null;
+                    }
+
+                    return r.json();
+                })
+                .then((data) => {
+                    if (data) {
+                        this.favorited = data.favorited;
+                        window.dispatchEvent(new CustomEvent('favorites-changed'));
+                    }
+                })
+                .catch(() => {
+                    this.favorited = prev;
+                })
+                .finally(() => {
+                    this.busy = false;
+                });
+        },
+    }));
+
     Alpine.data('storeLocatorMap', (locations) => ({
         map: null,
         init() {

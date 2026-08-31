@@ -2,19 +2,22 @@
 
 namespace App\Services;
 
-use App\Models\Discount;
-use App\Models\Store;
-use App\Models\Category;
-use App\Models\Product;
 use App\Http\Controllers\Api\ProductController;
+use App\Models\Category;
+use App\Models\Discount;
+use App\Models\Product;
+use App\Models\Store;
 use App\Support\CacheVersion;
+use App\Support\PageHtmlCache;
 use Illuminate\Console\Command;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 class CacheWarmingService
 {
     protected $productController;
+
     protected ?Command $command = null;
 
     public function __construct(ProductController $productController)
@@ -35,6 +38,7 @@ class CacheWarmingService
         $this->warmBestByCategoryCaches();
         $this->warmPopularProductsCache();
         $this->warmAllDiscountsCache();
+        $this->warmGuestHtmlCaches();
     }
 
     public function warmBestByCategoryCaches()
@@ -42,12 +46,12 @@ class CacheWarmingService
         $stores = Store::select('id', 'slug')->get();
         $this->section('best-by-category', $stores->count() + 1);
 
-        $rootCacheKey = 'best_discounts_by_category_' . CacheVersion::suffix(['discounts']);
+        $rootCacheKey = 'best_discounts_by_category_'.CacheVersion::suffix(['discounts']);
         $this->logWarm('best-by-category', '/akcijos', $rootCacheKey);
         $this->productController->getBestDiscountsByCategory();
 
         foreach ($stores as $store) {
-            $cacheKey = "best_discounts_by_category_store_{$store->id}_" . CacheVersion::suffix(['discounts']);
+            $cacheKey = "best_discounts_by_category_store_{$store->id}_".CacheVersion::suffix(['discounts']);
             $this->logWarm('best-by-category', "/akcijos/{$store->slug}", $cacheKey);
             $this->productController->getBestDiscountsByCategoryForStore($store->slug);
         }
@@ -156,9 +160,48 @@ class CacheWarmingService
             ->distinct();
     }
 
+    public function warmGuestHtmlCaches(): void
+    {
+        // HTML warm renders Blade with the current machine's APP_URL — only
+        // production may write page_html keys (shared Redis + local nuolaidos.wip
+        // would otherwise poison @vite/Livewire/storage URLs for prod guests).
+        if (! app()->environment('production')) {
+            return;
+        }
+
+        $paths = collect(['/', '/akcijos']);
+
+        foreach (Store::pluck('slug') as $slug) {
+            $paths->push("/akcijos/{$slug}");
+        }
+
+        foreach (Category::whereNull('parent_id')->pluck('slug') as $slug) {
+            $paths->push("/akcijos/{$slug}");
+        }
+
+        foreach ($this->storeCategoryPairsQuery()->get() as $pair) {
+            $paths->push("/akcijos/{$pair->store_slug}/{$pair->category_slug}");
+        }
+
+        $paths = $paths->unique()->values();
+        $this->section('guest page html', $paths->count());
+
+        foreach ($paths as $path) {
+            $cacheKey = PageHtmlCache::cacheKey($path);
+            $this->logWarm('page-html', $path, $cacheKey);
+
+            if (Cache::has($cacheKey)) {
+                continue;
+            }
+
+            $origin = rtrim((string) config('app.url'), '/');
+            app()->handle(Request::create("{$origin}{$path}", 'GET'));
+        }
+    }
+
     public function warmFavoritesCache()
     {
-        $categories = Category::whereNull('parent_id')->limit(10)->get();
+        $categories = Category::whereNull('parent_id')->get();
         $this->section('favorites', 1 + $categories->count());
 
         $homeKey = $this->productController->resolveFavoriteHomeCacheKey();
@@ -175,7 +218,7 @@ class CacheWarmingService
 
     protected function startProgressBar(int $count): ?ProgressBar
     {
-        if (!$this->command || $this->command->getOutput()->isVerbose()) {
+        if (! $this->command || $this->command->getOutput()->isVerbose()) {
             return null;
         }
 
@@ -188,7 +231,7 @@ class CacheWarmingService
 
     protected function finishProgressBar(?ProgressBar $bar): void
     {
-        if (!$bar) {
+        if (! $bar) {
             return;
         }
 
@@ -198,7 +241,7 @@ class CacheWarmingService
 
     protected function section(string $name, int $count): void
     {
-        if (!$this->command) {
+        if (! $this->command) {
             return;
         }
 
@@ -208,7 +251,7 @@ class CacheWarmingService
 
     protected function logWarm(string $type, string $label, string $cacheKey): void
     {
-        if (!$this->command || !$this->command->getOutput()->isVerbose()) {
+        if (! $this->command || ! $this->command->getOutput()->isVerbose()) {
             return;
         }
 

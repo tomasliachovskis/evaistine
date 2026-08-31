@@ -1,4 +1,4 @@
-@props(['deals', 'pagination' => null, 'basePath' => null])
+@props(['deals', 'pagination' => null, 'basePath' => null, 'contextStoreSlug' => null])
 
 {{-- Grid classes ported verbatim from discount/src/components/common/discounts-list.tsx's
      default (gridVariant="default") grid, which is what every listing page uses. --}}
@@ -7,7 +7,7 @@
 @else
     <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-4">
         @foreach ($deals as $deal)
-            <x-deal-card :deal="$deal" class="h-full" />
+            <x-deal-card :deal="$deal" class="h-full" :context-store-slug="$contextStoreSlug" />
         @endforeach
     </div>
 

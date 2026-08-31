@@ -69,14 +69,14 @@ class DiscountFilters extends Component
 
     public bool $panelOpen = false;
 
-    // Ported from akcijos/[...slug].tsx's showStoreCarousels: a plain store
-    // page (no filters active) shows per-category "best deals" carousels
-    // instead of the flat grid. Any filter/sort interaction clears this and
-    // falls back to the flat grid — same "still one click away" behavior as
-    // the original's CategoryCarouselsLayout, just without a full page nav.
-    public array $sections = [];
+    // Rendered carousel markup from the parent listing view — kept only for
+    // the initial full-page response and stripped in dehydrate() so it never
+    // lands in wire:snapshot.
+    public string $carouselHtml = '';
 
-    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, array $initialSections = [], string $sidebarMode = 'categories', ?string $primaryStoreName = null): void
+    public bool $showCarousels = false;
+
+    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, string $carouselHtml = '', bool $showCarousels = false, string $sidebarMode = 'categories', ?string $primaryStoreName = null): void
     {
         $this->mode = $mode;
         $this->primarySlug = $primarySlug;
@@ -85,7 +85,10 @@ class DiscountFilters extends Component
         $this->primaryStoreName = $primaryStoreName;
         $this->deals = $initialDeals;
         $this->pagination = $initialPagination;
-        $this->sections = $initialSections;
+        $this->carouselHtml = $carouselHtml;
+        $this->showCarousels = $showCarousels
+            && $this->storeFilter === ''
+            && $this->categoryFilter === '';
 
         // Scoped to the store/category already fixed by the URL — production
         // only lists categories a store actually has discounts in (and vice
@@ -110,7 +113,7 @@ class DiscountFilters extends Component
     {
         $this->storeFilter = $this->toggleInCommaList($this->storeFilter, $slug);
         $this->page = 1;
-        $this->sections = [];
+        $this->showCarousels = false;
         $this->refreshResults();
     }
 
@@ -118,13 +121,13 @@ class DiscountFilters extends Component
     {
         $this->categoryFilter = $this->toggleInCommaList($this->categoryFilter, $slug);
         $this->page = 1;
-        $this->sections = [];
+        $this->showCarousels = false;
         $this->refreshResults();
     }
 
     public function setOrder(string $order): void
     {
-        // Deliberately doesn't clear $sections — verified against production
+        // Deliberately doesn't clear $showCarousels — verified against production
         // (/akcijos?order=price_discount_proc_max still shows the per-category
         // carousels, just re-fetched): sorting only switches to the flat grid
         // when it's combined with actually picking a category/store, which
@@ -136,14 +139,14 @@ class DiscountFilters extends Component
 
     public function toggleCard(): void
     {
-        $this->cardOnly = !$this->cardOnly;
+        $this->cardOnly = ! $this->cardOnly;
         $this->page = 1;
         $this->refreshResults();
     }
 
     public function togglePlus(): void
     {
-        $this->plusOnly = !$this->plusOnly;
+        $this->plusOnly = ! $this->plusOnly;
         $this->page = 1;
         $this->refreshResults();
     }
@@ -205,6 +208,11 @@ class DiscountFilters extends Component
     {
         $this->pagination = $this->fetchPage();
         $this->deals = $this->pagination['data'] ?? [];
+    }
+
+    public function dehydrate(): void
+    {
+        $this->carouselHtml = '';
     }
 
     public function render()

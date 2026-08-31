@@ -342,9 +342,6 @@ use App\Support\ProductPageMeta;
                          its first 2 rows. --}}
                     <div class="grid w-full grid-cols-2 items-stretch gap-1.5 sm:grid-cols-5 sm:gap-2 lg:gap-3">
                         @foreach ($similar as $deal)
-                            {{-- deal-card.blade.php's root div never calls $attributes->merge(),
-                                 so a class prop passed straight to <x-deal-card> is silently
-                                 dropped — wrap it instead of touching that shared component. --}}
                             <div class="{{ $loop->index >= 4 ? 'hidden sm:block' : '' }}">
                                 <x-deal-card :deal="$deal" class="h-full" source="similar_products" />
                             </div>

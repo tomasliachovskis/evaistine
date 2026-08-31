@@ -10,11 +10,14 @@ use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
 use App\Support\FaqSchema;
 use App\Support\ItemListSchema;
+use App\Support\PageHtmlCache;
 use App\Support\ProductPageMeta;
 use App\Support\ProductSchema;
 use App\Support\StoreDisplayMeta;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\View\View;
 
 // Ported from discount/src/app/akcijos/page.tsx and .../[...slug]/page.tsx —
 // the [...slug] catch-all's resolveRouteType() dispatch (store / category /
@@ -35,7 +38,7 @@ class AkcijosController extends Controller
         $payload = json_decode($api->getAllDiscounts()->getContent(), true);
 
         $sections = [];
-        if (!$request->query('category') && !$request->query('store')) {
+        if (! $request->query('category') && ! $request->query('store')) {
             $sections = json_decode($api->getBestDiscountsByCategory()->getContent(), true);
         }
 
@@ -93,7 +96,7 @@ class AkcijosController extends Controller
         ]);
     }
 
-    private function renderDiscountsListing(Request $request, ProductController $api, string $storeOrCategory, ?string $category): \Illuminate\View\View
+    private function renderDiscountsListing(Request $request, ProductController $api, string $storeOrCategory, ?string $category): View|Response
     {
         try {
             $response = $category ? $api->getDiscounts($storeOrCategory, $category) : $api->getDiscounts($storeOrCategory);
@@ -116,14 +119,14 @@ class AkcijosController extends Controller
         // h1, back-link, seoDescription, FAQ) is already identical to
         // CategoryCarouselsLayout's, so no separate view is needed.
         $sections = [];
-        if (StoreDisplayMeta::isStoreSlug($storeOrCategory) && $category === null && !$request->query('category')) {
+        if (StoreDisplayMeta::isStoreSlug($storeOrCategory) && $category === null && ! $request->query('category')) {
             $sections = json_decode($api->getBestDiscountsByCategoryForStore($storeOrCategory)->getContent(), true);
         }
 
         return $this->renderListingPayload($request, $payload, $path, 'discounts', $storeOrCategory, $category, $sections);
     }
 
-    private function renderKeyword(Request $request, KeywordPageController $keywordApi, string $slug): \Illuminate\View\View
+    private function renderKeyword(Request $request, KeywordPageController $keywordApi, string $slug): View|Response
     {
         $response = $keywordApi->show($request, $slug);
         $payload = json_decode($response->getContent(), true);
@@ -131,7 +134,7 @@ class AkcijosController extends Controller
         return $this->renderListingPayload($request, $payload, "/akcijos/{$slug}", 'keyword', $slug, null);
     }
 
-    private function renderListingPayload(Request $request, array $payload, string $path, string $filtersMode, ?string $filtersPrimarySlug, ?string $filtersSecondarySlug, array $sections = []): \Illuminate\View\View
+    private function renderListingPayload(Request $request, array $payload, string $path, string $filtersMode, ?string $filtersPrimarySlug, ?string $filtersSecondarySlug, array $sections = []): View|Response
     {
         $data = $payload['data'] ?? [];
         $breadcrumbs = $payload['breadcrumbs'] ?? [];
@@ -149,8 +152,8 @@ class AkcijosController extends Controller
         // here rather than duplicated in the backend. Every other case (store
         // category, category, keyword) already gets the right text straight
         // from seo_title (e.g. "Maxima akcija bakalėja").
-        if (($listingMeta['type'] ?? null) === 'store' && !empty($listingMeta['store_name'])) {
-            $pageTitle = $listingMeta['store_name'] . ' akcijos šią savaitę';
+        if (($listingMeta['type'] ?? null) === 'store' && ! empty($listingMeta['store_name'])) {
+            $pageTitle = $listingMeta['store_name'].' akcijos šią savaitę';
         } else {
             $pageTitle = $seo['seo_title'] ?? $listingMeta['store_name'] ?? $listingMeta['category_name'] ?? $path;
         }
@@ -163,11 +166,11 @@ class AkcijosController extends Controller
         // not the invented category-tile page this used to be) always shows
         // categories, same as a store page.
         $sidebarMode = 'categories';
-        if ($filtersPrimarySlug !== null && ($filtersMode === 'keyword' || !StoreDisplayMeta::isStoreSlug($filtersPrimarySlug))) {
+        if ($filtersPrimarySlug !== null && ($filtersMode === 'keyword' || ! StoreDisplayMeta::isStoreSlug($filtersPrimarySlug))) {
             $sidebarMode = 'stores';
         }
 
-        return view('akcijos.listing', [
+        return PageHtmlCache::remember($request, $path, fn () => view('akcijos.listing', [
             'deals' => $deals,
             'pagination' => $data,
             'seo' => $seo,
@@ -185,16 +188,16 @@ class AkcijosController extends Controller
             'breadcrumbSchema' => BreadcrumbSchema::build(
                 collect($breadcrumbs)->map(fn ($b) => [
                     'name' => $b['name'],
-                    'href' => $b['slug'] === '/' ? '/' : '/' . ltrim($b['slug'], '/'),
+                    'href' => $b['slug'] === '/' ? '/' : '/'.ltrim($b['slug'], '/'),
                 ])->all()
             ),
-            'faqSchema' => !empty($faqItems) ? FaqSchema::build($faqItems) : null,
-            'itemListSchema' => !empty($deals) ? ItemListSchema::build($pageTitle, collect($deals)->map(fn ($d) => [
+            'faqSchema' => ! empty($faqItems) ? FaqSchema::build($faqItems) : null,
+            'itemListSchema' => ! empty($deals) ? ItemListSchema::build($pageTitle, collect($deals)->map(fn ($d) => [
                 'name' => $d['product']['name'],
-                'href' => '/akcijos/' . $d['product']['full_slug'],
+                'href' => '/akcijos/'.$d['product']['full_slug'],
                 'image' => $d['product']['image_url'],
             ])->all()) : null,
-        ]);
+        ]));
     }
 
     private function renderProduct(Request $request, ProductController $api, string $categorySlug, string $productSlug): \Illuminate\Http\RedirectResponse|\Illuminate\View\View
@@ -262,7 +265,7 @@ class AkcijosController extends Controller
             'breadcrumbSchema' => BreadcrumbSchema::build(
                 collect($breadcrumbs)->map(fn ($b) => [
                     'name' => $b['name'],
-                    'href' => $b['slug'] === '/' ? '/' : '/' . ltrim($b['slug'], '/'),
+                    'href' => $b['slug'] === '/' ? '/' : '/'.ltrim($b['slug'], '/'),
                 ])->all()
             ),
             'productSchema' => $productSchema,

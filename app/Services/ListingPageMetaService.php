@@ -7,6 +7,7 @@ use App\Models\Discount;
 use App\Models\Store;
 use App\Models\StoreFlyer;
 use App\Support\FoodCategorySlugs;
+use App\Support\FlyerStorage;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -324,15 +325,17 @@ class ListingPageMetaService
             'flyer' => [
                 'title' => $title,
                 'slug' => $flyer->slug,
-                'image_url' => $flyer->image_url ?? '',
-                'pdf_url' => $flyer->pdf_url && $flyer->pdf_url !== '#' ? $flyer->pdf_url : null,
+                'image_url' => FlyerStorage::normalizePublicUrl($flyer->image_url ?? '') ?? '',
+                'pdf_url' => $flyer->pdf_url && $flyer->pdf_url !== '#'
+                    ? FlyerStorage::normalizePublicUrl($flyer->pdf_url)
+                    : null,
                 'valid_from' => $flyer->valid_from?->format('Y-m-d') ?? '',
                 'valid_to' => $flyer->valid_to?->format('Y-m-d') ?? '',
                 'view_url' => "/leidinys/{$store->slug}/{$flyer->slug}",
             ],
             'pages' => $flyer->pages->map(fn ($page) => [
                 'page_number' => $page->page_number,
-                'image_url' => $page->image_url,
+                'image_url' => FlyerStorage::normalizePublicUrl($page->image_url),
             ])->values()->all(),
         ];
     }

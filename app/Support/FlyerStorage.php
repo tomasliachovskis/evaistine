@@ -10,7 +10,27 @@ class FlyerStorage
 {
     public static function publicUrl(string $path): string
     {
-        return Storage::disk('public')->url($path);
+        return '/storage/'.ltrim($path, '/');
+    }
+
+    /**
+     * Storage files are served from the same origin as the Blade frontend —
+     * relative /storage/... paths avoid baking APP_URL (nuolaidos.wip vs prod)
+     * into cached HTML or JSON.
+     */
+    public static function normalizePublicUrl(?string $url): ?string
+    {
+        if (! $url || $url === '#') {
+            return $url;
+        }
+
+        $path = self::urlToStoragePath($url);
+
+        if ($path !== null) {
+            return '/storage/'.ltrim($path, '/');
+        }
+
+        return $url;
     }
 
     public static function urlToStoragePath(?string $url): ?string

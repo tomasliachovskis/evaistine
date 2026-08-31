@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Store;
 use App\Models\StoreFlyer;
+use App\Support\FlyerStorage;
 use Carbon\Carbon;
 
 class StoreFlyerTitleBuilder
@@ -46,11 +47,11 @@ class StoreFlyerTitleBuilder
         return [
             'title' => $this->build($flyer, $store),
             'slug' => $slug,
-            'image_url' => $flyer->image_url ?? '',
+            'image_url' => FlyerStorage::normalizePublicUrl($flyer->image_url ?? '') ?? '',
             'view_url' => $slug
                 ? "/leidinys/{$store->slug}/{$slug}"
                 : ($flyer->view_url ?: "/leidinys/{$store->slug}"),
-            'pdf_url' => $hasPdf ? $pdfUrl : null,
+            'pdf_url' => $hasPdf ? FlyerStorage::normalizePublicUrl($pdfUrl) : null,
             'valid_from' => $flyer->valid_from ? $flyer->valid_from->format('Y-m-d') : '',
             'valid_to' => $flyer->valid_to ? $flyer->valid_to->format('Y-m-d') : '',
             'pages_count' => (int) ($flyer->pages_count ?? $flyer->pages()->count()),
