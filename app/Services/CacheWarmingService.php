@@ -37,8 +37,14 @@ class CacheWarmingService
         $this->warmStoreCategoryCaches();
         $this->warmBestByCategoryCaches();
         $this->warmPopularProductsCache();
-        $this->warmAllDiscountsCache();
+        // Guest HTML before the (slower, bulk) all-discounts cache — real
+        // visitors hitting the site mid-warm benefit from fast cached pages
+        // as soon as this step finishes, rather than waiting for the whole
+        // sequence. warmAllDiscountsCache() only backs getAllDiscounts()'s
+        // own JSON cache, not page rendering, so nothing HTML-related
+        // depends on it running first.
         $this->warmGuestHtmlCaches();
+        $this->warmAllDiscountsCache();
     }
 
     public function warmBestByCategoryCaches()
