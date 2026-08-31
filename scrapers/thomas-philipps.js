@@ -82,6 +82,7 @@ const enrichCategories = async (products, fallbackCategory) => {
 };
 
 (async () => {
+    const systemChromePath = '/usr/bin/google-chrome';
     const chromePath = `${process.env.HOME}/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome`;
     const launchOptions = {
         headless: 'new',
@@ -91,12 +92,23 @@ const enrichCategories = async (products, fallbackCategory) => {
         ],
     };
 
-    // /usr/bin/chromium-browser is Ubuntu's transitional snap-stub package —
-    // it exists on disk but just errors telling you to install the snap, so
-    // it must never be used as executablePath. Prefer puppeteer's own managed
-    // Chrome, falling back to puppeteer's dynamic resolution if that specific
-    // cached version isn't present (e.g. after a puppeteer upgrade).
-    if (fs.existsSync(chromePath)) {
+    // Prefer the system Chrome baked into the Sail image's Dockerfile
+    // (permanent, survives container recreation) over puppeteer's own
+    // downloaded copy under ~/.cache/puppeteer — that path lives in the
+    // container's ephemeral home directory (not the bind-mounted project
+    // dir, not a named Docker volume), so it silently disappears every
+    // time the container is recreated (sail up / sail build), breaking
+    // every scraper until someone remembers to re-run
+    // `npx puppeteer browsers install chrome`. /usr/bin/chromium-browser
+    // is NOT an equivalent fallback — on a stale image (Dockerfile changed
+    // but the image wasn't rebuilt) it's Ubuntu's transitional snap-stub,
+    // which exists on disk but just errors telling you to install the
+    // snap — only safe once the Dockerfile's own
+    // `ln -sf /usr/bin/google-chrome /usr/bin/chromium-browser` step has
+    // actually run, hence checking google-chrome directly instead.
+    if (fs.existsSync(systemChromePath)) {
+        launchOptions.executablePath = systemChromePath;
+    } else if (fs.existsSync(chromePath)) {
         launchOptions.executablePath = chromePath;
     } else {
         launchOptions.executablePath = puppeteer.executablePath();
