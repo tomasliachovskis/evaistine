@@ -44,7 +44,7 @@ if [ -n "$SSH_KEY" ]; then
 fi
 
 # Sync project files to the server
-rsync -avz -e "ssh $SSH_OPTS" \
+rsync -avz --no-perms --no-owner --no-group -e "ssh $SSH_OPTS" \
   --include='storage/' \
   --include='storage/app/' \
   --include='storage/app/flyers-incoming/' \
@@ -128,6 +128,23 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     if [ -f deploy_key ]; then
         chmod 600 deploy_key
     fi
+
+    # Self-healing permission fix, no sudo needed: `deploy` already owns
+    # these paths and is a member of the www-data group, so plain chmod is
+    # enough (no chgrp/chown required). Setgid (g+s) on directories means
+    # any file www-data (php-fpm) creates here — a Blade view compiled on
+    # first real request instead of by view:cache below, a queue log, a
+    # cache entry — automatically gets group www-data too, and g+w means
+    # both deploy and www-data can always write/delete regardless of which
+    # one created a given file. Without this, php-fpm gets "Permission
+    # denied" trying to compile any view not already in view:cache — this
+    # bit was getting silently reset to 0755 by an earlier version of this
+    # script's rsync step (archive mode pushed the local machine's plain
+    # 0755 storage/ permissions over the server's fixed ones every deploy)
+    # — that's fixed too (see --no-perms above), this stays as a second
+    # line of defense against any other future permission drift.
+    find storage bootstrap/cache -type d -exec chmod g+ws {} \; 2>/dev/null || true
+    find storage bootstrap/cache -type f -exec chmod g+w {} \; 2>/dev/null || true
 
     composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
     php artisan optimize:clear
