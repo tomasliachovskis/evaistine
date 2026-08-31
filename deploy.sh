@@ -131,6 +131,11 @@ ssh $SSH_OPTS $SERVER << 'EOF'
 
     composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
     php artisan optimize:clear
+    # --force recreates existing links too, so this is safe to run on every
+    # deploy — not just the first. config/filesystems.php's `links` includes
+    # public/assets/product (preserves the pre-migration product image URL
+    # shape for SEO — see DiscountResponseFormatter::resolveProductImageUrl()).
+    php artisan storage:link --force
     php artisan migrate --force
     php artisan config:cache
     php artisan route:cache

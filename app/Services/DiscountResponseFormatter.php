@@ -253,10 +253,14 @@ class DiscountResponseFormatter
             return $product->image_url;
         }
 
-        // Was '/assets/product/' + filename, a path the old separate Next.js
-        // frontend served via its own symlink (set up by deploy.sh's now-removed
-        // images-only rsync step). Now that this app serves the frontend too,
-        // the file is already reachable at its real storage:link path.
-        return '/storage/products/' . $filename;
+        // Keep the exact pre-migration URL shape — the old separate Next.js
+        // frontend served this at '/assets/product/' + filename via its own
+        // /var/www/images alias. Changing it to '/storage/products/' (this
+        // app's own real storage:link path) would 404 every indexed
+        // image-search URL and external hotlink/backlink pointing at the
+        // old path, so `assets/product` is symlinked to the same files too
+        // (see config/filesystems.php's `links`) and this keeps emitting
+        // the old path rather than the new one.
+        return '/assets/product/' . $filename;
     }
 }
