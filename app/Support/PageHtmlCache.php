@@ -27,7 +27,7 @@ class PageHtmlCache
     /** @deprecated Legacy cache entries only — new writes use relative paths. */
     private const APP_URL_PLACEHOLDER = '__PAGE_HTML_APP_URL__';
 
-    private const TTL_SECONDS = 3600; // 1h while testing cache fixes; bump back to 86400 later
+    private const TTL_SECONDS = 86400; // 24h — page caches are warmed on deploy via `cache:warm --type=page-html`
 
     public static function isEligible(Request $request): bool
     {
