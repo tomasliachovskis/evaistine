@@ -15,7 +15,7 @@
                     @else
                         <x-app-icon :name="$icon" class="size-4 text-green sm:hidden" />
                     @endif
-                    <h2 id="{{ $id }}-heading" class="text-[0.95rem] font-semibold leading-tight text-gray-900 sm:text-2xl sm:font-extrabold sm:leading-snug">
+                    <h2 id="{{ $id }}-heading" class="text-lg font-semibold leading-tight text-gray-900 sm:text-2xl sm:font-extrabold sm:leading-snug">
                         {{ $title }}
                     </h2>
                 </div>
