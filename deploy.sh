@@ -164,7 +164,14 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     php artisan cache:clear-discounts
     php artisan cache:warm --type=page-html
 
-    sudo supervisorctl restart nuolaidos-flyers || true
+    # No explicit supervisorctl restart needed for the flyers queue worker:
+    # queue:restart above already signals every queue worker (not just the
+    # default queue) to gracefully exit after its current job, and
+    # supervisor's autorestart=true (deploy/supervisor-nuolaidos-flyers.conf)
+    # brings it back up running the freshly deployed code. An explicit
+    # `sudo supervisorctl restart nuolaidos-flyers` here always failed
+    # anyway (no TTY for the sudo password over a non-interactive SSH
+    # heredoc) — it was a no-op wrapped in `|| true`, not a working restart.
 EOF
 
 # NOTE (Phase 7, manual/one-time, not automated here): the public domain's
