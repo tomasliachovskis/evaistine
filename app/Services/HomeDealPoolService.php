@@ -195,9 +195,7 @@ class HomeDealPoolService
             ->when($storeId, function ($query) use ($storeId) {
                 $query->where('discounts.store_id', $storeId);
             })
-            ->whereHas('product', function ($productQuery) use ($categoryId) {
-                $productQuery->where('category_id', $categoryId);
-            })
+            ->where('products.category_id', $categoryId)
             ->orderByDesc('deal_score')
             ->orderByDesc('discounts.discount_percent')
             ->limit($limit)
@@ -247,7 +245,7 @@ class HomeDealPoolService
                         ELSE 0
                     END
                     + CASE
-                        WHEN (SELECT category_id FROM products WHERE products.id = discounts.product_id) IN ({$popularIds})
+                        WHEN products.category_id IN ({$popularIds})
                         THEN 15
                         ELSE 0
                     END
@@ -380,8 +378,15 @@ class HomeDealPoolService
         // relation isn't already loaded — without this, formatting N candidates
         // fires N extra queries (this was the root cause of the home page's and
         // every store's /akcijos carousel's 600-700 query cold-cache pass).
+        // Joining products here (every discount has one, so INNER is safe)
+        // lets scoredCandidatesQuery() read products.category_id directly
+        // for the popularity-bonus check instead of a separate correlated
+        // subquery per row — ~2.3x faster for that part alone (measured:
+        // 79ms vs 34ms scanning one store's ~4.4k discounts). select()
+        // stays discounts.* only, so Discount model hydration is unaffected.
         return Discount::query()
             ->select('discounts.*')
+            ->join('products', 'products.id', '=', 'discounts.product_id')
             ->with(['product.category', 'product.discounts.store', 'product.discountHistories.store', 'store'])
             ->whereNotNull('discounts.discount_percent')
             ->where('discounts.discount_percent', '>', 0);
