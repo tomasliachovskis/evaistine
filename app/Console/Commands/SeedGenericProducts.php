@@ -423,6 +423,25 @@ class SeedGenericProducts extends Command
         ['slug' => 'funkcinis-gerimas', 'name' => 'Funkcinis gėrimas', 'emoji' => '🥤', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'vitamininis-gerimas', 'name' => 'Vitamininis gėrimas', 'emoji' => '💊', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'fermentuotas-gerimas', 'name' => 'Fermentuotas gėrimas', 'emoji' => '🍶', 'category' => 'gerimai-kava-arbata'],
+
+        // Round 8 — from live user testing against real products (not
+        // frequency analysis this time): confirmed cross-category splits
+        // (same pattern as pėdkelnės/tualetinis popierius — same real
+        // product type, genuinely listed under a second root category by
+        // some stores) plus a few generics that turned out to be missing
+        // entirely (šampūnas notably had none at all despite being a huge
+        // category).
+        ['slug' => 'duona-bakaleja', 'name' => 'Duona', 'emoji' => '🍞', 'category' => 'bakaleja', 'terms' => ['duona']],
+        ['slug' => 'pyragai-duonos-gaminiai', 'name' => 'Pyragai', 'emoji' => '🥧', 'category' => 'duonos-gaminiai', 'terms' => ['pyragas', 'pyragai']],
+        ['slug' => 'kumpis-bakaleja', 'name' => 'Kumpis', 'emoji' => '🍖', 'category' => 'bakaleja', 'terms' => ['kumpis']],
+        ['slug' => 'jogurtas-vaikams', 'name' => 'Jogurtas vaikams', 'emoji' => '🥣', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['jogurtas']],
+        ['slug' => 'tyre-vaikams', 'name' => 'Tyrė vaikams', 'emoji' => '🥣', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['tyrė']],
+        ['slug' => 'seklos-bakaleja', 'name' => 'Sėklos', 'emoji' => '🌻', 'category' => 'bakaleja', 'terms' => ['sėklos']],
+
+        ['slug' => 'plauku-sampunas', 'name' => 'Plaukų šampūnas', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena', 'terms' => ['šampūnas', 'plaukų šampūnas', 'šamp']],
+        ['slug' => 'sluotos', 'name' => 'Šluotos', 'emoji' => '🧹', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['šluota', 'šluotos']],
+        ['slug' => 'semtuvelis', 'name' => 'Semtuvėliai', 'emoji' => '🧹', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['semtuvėlis']],
+        ['slug' => 'javinukai', 'name' => 'Javinukai', 'emoji' => '🥣', 'category' => 'saldumynai-ir-uzkandziai'],
     ];
 
     public function handle(): int
