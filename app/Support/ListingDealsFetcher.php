@@ -33,6 +33,8 @@ class ListingDealsFetcher
 
         if ($mode === 'keyword') {
             $payload = json_decode(app(KeywordPageController::class)->show(request(), $primarySlug)->getContent(), true);
+        } elseif ($mode === 'search') {
+            $payload = json_decode(app(ProductController::class)->search(request(), $primarySlug)->getContent(), true);
         } elseif ($primarySlug === null) {
             $payload = json_decode(app(ProductController::class)->getAllDiscounts()->getContent(), true);
         } else {

@@ -3,9 +3,8 @@
         // Same order options/icons/row styling as
         // livewire/discount-filters.blade.php's sort dropdown, ported here as
         // plain <a href> links (query-param navigation) since this page isn't
-        // a Livewire component — deal-grid's pagination already preserves any
-        // extra query params (request()->except('page')), so ?order=... keeps
-        // working across "Kiti"/"Ankstesni".
+        // a Livewire component — the load-more button's params already carry
+        // the current order, so ?order=... keeps working across loads.
         $orderOptions = [
             'popular' => 'Populiariausi',
             'price_min' => 'Mažiausia kaina',
@@ -59,7 +58,56 @@
         @endif
 
         <div class="mt-4 flex w-full flex-wrap gap-8">
-            <x-deal-grid :deals="$deals" :pagination="$pagination" :base-path="$basePath" />
+            @if (empty($deals))
+                <p class="w-full text-center font-bold">Pagal Jūsų užklausą neradome nei vienos prekės</p>
+            @else
+                @php
+                    $current = (int) ($pagination['current_page'] ?? 1);
+                    $last = (int) ($pagination['last_page'] ?? 1);
+                @endphp
+
+                {{-- Same AJAX-accumulating load-more pattern as
+                     livewire/discount-filters.blade.php's grid (listingLoadMore
+                     Alpine component + /akcijos/_deals partial endpoint), just
+                     without a Livewire wireId since this page isn't Livewire. --}}
+                <div
+                    class="flex w-full flex-col"
+                    x-data="listingLoadMore(@js([
+                        'endpoint' => route('akcijos.deals.partial'),
+                        'page' => $current,
+                        'lastPage' => $last,
+                        'shown' => count($deals),
+                        'total' => (int) ($pagination['total'] ?? count($deals)),
+                        'params' => [
+                            'mode' => 'search',
+                            'primary_slug' => $query,
+                            'order' => $currentOrder,
+                        ],
+                    ]))"
+                >
+                    <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-4" x-ref="grid">
+                        @foreach ($deals as $deal)
+                            <x-deal-card :deal="$deal" class="h-full" />
+                        @endforeach
+                    </div>
+
+                    @if ($current < $last)
+                        <div class="mt-6 flex justify-center">
+                            <button
+                                type="button"
+                                @click="loadMore()"
+                                :disabled="loading || page >= lastPage"
+                                class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-green bg-white px-6 text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                <span x-show="!loading" x-text="`Rodyti daugiau (${shown} iš ${total})`"></span>
+                                <span x-show="loading" x-cloak>Kraunama...</span>
+                            </button>
+                            {{-- Same crawler-only fallback link as discount-filters.blade.php. --}}
+                            <a href="{{ $basePath }}?{{ http_build_query(array_merge(request()->except('page'), ['page' => $current + 1])) }}" rel="next" class="sr-only" tabindex="-1" aria-hidden="true">Kitas puslapis</a>
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
     </div>
 </x-layouts.app>

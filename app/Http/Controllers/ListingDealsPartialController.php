@@ -12,7 +12,7 @@ class ListingDealsPartialController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'mode' => 'required|in:discounts,keyword',
+            'mode' => 'required|in:discounts,keyword,search',
             'primary_slug' => 'nullable|string|max:255',
             'secondary_slug' => 'nullable|string|max:255',
             'page' => 'required|integer|min:2',
