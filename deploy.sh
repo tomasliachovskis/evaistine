@@ -161,8 +161,24 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     # Frontend now lives in this repo (Blade/Alpine/Livewire) — build its Vite
     # assets before view:cache, since @vite() needs public/build/manifest.json
     # present or the cached views bake in a stale/missing manifest reference.
+    #
+    # Building straight into public/build is NOT safe on a live server: Vite
+    # empties that directory before writing the new assets, so real traffic
+    # hitting a request during the build sees no manifest.json at all and
+    # gets a 500 (seen live 6 times across today's deploys: 2026-08-27
+    # 12:15, 2026-09-01 13:46/15:27/16:50/16:58). Build into a throwaway
+    # directory instead, then swap it into place with two renames — a
+    # rename is atomic on the same filesystem, so public/build is always
+    # either the complete old build or the complete new one, never partial
+    # or missing.
     npm ci
-    npm run build
+    rm -rf public/build-new
+    npm run build -- --outDir public/build-new
+    if [ -d public/build ]; then
+        mv public/build "public/build-old-$$"
+    fi
+    mv public/build-new public/build
+    rm -rf "public/build-old-$$" 2>/dev/null || true
 
     # Second pass, right before view:cache: composer/npm above take long
     # enough that live traffic (still served by the old code during this
