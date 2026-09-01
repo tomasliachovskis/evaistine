@@ -219,6 +219,31 @@ puppeteer.use(StealthPlugin());
                 lastCount = allProducts.size;
             }
 
+            // Still short after nudging from the bottom? Scroll back to the
+            // top and do a full fresh pass down — a completely new traversal
+            // gives the virtualized list another chance to mount whatever
+            // didn't load the first time, instead of only ever nudging from
+            // wherever the previous pass stalled out.
+            for (let fullRetry = 0; allProducts.size < expectedTotal && fullRetry < 2; fullRetry++) {
+                console.log(`Still ${allProducts.size}/${expectedTotal}, full re-scroll pass ${fullRetry + 1}/2...`);
+
+                await page.evaluate(() => window.scrollTo(0, 0));
+                await sleep(1000);
+
+                let passStableAtBottom = 0;
+                while (passStableAtBottom < 3 && allProducts.size < expectedTotal) {
+                    mergeProducts(await extractProducts());
+
+                    const atBottom = await page.evaluate(() => {
+                        window.scrollBy(0, 150);
+                        return window.scrollY + window.innerHeight >= document.body.scrollHeight;
+                    });
+                    await sleep(500);
+
+                    passStableAtBottom = atBottom ? passStableAtBottom + 1 : 0;
+                }
+            }
+
             if (allProducts.size < expectedTotal) {
                 console.log(`Warning: only found ${allProducts.size}/${expectedTotal} products after retrying, site may be rate-limiting.`);
             } else {
