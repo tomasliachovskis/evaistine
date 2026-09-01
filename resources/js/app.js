@@ -206,7 +206,19 @@ document.addEventListener('alpine:init', () => {
         activeStore: null,
         tooltip: { visible: false, x: 0, y: 0, price: '', sub: '' },
 
-        W: 760,
+        // The SVG scales its whole coordinate system (including font-size,
+        // which is in user units, not real CSS px) to fill whatever width
+        // the box actually renders at (preserveAspectRatio="none"). At a
+        // fixed W=760 that's fine on desktop, but on a ~360px-wide phone
+        // the scale factor is ~0.47x — 10.5px axis-label text was rendering
+        // at ~5px on screen, unreadably small. Using a much smaller W on
+        // narrow viewports keeps that scale factor close to 1:1, so text/
+        // points/strokes render near their intended physical size instead
+        // of shrinking with the screen. H stays the same either way, so the
+        // chart also reads as taller/bigger on mobile, not just legible.
+        get W() {
+            return window.innerWidth < 640 ? 380 : 760;
+        },
         H: 220,
         padL: 48,
         padR: 10,
@@ -215,6 +227,7 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             this.renderChart();
+            window.addEventListener('resize', () => this.renderChart());
         },
 
         setStore(slug) {
@@ -234,6 +247,11 @@ document.addEventListener('alpine:init', () => {
             if (!svg) {
                 return;
             }
+            // Blade renders a static viewBox="0 0 760 220" for no-JS/SEO
+            // visitors — keep it in sync with the (possibly narrower-on-
+            // mobile) W computed above so the coordinates below actually
+            // line up with what's declared.
+            svg.setAttribute('viewBox', `0 0 ${this.W} ${this.H}`);
             [...svg.querySelectorAll('[data-dynamic]')].forEach((n) => n.remove());
 
             const mk = (tag, attrs) => {
