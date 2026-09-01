@@ -16,4 +16,17 @@ class StaticPageController extends Controller
             ],
         ]);
     }
+
+    public function about()
+    {
+        return view('static.about', [
+            'title' => 'Apie mus',
+            'description' => 'Kas yra SuperAkcijos.lt, iš kur renkame kainas ir akcijas, ir kaip su mumis susisiekti.',
+            'canonical' => url('/apie'),
+            'breadcrumbs' => [
+                ['name' => 'Akcijos', 'href' => '/'],
+                ['name' => 'Apie mus', 'href' => '/apie'],
+            ],
+        ]);
+    }
 }

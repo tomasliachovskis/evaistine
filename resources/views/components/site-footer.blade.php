@@ -50,6 +50,7 @@
                     <div>
                         <h2 class="mb-4 text-lg font-bold">Apie SuperAkcijos.lt</h2>
                         <ul class="flex flex-col gap-2">
+                            <li><a href="/apie" class="text-base text-white/80 transition-colors hover:text-green">Apie mus</a></li>
                             <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-green">Naujienos</a></li>
                             <li><a href="/privatumo-politika" class="text-base text-white/80 transition-colors hover:text-green">Privatumo politika</a></li>
                             <li><a href="/parduotuves" class="text-base text-white/80 transition-colors hover:text-green">Parduotuvės</a></li>

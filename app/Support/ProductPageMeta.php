@@ -3,15 +3,15 @@
 namespace App\Support;
 
 // Ported from discount/src/lib/product-page-meta.ts — only the pieces that
-// drive visible product-page UI (hero copy, price-deal signal, FAQ, follower
-// count). Deliberately NOT ported: popular-search-link generation, attribute
+// drive visible product-page UI (hero copy, price-deal signal, FAQ).
+// Deliberately NOT ported: a fabricated per-product "follower count" (same
+// fake-social-proof pattern removed from StoreSocialProof — a deterministic
+// number with no real feature behind it), popular-search-link generation, attribute
 // chips, promo-banner copy, store-links-row — lower-value/SEO-only pieces of
 // a 1700-line source file; the product/discount data plumbing already exists
 // in AkcijosController/ProductController, this class is presentation-only.
 class ProductPageMeta
 {
-    private const PRODUCT_FOLLOWER_COUNT_OPTIONS = [42, 58, 73, 91, 104, 118, 124, 136, 157, 183];
-
     private const VOLUME_PATTERN = '/\b(\d+(?:[.,]\d+)?\s*(?:ml|l|kg|g|vnt\.?|vnt))\b/iu';
 
     public static function heroTitle(string $productName, ?string $description): string
@@ -61,29 +61,6 @@ class ProductPageMeta
         }
 
         return null;
-    }
-
-    public static function followerCount(int $productId): int
-    {
-        $index = abs($productId) % count(self::PRODUCT_FOLLOWER_COUNT_OPTIONS);
-
-        return self::PRODUCT_FOLLOWER_COUNT_OPTIONS[$index];
-    }
-
-    public static function followerLabel(int $productId): string
-    {
-        $count = self::followerCount($productId);
-        $mod10 = $count % 10;
-        $mod100 = $count % 100;
-
-        $noun = 'žmonių';
-        if ($mod10 === 1 && $mod100 !== 11) {
-            $noun = 'žmogus';
-        } elseif ($mod10 >= 2 && $mod10 <= 9 && ($mod100 < 11 || $mod100 > 19)) {
-            $noun = 'žmonės';
-        }
-
-        return "{$count} {$noun} jau seka šią prekę";
     }
 
     /**

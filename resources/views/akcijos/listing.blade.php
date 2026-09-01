@@ -106,11 +106,10 @@
                 <p class="text-xs text-gray-500 sm:text-sm">
                     @if ($isStoreHeader)
                         @if ($total > 0)
-                            {{ number_format($total, 0, ',', ' ') }} aktyvios {{ $listingMeta['store_name'] }} akcijos ·
+                            {{ number_format($total, 0, ',', ' ') }} aktyvios {{ $listingMeta['store_name'] }} akcijos
                         @endif
-                        {{ \App\Support\StoreSocialProof::followerLabel($listingMeta['store_slug'], $listingMeta['store_name']) }}
                         @if ($lastUpdated = \App\Support\StoreDataFreshness::lastUpdatedLabel($listingMeta['store_name']))
-                            · {{ $lastUpdated }}
+                            @if ($total > 0) · @endif {{ $lastUpdated }}
                         @endif
                         @if (($listingMeta['locations_count'] ?? 0) > 0)
                             ·

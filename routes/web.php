@@ -23,6 +23,8 @@ Route::get('/_health', function () {
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/privatumo-politika', [StaticPageController::class, 'privacyPolicy']);
+Route::get('/apie', [StaticPageController::class, 'about']);
+Route::redirect('/kontaktai', '/apie#kontaktai', 301);
 
 Route::get('/naujienos', [BlogController::class, 'index']);
 Route::get('/naujienos/{slug}', [BlogController::class, 'show']);

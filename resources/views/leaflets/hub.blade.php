@@ -17,8 +17,6 @@
     $seoAboutParagraphs = array_values(array_filter(explode("\n\n", $intro['seo_about'] ?? '')));
     $hasAbout = count($seoAboutParagraphs) > 0 || count($faq) > 0;
 
-    $followersLabel = \App\Support\StoreSocialProof::followerLabel($storeSlug, $storeName);
-
     $daysWord = fn ($n) => match (true) {
         $n === 1 => 'diena',
         $n % 10 >= 2 && $n % 10 <= 9 && !($n % 100 >= 11 && $n % 100 <= 19) => 'dienas',
@@ -55,11 +53,10 @@
 
                 <p class="mt-1.5 text-xs text-gray-500 sm:text-sm">
                     @if ($totalOffers > 0)
-                        {{ number_format($totalOffers, 0, ',', ' ') }} aktyvios {{ $storeName }} akcijos ·
+                        {{ number_format($totalOffers, 0, ',', ' ') }} aktyvios {{ $storeName }} akcijos
                     @endif
-                    {{ $followersLabel }}
                     @if ($lastUpdated = \App\Support\StoreDataFreshness::lastUpdatedLabel($storeName))
-                        · {{ $lastUpdated }}
+                        @if ($totalOffers > 0) · @endif {{ $lastUpdated }}
                     @endif
                     @if ($locationsCount > 0)
                         ·
