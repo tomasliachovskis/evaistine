@@ -262,6 +262,17 @@ class ProcessDiscounts extends Command
             return true;
         }
 
+        // Mirrors ArchiveExpiredDiscounts' own cutoff (end_at < start of
+        // today) — without this, a row scraped late in a leaflet's last day
+        // but not reached by the queued processing job until after midnight
+        // gets a Discount created and then deleted again by
+        // discounts:archive-expired moments later, in the same job run,
+        // without ever being visible on the site. Skip creating it at all
+        // instead of round-tripping through create-then-archive.
+        if ($endAt !== null && $endAt < now()->startOfDay()->format('Y-m-d')) {
+            return true;
+        }
+
         $categoryId = $this->resolveCategoryId($tempDiscount, $store);
         if ($categoryId === false || $categoryId === null) {
             CategoryMapper::firstOrCreate(

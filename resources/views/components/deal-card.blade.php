@@ -102,7 +102,7 @@
                 </div>
             @elseif ($stores->count() === 1 && ! $hideSingleStoreLogo)
                 <div class="mt-auto flex min-w-0 items-center pt-3">
-                    <x-store-logo :slug="$stores[0]['slug']" :name="$stores[0]['name']" size="sm" class="object-left" />
+                    <x-store-logo :slug="$stores[0]['slug']" :name="$stores[0]['name']" size="xs" class="object-left" />
                 </div>
             @endif
         </div>
