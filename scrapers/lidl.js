@@ -224,8 +224,8 @@ puppeteer.use(StealthPlugin());
             // gives the virtualized list another chance to mount whatever
             // didn't load the first time, instead of only ever nudging from
             // wherever the previous pass stalled out.
-            for (let fullRetry = 0; allProducts.size < expectedTotal && fullRetry < 2; fullRetry++) {
-                console.log(`Still ${allProducts.size}/${expectedTotal}, full re-scroll pass ${fullRetry + 1}/2...`);
+            for (let fullRetry = 0; allProducts.size < expectedTotal && fullRetry < 5; fullRetry++) {
+                console.log(`Still ${allProducts.size}/${expectedTotal}, full re-scroll pass ${fullRetry + 1}/5...`);
 
                 await page.evaluate(() => window.scrollTo(0, 0));
                 await sleep(1000);
