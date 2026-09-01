@@ -118,7 +118,7 @@ class SeedGenericProducts extends Command
         ['slug' => 'veido-kauke', 'name' => 'Veido kaukė', 'emoji' => '🧖', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'lupu-dazai', 'name' => 'Lūpų dažai', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'plauku-kauke', 'name' => 'Plaukų kaukė', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
-        ['slug' => 'higieniniai-paketai', 'name' => 'Higieniniai paketai', 'emoji' => '🩸', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'higieniniai-paketai', 'name' => 'Higieniniai paketai', 'emoji' => '🩸', 'category' => 'kosmetika-ir-higiena', 'terms' => ['higieniniai paketai', 'hig paketai']],
         ['slug' => 'gaivusis-gerimas', 'name' => 'Gaivusis gėrimas', 'emoji' => '🥤', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'energinis-gerimas', 'name' => 'Energinis gėrimas', 'emoji' => '⚡', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'sausi-pusryciai', 'name' => 'Sausi pusryčiai', 'emoji' => '🥣', 'category' => 'bakaleja'],
@@ -151,7 +151,7 @@ class SeedGenericProducts extends Command
         ['slug' => 'nealkoholinis-alus', 'name' => 'Nealkoholinis alus', 'emoji' => '🍺', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'pomidoru-padazas', 'name' => 'Pomidorų padažas', 'emoji' => '🍅', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'silkiu-file', 'name' => 'Silkių filė', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
-        ['slug' => 'lasisos-file', 'name' => 'Lašišos filė', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'lasisos-file', 'name' => 'Lašišos filė', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis', 'terms' => ['lašišos filė', 'lašišų filė']],
         ['slug' => 'saslykas', 'name' => 'Šašlykas', 'emoji' => '🍢', 'category' => 'mesa-ir-zuvis'],
         ['slug' => 'paklodes', 'name' => 'Paklodės', 'emoji' => '🛏️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'kepimo-formos', 'name' => 'Kepimo formos', 'emoji' => '🍰', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
@@ -193,6 +193,21 @@ class SeedGenericProducts extends Command
         ['slug' => 'elektriniai-virduliai', 'name' => 'Elektriniai virduliai', 'emoji' => '☕', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'vazonai', 'name' => 'Vazonai', 'emoji' => '🪴', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'rasikliai', 'name' => 'Rašikliai', 'emoji' => '🖊️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+
+        // Round 4 — returns are visibly diminishing now (round 1: +3,828,
+        // round 2: +1,267, round 3: +629), consistent with having already
+        // taken the largest/clearest clusters. Includes 'terms' with the
+        // exact grammatical case seen in real product names (e.g. genitive
+        // plural "lašišų" vs the dictionary-form "lašišos" used above) —
+        // matching is exact-word, not stemmed, so a declension mismatch
+        // alone silently loses real matches (found via lasisos-file above
+        // still showing 57 unmatched "lašišų filė" products next round).
+        ['slug' => 'karstai-rukyta-mesa', 'name' => 'Karštai rūkyta mėsa', 'emoji' => '🥓', 'category' => 'mesa-ir-zuvis', 'terms' => ['karštai rūkytas', 'karštai rūkyta', 'karštai rūkyti', 'karštai rūkytos']],
+        ['slug' => 'visciuku-sparneliai', 'name' => 'Viščiukų sparneliai', 'emoji' => '🍗', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'valymo-sluostes', 'name' => 'Valymo šluostės', 'emoji' => '🧽', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['valymo šluostės', 'šluostės']],
+        ['slug' => 'indu-kempines', 'name' => 'Indų kempinės', 'emoji' => '🧽', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'vistienos-sultinys', 'name' => 'Vištienos sultinys', 'emoji' => '🍲', 'category' => 'bakaleja'],
+        ['slug' => 'skustuvo-galvutes', 'name' => 'Skustuvo galvutės', 'emoji' => '🪒', 'category' => 'kosmetika-ir-higiena'],
     ];
 
     public function handle(): int
