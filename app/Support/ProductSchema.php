@@ -23,15 +23,21 @@ class ProductSchema
         if ($offers->isNotEmpty()) {
             $productOffers = $offers->map(function ($offer) use ($currentUrl) {
                 $isGenuineDiscount = (float) ($offer['discount_percent'] ?? 0) > 0;
+                // SEO audit finding: this offer's own to_date can already be
+                // in the past (e.g. it's carried over from $deal['offers']
+                // while the product page itself has fallen back to showing
+                // a "last known price") — availability must follow that
+                // date, not assume every entry here is a live deal.
+                $isActive = ProductPageMeta::offerIsActive($offer['to_date'] ?? null);
 
                 return array_filter([
                     '@type' => 'Offer',
                     'price' => (string) $offer['discounted_price'],
                     'priceCurrency' => 'EUR',
-                    'availability' => 'https://schema.org/InStock',
+                    'availability' => $isActive ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
                     'url' => $currentUrl,
                     'seller' => ['@type' => 'Organization', 'name' => $offer['store']['name'] ?? null],
-                    'validFrom' => $isGenuineDiscount ? ($offer['from_date'] ?? null) : null,
+                    'validFrom' => $isGenuineDiscount && $isActive ? ($offer['from_date'] ?? null) : null,
                     'priceValidUntil' => $isGenuineDiscount ? ($offer['to_date'] ?? null) : null,
                 ]);
             })->all();

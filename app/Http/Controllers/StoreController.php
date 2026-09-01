@@ -8,7 +8,6 @@ use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
 use App\Support\FaqSchema;
 use App\Support\ItemListSchema;
-use Illuminate\Support\Str;
 
 // Ported from discount/src/app/parduotuves/{page,[slug]/page,[slug]/[city]/page}.tsx.
 class StoreController extends Controller
@@ -39,6 +38,16 @@ class StoreController extends Controller
 
     public function show(ProductController $api, string $slug, ?string $city = null)
     {
+        // Per-city subpages were a doorway-page pattern flagged by an SEO
+        // audit (1,399 near-identical /parduotuves/{store}/{city} pages,
+        // same title/H1, differing only by one address block) — the
+        // no-city page below already groups and renders every city's
+        // locations in one place, so a bookmarked/indexed city URL just
+        // redirects to the store page instead of 404ing.
+        if ($city !== null) {
+            return redirect("/parduotuves/{$slug}", 301);
+        }
+
         $store = Store::where('slug', $slug)->firstOrFail();
         $response = $api->getStoreLocations($slug);
 
@@ -47,42 +56,20 @@ class StoreController extends Controller
         }
 
         $payload = json_decode($response->getContent(), true);
-        $allLocations = collect($payload['locations']);
-        $cities = $allLocations->pluck('city')->unique()->sort()->values();
+        $locations = collect($payload['locations']);
 
-        $locations = $allLocations;
-        if ($city !== null) {
-            $locations = $allLocations->filter(fn ($l) => Str::slug($l['city']) === $city)->values();
-            if ($locations->isEmpty()) {
-                abort(404);
-            }
-        }
-
-        $path = $city ? "/parduotuves/{$slug}/{$city}" : "/parduotuves/{$slug}";
+        $path = "/parduotuves/{$slug}";
         $breadcrumbs = [
             ['name' => 'Akcijos', 'href' => '/akcijos'],
             ['name' => 'Parduotuvės', 'href' => '/parduotuves'],
-            ['name' => $store->name, 'href' => "/parduotuves/{$slug}"],
+            ['name' => $store->name, 'href' => $path],
         ];
-        if ($city) {
-            $cityName = $locations->first()['city'] ?? $city;
-            $breadcrumbs[] = ['name' => $cityName, 'href' => $path];
-        }
-
-        // A single-city store's /{city} page shows the exact same locations as
-        // the no-city overview (which already lists every city) — duplicate
-        // content, so canonicalize to the parent instead of self and keep it
-        // out of the index. Sitemap generation mirrors this (ProductController).
-        $isSingleCityDuplicate = $city !== null && $cities->count() <= 1;
-        $canonicalPath = $isSingleCityDuplicate ? "/parduotuves/{$slug}" : $path;
 
         return view('stores.show', [
             'store' => $store,
             'locations' => $locations,
-            'cities' => $cities,
-            'citySlug' => $city,
-            'canonical' => CanonicalUrl::build($canonicalPath),
-            'robots' => $isSingleCityDuplicate ? 'noindex, follow' : CanonicalUrl::robotsMeta($path),
+            'canonical' => CanonicalUrl::build($path),
+            'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
         ]);

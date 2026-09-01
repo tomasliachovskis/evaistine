@@ -101,13 +101,8 @@ class SitemapController extends Controller
             $urls[] = ['loc' => CanonicalUrl::build("/naujienos/{$post['slug']}"), 'lastmod' => $post['lastmod'] ?? $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.5'];
         }
 
-        $storeLocationCities = $data['store_location_cities'] ?? [];
-        $overviewSlugs = collect($storeLocationCities)->pluck('store_slug')->unique();
-        foreach ($overviewSlugs as $slug) {
+        foreach ($data['store_location_slugs'] ?? [] as $slug) {
             $urls[] = ['loc' => CanonicalUrl::build("/parduotuves/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
-        }
-        foreach ($storeLocationCities as $entry) {
-            $urls[] = ['loc' => CanonicalUrl::build("/parduotuves/{$entry['store_slug']}/{$entry['city_slug']}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
         }
 
         return response()

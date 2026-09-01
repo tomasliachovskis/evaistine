@@ -10,7 +10,7 @@
 @endphp
 
 <x-layouts.app
-    :title="$store->name . ($citySlug ? ' parduotuvės' : ' parduotuvių tinklas') . ' – adresai ir darbo laikas'"
+    :title="$store->name . ' parduotuvių tinklas – adresai ir darbo laikas'"
     :canonical="$canonical"
     :robots="$robots"
 >
@@ -86,20 +86,6 @@
                             class="h-full min-h-[400px] w-full rounded-xl border border-gray-200"
                         ></div>
                     </div>
-                </div>
-            </div>
-        @endif
-
-        @if (!$citySlug && $cities->count() > 1)
-            <div>
-                <h2 class="mb-2.5 text-base font-bold text-gray-900">{{ $store->name }} pagal miestus</h2>
-                <div class="scroll-cards-x flex flex-nowrap gap-2">
-                    @foreach ($cities as $city)
-                        <a href="/parduotuves/{{ $store->slug }}/{{ \Illuminate\Support\Str::slug($city) }}" class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-green hover:text-dark-green">
-                            {{ $city }}
-                            <span class="text-xs text-gray-400">({{ $locationsByCity[$city]->count() }})</span>
-                        </a>
-                    @endforeach
                 </div>
             </div>
         @endif

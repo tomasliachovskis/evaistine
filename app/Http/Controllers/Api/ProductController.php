@@ -1203,7 +1203,7 @@ class ProductController extends Controller
 
     public function getSitemap()
     {
-        $cacheKey = 'sitemap_entries_v6_'.CacheVersion::suffix(['sitemap']);
+        $cacheKey = 'sitemap_entries_v7_'.CacheVersion::suffix(['sitemap']);
 
         return Cache::remember($cacheKey, 3600, function () {
             $freshness = $this->pageFreshnessService->build();
@@ -1258,38 +1258,21 @@ class ProductController extends Controller
                 ->values()
                 ->all();
 
-            // One entry per (store, city) with active locations — the frontend's
-            // slugifyCity() must produce byte-identical slugs to Str::slug() here
-            // (verified against real Lithuanian city names), or these URLs won't
-            // resolve to the actual /parduotuves/{store}/{city} pages.
-            $storeLocationCities = \App\Models\StoreLocation::query()
+            // Just the store overview page now — no more per-city subpages
+            // (/parduotuves/{store}/{city} was a doorway-page pattern, see
+            // StoreController::show()'s redirect-to-parent handling; the
+            // overview already groups and shows every city's locations).
+            $storeLocationSlugs = \App\Models\StoreLocation::query()
                 ->where('is_active', true)
                 ->join('stores', 'stores.id', '=', 'store_locations.store_id')
-                ->select('stores.slug as store_slug', 'store_locations.city')
                 ->distinct()
-                ->get()
-                ->map(fn ($row) => [
-                    'store_slug' => $row->store_slug,
-                    'city_slug' => \Illuminate\Support\Str::slug($row->city),
-                ])
-                ->unique(fn ($row) => "{$row['store_slug']}|{$row['city_slug']}")
-                ->values();
-
-            // A store present in only one city has a /parduotuves/{store}/{city}
-            // page that is byte-identical to /parduotuves/{store} (no-city shows
-            // all locations, which is just that one city's) — only the overview
-            // URL should be sitemapped/indexed for those, see
-            // StoreController::show()'s matching canonical-to-parent handling.
-            $storeLocationCities = $storeLocationCities
-                ->groupBy('store_slug')
-                ->filter(fn ($rows) => $rows->count() > 1)
-                ->flatten(1)
+                ->pluck('stores.slug')
                 ->values()
                 ->all();
 
             return response()->json([
                 'lastmod' => $defaultLastmod,
-                'store_location_cities' => $storeLocationCities,
+                'store_location_slugs' => $storeLocationSlugs,
                 'stores' => $stores,
                 'leaflet_stores' => $stores,
                 'leaflets' => $leafletEntries,
