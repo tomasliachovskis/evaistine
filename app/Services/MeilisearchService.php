@@ -530,7 +530,12 @@ class MeilisearchService
                 // for produce) never matched the singular product form at
                 // all. Found live: "Didysis avokadas..." didn't match the
                 // "Avokadai" generic.
-                'ai', 'as', 'os', 'io', 'ių', 'ų', 'is',
+                // 'ės' (nominative plural for -ė stem feminine nouns, e.g.
+                // "gertuvės"/"servetėlės"/"pirštinės") was also missing —
+                // only the singular 'ė' was stripped, so "Gertuvė" (product)
+                // and "Gertuvės" (generic, plural by convention) stemmed to
+                // "gertuv" vs "gertuvės" and never matched.
+                'ai', 'as', 'ės', 'os', 'io', 'ių', 'ų', 'is',
                 'ė', 'ę', 'ą', 'į', 'a', 'o', 'e', 'i', 'u',
             ];
             usort($suffixes, fn ($a, $b) => mb_strlen($b) - mb_strlen($a));
