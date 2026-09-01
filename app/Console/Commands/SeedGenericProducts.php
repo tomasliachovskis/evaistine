@@ -338,6 +338,91 @@ class SeedGenericProducts extends Command
         ['slug' => 'muilo-burbulai', 'name' => 'Muilo burbulai', 'emoji' => '🫧', 'category' => 'vaiku-ir-kudikiu-prekes'],
         ['slug' => 'zaislinis-automodelis', 'name' => 'Žaisliniai automodeliai', 'emoji' => '🚗', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['žaislinis automodelis']],
         ['slug' => 'pervystymo-paklotai', 'name' => 'Vienkartiniai pervystymo paklotai', 'emoji' => '👶', 'category' => 'vaiku-ir-kudikiu-prekes'],
+
+        // Round 7 — GPT batches for mesa-ir-zuvis, buitine-chemija-
+        // valymo-priemones, gyvunu-prekes, gerimai-kava-arbata. Cross-
+        // checked every suggestion against the current 329 slugs; a few
+        // genuinely collide in name only, not product type, so keep
+        // distinct slugs in the same or a different category: "desra"
+        // (human sausage, mesa-ir-zuvis) vs "sunu-desra" (dog treat,
+        // gyvunu-prekes); "indaploviu-tabletes" (dishwasher tablets) vs
+        // the salt/powder forms added here; "skumbre"/"sushi" already
+        // exist scoped to bakaleja (tinned/prepackaged) — fresh versions
+        // from the meat/fish counter get their own mesa-ir-zuvis entry,
+        // same cross-listing pattern as pėdkelnės/tualetinis popierius.
+        // Dropped as too vague/abbreviated: "Indap. skalav. pr.".
+        ['slug' => 'tualetinis-popierius-buitine-chemija', 'name' => 'Tualetinis popierius', 'emoji' => '🧻', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['tualetinis popierius']],
+
+        ['slug' => 'sumustinis', 'name' => 'Sumuštiniai', 'emoji' => '🥪', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'sesiu-rinkinys', 'name' => 'Sušių rinkiniai', 'emoji' => '🍣', 'category' => 'mesa-ir-zuvis', 'terms' => ['sušių rinkinys']],
+        ['slug' => 'uztepele', 'name' => 'Užtepėlės', 'emoji' => '🧈', 'category' => 'mesa-ir-zuvis', 'terms' => ['užtepėlė']],
+        ['slug' => 'midijos', 'name' => 'Midijos', 'emoji' => '🦪', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'kalmarai', 'name' => 'Kalmarai', 'emoji' => '🦑', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'anciuviai', 'name' => 'Ančiuviai', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'skumbre-mesa-zuvis', 'name' => 'Skumbrė', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis', 'terms' => ['skumbrė']],
+        ['slug' => 'sprotai', 'name' => 'Šprotai', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'vyniotinis', 'name' => 'Vyniotiniai', 'emoji' => '🌯', 'category' => 'mesa-ir-zuvis', 'terms' => ['vyniotinis']],
+        ['slug' => 'balandeliai', 'name' => 'Balandėliai', 'emoji' => '🥬', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'kebabas', 'name' => 'Kebabas', 'emoji' => '🌯', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'lazanija', 'name' => 'Lazanija', 'emoji' => '🍝', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'vistienos-kepsneliai', 'name' => 'Vištienos kepsneliai', 'emoji' => '🍗', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'zuvies-kukuliai', 'name' => 'Žuvies kukuliai', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'kiaulienos-mente', 'name' => 'Kiaulienos mentė', 'emoji' => '🥩', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'kiaulienos-nugarine', 'name' => 'Kiaulienos nugarinė', 'emoji' => '🥩', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'kiauliu-ausys', 'name' => 'Kiaulių ausys', 'emoji' => '🐷', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'kotletai', 'name' => 'Kotletai', 'emoji' => '🍖', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'vistienos-kukuliai', 'name' => 'Vištienos kukuliai', 'emoji' => '🍗', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'mesainis', 'name' => 'Mėsainiai', 'emoji' => '🍔', 'category' => 'mesa-ir-zuvis', 'terms' => ['mėsainis']],
+
+        ['slug' => 'purskiamas-kvapas', 'name' => 'Purškiamas kvapas', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'sausas-kvapiklis', 'name' => 'Sausas kvapiklis', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'skalbiniu-kvepalai', 'name' => 'Skalbinių kvepalai', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'kvapiosios-granules', 'name' => 'Kvapiosios granulės', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'automobilio-gaiviklis', 'name' => 'Automobilio gaiviklis', 'emoji' => '🚗', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'indaploviu-druska', 'name' => 'Indaplovių druska', 'emoji' => '🧂', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'indaplovies-milteliai', 'name' => 'Indaplovės milteliai', 'emoji' => '🧼', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'valomasis-pienelis', 'name' => 'Valomasis pienelis', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'milteliai-demems-salinti', 'name' => 'Milteliai dėmėms šalinti', 'emoji' => '🧼', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'baliklis', 'name' => 'Baliklis', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'dezinfekcijos-priemone', 'name' => 'Dezinfekcijos priemonė', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'kosmetines-serveteles', 'name' => 'Kosmetinės servetėlės', 'emoji' => '🧻', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'vienkartines-pirstines', 'name' => 'Vienkartinės pirštinės', 'emoji' => '🧤', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'buitines-pirstines', 'name' => 'Buitinės pirštinės', 'emoji' => '🧤', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'variklio-alyva', 'name' => 'Variklio alyva', 'emoji' => '🛢️', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'ausinimo-skystis', 'name' => 'Aušinimo skystis', 'emoji' => '🚗', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'impregnantas-avalynei', 'name' => 'Impregnantas avalynei', 'emoji' => '👟', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'metaliniai-sveistukai', 'name' => 'Metaliniai šveistukai', 'emoji' => '🧽', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'dulkiu-siurblys', 'name' => 'Dulkių siurbliai', 'emoji' => '🧹', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['dulkių siurblys']],
+        ['slug' => 'repelentas', 'name' => 'Repelentas', 'emoji' => '🦟', 'category' => 'buitine-chemija-valymo-priemones'],
+
+        ['slug' => 'uzkandis-sunims', 'name' => 'Užkandis šunims', 'emoji' => '🦴', 'category' => 'gyvunu-prekes'],
+        ['slug' => 'uzkandis-katems', 'name' => 'Užkandis katėms', 'emoji' => '🐟', 'category' => 'gyvunu-prekes'],
+        ['slug' => 'sunu-zaislas', 'name' => 'Šunų žaislai', 'emoji' => '🎾', 'category' => 'gyvunu-prekes', 'terms' => ['šunų žaislas']],
+        ['slug' => 'kaciu-zaislas', 'name' => 'Kačių žaislai', 'emoji' => '🐈', 'category' => 'gyvunu-prekes', 'terms' => ['kačių žaislas']],
+        ['slug' => 'augintiniu-dubuo', 'name' => 'Augintinių dubenys', 'emoji' => '🥣', 'category' => 'gyvunu-prekes', 'terms' => ['augintinių dubuo', 'augintinių dubenys']],
+        ['slug' => 'dantu-lazdeles-sunims', 'name' => 'Dantų lazdelės šunims', 'emoji' => '🦴', 'category' => 'gyvunu-prekes'],
+        ['slug' => 'sunu-kramtalai', 'name' => 'Šunų kramtalai', 'emoji' => '🦴', 'category' => 'gyvunu-prekes'],
+        ['slug' => 'konservuotas-maistas-sunims', 'name' => 'Konservuotas maistas šunims', 'emoji' => '🥫', 'category' => 'gyvunu-prekes'],
+        ['slug' => 'sunu-desra', 'name' => 'Šunų dešra', 'emoji' => '🌭', 'category' => 'gyvunu-prekes'],
+        ['slug' => 'pasaro-papildas', 'name' => 'Pašaro papildas', 'emoji' => '💊', 'category' => 'gyvunu-prekes', 'terms' => ['pašaro papildas', 'ėdalo papildas']],
+        ['slug' => 'kaciu-tualetas', 'name' => 'Kačių tualetas', 'emoji' => '🐈', 'category' => 'gyvunu-prekes'],
+        ['slug' => 'draskymo-lenta-katems', 'name' => 'Draskymo lentos katėms', 'emoji' => '🐈', 'category' => 'gyvunu-prekes', 'terms' => ['draskymo lenta']],
+        ['slug' => 'gyvunu-antkaklis', 'name' => 'Gyvūnų antkakliai', 'emoji' => '🐕', 'category' => 'gyvunu-prekes', 'terms' => ['antkaklis']],
+        ['slug' => 'pavadelis', 'name' => 'Pavadėliai', 'emoji' => '🦮', 'category' => 'gyvunu-prekes', 'terms' => ['pavadėlis']],
+        ['slug' => 'gyvuno-guolis', 'name' => 'Gyvūno guoliai', 'emoji' => '🛏️', 'category' => 'gyvunu-prekes', 'terms' => ['guolis']],
+        ['slug' => 'gyvunu-nagu-zirkles', 'name' => 'Gyvūnų nagų kirpimo žirklės', 'emoji' => '✂️', 'category' => 'gyvunu-prekes'],
+        ['slug' => 'mesos-pasta-augintiniams', 'name' => 'Mėsos pasta augintiniams', 'emoji' => '🥫', 'category' => 'gyvunu-prekes', 'terms' => ['mėsos pasta']],
+        ['slug' => 'gyvunu-sepetys', 'name' => 'Gyvūnų šepečiai', 'emoji' => '🪮', 'category' => 'gyvunu-prekes', 'terms' => ['gyvūnų šepetys']],
+
+        ['slug' => 'gira', 'name' => 'Gira', 'emoji' => '🍺', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'kombuca', 'name' => 'Kombuča', 'emoji' => '🍵', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'bulviu-traskuciai-gerimai', 'name' => 'Bulvių traškučiai', 'emoji' => '🍟', 'category' => 'gerimai-kava-arbata', 'terms' => ['bulvių traškučiai']],
+        ['slug' => 'dziovinti-vaisiai', 'name' => 'Džiovinti vaisiai', 'emoji' => '🍇', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'tyre', 'name' => 'Tyrė', 'emoji' => '🥣', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'sojos-padazas', 'name' => 'Sojos padažas', 'emoji' => '🍶', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'funkcinis-gerimas', 'name' => 'Funkcinis gėrimas', 'emoji' => '🥤', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'vitamininis-gerimas', 'name' => 'Vitamininis gėrimas', 'emoji' => '💊', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'fermentuotas-gerimas', 'name' => 'Fermentuotas gėrimas', 'emoji' => '🍶', 'category' => 'gerimai-kava-arbata'],
     ];
 
     public function handle(): int
