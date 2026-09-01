@@ -93,7 +93,7 @@ ssh $SSH_OPTS $SERVER << 'EOF'
 
     # Wrong APP_URL (e.g. http://localhost) bakes localhost into @vite() asset
     # URLs and JSON-LD — browsers then block app.js with CORS / LNA prompts.
-    PROD_APP_URL="${PROD_APP_URL:-https://api.liachovskis.com}"
+    PROD_APP_URL="${PROD_APP_URL:-https://superakcijos.lt}"
     if grep -q '^APP_URL=' .env; then
         sed -i "s|^APP_URL=.*|APP_URL=${PROD_APP_URL}|" .env
     else
