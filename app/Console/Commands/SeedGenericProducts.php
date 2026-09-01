@@ -162,6 +162,37 @@ class SeedGenericProducts extends Command
         ['slug' => 'seklos', 'name' => 'Sėklos', 'emoji' => '🌱', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'karsto-oro-gruzdintuves', 'name' => 'Karšto oro gruzdintuvės', 'emoji' => '🍟', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'gimtadienio-zvakutes', 'name' => 'Gimtadienio žvakutės', 'emoji' => '🎂', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+
+        // Round 3 — two categories of finding here: brand-new product-type
+        // clusters (as in rounds 1-2), plus a distinct "silent gap" kind:
+        // an existing generic's search_terms use one Lithuanian synonym
+        // (e.g. "maistas") while real product names commonly use another
+        // ("ėdalas") — same product, different word, so the existing entry
+        // never matches them. Since matching is exact-word (no stemming/
+        // synonym handling — see MatchGenericProducts::wordsOf), the fix is
+        // a new generic_products row with the missing phrasing rather than
+        // editing the existing one, same "silke"/"lasisa" umbrella pattern
+        // already relied on in round 2.
+        ['slug' => 'sunu-edalas', 'name' => 'Šunų ėdalas', 'emoji' => '🐶', 'category' => 'gyvunu-prekes', 'terms' => ['šunų ėdalas', 'ėdalas šunims', 'ėdalas šunų']],
+        ['slug' => 'kaciu-edalas', 'name' => 'Kačių ėdalas', 'emoji' => '🐱', 'category' => 'gyvunu-prekes', 'terms' => ['kačių ėdalas', 'ėdalas katėms', 'ėdalas kačių']],
+        ['slug' => 'skutimosi-putos', 'name' => 'Skutimosi putos', 'emoji' => '🪒', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'micelinis-vanduo', 'name' => 'Micelinis vanduo', 'emoji' => '💧', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'makiazo-pagrindas', 'name' => 'Makiažo pagrindas', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'paakiu-kremas', 'name' => 'Paakių kremas', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'veido-prausiklis', 'name' => 'Veido prausiklis', 'emoji' => '🧼', 'category' => 'kosmetika-ir-higiena'],
+        // gazuoti-gerimai (round-0 keyword_page generic) apparently doesn't
+        // match here — likely scoped to a different root category — so
+        // gerimai-kava-arbata's own "gazuotas gėrimas" products (154+)
+        // never matched anything. New slug, not an edit of the existing one.
+        ['slug' => 'gazuotas-gerimas-gk', 'name' => 'Gazuotas gėrimas', 'emoji' => '🥤', 'category' => 'gerimai-kava-arbata', 'terms' => ['gazuotas gėrimas', 'gazuotas gaivusis gėrimas']],
+        ['slug' => 'izotoninis-gerimas', 'name' => 'Izotoninis gėrimas', 'emoji' => '🏃', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'kojines', 'name' => 'Kojinės', 'emoji' => '🧦', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'kuprines', 'name' => 'Kuprinės', 'emoji' => '🎒', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'dubeneliai', 'name' => 'Dubenėliai', 'emoji' => '🥣', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'puodai', 'name' => 'Puodai', 'emoji' => '🍲', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'elektriniai-virduliai', 'name' => 'Elektriniai virduliai', 'emoji' => '☕', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'vazonai', 'name' => 'Vazonai', 'emoji' => '🪴', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'rasikliai', 'name' => 'Rašikliai', 'emoji' => '🖊️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
     ];
 
     public function handle(): int
