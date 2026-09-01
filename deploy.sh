@@ -49,10 +49,7 @@ rsync -avz --no-perms --no-owner --no-group -e "ssh $SSH_OPTS" \
   --include='storage/app/' \
   --include='storage/app/flyers-incoming/' \
   --include='storage/app/flyers-incoming/***' \
-  --include='storage/app/public/' \
-  --include='storage/app/public/flyers/' \
-  --include='storage/app/public/flyers/pdfs/' \
-  --include='storage/app/public/flyers/pdfs/***' \
+  --exclude='storage/app/public/' \
   --exclude='storage/logs/**' \
   --exclude='storage/framework/cache/**' \
   --exclude='storage/framework/sessions/**' \
