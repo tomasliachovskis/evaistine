@@ -20,33 +20,38 @@
     <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
     <meta name="robots" content="{{ $robots ?? 'index, follow' }}">
 
-    <script type="application/ld+json">
-        {!! json_encode([
-            '@context' => 'https://schema.org',
-            '@type' => 'Organization',
-            'name' => 'SuperAkcijos.lt',
-            'url' => 'https://superakcijos.lt',
-            'logo' => 'https://superakcijos.lt/assets/logo.svg',
-            'description' => 'Naujausi akcijų ir nuolaidų leidiniai vienoje vietoje. Rask geriausias MAXIMA, IKI, LIDL, NORFA, RIMI ir kitų prekybos tinklų akcijas.',
-        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
-    </script>
-    <script type="application/ld+json">
-        {!! json_encode([
-            '@context' => 'https://schema.org',
-            '@type' => 'WebSite',
-            'name' => 'SuperAkcijos.lt',
-            'url' => 'https://superakcijos.lt',
-            'description' => 'Rask visas akcijas ir nuolaidas vienoje vietoje',
-            'potentialAction' => [
-                '@type' => 'SearchAction',
-                'target' => [
-                    '@type' => 'EntryPoint',
-                    'urlTemplate' => 'https://superakcijos.lt/akcijos/paieska/{search_term_string}',
+    @if (request()->is('/'))
+        {{-- SEO audit finding: was emitted on every single page — Google
+             only needs Organization/WebSite once, conventionally on the
+             homepage; repeating it site-wide is just redundant payload. --}}
+        <script type="application/ld+json">
+            {!! json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'Organization',
+                'name' => 'SuperAkcijos.lt',
+                'url' => 'https://superakcijos.lt',
+                'logo' => 'https://superakcijos.lt/assets/logo.svg',
+                'description' => 'Naujausi akcijų ir nuolaidų leidiniai vienoje vietoje. Rask geriausias MAXIMA, IKI, LIDL, NORFA, RIMI ir kitų prekybos tinklų akcijas.',
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+        </script>
+        <script type="application/ld+json">
+            {!! json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'WebSite',
+                'name' => 'SuperAkcijos.lt',
+                'url' => 'https://superakcijos.lt',
+                'description' => 'Rask visas akcijas ir nuolaidas vienoje vietoje',
+                'potentialAction' => [
+                    '@type' => 'SearchAction',
+                    'target' => [
+                        '@type' => 'EntryPoint',
+                        'urlTemplate' => 'https://superakcijos.lt/akcijos/paieska/{search_term_string}',
+                    ],
+                    'query-input' => 'required name=search_term_string',
                 ],
-                'query-input' => 'required name=search_term_string',
-            ],
-        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
-    </script>
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+        </script>
+    @endif
 
     @stack('head')
 

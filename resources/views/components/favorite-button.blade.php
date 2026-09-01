@@ -21,11 +21,17 @@
     {{-- Ported from discount/src/components/common/favorite-button.tsx (default,
          non-"header" variant): ghost icon button, no circular backdrop — the
          heart itself fills red when favorited. --}}
+    {{-- Visual mobile SEO audit finding: this was h-auto w-auto p-0, so its
+         tap target was exactly the 22px icon — well under the ~44px
+         guidance, and repeated on every card in every grid. Sizing the
+         button itself to 44px (icon stays visually 22px, just centered in
+         a bigger invisible hit area) fixes that without changing how the
+         icon looks. --}}
     <button
         type="button"
         x-data="favoriteButton({{ $productId }}, {{ $favorited ? 'true' : 'false' }})"
         @click.stop.prevent="toggle()"
-        class="h-auto w-auto p-0 hover:bg-transparent"
+        class="flex h-11 w-11 items-center justify-center hover:bg-transparent"
         x-bind:aria-label="favorited ? 'Pašalinti iš stebimų' : 'Pridėti į stebimas'"
     >
         <x-app-icon

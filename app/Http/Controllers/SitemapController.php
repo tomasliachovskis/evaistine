@@ -39,7 +39,12 @@ class SitemapController extends Controller
             'User-agent: *',
             'Disallow: /api/',
             'Disallow: /private/',
-            'Disallow: /akcijos/paieska/',
+            // No trailing slash: robots.txt Disallow is a plain prefix
+            // match, so the trailing-slash form used before only ever
+            // matched query results (/akcijos/paieska/{query}) and never
+            // the bare search form itself (/akcijos/paieska, already
+            // meta-noindexed separately) — this one line covers both.
+            'Disallow: /akcijos/paieska',
             'Disallow: /*?store=*',
             'Disallow: /*?category=*',
             'Disallow: /*?card=*',
