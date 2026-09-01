@@ -178,8 +178,10 @@ puppeteer.use(StealthPlugin());
         while (stableAtBottom < 3) {
             mergeProducts(await extractProducts());
 
+            // Smaller steps (was 350px) — fewer new tiles trigger to mount per
+            // step, and the 300ms gap has an easier time keeping up with them.
             const atBottom = await page.evaluate(() => {
-                window.scrollBy(0, 350);
+                window.scrollBy(0, 150);
                 return window.scrollY + window.innerHeight >= document.body.scrollHeight;
             });
             await sleep(300);
@@ -209,7 +211,7 @@ puppeteer.use(StealthPlugin());
             let lastCount = allProducts.size;
 
             while (allProducts.size < expectedTotal && stallRounds < 10) {
-                await page.evaluate(() => window.scrollBy(0, 350));
+                await page.evaluate(() => window.scrollBy(0, 150));
                 await sleep(700);
                 mergeProducts(await extractProducts());
 
