@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\GenericProduct;
 use App\Models\Product;
+use App\Services\MeilisearchService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -124,14 +125,27 @@ class MatchGenericProducts extends Command
     ];
 
     /**
+     * Words here are Lithuanian-stemmed (via the same MeilisearchService::
+     * buildNameStem() used for "similar products" search), not full words —
+     * "jautiena"/"jautienos"/"jautienai" and "lašišos"/"lašišų" all reduce
+     * to the same stem ("jautien"/"lasis" after diacritic folding), closing
+     * a whole class of declension-mismatch misses that used to require a
+     * hand-added 'terms' variant per affected generic_products row (see
+     * lasisos-file, higieniniai-paketai, dezodorantas in
+     * SeedGenericProducts::MANUAL_ADDITIONS). buildNameStem() also strips
+     * ALL-CAPS brand words and package-size/unit noise, which matches this
+     * command's own "never a brand name" rule for search terms.
+     *
      * @return list<string>
      */
     private function wordsOf(string $text): array
     {
-        $text = strtr(mb_strtolower($text), self::DIACRITIC_MAP);
-        preg_match_all('/[a-z]+/u', $text, $matches);
+        $stem = MeilisearchService::buildNameStem($text);
+        $words = $stem !== '' ? explode(' ', $stem) : [];
 
-        return array_values(array_filter($matches[0], fn ($w) => mb_strlen($w) >= 3));
+        $folded = array_map(fn ($w) => strtr(mb_strtolower($w), self::DIACRITIC_MAP), $words);
+
+        return array_values(array_filter($folded, fn ($w) => mb_strlen($w) >= 3));
     }
 
     /**
