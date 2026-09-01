@@ -176,7 +176,19 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     find storage bootstrap/cache -type d -exec chmod g+ws {} \; 2>/dev/null || true
     find storage bootstrap/cache -type f -exec chmod g+w {} \; 2>/dev/null || true
 
-    php artisan view:cache
+    # Still an inherent race even right after the chmod above (seen live
+    # again, same day: a request compiled a view in the split second between
+    # the chmod pass and view:cache itself). view:cache aborts entirely on
+    # the first unwritable file — a single unlucky file otherwise leaves
+    # every OTHER view uncompiled too, not just that one. One retry after a
+    # fresh chmod pass resolves it; the odds of the exact same race
+    # happening twice in a row are negligible.
+    php artisan view:cache || {
+        echo "view:cache failed (permission race with a live request) — fixing perms and retrying once..."
+        find storage bootstrap/cache -type d -exec chmod g+ws {} \; 2>/dev/null || true
+        find storage bootstrap/cache -type f -exec chmod g+w {} \; 2>/dev/null || true
+        php artisan view:cache
+    }
 
     php artisan queue:restart
 
