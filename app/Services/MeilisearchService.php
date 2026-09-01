@@ -524,7 +524,13 @@ class MeilisearchService
         if ($suffixes === null) {
             $suffixes = [
                 'iams', 'omis', 'umas', 'ose', 'oje', 'iai', 'ėms', 'oms',
-                'ai', 'os', 'io', 'ių', 'ų', 'is',
+                // 'as' (nominative singular, e.g. "avokadas"/"pomidoras"/
+                // "agurkas") was missing — its plural "-ai" was already
+                // stripped, so a generic named in the plural (very common
+                // for produce) never matched the singular product form at
+                // all. Found live: "Didysis avokadas..." didn't match the
+                // "Avokadai" generic.
+                'ai', 'as', 'os', 'io', 'ių', 'ų', 'is',
                 'ė', 'ę', 'ą', 'į', 'a', 'o', 'e', 'i', 'u',
             ];
             usort($suffixes, fn ($a, $b) => mb_strlen($b) - mb_strlen($a));
