@@ -1034,11 +1034,17 @@ class ProductController extends Controller
                 $countLabel = $this->formatCount($count);
                 $lowerName = mb_strtolower($entity->name);
 
+                // Some listings are full-catalog (price-only, no discount_percent
+                // on any row) rather than discount-only — MAX(discount_percent)
+                // is then NULL/0 across the board, and an unconditional "iki 0%
+                // nuolaidos" would misrepresent real priced products as a fake
+                // zero-value deal. Only claim a discount percentage when one
+                // genuinely exists.
                 return [
                     'seo_title' => $entity->name.' akcijos prekybos centruose',
                     'seo_description' => $entity->description,
-                    'meta_title' => $entity->name." akcijos – pigiausios kainos, iki {$maxDiscount}% nuolaidos",
-                    'meta_description' => "Palyginkite {$lowerName} akcijas prekybos centruose – {$countLabel}+ pasiūlymų iš {$storeNames}. Iki {$maxDiscount}% nuolaidos šią savaitę!",
+                    'meta_title' => $entity->name.' akcijos – pigiausios kainos'.($maxDiscount > 0 ? ", iki {$maxDiscount}% nuolaidos" : ''),
+                    'meta_description' => "Palyginkite {$lowerName} akcijas prekybos centruose – {$countLabel}+ pasiūlymų iš {$storeNames}.".($maxDiscount > 0 ? " Iki {$maxDiscount}% nuolaidos šią savaitę!" : ''),
                 ];
             case 'store_leaflet':
                 $count = $this->getDiscountCountForStore($entity);
@@ -1104,11 +1110,15 @@ class ProductController extends Controller
                     return $seoData;
                 }
 
+                // Same full-catalog case as the 'category' branch above: real
+                // products can exist here with no discount_percent on any of
+                // them (price-only listing), so only claim a percentage when
+                // one actually exists rather than defaulting to "iki 0%".
                 $seoData = [
                     'seo_title' => $entity->name.' akcija '.$categoryLower,
                     'seo_description' => '',
-                    'meta_title' => mb_strtoupper($entity->name).' akcija '.$categoryLower.' – iki '.$maxDiscount.'% nuolaidos',
-                    'meta_description' => "Naujausios {$entity->name} {$categoryLower} akcijos – iki {$maxDiscount}% nuolaidos, {$countLabel}+ prekių. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
+                    'meta_title' => mb_strtoupper($entity->name).' akcija '.$categoryLower.($maxDiscount > 0 ? ' – iki '.$maxDiscount.'% nuolaidos' : ''),
+                    'meta_description' => "Naujausios {$entity->name} {$categoryLower} akcijos".($maxDiscount > 0 ? " – iki {$maxDiscount}% nuolaidos" : '').", {$countLabel}+ prekių. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
                 ];
 
                 if ($storeCategoryDescription && $storeCategoryDescription->top_products_html) {
