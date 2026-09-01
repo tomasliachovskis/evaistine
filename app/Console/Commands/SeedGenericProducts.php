@@ -223,6 +223,118 @@ class SeedGenericProducts extends Command
         ['slug' => 'pastetas', 'name' => 'Paštetas', 'emoji' => '🥫', 'category' => 'mesa-ir-zuvis'],
         ['slug' => 'krabu-lazdeles', 'name' => 'Krabų lazdelės', 'emoji' => '🦀', 'category' => 'mesa-ir-zuvis'],
         ['slug' => 'kuno-sveitiklis', 'name' => 'Kūno šveitiklis', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
+
+        // Round 6 — GPT-assisted (gpt-5-mini via the existing OpenAI
+        // integration, same pattern as CategoryMappingService), not pure
+        // frequency counting: sampled random batches of still-ungrouped
+        // product names per category and asked for generic-product
+        // candidates. Useful for surfacing the "long tail" of real,
+        // distinct product types that never individually cracked the
+        // top-20/30 word-frequency list (each is common enough to matter,
+        // just not dominant on its own) — brand names and umbrella terms
+        // in the raw suggestions were stripped/rewritten by hand before
+        // use, same quality bar as every round above.
+        ['slug' => 'hermetiski-indeliai', 'name' => 'Hermetiški indeliai', 'emoji' => '🫙', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['hermetiškas indelis', 'hermetiški indeliai', 'indelis maistui']],
+        ['slug' => 'daiktadezes', 'name' => 'Daiktadėžės', 'emoji' => '📦', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'baterijos-elementai', 'name' => 'Baterijos ir elementai', 'emoji' => '🔋', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['baterijos', 'elementai aaa', 'elementai aa']],
+        ['slug' => 'tekstiliniai-ranksluosciai', 'name' => 'Tekstiliniai rankšluosčiai', 'emoji' => '🧻', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['rankšluostis', 'kilpinis rankšluostis']],
+        ['slug' => 'sulankstomos-kedes', 'name' => 'Sulankstomos kėdės', 'emoji' => '🪑', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'skeciai', 'name' => 'Skėčiai', 'emoji' => '☂️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'plauku-dziovintuvai', 'name' => 'Plaukų džiovintuvai', 'emoji' => '💨', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'kirpimo-masineles', 'name' => 'Kirpimo mašinėlės', 'emoji' => '💈', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'ikrovikliai', 'name' => 'Įkrovikliai', 'emoji' => '🔌', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['įkroviklis', 'įkrovikliai', 'kroviklis']],
+        ['slug' => 'klijai', 'name' => 'Klijai', 'emoji' => '🧴', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'klijai-pistoletai', 'name' => 'Klijų pistoletai', 'emoji' => '🔫', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'kepimo-maiseliai', 'name' => 'Kepimo maišeliai', 'emoji' => '🍗', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'stiklines', 'name' => 'Stiklinės', 'emoji' => '🥃', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'gertuves', 'name' => 'Gertuvės', 'emoji' => '🍶', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'vandens-filtrai', 'name' => 'Vandens filtrai', 'emoji' => '💧', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'irankiu-dezes', 'name' => 'Įrankių dėžės', 'emoji' => '🧰', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['įrankių dėžė', 'įrankių krepšys']],
+        ['slug' => 'kibirai', 'name' => 'Kibirai', 'emoji' => '🪣', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'padekliukai', 'name' => 'Padėkliukai', 'emoji' => '🧺', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'pledai', 'name' => 'Pledai', 'emoji' => '🧣', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'serviravimo-indai', 'name' => 'Serviravimo indai', 'emoji' => '🍽️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'vienkartines-nosinaites', 'name' => 'Vienkartinės nosinaitės', 'emoji' => '🤧', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'spalvotas-popierius', 'name' => 'Spalvotas popierius', 'emoji' => '🎨', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'flomasteriai', 'name' => 'Flomasteriai', 'emoji' => '🖍️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'pasteles', 'name' => 'Pastelės', 'emoji' => '🖍️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'israsiniai-akumuliatoriai', 'name' => 'Išoriniai akumuliatoriai', 'emoji' => '🔋', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['išorinis akumuliatorius', 'išoriniai akumuliatoriai']],
+        ['slug' => 'rankiniai-zibintuvieliai', 'name' => 'Rankiniai žibintuvėliai', 'emoji' => '🔦', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['žibintuvėlis', 'rankinis žibintuvėlis']],
+        ['slug' => 'belaides-peles', 'name' => 'Belaidės pelės', 'emoji' => '🖱️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['belaidė pelė', 'belaidė optinė pelė']],
+        ['slug' => 'dumu-detektoriai', 'name' => 'Dūmų detektoriai', 'emoji' => '🚨', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'rankiniai-maisytuvai', 'name' => 'Rankiniai maišytuvai', 'emoji' => '🍽️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'staliniai-sviestuvai', 'name' => 'Staliniai šviestuvai', 'emoji' => '💡', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'garu-valytuvai', 'name' => 'Garų valytuvai', 'emoji' => '💨', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'tarpdanciu-siulas', 'name' => 'Tarpdančių siūlas', 'emoji' => '🦷', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'el-dantu-sepetelio-galvutes', 'name' => 'Elektrinio dantų šepetėlio galvutės', 'emoji' => '🦷', 'category' => 'kosmetika-ir-higiena', 'terms' => ['dantų šepetėlio galvutės', 'el. dantų šep. galv.']],
+        // Refines the existing 'dezodorantas' generic (from the original
+        // 178) with the abbreviated application-form phrasing real product
+        // names use — same slug, so this updates it in place rather than
+        // creating a duplicate/competing entry.
+        ['slug' => 'dezodorantas', 'name' => 'Dezodorantas', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena', 'terms' => ['dezodorantas', 'pieštukinis dezodorantas', 'purškiamas dezodorantas', 'rutulinis dezodorantas', 'piešt dezodor', 'puršk dezodor', 'rutul dezodor']],
+
+        // Round 6b — GPT batches for bakaleja/kosmetika/vaiku-ir-kudikiu-
+        // prekes. Cross-checked every suggested name against the current
+        // 253 slugs before adding: several (sviestas, vafliai, guminukai,
+        // ledai, kakava, arbata, dešrelės, dešra, sausainiai) already exist
+        // but scoped to a DIFFERENT root category — same real product
+        // cross-listed under bakaleja too (matching is category-scoped, see
+        // the pėdkelnės/silkių filė finding in round 5) — so these get a
+        // new "-bak" slug rather than being skipped as duplicates. Vague/
+        // umbrella suggestions (Užkandis, Kūrybinis rinkinys, Interaktyvus
+        // žaislas, Tepamieji kremai) were dropped.
+        ['slug' => 'sviestas-bak', 'name' => 'Sviestas', 'emoji' => '🧈', 'category' => 'bakaleja', 'terms' => ['sviestas']],
+        ['slug' => 'vafliai-bak', 'name' => 'Vafliai', 'emoji' => '🧇', 'category' => 'bakaleja', 'terms' => ['vafliai']],
+        ['slug' => 'guminukai-bak', 'name' => 'Guminukai', 'emoji' => '🍬', 'category' => 'bakaleja', 'terms' => ['guminukai']],
+        ['slug' => 'kakava-bak', 'name' => 'Tirpioji kakava', 'emoji' => '🍫', 'category' => 'bakaleja', 'terms' => ['tirpioji kakava', 'kakava']],
+        ['slug' => 'arbata-bak', 'name' => 'Arbata', 'emoji' => '🍵', 'category' => 'bakaleja', 'terms' => ['žalioji arbata', 'juodoji arbata', 'arbata']],
+        ['slug' => 'desreles-bak', 'name' => 'Dešrelės', 'emoji' => '🌭', 'category' => 'bakaleja', 'terms' => ['dešrelės']],
+        ['slug' => 'sausainiai-bak', 'name' => 'Sausainiai', 'emoji' => '🍪', 'category' => 'bakaleja', 'terms' => ['sausainiai']],
+        ['slug' => 'dribsniai', 'name' => 'Dribsniai', 'emoji' => '🥣', 'category' => 'bakaleja'],
+        ['slug' => 'granola', 'name' => 'Granola', 'emoji' => '🥣', 'category' => 'bakaleja'],
+        ['slug' => 'krekeriai', 'name' => 'Krekeriai', 'emoji' => '🍘', 'category' => 'bakaleja'],
+        ['slug' => 'pastiles', 'name' => 'Pastilės', 'emoji' => '🍬', 'category' => 'bakaleja'],
+        ['slug' => 'kukuruzu-traskuciai', 'name' => 'Kukurūzų traškučiai', 'emoji' => '🌽', 'category' => 'bakaleja'],
+        ['slug' => 'baltyminis-batonelis', 'name' => 'Baltyminis batonėlis', 'emoji' => '🍫', 'category' => 'bakaleja'],
+        ['slug' => 'marinuoti-burokeliai', 'name' => 'Marinuoti burokėliai', 'emoji' => '🫐', 'category' => 'bakaleja'],
+        ['slug' => 'alyvuoges', 'name' => 'Alyvuogės', 'emoji' => '🫒', 'category' => 'bakaleja', 'terms' => ['žaliosios alyvuogės', 'juodosios alyvuogės', 'alyvuogės']],
+
+        ['slug' => 'plauku-serumas', 'name' => 'Plaukų serumas', 'emoji' => '💧', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'plauku-putos', 'name' => 'Plaukų putos', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'plauku-formavimo-priemone', 'name' => 'Plaukų formavimo priemonė', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena', 'terms' => ['plaukų formavimo gelis', 'plaukų modeliavimo pasta', 'plaukų purškiklis', 'plaukų pudra']],
+        ['slug' => 'plauku-sepeciai-sukos', 'name' => 'Plaukų šepečiai ir šukos', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena', 'terms' => ['plaukų šepetys', 'plaukų šukos']],
+        ['slug' => 'plauku-gumeles', 'name' => 'Plaukų gumelės', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'veido-tonikas', 'name' => 'Veido tonikas', 'emoji' => '💧', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'akiu-makiazo-valiklis', 'name' => 'Akių makiažo valiklis', 'emoji' => '💧', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'lupu-balzamas', 'name' => 'Lūpų balzamas', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'lupu-blizgis', 'name' => 'Lūpų blizgis', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'nagu-lako-valiklis', 'name' => 'Nagų lako valiklis', 'emoji' => '💅', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'nagu-zirkles', 'name' => 'Nagų žirklės', 'emoji' => '✂️', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'pleistrai', 'name' => 'Pleistrai', 'emoji' => '🩹', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'vatos-diskeliai', 'name' => 'Vatos diskeliai', 'emoji' => '⚪', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'prezervatyvai', 'name' => 'Prezervatyvai', 'emoji' => '📦', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'kojines-kosmetika', 'name' => 'Kojinės', 'emoji' => '🧦', 'category' => 'kosmetika-ir-higiena', 'terms' => ['kojinės']],
+        ['slug' => 'losjonas-po-skutimosi', 'name' => 'Losjonas po skutimosi', 'emoji' => '🪒', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'gelis-po-saules', 'name' => 'Gelis po saulės', 'emoji' => '☀️', 'category' => 'kosmetika-ir-higiena'],
+
+        ['slug' => 'dregnosios-servetieles-kudikiams', 'name' => 'Drėgnosios servetėlės kūdikiams', 'emoji' => '🧻', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['drėgnosios servetėlės']],
+        ['slug' => 'buteliukas', 'name' => 'Buteliukai', 'emoji' => '🍼', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['buteliukas']],
+        ['slug' => 'zindukas', 'name' => 'Žindukai', 'emoji' => '🍼', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['žindukas']],
+        ['slug' => 'vaikiskas-sampunas', 'name' => 'Vaikiškas šampūnas', 'emoji' => '🧴', 'category' => 'vaiku-ir-kudikiu-prekes'],
+        ['slug' => 'kudikiu-prausiklis', 'name' => 'Kūdikių prausiklis', 'emoji' => '🧼', 'category' => 'vaiku-ir-kudikiu-prekes'],
+        ['slug' => 'kremas-kudikiams', 'name' => 'Kremas kūdikiams', 'emoji' => '🧴', 'category' => 'vaiku-ir-kudikiu-prekes'],
+        ['slug' => 'puodelis-vaikams', 'name' => 'Puodeliai vaikams', 'emoji' => '🥤', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['puodelis']],
+        ['slug' => 'gertuve-vaikams', 'name' => 'Gertuvės vaikams', 'emoji' => '🍼', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['gertuvė']],
+        ['slug' => 'dubenelis-vaikams', 'name' => 'Dubenėliai vaikams', 'emoji' => '🥣', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['dubenėlis']],
+        ['slug' => 'pliusinis-zaislas', 'name' => 'Pliušiniai žaislai', 'emoji' => '🧸', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['pliušinis žaislas']],
+        ['slug' => 'figurele', 'name' => 'Figūrėlės', 'emoji' => '🧸', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['figūrėlė']],
+        ['slug' => 'delione', 'name' => 'Dėlionės', 'emoji' => '🧩', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['dėlionė']],
+        ['slug' => 'plastilinas-modelinas', 'name' => 'Plastilinas ir modelinas', 'emoji' => '🎨', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['plastilinas', 'modelinas']],
+        ['slug' => 'maudymukas', 'name' => 'Maudymukai', 'emoji' => '👙', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['maudymukas']],
+        ['slug' => 'kojines-vaikams', 'name' => 'Kojinės vaikams', 'emoji' => '🧦', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['kojinės']],
+        ['slug' => 'muilo-burbulai', 'name' => 'Muilo burbulai', 'emoji' => '🫧', 'category' => 'vaiku-ir-kudikiu-prekes'],
+        ['slug' => 'zaislinis-automodelis', 'name' => 'Žaisliniai automodeliai', 'emoji' => '🚗', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['žaislinis automodelis']],
+        ['slug' => 'pervystymo-paklotai', 'name' => 'Vienkartiniai pervystymo paklotai', 'emoji' => '👶', 'category' => 'vaiku-ir-kudikiu-prekes'],
     ];
 
     public function handle(): int
