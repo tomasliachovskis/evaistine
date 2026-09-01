@@ -83,14 +83,37 @@
             />
         </div>
 
-        @if (!empty($leaflets))
-            <section>
+        @php
+            // Split rather than just re-sort: an SEO audit flagged expired
+            // leaflets sitting in the same grid, same size, as the current
+            // one — hard to tell at a glance which leaflet is actually live.
+            // A separate, clearly-labeled section makes that unambiguous.
+            $activeLeaflets = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) !== 'expired'));
+            $expiredLeaflets = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) === 'expired'));
+
+            $formatLeafletDateRange = function (array $leaflet) {
+                if (empty($leaflet['valid_from']) || empty($leaflet['valid_to'])) {
+                    return null;
+                }
+
+                return \Illuminate\Support\Carbon::parse($leaflet['valid_from'])->format('Y.m.d')
+                    . ' – ' . \Illuminate\Support\Carbon::parse($leaflet['valid_to'])->format('Y.m.d');
+            };
+        @endphp
+
+        @foreach ([['heading' => null, 'items' => $activeLeaflets], ['heading' => 'Pasibaigę leidiniai', 'items' => $expiredLeaflets]] as $group)
+            @continue(empty($group['items']))
+            <section class="{{ $loop->index > 0 ? 'mt-8' : '' }}">
+                @if ($group['heading'])
+                    <h2 class="mb-3 text-base font-bold text-gray-900">{{ $group['heading'] }}</h2>
+                @endif
                 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-                    @foreach ($leaflets as $leaflet)
+                    @foreach ($group['items'] as $leaflet)
                         @php
                             $isExpired = ($leaflet['status'] ?? null) === 'expired';
                             $href = $leaflet['view_url'] ?? "/leidinys/{$storeSlug}";
                             $days = $leaflet['days_remaining'] ?? null;
+                            $dateRange = $formatLeafletDateRange($leaflet);
                         @endphp
                         <article class="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
                             <a href="{{ $href }}" class="relative block aspect-[6/5] w-full overflow-hidden bg-gray-50">
@@ -100,6 +123,15 @@
                             </a>
                             <div class="flex flex-1 flex-col gap-2 p-4">
                                 <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
+                                @if ($dateRange)
+                                    {{-- A consistent, real identifier for every card — some
+                                         leaflets carry a themed campaign name instead of a
+                                         sequential number (e.g. "Skonių dienos"), so a fixed
+                                         "Nr. X" can't be shown for all of them without
+                                         fabricating one; the validity date range is always
+                                         real and always available. --}}
+                                    <p class="text-xs font-medium text-gray-500">{{ $dateRange }}</p>
+                                @endif
                                 <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ $isExpired ? 'text-gray-400' : ($days !== null && $days <= 2 ? 'text-red-600' : 'text-dark-green') }}">
                                     <x-app-icon name="clock" class="size-3.5" />
                                     {{ $isExpired ? 'Nebegalioja' : ($days !== null ? "Galioja dar {$days} {$daysWord($days)}" : 'Galioja') }}
@@ -110,7 +142,7 @@
                     @endforeach
                 </div>
             </section>
-        @endif
+        @endforeach
 
         @if (count($sections ?? []))
             <div class="flex min-w-0 flex-col">

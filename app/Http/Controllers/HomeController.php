@@ -50,12 +50,20 @@ class HomeController extends Controller
         $stores = \App\Support\StoreListPriority::sort($stores);
 
         // buildAllLeaflets() is already ordered current-per-store first, newest
-        // valid_from first within that (StoreFlyer::scopeOrdered()) — so the
-        // first N are exactly "newest leaflets across every store", no extra
-        // sorting needed. Reuses ProductController::getAllLeaflets()'s own
-        // 1h cache, same in-process pattern as AkcijosController/LeafletController.
+        // valid_from first within that (StoreFlyer::scopeOrdered()), with
+        // expired ones pushed to the end — but "pushed to the end" still
+        // means an expired leaflet could land in the first 10 for a store
+        // whose current leaflet isn't ready yet. The homepage should only
+        // ever tease genuinely current leaflets, so filter expired out
+        // entirely rather than relying on sort order alone. Reuses
+        // ProductController::getAllLeaflets()'s own 1h cache, same in-process
+        // pattern as AkcijosController/LeafletController.
         $leafletsPayload = json_decode(app(ProductController::class)->getAllLeaflets()->getContent(), true);
-        $latestLeaflets = array_slice($leafletsPayload['leaflets'] ?? [], 0, 12);
+        $latestLeaflets = collect($leafletsPayload['leaflets'] ?? [])
+            ->filter(fn ($leaflet) => ($leaflet['status'] ?? null) !== 'expired')
+            ->take(10)
+            ->values()
+            ->all();
 
         $seo = $pageMeta['seo'];
         $title = $seo['meta_title'] ?: 'Akcijos ir nuolaidos Lietuvoje | SuperAkcijos.lt';
