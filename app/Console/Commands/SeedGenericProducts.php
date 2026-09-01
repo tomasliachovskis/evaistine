@@ -128,6 +128,40 @@ class SeedGenericProducts extends Command
         ['slug' => 'saldainiu-rinkinys', 'name' => 'Saldainių rinkinys', 'emoji' => '🍬', 'category' => 'saldumynai-ir-uzkandziai'],
         ['slug' => 'kramtomoji-guma', 'name' => 'Kramtomoji guma', 'emoji' => '🍬', 'category' => 'saldumynai-ir-uzkandziai'],
         ['slug' => 'plombyras', 'name' => 'Plombyras', 'emoji' => '🍦', 'category' => 'saldytas-maistas-ir-ledai'],
+
+        // Round 2 — same frequency-analysis method, re-run against the
+        // residual after round 1's 19 additions. Matching tries longer
+        // (more specific) search-term sequences before shorter ones (see
+        // MatchGenericProducts::termSets sortByDesc), so a 2-word generic
+        // like "silkių filė" added alongside the existing single-word
+        // "silke"/"lasisa" umbrella is picked first for products that
+        // actually say "filė" — no risk of the new entry losing to the
+        // older, broader one.
+        ['slug' => 'dusas-gelis', 'name' => 'Dušo gelis', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena', 'terms' => ['dušo gelis']],
+        ['slug' => 'blakstienu-tusas', 'name' => 'Blakstienų tušas', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'ranku-kremas', 'name' => 'Rankų kremas', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'nagu-lakas', 'name' => 'Nagų lakas', 'emoji' => '💅', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'tualetinis-vanduo', 'name' => 'Tualetinis vanduo', 'emoji' => '🌸', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'plauku-lakas', 'name' => 'Plaukų lakas', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'burnos-skalavimo-skystis', 'name' => 'Burnos skalavimo skystis', 'emoji' => '🦷', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'prieskoniu-misinys', 'name' => 'Prieskonių mišinys', 'emoji' => '🧂', 'category' => 'bakaleja'],
+        ['slug' => 'marinuoti-agurkai', 'name' => 'Marinuoti agurkai', 'emoji' => '🥒', 'category' => 'bakaleja'],
+        ['slug' => 'riesutu-kremas', 'name' => 'Riešutų kremas', 'emoji' => '🥜', 'category' => 'bakaleja'],
+        ['slug' => 'sulciu-gerimas', 'name' => 'Sulčių gėrimas', 'emoji' => '🧃', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'nealkoholinis-alus', 'name' => 'Nealkoholinis alus', 'emoji' => '🍺', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'pomidoru-padazas', 'name' => 'Pomidorų padažas', 'emoji' => '🍅', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'silkiu-file', 'name' => 'Silkių filė', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'lasisos-file', 'name' => 'Lašišos filė', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'saslykas', 'name' => 'Šašlykas', 'emoji' => '🍢', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'paklodes', 'name' => 'Paklodės', 'emoji' => '🛏️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'kepimo-formos', 'name' => 'Kepimo formos', 'emoji' => '🍰', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'spalvoti-piestukai', 'name' => 'Spalvoti pieštukai', 'emoji' => '🖍️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'biriu-produktu-indai', 'name' => 'Birių produktų indai', 'emoji' => '🫙', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'led-lempos', 'name' => 'LED lempos', 'emoji' => '💡', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'peiliai', 'name' => 'Peiliai', 'emoji' => '🔪', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'seklos', 'name' => 'Sėklos', 'emoji' => '🌱', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'karsto-oro-gruzdintuves', 'name' => 'Karšto oro gruzdintuvės', 'emoji' => '🍟', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'gimtadienio-zvakutes', 'name' => 'Gimtadienio žvakutės', 'emoji' => '🎂', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
     ];
 
     public function handle(): int
