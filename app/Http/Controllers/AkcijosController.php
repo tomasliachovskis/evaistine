@@ -145,6 +145,13 @@ class AkcijosController extends Controller
         $faqItems = $listingMeta['sections']['faq'] ?? [];
         $deals = $data['data'] ?? [];
 
+        // When a store+category combo has 0 real offers, the backend (see
+        // getDiscountsByStoreAndCategory) fills this in with the same
+        // category's live offers from other stores instead of leaving the
+        // page blank — real, relevant content instead of a thin/empty page.
+        $fallbackOtherStores = $payload['fallback_other_stores'] ?? null;
+        $itemListDeals = $deals !== [] ? $deals : ($fallbackOtherStores['data']['data'] ?? []);
+
         // Verified against production (not just the local .tsx checkout, which
         // renders a different/older hero here): a plain store page reads
         // "{Store} akcijos šią savaitę" — generateSeoData('store')'s seo_title
@@ -177,6 +184,7 @@ class AkcijosController extends Controller
             'pageTitle' => $pageTitle,
             'breadcrumbs' => $breadcrumbs,
             'listingMeta' => $listingMeta,
+            'fallbackOtherStores' => $fallbackOtherStores,
             'basePath' => $path,
             'filtersMode' => $filtersMode,
             'filtersPrimarySlug' => $filtersPrimarySlug,
@@ -192,7 +200,7 @@ class AkcijosController extends Controller
                 ])->all()
             ),
             'faqSchema' => ! empty($faqItems) ? FaqSchema::build($faqItems) : null,
-            'itemListSchema' => ! empty($deals) ? ItemListSchema::build($pageTitle, collect($deals)->map(fn ($d) => [
+            'itemListSchema' => ! empty($itemListDeals) ? ItemListSchema::build($pageTitle, collect($itemListDeals)->map(fn ($d) => [
                 'name' => $d['product']['name'],
                 'href' => '/akcijos/'.$d['product']['full_slug'],
                 'image' => $d['product']['image_url'],

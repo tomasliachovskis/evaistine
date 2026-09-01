@@ -165,18 +165,41 @@
                 : '';
         @endphp
 
-        <livewire:discount-filters
-            :mode="$filtersMode"
-            :primary-slug="$filtersPrimarySlug"
-            :secondary-slug="$filtersSecondarySlug"
-            :initial-deals="$deals"
-            :initial-pagination="$pagination"
-            :carousel-html="$carouselHtml"
-            :show-carousels="! empty($sections)"
-            :sidebar-mode="$sidebarMode"
-            :primary-store-name="$listingMeta['store_name'] ?? null"
-            :key="'filters-'.$basePath"
-        />
+        @if ($fallbackOtherStores)
+            {{-- This store+category combination has no current offers of its
+                 own — rather than an empty grid (or noindex, which would
+                 throw away real long-tail SEO value for this exact
+                 store+category keyword), show the same category's live
+                 offers from other stores so the page still has real,
+                 relevant content. --}}
+            <div class="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 sm:p-5">
+                Šiuo metu {{ $fallbackOtherStores['store_name'] }} neturi aktyvių {{ mb_strtolower($fallbackOtherStores['category_name']) }} akcijų.
+                @if (!empty($fallbackOtherStores['data']['data']))
+                    Žemiau matote {{ mb_strtolower($fallbackOtherStores['category_name']) }} pasiūlymus kitose parduotuvėse.
+                @endif
+            </div>
+
+            @if (!empty($fallbackOtherStores['data']['data']))
+                <div class="mt-4 grid w-full grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-4">
+                    @foreach ($fallbackOtherStores['data']['data'] as $deal)
+                        <x-deal-card :deal="$deal" class="h-full" />
+                    @endforeach
+                </div>
+            @endif
+        @else
+            <livewire:discount-filters
+                :mode="$filtersMode"
+                :primary-slug="$filtersPrimarySlug"
+                :secondary-slug="$filtersSecondarySlug"
+                :initial-deals="$deals"
+                :initial-pagination="$pagination"
+                :carousel-html="$carouselHtml"
+                :show-carousels="! empty($sections)"
+                :sidebar-mode="$sidebarMode"
+                :primary-store-name="$listingMeta['store_name'] ?? null"
+                :key="'filters-'.$basePath"
+            />
+        @endif
 
         @if (!empty($storeComparisonRows))
             <section class="mt-10 w-full border-t border-gray-200 pt-6">

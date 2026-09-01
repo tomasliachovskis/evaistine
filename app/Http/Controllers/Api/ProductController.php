@@ -248,6 +248,25 @@ class ProductController extends Controller
             'seo' => $this->generateSeoData('store_category', $store, $category),
         ];
 
+        // Store genuinely has no current offers in this category — coverage
+        // varies per store since categories are scraped independently. A
+        // blank grid or noindex would throw away real SEO value for this
+        // store+category keyword combination, so show the same category's
+        // live offers from other stores instead of nothing.
+        if ($discounts->total() === 0) {
+            $fallbackQuery = Discount::whereHas('product', function ($q) use ($category) {
+                $q->where('category_id', $category->id);
+            })->where('store_id', '!=', $store->id);
+
+            $fallbackDiscounts = $this->buildDiscountQuery($fallbackQuery, $filters)->paginate(24);
+
+            $payload['fallback_other_stores'] = [
+                'store_name' => $store->name,
+                'category_name' => $category->name,
+                'data' => $this->formatter->format($fallbackDiscounts),
+            ];
+        }
+
         $payload = $this->appendListingMeta($payload, 'store_category', $store, $category, $filters);
 
         return response()->json($payload);
@@ -1067,6 +1086,23 @@ class ProductController extends Controller
                 $storeCategoryDescription = StoreCategoryDescription::where('store_id', $entity->id)
                     ->where('category_id', $secondaryEntity->id)
                     ->first();
+
+                // SEO audit finding: with 0 offers this unconditionally read
+                // "iki 0% nuolaidos, 0+ prekių" — a template artifact that
+                // misrepresented an empty result as a real (if tiny) deal.
+                // The page itself still shows other stores' offers for this
+                // category (see getDiscountsByStoreAndCategory's fallback),
+                // so title/description describe that instead of a fake 0%.
+                if ($count === 0) {
+                    $seoData = [
+                        'seo_title' => $entity->name.' '.$categoryLower,
+                        'seo_description' => '',
+                        'meta_title' => mb_strtoupper($entity->name).' '.$categoryLower.' – palyginkite kainas kitose parduotuvėse',
+                        'meta_description' => "Šiuo metu {$entity->name} neturi aktyvių {$categoryLower} akcijų. Peržiūrėkite {$categoryLower} pasiūlymus kitose parduotuvėse.",
+                    ];
+
+                    return $seoData;
+                }
 
                 $seoData = [
                     'seo_title' => $entity->name.' akcija '.$categoryLower,
