@@ -208,6 +208,21 @@ class SeedGenericProducts extends Command
         ['slug' => 'indu-kempines', 'name' => 'Indų kempinės', 'emoji' => '🧽', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'vistienos-sultinys', 'name' => 'Vištienos sultinys', 'emoji' => '🍲', 'category' => 'bakaleja'],
         ['slug' => 'skustuvo-galvutes', 'name' => 'Skustuvo galvutės', 'emoji' => '🪒', 'category' => 'kosmetika-ir-higiena'],
+
+        // Round 5 — biggest find: moteriškos-pedkelnes (round 1) only
+        // covered this product under namu-ukio-ir-laisvalaikio-prekes, but
+        // the exact same product type is independently sold under
+        // kosmetika-ir-higiena too (different stores categorize it
+        // differently) — matching is category-scoped, so the round-1 entry
+        // never touched this second pool at all. "pėdk" is also a real
+        // in-product abbreviation for pėdkelnės, not just the dictionary
+        // form.
+        ['slug' => 'pedkelnes-kosmetika', 'name' => 'Moteriškos pėdkelnės', 'emoji' => '🧦', 'category' => 'kosmetika-ir-higiena', 'terms' => ['pėdkelnės', 'pėdk', 'moteriškos pėdkelnės']],
+        ['slug' => 'zemes-riesutai', 'name' => 'Žemės riešutai', 'emoji' => '🥜', 'category' => 'saldumynai-ir-uzkandziai'],
+        ['slug' => 'viscius-blauzdeles', 'name' => 'Viščiukų blauzdelės', 'emoji' => '🍗', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'pastetas', 'name' => 'Paštetas', 'emoji' => '🥫', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'krabu-lazdeles', 'name' => 'Krabų lazdelės', 'emoji' => '🦀', 'category' => 'mesa-ir-zuvis'],
+        ['slug' => 'kuno-sveitiklis', 'name' => 'Kūno šveitiklis', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
     ];
 
     public function handle(): int
