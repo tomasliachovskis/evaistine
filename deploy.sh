@@ -164,6 +164,18 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     npm ci
     npm run build
 
+    # Second pass, right before view:cache: composer/npm above take long
+    # enough that live traffic (still served by the old code during this
+    # window) can trigger php-fpm (www-data) to compile a Blade view
+    # on-demand mid-deploy. That file lands with whatever umask php-fpm's
+    # systemd unit uses (typically 022, not this script's own umask 0002),
+    # so it's often not group-writable — then view:cache's own attempt to
+    # rewrite that exact cache filename fails with "Permission denied"
+    # (seen live: 2026-09-01 deploy). The first chmod pass above runs too
+    # early to catch a file created during composer/npm.
+    find storage bootstrap/cache -type d -exec chmod g+ws {} \; 2>/dev/null || true
+    find storage bootstrap/cache -type f -exec chmod g+w {} \; 2>/dev/null || true
+
     php artisan view:cache
 
     php artisan queue:restart
