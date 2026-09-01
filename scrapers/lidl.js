@@ -189,6 +189,41 @@ puppeteer.use(StealthPlugin());
 
         console.log(`Found ${allProducts.size} unique products after scrolling ${offerLink}`);
 
+        // The initial scrollIntoView(.s-load-more__text) above jumps almost to
+        // the bottom in one move (that element sits right above the load-more
+        // button), which can trigger many lazy-loaded tiles to start mounting
+        // at once — the stableAtBottom loop's 300ms gap between checks isn't
+        // always enough for all of them to finish before three consecutive
+        // "still at the bottom" reads conclude we're done. Reproduced locally:
+        // same page, same code, 35/55 one run and 51/55 the next. The site's
+        // own "Rodomi produktai X / Y produktas" counter (.s-load-more__text)
+        // is a reliable total to check against — if we're short, give the
+        // virtualized list more time/scroll cycles instead of trusting the
+        // geometry-only stability check alone.
+        const totalText = await page.$eval('.s-load-more__text', el => el.textContent).catch(() => null);
+        const totalMatch = totalText && totalText.match(/(\d+)\s*\/\s*(\d+)/);
+        const expectedTotal = totalMatch ? parseInt(totalMatch[2], 10) : null;
+
+        if (expectedTotal) {
+            let stallRounds = 0;
+            let lastCount = allProducts.size;
+
+            while (allProducts.size < expectedTotal && stallRounds < 10) {
+                await page.evaluate(() => window.scrollBy(0, 350));
+                await sleep(700);
+                mergeProducts(await extractProducts());
+
+                stallRounds = allProducts.size > lastCount ? 0 : stallRounds + 1;
+                lastCount = allProducts.size;
+            }
+
+            if (allProducts.size < expectedTotal) {
+                console.log(`Warning: only found ${allProducts.size}/${expectedTotal} products after retrying, site may be rate-limiting.`);
+            } else {
+                console.log(`Found all ${allProducts.size}/${expectedTotal} products after retry pass.`);
+            }
+        }
+
         // Fallback: if a "load more" button is still present (offset=90 didn't
         // seed quite enough placeholders to cover every item), click it a few
         // times, gently, to pick up whatever's left.
