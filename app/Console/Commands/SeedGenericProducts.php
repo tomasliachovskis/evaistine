@@ -274,22 +274,25 @@ class SeedGenericProducts extends Command
         ['slug' => 'dezodorantas', 'name' => 'Dezodorantas', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena', 'terms' => ['dezodorantas', 'pieštukinis dezodorantas', 'purškiamas dezodorantas', 'rutulinis dezodorantas', 'piešt dezodor', 'puršk dezodor', 'rutul dezodor']],
 
         // Round 6b — GPT batches for bakaleja/kosmetika/vaiku-ir-kudikiu-
-        // prekes. Cross-checked every suggested name against the current
-        // 253 slugs before adding: several (sviestas, vafliai, guminukai,
-        // ledai, kakava, arbata, dešrelės, dešra, sausainiai) already exist
-        // but scoped to a DIFFERENT root category — same real product
-        // cross-listed under bakaleja too (matching is category-scoped, see
-        // the pėdkelnės/silkių filė finding in round 5) — so these get a
-        // new "-bak" slug rather than being skipped as duplicates. Vague/
-        // umbrella suggestions (Užkandis, Kūrybinis rinkinys, Interaktyvus
-        // žaislas, Tepamieji kremai) were dropped.
-        ['slug' => 'sviestas-bak', 'name' => 'Sviestas', 'emoji' => '🧈', 'category' => 'bakaleja', 'terms' => ['sviestas']],
-        ['slug' => 'vafliai-bak', 'name' => 'Vafliai', 'emoji' => '🧇', 'category' => 'bakaleja', 'terms' => ['vafliai']],
-        ['slug' => 'guminukai-bak', 'name' => 'Guminukai', 'emoji' => '🍬', 'category' => 'bakaleja', 'terms' => ['guminukai']],
-        ['slug' => 'kakava-bak', 'name' => 'Tirpioji kakava', 'emoji' => '🍫', 'category' => 'bakaleja', 'terms' => ['tirpioji kakava', 'kakava']],
-        ['slug' => 'arbata-bak', 'name' => 'Arbata', 'emoji' => '🍵', 'category' => 'bakaleja', 'terms' => ['žalioji arbata', 'juodoji arbata', 'arbata']],
-        ['slug' => 'desreles-bak', 'name' => 'Dešrelės', 'emoji' => '🌭', 'category' => 'bakaleja', 'terms' => ['dešrelės']],
-        ['slug' => 'sausainiai-bak', 'name' => 'Sausainiai', 'emoji' => '🍪', 'category' => 'bakaleja', 'terms' => ['sausainiai']],
+        // prekes. Vague/umbrella suggestions (Užkandis, Kūrybinis
+        // rinkinys, Interaktyvus žaislas, Tepamieji kremai) were dropped.
+        //
+        // Originally also added sviestas-bak/vafliai-bak/guminukai-bak/
+        // kakava-bak/arbata-bak/desreles-bak/sausainiai-bak as "same
+        // product, different root category" duplicates alongside the
+        // existing sviestas/vafliai/guminukai/kakava/arbata/dešrelės/
+        // sausainiai generics — removed after user pushback: these are
+        // real duplicate product types, not distinct ones (unlike
+        // pėdkelnės-kosmetika, which really is a different, independently-
+        // stocked product line under a second category). Investigated with
+        // products:fix-stale-categories: only 2 of the ~240 affected
+        // products (both literally named "Sviestas") had a genuinely stale
+        // category_id bug; the rest resolve correctly, category-scoped, to
+        // bakaleja under the current category_mappers — so the right fix
+        // is to leave them in bakaleja uncovered by a generic for now
+        // (or, longer-term, reconcile category_mappers so the same product
+        // type isn't split across two root categories at all) rather than
+        // creating a second GenericProduct row for the same real product.
         ['slug' => 'dribsniai', 'name' => 'Dribsniai', 'emoji' => '🥣', 'category' => 'bakaleja'],
         ['slug' => 'granola', 'name' => 'Granola', 'emoji' => '🥣', 'category' => 'bakaleja'],
         ['slug' => 'krekeriai', 'name' => 'Krekeriai', 'emoji' => '🍘', 'category' => 'bakaleja'],
