@@ -90,6 +90,44 @@ class SeedGenericProducts extends Command
         ['slug' => 'kakava', 'name' => 'Kakava', 'emoji' => '🍫', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'sardines', 'name' => 'Sardinės', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
         ['slug' => 'miuslis', 'name' => 'Miuslis', 'emoji' => '🥣', 'category' => 'bakaleja', 'terms' => ['miuslis', 'musli', 'javainis']],
+
+        // Found via product-name frequency analysis of everything still
+        // missing a generic_product_id after generic-products:match — see
+        // the session's gap-analysis writeup for full method and counts.
+        // 'namu-ukio-ir-laisvalaikio-prekes' stays out of the
+        // EXCLUDED_CATEGORY_SLUGS keyword_page loop above (still too
+        // heterogeneous as a whole for that), but these are its biggest,
+        // unambiguous, non-brand clusters — safe to carve out by hand
+        // without touching the blanket exclusion.
+        ['slug' => 'knygos', 'name' => 'Knygos', 'emoji' => '📚', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['knyga', 'knygos']],
+        ['slug' => 'moteriskos-pedkelnes', 'name' => 'Moteriškos pėdkelnės', 'emoji' => '🧦', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['moteriškos pėdkelnės', 'pėdkelnės']],
+        ['slug' => 'sasiuviniai', 'name' => 'Sąsiuviniai', 'emoji' => '📓', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['sąsiuvinis', 'sąsiuviniai']],
+        ['slug' => 'zvakes', 'name' => 'Žvakės', 'emoji' => '🕯️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['žvakė', 'žvakės']],
+        ['slug' => 'lekstes', 'name' => 'Lėkštės', 'emoji' => '🍽️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['lėkštė', 'lėkštės']],
+        ['slug' => 'keptuves', 'name' => 'Keptuvės', 'emoji' => '🍳', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['keptuvė', 'keptuvės']],
+        ['slug' => 'puodeliai', 'name' => 'Puodeliai', 'emoji' => '☕', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['puodelis', 'puodeliai']],
+        ['slug' => 'patalynes-komplektai', 'name' => 'Patalynės komplektai', 'emoji' => '🛏️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['patalynės komplektas', 'patalynės komplektai']],
+        ['slug' => 'led-lemputes', 'name' => 'LED lemputės', 'emoji' => '💡', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['led lemputė', 'led lemputes', 'led lemputės']],
+
+        // Vetted against the existing 178 slugs before adding — skipped
+        // several near-duplicates of already-seeded generics (e.g.
+        // tualetinis-popierius, dantu-sepeteliai, traskuciai,
+        // saldyti-zuvies-pirsteliai, kudikiu-koses already exist; riesutai/
+        // prieskoniai/silke/lasisa already act as an umbrella over the more
+        // specific term that would've been proposed here).
+        ['slug' => 'veido-kauke', 'name' => 'Veido kaukė', 'emoji' => '🧖', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'lupu-dazai', 'name' => 'Lūpų dažai', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'plauku-kauke', 'name' => 'Plaukų kaukė', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'higieniniai-paketai', 'name' => 'Higieniniai paketai', 'emoji' => '🩸', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'gaivusis-gerimas', 'name' => 'Gaivusis gėrimas', 'emoji' => '🥤', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'energinis-gerimas', 'name' => 'Energinis gėrimas', 'emoji' => '⚡', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'sausi-pusryciai', 'name' => 'Sausi pusryčiai', 'emoji' => '🥣', 'category' => 'bakaleja'],
+        ['slug' => 'lego-konstruktorius', 'name' => 'LEGO konstruktorius', 'emoji' => '🧱', 'category' => 'vaiku-ir-kudikiu-prekes'],
+        ['slug' => 'stalo-zaidimai', 'name' => 'Stalo žaidimai', 'emoji' => '🎲', 'category' => 'vaiku-ir-kudikiu-prekes'],
+        ['slug' => 'namu-kvapas-lazdelemis', 'name' => 'Namų kvapas (lazdelėmis)', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['namų kvapas', 'kvapas lazdelėmis']],
+        ['slug' => 'saldainiu-rinkinys', 'name' => 'Saldainių rinkinys', 'emoji' => '🍬', 'category' => 'saldumynai-ir-uzkandziai'],
+        ['slug' => 'kramtomoji-guma', 'name' => 'Kramtomoji guma', 'emoji' => '🍬', 'category' => 'saldumynai-ir-uzkandziai'],
+        ['slug' => 'plombyras', 'name' => 'Plombyras', 'emoji' => '🍦', 'category' => 'saldytas-maistas-ir-ledai'],
     ];
 
     public function handle(): int
