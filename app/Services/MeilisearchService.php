@@ -554,7 +554,12 @@ class MeilisearchService
 
             $stem = $lower;
 
-            if (mb_strlen($lower, 'UTF-8') >= 6) {
+            // Was >= 6, which skipped stemming entirely for common 5-letter
+            // declined nouns like "sūris"/"sūrio" (cheese) — both stayed as
+            // literal, different strings instead of unifying to "sūr". The
+            // "remaining stem >= 3 chars" guard below already protects
+            // against over-stripping short words.
+            if (mb_strlen($lower, 'UTF-8') >= 5) {
                 foreach ($suffixes as $suffix) {
                     $suffixLen = mb_strlen($suffix, 'UTF-8');
 
