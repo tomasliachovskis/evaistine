@@ -9,6 +9,9 @@
     $isReady = empty($leaflet['processing_status']) || $leaflet['processing_status'] === 'ready';
     $isExpired = $leaflet['status'] === 'expired';
     $href = $leaflet['view_url'] ?? "/leidinys/{$leaflet['store_slug']}";
+    $dateRange = !empty($leaflet['valid_from']) && !empty($leaflet['valid_to'])
+        ? \Illuminate\Support\Carbon::parse($leaflet['valid_from'])->format('Y.m.d') . ' – ' . \Illuminate\Support\Carbon::parse($leaflet['valid_to'])->format('Y.m.d')
+        : null;
 @endphp
 
 <article {{ $attributes->merge(['class' => 'group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg']) }}>
@@ -43,6 +46,14 @@
             </span>
             <span class="truncate text-base font-extrabold text-gray-900 sm:text-lg">{{ $leaflet['store_name'] }}</span>
         </div>
+
+        @if ($dateRange)
+            {{-- A real, always-available identifier for every card — some
+                 leaflets carry a themed campaign name instead of a
+                 sequential number, so the validity date range stands in
+                 consistently for both. --}}
+            <p class="-mt-1.5 text-xs font-medium text-gray-500">{{ $dateRange }}</p>
+        @endif
 
         @if ($leaflet['status'] === 'expired')
             <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-400">

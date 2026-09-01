@@ -43,11 +43,29 @@
                 <p class="text-sm text-gray-600">Šiuo metu leidinių nėra.</p>
             </div>
         @else
-            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
-                @foreach ($leaflets as $leaflet)
-                    <x-leaflet-card :leaflet="$leaflet" />
-                @endforeach
-            </div>
+            @php
+                // Split rather than rely on sort order alone — an SEO audit
+                // flagged expired leaflets sitting in the same grid, same
+                // size, as current ones across the whole site, not just a
+                // single store's hub (see leaflets/hub.blade.php for the
+                // same fix there).
+                $activeLeaflets = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) !== 'expired'));
+                $expiredLeaflets = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) === 'expired'));
+            @endphp
+
+            @foreach ([['heading' => null, 'items' => $activeLeaflets], ['heading' => 'Pasibaigę leidiniai', 'items' => $expiredLeaflets]] as $group)
+                @continue(empty($group['items']))
+                <div class="{{ $loop->index > 0 ? 'mt-2' : '' }}">
+                    @if ($group['heading'])
+                        <h2 class="mb-3 text-lg font-bold text-gray-900">{{ $group['heading'] }}</h2>
+                    @endif
+                    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+                        @foreach ($group['items'] as $leaflet)
+                            <x-leaflet-card :leaflet="$leaflet" />
+                        @endforeach
+                    </div>
+                </div>
+            @endforeach
         @endif
     </div>
 </x-layouts.app>
