@@ -25,6 +25,15 @@
     $tips = $isKeyword ? ($listingMeta['tips'] ?? []) : [];
     $seoAboutHtml = $isKeyword ? ($listingMeta['intro']['seo_about'] ?? null) : null;
     $primarySearchTerm = $listingMeta['keyword_primary_search_term'] ?? ($listingMeta['keyword_slug'] ?? '');
+
+    // Flat-grid pages only (carousels have no page-by-page pagination) — the
+    // "Rodyti daugiau" AJAX button already lets a real user reach every page,
+    // but a crawler following only real hrefs previously had no way past
+    // page 1 except via the product sitemap. rel=next/prev plus the
+    // crawlable <a> next to the button (see discount-filters.blade.php) make
+    // deep pages reachable through on-page link-following too.
+    $paginationCurrent = (int) ($pagination['current_page'] ?? 1);
+    $paginationLast = (int) ($pagination['last_page'] ?? 1);
 @endphp
 
 <x-layouts.app
@@ -40,6 +49,14 @@
         @endif
         @if ($itemListSchema)
             <script type="application/ld+json">{!! json_encode($itemListSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @endif
+        @if (empty($sections))
+            @if ($paginationCurrent > 1)
+                <link rel="prev" href="{{ \App\Support\CanonicalUrl::build($basePath, ['page' => $paginationCurrent - 1]) }}">
+            @endif
+            @if ($paginationCurrent < $paginationLast)
+                <link rel="next" href="{{ \App\Support\CanonicalUrl::build($basePath, ['page' => $paginationCurrent + 1]) }}">
+            @endif
         @endif
     @endpush
 

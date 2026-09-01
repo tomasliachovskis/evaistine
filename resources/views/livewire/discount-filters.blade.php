@@ -183,6 +183,13 @@
                                 <span x-show="!loading" x-text="`Rodyti daugiau (${shown} iš ${total})`"></span>
                                 <span x-show="loading" x-cloak>Kraunama...</span>
                             </button>
+                            {{-- Real user pagination is the AJAX button above (accumulates
+                                 pages client-side); this plain href exists only so a
+                                 crawler following actual links (not just the sitemap)
+                                 can reach page {{ $current + 1 }} onward. Visually
+                                 hidden, not part of the tab order — it duplicates what
+                                 the button already does for a sighted/JS user. --}}
+                            <a href="?page={{ $current + 1 }}" rel="next" class="sr-only" tabindex="-1" aria-hidden="true">Kitas puslapis</a>
                         </div>
                     @endif
                 </div>

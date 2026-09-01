@@ -1044,12 +1044,19 @@ class ProductController extends Controller
                 $maxDiscount = (int) round(Discount::where('store_id', $entity->id)->max('discount_percent') ?? 0);
                 $storeUpper = mb_strtoupper($entity->name);
                 $words = $this->getStoreLeafletWords($entity->slug);
+                // SXO audit finding: SERP competitors for "{store} akcijos šią
+                // savaitę" all bake a date range into their title, this page's
+                // title had none (evergreen-looking, no freshness signal) —
+                // reuse the same validity resolution /leidinys/{store} already
+                // uses so both page types read consistently.
+                $validity = $this->resolveStoreValidity($entity);
+                $validityLabel = $this->formatValidityRangeLabel($validity['valid_from'], $validity['valid_to']);
 
                 return [
                     'seo_title' => $entity->name.' akcijos',
                     'seo_description' => $entity->description,
-                    'meta_title' => "{$storeUpper} akcijos – {$countLabel}+ pasiūlymų".($maxDiscount > 0 ? ", iki -{$maxDiscount}%" : ''),
-                    'meta_description' => "Visos {$entity->name} akcijos ir nuolaidos. Filtruokite, rūšiuokite ir palyginkite kainas. Naujas {$words['nominative']}: /leidinys/{$entity->slug}",
+                    'meta_title' => "{$storeUpper} akcijos {$validityLabel} – {$countLabel}+ pasiūlymų".($maxDiscount > 0 ? ", iki -{$maxDiscount}%" : ''),
+                    'meta_description' => "Visos {$entity->name} akcijos ir nuolaidos (galioja {$validityLabel}). Filtruokite, rūšiuokite ir palyginkite kainas. Naujas {$words['nominative']}: /leidinys/{$entity->slug}",
                 ];
             case 'store_category':
                 $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);

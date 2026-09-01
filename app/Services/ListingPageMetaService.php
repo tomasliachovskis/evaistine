@@ -137,7 +137,11 @@ class ListingPageMetaService
             'category_name' => $categoryName,
             'keyword_pages' => $this->keywordPageService->listPublishedPagesForCategory($categorySlug),
             'intro' => [
-                'description' => 'Palyginkite ' . mb_strtolower($categoryName) . ' akcijas visuose pagrindiniuose prekybos tinkluose. Matysite didžiausias nuolaidas ir aktyvių pasiūlymų skaičių kiekvienoje parduotuvėje.',
+                'description' => $this->pickVariant($categorySlug, [
+                    'Palyginkite ' . mb_strtolower($categoryName) . ' akcijas visuose pagrindiniuose prekybos tinkluose. Matysite didžiausias nuolaidas ir aktyvių pasiūlymų skaičių kiekvienoje parduotuvėje.',
+                    $categoryName . ' akcijos iš visų didžiųjų prekybos tinklų vienoje vietoje — palyginkite kainas ir rinkitės pigiausią pasiūlymą.',
+                    'Sekite ' . mb_strtolower($categoryName) . ' kainas ir nuolaidas kiekviename prekybos tinkle — čia matysite, kur šiuo metu didžiausios akcijos ir kiek galima sutaupyti.',
+                ]),
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
                 'quick_stats' => [
@@ -189,7 +193,11 @@ class ListingPageMetaService
             'leaflets_count' => $store->flyers()->ready()->count(),
             'locations_count' => $store->locations()->active()->count(),
             'intro' => [
-                'description' => "Visos {$storeName} " . mb_strtolower($categoryName) . ' akcijos vienoje vietoje. Peržiūrėkite savaitės pasiūlymus ir sutaupykite apsipirkdami sezoninius produktus.',
+                'description' => $this->pickVariant($store->slug . '/' . $category->slug, [
+                    "Visos {$storeName} " . mb_strtolower($categoryName) . ' akcijos vienoje vietoje. Peržiūrėkite savaitės pasiūlymus ir sutaupykite apsipirkdami sezoninius produktus.',
+                    "{$storeName} " . mb_strtolower($categoryName) . ' akcijos šią savaitę — palyginkite kainas ir raskite geriausius pasiūlymus vienoje vietoje.',
+                    "Naujausios {$storeName} " . mb_strtolower($categoryName) . ' nuolaidos surinktos į vieną sąrašą — sutaupykite apsipirkdami šios savaitės akcijų prekėmis.',
+                ]),
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
             ],
@@ -233,11 +241,29 @@ class ListingPageMetaService
         $leafletNoun = $multipleLeaflets ? $words['nominative_plural'] : $words['nominative'];
         $locationSuffix = $multipleLeaflets ? ' vienoje vietoje' : '';
 
+        $description = $this->pickVariant($storeSlug, [
+            "{$headline} {$storeName} akcijų {$leafletNoun}{$locationSuffix}. Peržiūrėkite šios savaitės nuolaidas, specialius pasiūlymus ir populiariausias akcijas.",
+            "Rinkitės iš {$storeName} akcijų {$leafletNoun}{$locationSuffix} — čia rasite šios savaitės nuolaidas, ribotus pasiūlymus ir daugiausiai perkamas prekes su nuolaida.",
+            "{$storeName} akcijos atnaujinamos kiekvieną savaitę — sekite naujausią {$leafletNoun}{$locationSuffix} ir nepraleiskite geriausių pasiūlymų bei populiariausių prekių nuolaidų.",
+        ]);
+
         return [
-            'description' => "{$headline} {$storeName} akcijų {$leafletNoun}{$locationSuffix}. Peržiūrėkite šios savaitės nuolaidas, specialius pasiūlymus ir populiariausias akcijas.",
+            'description' => $description,
             'valid_from' => $validity['valid_from'],
             'valid_to' => $validity['valid_to'],
         ];
+    }
+
+    // Deterministic (not random) so the same page always renders the same
+    // copy across requests/cache warms, but different stores/categories land
+    // on different phrasing — cuts near-duplicate-content risk across the
+    // large store x category combinatorial page set without needing fully
+    // hand-written copy per page.
+    private function pickVariant(string $seed, array $variants): string
+    {
+        $index = crc32($seed) % count($variants);
+
+        return $variants[$index];
     }
 
     public function buildAllLeaflets(): array
