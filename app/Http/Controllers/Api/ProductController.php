@@ -1241,9 +1241,15 @@ class ProductController extends Controller
 
     private function sitemapProductsQuery()
     {
+        // Only products with a currently active discount — not "ever had a
+        // discount or price-history row" (the old ->orWhereHas('discountHistories')
+        // matched almost any product, active or not). 36k/50k products have
+        // no active discount at any given time and their pages 301-redirect
+        // to the category listing; keeping them in the sitemap indefinitely
+        // fed Google ~35k "Page with redirect" entries it kept re-crawling.
         return Product::query()
-            ->where(function ($query) {
-                $query->whereHas('discounts')->orWhereHas('discountHistories');
+            ->whereHas('discounts', function ($query) {
+                $query->whereNull('end_at')->orWhere('end_at', '>=', now());
             });
     }
 
