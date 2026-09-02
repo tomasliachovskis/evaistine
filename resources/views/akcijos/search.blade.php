@@ -60,6 +60,18 @@
         <div class="mt-4 flex w-full flex-wrap gap-8">
             @if (empty($deals))
                 <p class="w-full text-center font-bold">Pagal Jūsų užklausą neradome nei vienos prekės</p>
+                {{-- Only rendered on the empty state itself (no cost on normal
+                     searches) — content-gap signal: what people search for
+                     that we don't have. --}}
+                <script>
+                    // app.js loads as a module (deferred) — wait for
+                    // DOMContentLoaded so window.trackGaEvent is defined
+                    // before this classic inline script (which would
+                    // otherwise run first) tries to call it.
+                    document.addEventListener('DOMContentLoaded', () => {
+                        window.trackGaEvent?.('search_no_results', { search_term: @json($query) });
+                    });
+                </script>
             @else
                 @php
                     $current = (int) ($pagination['current_page'] ?? 1);

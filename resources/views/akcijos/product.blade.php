@@ -368,6 +368,8 @@ use App\Support\ProductPageMeta;
                                 <a
                                     href="#{{ $tab['id'] }}"
                                     aria-label="{{ $tab['label'] }}"
+                                    data-ga-event="product_tab_click"
+                                    data-ga-source="{{ $tab['id'] }}"
                                     :class="activeId === '{{ $tab['id'] }}' ? 'border-green text-dark-green' : 'border-transparent text-gray-600 hover:border-green/30 hover:text-dark-green'"
                                     class="inline-flex items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:gap-2 sm:px-4"
                                 >
