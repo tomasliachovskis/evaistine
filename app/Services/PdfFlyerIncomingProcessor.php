@@ -67,6 +67,24 @@ class PdfFlyerIncomingProcessor
             $seedValidityDates = $retryState['validity_dates'] ?? null;
             $attempt = ($retryState['attempts'] ?? 0) + 1;
 
+            // ProcessPdfFlyerJob runs every minute (Kernel.php) — without this,
+            // a stuck leaflet gets hammered once a minute for the whole 10
+            // attempts, which is pointless against anything but the shortest
+            // outages and burns a Gemini call per page every time. Backs off
+            // 2 min after the 1st failure, growing 2 min per attempt, capped
+            // at 15 min between attempts.
+            $lastAttemptedAt = $retryState['last_attempted_at'] ?? null;
+            if ($lastAttemptedAt !== null) {
+                $delayMinutes = min(2 * ($attempt - 1), 15);
+                $nextEligibleAt = \Illuminate\Support\Carbon::parse($lastAttemptedAt)->addMinutes($delayMinutes);
+
+                if (now()->lt($nextEligibleAt)) {
+                    $this->emit($output, 'line', "Skipping {$filename} — retry {$attempt} not due until {$nextEligibleAt->toDateTimeString()} (backing off {$delayMinutes}m after attempt " . ($attempt - 1) . ').');
+                    $this->emit($output, 'newline');
+                    continue;
+                }
+            }
+
             $this->emit($output, 'info', $targetPages
                 ? "Retrying {$filename} (slug \"{$store->slug}\" → {$store->name}), attempt {$attempt}, pages: " . implode(', ', $targetPages)
                 : "Processing {$filename} (slug \"{$store->slug}\" → {$store->name})");
@@ -167,6 +185,7 @@ class PdfFlyerIncomingProcessor
             'failed_pages' => array_values($failedPages),
             'validity_dates' => $validityDates,
             'attempts' => $attempts,
+            'last_attempted_at' => now()->toDateTimeString(),
         ], JSON_PRETTY_PRINT));
     }
 
