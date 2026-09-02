@@ -199,7 +199,7 @@ use App\Support\ProductPageMeta;
                                                 $altPPrice = (float) ($alt['discounted_price'] ?? 0);
                                                 $altPStore = collect($alt['offers'] ?? [])->pluck('store')->filter()->first();
                                             @endphp
-                                            <a href="{{ $altPHref }}" data-ga-event="product_card_click" data-ga-product-id="{{ $altP['id'] }}" data-ga-product-name="{{ $altP['name'] }}" data-ga-source="generic_alternative_mockup"
+                                            <a href="{{ $altPHref }}" data-ga-event="product_card_click" data-ga-product-id="{{ $altP['id'] }}" data-ga-product-name="{{ $altP['name'] }}" data-ga-source="alternative"
                                                class="flex items-center gap-2.5 rounded-xl bg-white p-2.5 transition-colors hover:bg-gray-50">
                                                 <div class="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white">
                                                     @if ($altP['image_url'])
@@ -289,7 +289,7 @@ use App\Support\ProductPageMeta;
                                         $altPPrice = (float) ($alt['discounted_price'] ?? 0);
                                         $altPStore = collect($alt['offers'] ?? [])->pluck('store')->filter()->first();
                                     @endphp
-                                    <a href="{{ $altPHref }}" data-ga-event="product_card_click" data-ga-product-id="{{ $altP['id'] }}" data-ga-product-name="{{ $altP['name'] }}" data-ga-source="generic_alternative_mockup"
+                                    <a href="{{ $altPHref }}" data-ga-event="product_card_click" data-ga-product-id="{{ $altP['id'] }}" data-ga-product-name="{{ $altP['name'] }}" data-ga-source="alternative"
                                        class="{{ $loop->index >= 2 ? 'hidden lg:flex' : 'flex' }} items-center gap-2.5 rounded-xl bg-white p-2.5 transition-colors hover:bg-gray-50">
                                         <div class="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white">
                                             @if ($altP['image_url'])
