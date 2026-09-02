@@ -604,6 +604,7 @@ class ProductController extends Controller
                 try {
                     SearchResult::create([
                         'query' => $query,
+                        'ip_address' => request()->ip(),
                         'total_results' => $searchResults['total'],
                     ]);
                 } catch (\Exception $e) {
@@ -619,6 +620,7 @@ class ProductController extends Controller
                 try {
                     SearchResult::create([
                         'query' => $query,
+                        'ip_address' => request()->ip(),
                         'total_results' => 0,
                     ]);
                 } catch (\Exception $saveException) {
