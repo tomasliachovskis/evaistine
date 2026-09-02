@@ -17,6 +17,7 @@ use App\Support\StoreDisplayMeta;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 // Ported from discount/src/app/akcijos/page.tsx and .../[...slug]/page.tsx —
@@ -228,6 +229,24 @@ class AkcijosController extends Controller
         $breadcrumbs = $payload['breadcrumbs'] ?? [];
         $seo = $payload['seo'] ?? [];
 
+        // The product's real, current category — from breadcrumbs (derived
+        // from $product->category in ProductController::generateBreadcrumbs),
+        // not from the request URL. A product's category can change after a
+        // URL has already been shared/indexed (e.g. category re-mapping), so
+        // $categorySlug (the route segment) can go stale while the product
+        // itself still resolves fine by slug alone. Redirecting to the real
+        // category here, and always building the canonical from it, stops
+        // the same product being servable — and self-declaring itself
+        // canonical — under multiple category URLs at once (seen in Search
+        // Console as "Duplicate, Google chose different canonical than
+        // user" across ~500 pages).
+        $categoryCrumb = collect($breadcrumbs)->first(fn ($crumb) => ($crumb['type'] ?? null) === 'category');
+        $realCategorySlug = $categoryCrumb ? Str::after($categoryCrumb['slug'], 'akcijos/') : null;
+
+        if ($realCategorySlug && $realCategorySlug !== $categorySlug) {
+            return redirect("/akcijos/{$realCategorySlug}/{$productSlug}", 301);
+        }
+
         // pickPrimaryProductDiscount in product-page-meta.ts: the cheapest
         // active discount, not just the first row — $deals' order isn't
         // price-sorted.
@@ -236,7 +255,7 @@ class AkcijosController extends Controller
         usort($pool, fn ($a, $b) => (float) ($a['min_price'] ?? $a['discounted_price'] ?? PHP_INT_MAX) <=> (float) ($b['min_price'] ?? $b['discounted_price'] ?? PHP_INT_MAX));
         $primaryDeal = $pool[0] ?? null;
 
-        $path = "/akcijos/{$categorySlug}/{$productSlug}";
+        $path = '/akcijos/'.($realCategorySlug ?? $categorySlug)."/{$productSlug}";
         $canonicalUrl = CanonicalUrl::build($path);
 
         $productSchema = $primaryDeal
