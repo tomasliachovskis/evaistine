@@ -38,7 +38,15 @@ class ProcessStoreDiscountsJob implements ShouldBeUnique, ShouldQueue
     // became ready in the same dispatch-store-processing tick.
     public function __construct(public array $stores)
     {
-        $this->onQueue('flyers');
+        // Its own queue (a dedicated worker, see
+        // deploy/supervisor-nuolaidos-discounts.conf), not 'flyers' — this
+        // job finalizes scraped data into live discounts and needs to run on
+        // schedule (every 5 min via discounts:dispatch-store-processing);
+        // sharing a single worker with ProcessPdfFlyerJob/
+        // ProcessStoreFlyerPagesJob meant a slow/retrying leaflet (Gemini
+        // vision calls, minutes per page) could delay it indefinitely since
+        // Laravel can't preempt an in-flight job on the same worker.
+        $this->onQueue('discounts');
     }
 
     public function uniqueId(): string
