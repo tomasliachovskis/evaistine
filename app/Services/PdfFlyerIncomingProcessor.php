@@ -60,7 +60,28 @@ class PdfFlyerIncomingProcessor
 
                 if ($result['success']) {
                     $this->emit($output, 'info', "OK — extracted: {$result['total_extracted']}, saved: {$result['count']}");
-                    if (!@unlink($pdfPath)) {
+
+                    // A partial result means some pages hit an unrecoverable
+                    // API failure (see PdfFlyerProcessingService's
+                    // 'INCOMPLETE FLYER' log) — deleting the PDF here would
+                    // make that leaflet's missing pages effectively
+                    // unrecoverable (only a fresh manual re-upload could get
+                    // them back), for what's typically a transient outage.
+                    // Keep the file so a rerun of this command can pick it up
+                    // again once the API recovers.
+                    if (!empty($result['partial'])) {
+                        $pageSummaries = [];
+                        foreach ($result['failed_pages'] as $pageNum => $reason) {
+                            $pageSummaries[] = "page {$pageNum} ({$reason})";
+                        }
+                        $failedPagesSummary = implode(', ', $pageSummaries);
+                        $this->emit($output, 'warn', "INCOMPLETE: {$failedPagesSummary} — keeping {$filename} for a retry.");
+                        Log::channel('flyer')->warning('Keeping partially-processed PDF for retry', [
+                            'path' => $pdfPath,
+                            'failed_pages' => $result['failed_pages'],
+                        ]);
+                        $hadFailure = true;
+                    } elseif (!@unlink($pdfPath)) {
                         Log::channel('flyer')->warning('Processed PDF could not be deleted', ['path' => $pdfPath]);
                         $this->emit($output, 'warn', "Processed but could not delete file: {$pdfPath}");
                     } else {

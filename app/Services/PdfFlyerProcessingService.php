@@ -17,6 +17,14 @@ class PdfFlyerProcessingService
     private ?string $geminiApiKey;
     private string $geminiApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
+    // Set right before extractDiscountsFromImageGemini() returns null on a
+    // final (all-attempts-exhausted) failure, read back by processPdf() so
+    // the per-page failure reason (e.g. Gemini's actual error message, not
+    // just "it failed") makes it into the INCOMPLETE FLYER summary instead
+    // of only the raw request log line, which is what used to require
+    // manually grepping the flyer log to find.
+    private ?string $lastGeminiFailureReason = null;
+
     public function __construct()
     {
         $this->apiKey = config('services.openai.api_key');
@@ -66,6 +74,7 @@ class PdfFlyerProcessingService
         $currentPageNumber = 0;
         $totalSavedCount = 0;
         $totalExtractedCount = 0;
+        $failedPages = [];
 
         foreach ($images as $imageData) {
             $currentPageNumber++;
@@ -104,9 +113,19 @@ class PdfFlyerProcessingService
                             ['saved' => $savedCount, 'extracted' => $discountCount]);
                     }
                 } else {
+                    // $result === null specifically means extractDiscountsFromImageGemini
+                    // exhausted all retry attempts (an API-level failure) — a
+                    // genuinely empty page instead returns an array with an
+                    // empty 'discounts' list, not null. Only the former is a
+                    // page we should flag as unprocessed, not a normal "no
+                    // deals on this page" outcome.
+                    if ($result === null) {
+                        $failedPages[$pageNum] = $this->lastGeminiFailureReason ?? 'unknown error';
+                    }
                     Log::channel('flyer')->warning("No discounts found on page {$currentPageNumber}", ['result' => $result]);
                 }
             } catch (\Exception $e) {
+                $failedPages[$pageNum] = $e->getMessage();
                 Log::channel('flyer')->error('Error extracting discounts from image', [
                     'processed_url' => $processedImageUrl,
                     'original_path' => $originalImagePath,
@@ -121,8 +140,25 @@ class PdfFlyerProcessingService
             'total_pages' => count($images),
             'total_discounts_extracted' => $totalExtractedCount,
             'total_discounts_saved' => $totalSavedCount,
+            'failed_pages' => $failedPages,
             'process_id' => $processId
         ]);
+
+        if (!empty($failedPages)) {
+            // Deliberately ERROR (not warning) — this is the signal that used
+            // to be silently swallowed: a real leaflet where most pages
+            // failed (e.g. a sustained Gemini 503 outage, seen live: 6 of 8
+            // pages, 17 of an expected ~114 discounts saved) finished with
+            // the same log shape as a fully successful run, so nobody
+            // noticed short of manually reading the flyer log.
+            Log::channel('flyer')->error('PDF processing finished with unprocessed pages — INCOMPLETE FLYER', [
+                'process_id' => $processId,
+                'store' => $store->name,
+                'failed_pages' => $failedPages,
+                'total_pages' => count($images),
+                'total_discounts_saved' => $totalSavedCount,
+            ]);
+        }
 
         if ($totalSavedCount === 0) {
             Log::channel('flyer')->warning('No discounts saved from PDF', ['process_id' => $processId]);
@@ -134,7 +170,8 @@ class PdfFlyerProcessingService
             return [
                 'success' => false,
                 'message' => 'No discounts extracted from PDF',
-                'count' => 0
+                'count' => 0,
+                'failed_pages' => $failedPages,
             ];
         }
 
@@ -146,6 +183,8 @@ class PdfFlyerProcessingService
 
         return [
             'success' => true,
+            'partial' => !empty($failedPages),
+            'failed_pages' => $failedPages,
             'count' => $totalSavedCount,
             'total_extracted' => $totalExtractedCount,
             'process_id' => $processId,
@@ -328,8 +367,10 @@ class PdfFlyerProcessingService
         int $pageNumber = 0
     ): ?array {
         Log::channel('flyer')->info("Starting Gemini extraction from image", ['image_url' => $imageUrl, 'page' => $pageNumber]);
+        $this->lastGeminiFailureReason = null;
 
         if (empty($this->geminiApiKey)) {
+            $this->lastGeminiFailureReason = 'Gemini API key not configured';
             Log::channel('flyer')->error('Gemini API key not configured');
             return null;
         }
@@ -411,6 +452,17 @@ class PdfFlyerProcessingService
 
             while ($attempt < $maxAttempts) {
                 $attempt++;
+
+                // A transient outage (seen live: ~70s of Gemini returning 503
+                // for every request) fails all 3 attempts identically when
+                // they're only ~4s apart with no backoff — by the time attempt
+                // 3 runs, the outage hasn't had any chance to clear. Backs off
+                // 5s/10s between attempts instead of hammering the same
+                // failing endpoint seconds later.
+                if ($attempt > 1) {
+                    sleep(5 * ($attempt - 1));
+                }
+
                 Log::channel('flyer')->info("Gemini API attempt {$attempt}/{$maxAttempts}", ['image_url' => $imageUrl]);
 
                 try {
@@ -604,6 +656,9 @@ class PdfFlyerProcessingService
                         return $data;
                     }
 
+                    $geminiErrorMessage = json_decode($response->body(), true)['error']['message'] ?? null;
+                    $this->lastGeminiFailureReason = "HTTP {$response->status()}" . ($geminiErrorMessage ? ": {$geminiErrorMessage}" : '');
+
                     Log::channel('flyer')->error('Gemini API request failed', [
                         'status' => $response->status(),
                         'response_preview' => substr($response->body(), 0, 500),
@@ -616,6 +671,8 @@ class PdfFlyerProcessingService
                     }
 
                 } catch (\Exception $e) {
+                    $this->lastGeminiFailureReason = get_class($e) . ': ' . $e->getMessage();
+
                     Log::channel('flyer')->error('Error calling Gemini API', [
                         'error' => $e->getMessage(),
                         'error_class' => get_class($e),
@@ -631,12 +688,15 @@ class PdfFlyerProcessingService
 
             Log::channel('flyer')->error('Failed to extract discounts from Gemini after all attempts', [
                 'max_attempts' => $maxAttempts,
-                'image_url' => $imageUrl
+                'image_url' => $imageUrl,
+                'reason' => $this->lastGeminiFailureReason,
             ]);
 
             return null;
 
         } catch (\Exception $e) {
+            $this->lastGeminiFailureReason = get_class($e) . ': ' . $e->getMessage();
+
             Log::channel('flyer')->error('Error in Gemini extraction', [
                 'error' => $e->getMessage(),
                 'error_class' => get_class($e),
