@@ -167,7 +167,7 @@ use App\Support\ProductPageMeta;
                 <div class="grid grid-cols-[128px_minmax(0,1fr)] items-start gap-x-4 gap-y-6 sm:grid-cols-[144px_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-7 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-x-8">
                     <div class="flex min-w-0 items-start justify-center self-start overflow-hidden pt-2 pl-1.5 sm:pt-3 sm:pl-2 lg:p-3">
                         @if ($product['image_url'])
-                            <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" class="h-auto max-h-[128px] w-full max-w-full origin-center scale-[1.2] object-contain sm:max-h-[144px] sm:scale-[1.15] lg:max-h-[190px] lg:scale-100">
+                            <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" fetchpriority="high" loading="eager" class="aspect-square h-auto max-h-[128px] w-full max-w-full origin-center scale-[1.2] object-contain sm:max-h-[144px] sm:scale-[1.15] lg:max-h-[190px] lg:scale-100">
                         @endif
                     </div>
 
