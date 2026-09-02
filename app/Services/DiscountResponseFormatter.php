@@ -133,7 +133,7 @@ class DiscountResponseFormatter
         ];
     }
 
-    protected function formatListDiscount($discount)
+    public function formatListDiscount($discount)
     {
         $productDiscounts = $this->getProductDiscounts($discount->product);
         $offerCount = $productDiscounts->count();

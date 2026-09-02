@@ -748,7 +748,7 @@ class ProductController extends Controller
         // other caches here, so cache:clear-discounts does not invalidate it.
         // Its 7-day TTL means a stale shape (e.g. an image_url path change)
         // would otherwise linger for up to a week after deploy.
-        return "product_with_similar_v10_{$slug}";
+        return "product_with_similar_v12_{$slug}";
     }
 
     public function resolveDiscountsCacheKey($storeOrCategory, $category = null): string
@@ -904,6 +904,16 @@ class ProductController extends Controller
             'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
             'seo' => $this->generateSeoData('product', $product),
             'similar' => $this->formatter->formatList($similarDiscounts),
+            // MOCKUP (idea #10): when this exact product has no active
+            // discount, the true "get this instead" pick is another Product
+            // row sharing the same generic_product_id (the same real-world
+            // item — e.g. every "agurkai" variant across stores/brands), not
+            // a loosely-related $similar entry from the same broad category.
+            // $similar surfaced blueberries for a cucumber page — same
+            // category, no actual relation to the product itself.
+            'generic_alternatives' => $product->discounts->isEmpty()
+                ? $this->activeGenericAlternatives($product)
+                : [],
         ];
 
         $jsonString = json_encode($responseData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -913,6 +923,37 @@ class ProductController extends Controller
         return response($jsonString, 200, ['Content-Type' => 'application/json'])
             ->header('X-Cache', 'MISS')
             ->header('X-Cache-Key', $cacheKey);
+    }
+
+    /**
+     * MOCKUP (idea #10, not a permanent feature yet): up to $limit currently
+     * active discounts among the product's generic-product siblings (same
+     * real-world item across stores/pack sizes/brands, matched by
+     * MatchGenericProducts), cheapest first, one per distinct sibling
+     * product — the actual right "buy this instead" picks, not a loosely
+     * related $similar entry from the same broad category.
+     */
+    private function activeGenericAlternatives(Product $product, int $limit = 3): array
+    {
+        if (! $product->generic_product_id) {
+            return [];
+        }
+
+        $discounts = Discount::with(['store', 'product.category'])
+            ->whereHas('product', function ($query) use ($product) {
+                $query->where('generic_product_id', $product->generic_product_id)
+                    ->where('id', '!=', $product->id);
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_at')->orWhere('end_at', '>=', now());
+            })
+            ->orderByRaw('CASE WHEN discounted_price > 0 THEN discounted_price ELSE 999999 END')
+            ->get()
+            ->unique('product_id')
+            ->take($limit)
+            ->values();
+
+        return $discounts->map(fn ($discount) => $this->formatter->formatListDiscount($discount))->all();
     }
 
     private function generateBreadcrumbs($type, $entity = null, $secondaryEntity = null)

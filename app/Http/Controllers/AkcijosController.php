@@ -285,6 +285,7 @@ class AkcijosController extends Controller
             'bestOffer' => $bestOffer,
             'bestPrice' => $bestPrice,
             'similar' => $similar,
+            'genericAlternatives' => $payload['generic_alternatives'] ?? [],
             'breadcrumbs' => $breadcrumbs,
             'seo' => $seo,
             'canonical' => $canonicalUrl,
