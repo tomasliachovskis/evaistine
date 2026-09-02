@@ -41,7 +41,7 @@
                     </div>
                 @endforeach
             </div>
-            <a href="/akcijos" class="mt-3 flex h-10 w-full items-center justify-center rounded-lg border border-green bg-white text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green sm:hidden">
+            <a href="/akcijos" data-ga-event="load_more_click" data-ga-source="home_landing" class="mt-3 flex h-10 w-full items-center justify-center rounded-lg border border-green bg-white text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green sm:hidden">
                 Rodyti daugiau
             </a>
         @else

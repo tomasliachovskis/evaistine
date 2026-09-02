@@ -178,6 +178,8 @@
                                 type="button"
                                 @click="loadMore()"
                                 :disabled="loading || page >= lastPage"
+                                data-ga-event="load_more_click"
+                                data-ga-source="listing"
                                 class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-green bg-white px-6 text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 <span x-show="!loading" x-text="`Rodyti daugiau (${shown} iš ${total})`"></span>
