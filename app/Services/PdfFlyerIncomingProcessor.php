@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Log;
 
 class PdfFlyerIncomingProcessor
 {
+    private const MAX_RETRY_ATTEMPTS = 5;
+
     public function __construct(
         private PdfFlyerProcessingService $processingService
     ) {
@@ -68,11 +70,11 @@ class PdfFlyerIncomingProcessor
             $attempt = ($retryState['attempts'] ?? 0) + 1;
 
             // ProcessPdfFlyerJob runs every minute (Kernel.php) — without this,
-            // a stuck leaflet gets hammered once a minute for the whole 10
-            // attempts, which is pointless against anything but the shortest
-            // outages and burns a Gemini call per page every time. Backs off
-            // 2 min after the 1st failure, growing 2 min per attempt, capped
-            // at 15 min between attempts.
+            // a stuck leaflet gets hammered once a minute for the whole
+            // MAX_RETRY_ATTEMPTS attempts, which is pointless against
+            // anything but the shortest outages and burns a Gemini call per
+            // page every time. Backs off 2 min after the 1st failure,
+            // growing 2 min per attempt, capped at 15 min between attempts.
             $lastAttemptedAt = $retryState['last_attempted_at'] ?? null;
             if ($lastAttemptedAt !== null) {
                 $delayMinutes = min(2 * ($attempt - 1), 15);
@@ -111,11 +113,11 @@ class PdfFlyerIncomingProcessor
                         }
                         $failedPagesSummary = implode(', ', $pageSummaries);
 
-                        // 10 attempts (~10 minutes at the every-minute schedule)
-                        // is well past any transient outage — stop being quiet
-                        // about it so a stuck leaflet gets human attention
-                        // instead of retrying forever unnoticed.
-                        if ($attempt >= 10) {
+                        // MAX_RETRY_ATTEMPTS is well past any transient
+                        // outage — stop being quiet about it so a stuck
+                        // leaflet gets human attention instead of retrying
+                        // forever unnoticed.
+                        if ($attempt >= self::MAX_RETRY_ATTEMPTS) {
                             $this->emit($output, 'error', "STILL INCOMPLETE after {$attempt} attempts: {$failedPagesSummary} — {$filename} needs manual attention.");
                             Log::channel('flyer')->error('Flyer PDF still incomplete after many retries — needs manual attention', [
                                 'path' => $pdfPath,
