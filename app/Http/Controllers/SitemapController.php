@@ -39,12 +39,19 @@ class SitemapController extends Controller
             'User-agent: *',
             'Disallow: /api/',
             'Disallow: /private/',
-            // No trailing slash: robots.txt Disallow is a plain prefix
-            // match, so the trailing-slash form used before only ever
-            // matched query results (/akcijos/paieska/{query}) and never
-            // the bare search form itself (/akcijos/paieska, already
-            // meta-noindexed separately) — this one line covers both.
-            'Disallow: /akcijos/paieska',
+            // Search pages are noindexed via <meta name="robots"> instead of
+            // blocked here (AkcijosController::search()/searchForm()) — a
+            // robots.txt Disallow stops Googlebot from ever fetching the
+            // page, so it never sees that noindex tag and instead shows the
+            // bare URL as "Indexed, though blocked by robots.txt" (seen live
+            // in Search Console for /akcijos/paieska/sultys?store=iki).
+            // Letting it crawl is what lets the noindex meta actually take
+            // effect and drop the URL from the index. Needs an explicit
+            // Allow here too, or the broader /*?store=* etc. Disallow rules
+            // below would still catch e.g. /akcijos/paieska/sultys?store=iki
+            // — Google resolves conflicting rules by longest-path-wins, and
+            // "/akcijos/paieska" (17 chars) beats "/*?store=*" (10 chars).
+            'Allow: /akcijos/paieska',
             'Disallow: /*?store=*',
             'Disallow: /*?category=*',
             'Disallow: /*?card=*',
