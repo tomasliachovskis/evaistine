@@ -39,19 +39,12 @@ class SitemapController extends Controller
             'User-agent: *',
             'Disallow: /api/',
             'Disallow: /private/',
-            // Search pages are noindexed via <meta name="robots"> instead of
-            // blocked here (AkcijosController::search()/searchForm()) — a
-            // robots.txt Disallow stops Googlebot from ever fetching the
-            // page, so it never sees that noindex tag and instead shows the
-            // bare URL as "Indexed, though blocked by robots.txt" (seen live
-            // in Search Console for /akcijos/paieska/sultys?store=iki).
-            // Letting it crawl is what lets the noindex meta actually take
-            // effect and drop the URL from the index. Needs an explicit
-            // Allow here too, or the broader /*?store=* etc. Disallow rules
-            // below would still catch e.g. /akcijos/paieska/sultys?store=iki
-            // — Google resolves conflicting rules by longest-path-wins, and
-            // "/akcijos/paieska" (17 chars) beats "/*?store=*" (10 chars).
-            'Allow: /akcijos/paieska',
+            // Previously allowed + noindex-meta'd instead of blocked here, so
+            // Googlebot would actually crawl the page and see the noindex tag
+            // rather than showing "Indexed, though blocked by robots.txt".
+            // That still let bots crawl and index /akcijos/paieska/* pages in
+            // practice, so block crawling outright instead.
+            'Disallow: /akcijos/paieska',
             'Disallow: /*?store=*',
             'Disallow: /*?category=*',
             'Disallow: /*?card=*',
