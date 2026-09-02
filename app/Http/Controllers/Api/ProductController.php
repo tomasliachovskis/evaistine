@@ -1241,16 +1241,35 @@ class ProductController extends Controller
 
     private function sitemapProductsQuery()
     {
-        // Only products with a currently active discount — not "ever had a
-        // discount or price-history row" (the old ->orWhereHas('discountHistories')
-        // matched almost any product, active or not). 36k/50k products have
-        // no active discount at any given time and their pages 301-redirect
-        // to the category listing; keeping them in the sitemap indefinitely
-        // fed Google ~35k "Page with redirect" entries it kept re-crawling.
+        // A product with no active discount still renders its own 200 page
+        // (an "Akcija nebegalioja" state with price history) — it does NOT
+        // 301-redirect, that only happens when the Product row itself is
+        // gone. So pruning purely on "no active discount right now" (an
+        // earlier version of this method did that) drops ~36k pages that
+        // work fine and may get discounted again. Instead, prune only the
+        // clearly one-off/stale case: at most 1 discount ever (current +
+        // archived combined) and the most recent one ended over 2 weeks
+        // ago. Everything else — active now, multiple discounts ever, or a
+        // single discount that ended recently — stays in the sitemap.
+        $staleCutoff = now()->subWeeks(2);
+
         return Product::query()
-            ->whereHas('discounts', function ($query) {
-                $query->whereNull('end_at')->orWhere('end_at', '>=', now());
-            });
+            ->where(function ($query) {
+                $query->whereHas('discounts')->orWhereHas('discountHistories');
+            })
+            ->whereRaw('(
+                select count(*) from (
+                    select end_at from discounts where discounts.product_id = products.id
+                    union all
+                    select end_at from discount_histories where discount_histories.product_id = products.id
+                ) as all_discounts
+            ) >= 2 or exists (
+                select 1 from discounts where discounts.product_id = products.id
+                    and (discounts.end_at is null or discounts.end_at >= ?)
+                union all
+                select 1 from discount_histories where discount_histories.product_id = products.id
+                    and discount_histories.end_at >= ?
+            )', [now(), $staleCutoff]);
     }
 
     public function getSitemap()
