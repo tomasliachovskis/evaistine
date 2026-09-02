@@ -53,10 +53,26 @@ class PdfFlyerIncomingProcessor
                 continue;
             }
 
-            $this->emit($output, 'info', "Processing {$filename} (slug \"{$store->slug}\" → {$store->name})");
+            // A sidecar file (not the PDF itself — nothing else expects it to
+            // exist) carrying state from a previous partial attempt: which
+            // pages still need (re)processing and the validity dates already
+            // found on an earlier (now-skipped) page. Its presence is what
+            // lets a retry resume instead of re-extracting the whole PDF
+            // (and re-paying for/duplicating already-succeeded pages) from
+            // page 1 every time ProcessPdfFlyerJob's every-minute schedule
+            // picks this file back up.
+            $statePath = $pdfPath . '.retry.json';
+            $retryState = $this->readRetryState($statePath);
+            $targetPages = $retryState['failed_pages'] ?? null;
+            $seedValidityDates = $retryState['validity_dates'] ?? null;
+            $attempt = ($retryState['attempts'] ?? 0) + 1;
+
+            $this->emit($output, 'info', $targetPages
+                ? "Retrying {$filename} (slug \"{$store->slug}\" → {$store->name}), attempt {$attempt}, pages: " . implode(', ', $targetPages)
+                : "Processing {$filename} (slug \"{$store->slug}\" → {$store->name})");
 
             try {
-                $result = $this->processingService->processPdf($pdfPath, $store, null);
+                $result = $this->processingService->processPdf($pdfPath, $store, $targetPages, $seedValidityDates);
 
                 if ($result['success']) {
                     $this->emit($output, 'info', "OK — extracted: {$result['total_extracted']}, saved: {$result['count']}");
@@ -67,30 +83,53 @@ class PdfFlyerIncomingProcessor
                     // make that leaflet's missing pages effectively
                     // unrecoverable (only a fresh manual re-upload could get
                     // them back), for what's typically a transient outage.
-                    // Keep the file so a rerun of this command can pick it up
-                    // again once the API recovers.
+                    // Keep the file (and record what's still missing) so a
+                    // rerun of this command resumes from just those pages
+                    // once the API recovers.
                     if (!empty($result['partial'])) {
                         $pageSummaries = [];
                         foreach ($result['failed_pages'] as $pageNum => $reason) {
                             $pageSummaries[] = "page {$pageNum} ({$reason})";
                         }
                         $failedPagesSummary = implode(', ', $pageSummaries);
-                        $this->emit($output, 'warn', "INCOMPLETE: {$failedPagesSummary} — keeping {$filename} for a retry.");
-                        Log::channel('flyer')->warning('Keeping partially-processed PDF for retry', [
-                            'path' => $pdfPath,
-                            'failed_pages' => $result['failed_pages'],
-                        ]);
+
+                        // 10 attempts (~10 minutes at the every-minute schedule)
+                        // is well past any transient outage — stop being quiet
+                        // about it so a stuck leaflet gets human attention
+                        // instead of retrying forever unnoticed.
+                        if ($attempt >= 10) {
+                            $this->emit($output, 'error', "STILL INCOMPLETE after {$attempt} attempts: {$failedPagesSummary} — {$filename} needs manual attention.");
+                            Log::channel('flyer')->error('Flyer PDF still incomplete after many retries — needs manual attention', [
+                                'path' => $pdfPath,
+                                'attempts' => $attempt,
+                                'failed_pages' => $result['failed_pages'],
+                            ]);
+                        } else {
+                            $this->emit($output, 'warn', "INCOMPLETE: {$failedPagesSummary} — keeping {$filename} for a retry (attempt {$attempt}).");
+                            Log::channel('flyer')->warning('Keeping partially-processed PDF for retry', [
+                                'path' => $pdfPath,
+                                'attempt' => $attempt,
+                                'failed_pages' => $result['failed_pages'],
+                            ]);
+                        }
+
+                        $this->writeRetryState($statePath, array_keys($result['failed_pages']), $result['validity_dates'] ?? null, $attempt);
                         $hadFailure = true;
-                    } elseif (!@unlink($pdfPath)) {
-                        Log::channel('flyer')->warning('Processed PDF could not be deleted', ['path' => $pdfPath]);
-                        $this->emit($output, 'warn', "Processed but could not delete file: {$pdfPath}");
                     } else {
-                        $this->emit($output, 'info', "Deleted: {$filename}");
+                        @unlink($statePath);
+
+                        if (!@unlink($pdfPath)) {
+                            Log::channel('flyer')->warning('Processed PDF could not be deleted', ['path' => $pdfPath]);
+                            $this->emit($output, 'warn', "Processed but could not delete file: {$pdfPath}");
+                        } else {
+                            $this->emit($output, 'info', "Deleted: {$filename}");
+                        }
                     }
                     $this->emit($output, 'newline');
                     $this->emit($output, 'info', 'Next step: Run "sail artisan discounts:process" to finalize the discounts.');
                 } else {
                     $this->emit($output, 'error', "Failed {$filename}: {$result['message']}");
+                    $this->writeRetryState($statePath, array_keys($result['failed_pages'] ?? []) ?: $targetPages, $result['validity_dates'] ?? $seedValidityDates, $attempt);
                     $hadFailure = true;
                 }
             } catch (\Exception $e) {
@@ -107,6 +146,28 @@ class PdfFlyerIncomingProcessor
         }
 
         return $hadFailure ? 1 : 0;
+    }
+
+    /** @return array{failed_pages?: array<int>, validity_dates?: array, attempts?: int}|null */
+    private function readRetryState(string $statePath): ?array
+    {
+        if (!file_exists($statePath)) {
+            return null;
+        }
+
+        $decoded = json_decode((string) file_get_contents($statePath), true);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /** @param array<int> $failedPages */
+    private function writeRetryState(string $statePath, array $failedPages, ?array $validityDates, int $attempts): void
+    {
+        file_put_contents($statePath, json_encode([
+            'failed_pages' => array_values($failedPages),
+            'validity_dates' => $validityDates,
+            'attempts' => $attempts,
+        ], JSON_PRETTY_PRINT));
     }
 
     private function extractStoreSlugFromPdfFilename(string $filename): string

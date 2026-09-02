@@ -50,10 +50,20 @@ class PdfFlyerProcessingService
         return !empty($this->geminiApiKey);
     }
 
-    public function processPdf(string $pdfPath, Store $store, ?int $pageNumber = null): array
+    /**
+     * @param  array<int>|null  $targetPages  Specific 1-based page numbers to
+     *   process (e.g. a retry of just the pages that failed last time);
+     *   null processes every page in the PDF.
+     * @param  array{start_at?: ?string, end_at?: ?string}|null  $seedValidityDates
+     *   Validity dates already known from an earlier (successful) page of
+     *   this same leaflet — a page-only retry never sees page 1 again (that's
+     *   usually where these come from), so without seeding them here the
+     *   retried pages' discounts would fall back to no validity dates.
+     */
+    public function processPdf(string $pdfPath, Store $store, ?array $targetPages = null, ?array $seedValidityDates = null): array
     {
         $processId = uniqid('pdf_' . time() . '_', true);
-        Log::channel('flyer')->info('Starting PDF processing', ['pdf' => $pdfPath, 'store' => $store->name, 'process_id' => $processId]);
+        Log::channel('flyer')->info('Starting PDF processing', ['pdf' => $pdfPath, 'store' => $store->name, 'process_id' => $processId, 'target_pages' => $targetPages]);
 
         if (!$this->isGeminiConfigured()) {
             Log::channel('flyer')->error('Gemini API key not configured');
@@ -66,11 +76,11 @@ class PdfFlyerProcessingService
         }
 
         Log::channel('flyer')->info('Converting PDF to images...', ['pdf' => $pdfPath, 'process_id' => $processId]);
-        $images = $this->convertPdfToImages($pdfPath, $processId, $pageNumber);
+        $images = $this->convertPdfToImages($pdfPath, $processId, $targetPages);
         Log::channel('flyer')->info('PDF conversion completed',
-            ['total_pages' => count($images), 'process_id' => $processId, 'target_page' => $pageNumber]);
+            ['total_pages' => count($images), 'process_id' => $processId, 'target_pages' => $targetPages]);
 
-        $validityDates = null;
+        $validityDates = $seedValidityDates;
         $currentPageNumber = 0;
         $totalSavedCount = 0;
         $totalExtractedCount = 0;
@@ -172,6 +182,7 @@ class PdfFlyerProcessingService
                 'message' => 'No discounts extracted from PDF',
                 'count' => 0,
                 'failed_pages' => $failedPages,
+                'validity_dates' => $validityDates,
             ];
         }
 
@@ -185,6 +196,7 @@ class PdfFlyerProcessingService
             'success' => true,
             'partial' => !empty($failedPages),
             'failed_pages' => $failedPages,
+            'validity_dates' => $validityDates,
             'count' => $totalSavedCount,
             'total_extracted' => $totalExtractedCount,
             'process_id' => $processId,
@@ -192,7 +204,8 @@ class PdfFlyerProcessingService
         ];
     }
 
-    private function convertPdfToImages(string $pdfPath, string $processId, ?int $targetPage = null): array
+    /** @param array<int>|null $targetPages */
+    private function convertPdfToImages(string $pdfPath, string $processId, ?array $targetPages = null): array
     {
         $storageDir = 'flyers';
         $originalStorageDir = 'flyers/originals';
@@ -220,14 +233,16 @@ class PdfFlyerProcessingService
             Log::channel('flyer')->info('Getting number of pages...', ['process_id' => $processId]);
             $numberOfPages = $pdf->getNumberOfPages();
             Log::channel('flyer')->info('PDF has pages',
-                ['total_pages' => $numberOfPages, 'process_id' => $processId, 'target_page' => $targetPage]);
+                ['total_pages' => $numberOfPages, 'process_id' => $processId, 'target_pages' => $targetPages]);
 
-            if ($targetPage !== null && ($targetPage < 1 || $targetPage > $numberOfPages)) {
-                throw new \Exception("Target page {$targetPage} is out of range. PDF has {$numberOfPages} pages.");
+            foreach ($targetPages ?? [] as $targetPage) {
+                if ($targetPage < 1 || $targetPage > $numberOfPages) {
+                    throw new \Exception("Target page {$targetPage} is out of range. PDF has {$numberOfPages} pages.");
+                }
             }
 
             $imageData = [];
-            $pagesToProcess = $targetPage !== null ? [$targetPage] : range(1, $numberOfPages);
+            $pagesToProcess = $targetPages ?? range(1, $numberOfPages);
 
             foreach ($pagesToProcess as $pageNumber) {
                 $uniqueFilename = $processId . '_page_' . $pageNumber . '.png';
