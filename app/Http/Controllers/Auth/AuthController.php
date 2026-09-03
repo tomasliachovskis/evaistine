@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\MagicLinkMail;
+use App\Models\MagicLoginLink;
 use App\Models\ProductFavorite;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -10,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -20,10 +23,12 @@ class AuthController extends Controller
 {
     // Stashed by product-price-watch-banner.blade.php's toggle() the moment
     // it hits a 401 and opens the login modal — the click that got them here
-    // in the first place, so it survives all three login paths (POST back,
-    // register, and the full external redirect an OAuth provider does)
-    // rather than trying to carry it through a form field, which OAuth can't.
+    // in the first place, so it survives both login paths (the magic-link
+    // click, and the full external redirect an OAuth provider does) rather
+    // than trying to carry it through a form field, which OAuth can't.
     private const PENDING_FAVORITE_SESSION_KEY = 'pending_favorite_product_id';
+
+    private const MAGIC_LINK_TTL_MINUTES = 30;
 
     public function rememberPendingFavorite(Request $request): JsonResponse
     {
@@ -34,7 +39,7 @@ class AuthController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    // Every successful login/register/OAuth callback lands on /favorites —
+    // Every successful login/OAuth callback lands on /favorites —
     // there's no other "account home" in this app. If it was triggered by
     // the price-watch button's login-required popup, complete that pending
     // favorite first so the product they clicked is already there.
@@ -69,63 +74,57 @@ class AuthController extends Controller
         return back()->withErrors($validator)->withInput($request->only('email'));
     }
 
-    public function login(Request $request): RedirectResponse|JsonResponse
+    // Passwordless login: no registration flow, no password field. A user
+    // enters their email, we mail them a single-use link that logs them in,
+    // creating the account automatically the first time it's used.
+    public function sendMagicLink(Request $request): RedirectResponse|JsonResponse
     {
-        // App locale is 'en' (config/app.php) — Laravel's default validation
-        // messages come out in English on every form site-wide otherwise, an
-        // unrelated pre-existing bug noticed while adding inline errors here.
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
-            'password' => 'required|string',
         ], [
             'email.required' => 'Įveskite el. paštą.',
             'email.email' => 'Neteisingas el. pašto formatas.',
-            'password.required' => 'Įveskite slaptažodį.',
         ]);
 
         if ($validator->fails()) {
             return $this->validationFailed($request, $validator);
         }
 
-        if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            $validator->errors()->add('email', 'Neteisingas el. paštas arba slaptažodis.');
+        $link = MagicLoginLink::create([
+            'email' => $request->email,
+            'token' => str()->random(64),
+            'expires_at' => now()->addMinutes(self::MAGIC_LINK_TTL_MINUTES),
+        ]);
 
-            return $this->validationFailed($request, $validator);
+        Mail::to($link->email)->send(new MagicLinkMail(url("/auth/magic-link/{$link->token}")));
+
+        if ($request->wantsJson()) {
+            return response()->json(['sent' => true]);
         }
 
-        $request->session()->regenerate();
-
-        return $this->redirectAfterAuth($request);
+        return back()->with('status', 'Prisijungimo nuoroda išsiųsta.');
     }
 
-    public function register(Request $request): RedirectResponse|JsonResponse
+    public function verifyMagicLink(Request $request, string $token): RedirectResponse|JsonResponse
     {
-        // No "confirm password" field anymore — a show/hide toggle on the
-        // single field does the same typo-prevention job with less friction
-        // (Baymard/NN Group both find confirm-password fields don't
-        // meaningfully cut lockouts, just add a field before signup).
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
-        ], [
-            'email.required' => 'Įveskite el. paštą.',
-            'email.email' => 'Neteisingas el. pašto formatas.',
-            'email.unique' => 'Šis el. paštas jau užregistruotas.',
-            'password.required' => 'Įveskite slaptažodį.',
-            'password.min' => 'Slaptažodis turi būti bent 8 simbolių.',
-        ]);
+        $link = MagicLoginLink::where('token', $token)->first();
 
-        if ($validator->fails()) {
-            return $this->validationFailed($request, $validator);
+        if (! $link || ! $link->isValid()) {
+            return redirect('/?login=1&magic_link_expired=1');
         }
 
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'name' => $request->email,
-        ]);
+        $link->update(['used_at' => now()]);
 
-        Auth::login($user);
+        $user = User::firstOrCreate(
+            ['email' => $link->email],
+            ['name' => $link->email, 'password' => Hash::make(str()->random(32)), 'email_verified_at' => now()],
+        );
+
+        if (! $user->email_verified_at) {
+            $user->update(['email_verified_at' => now()]);
+        }
+
+        Auth::login($user, remember: true);
         $request->session()->regenerate();
 
         return $this->redirectAfterAuth($request);

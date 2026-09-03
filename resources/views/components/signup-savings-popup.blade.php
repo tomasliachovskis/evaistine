@@ -69,21 +69,11 @@
 
                 <button
                     type="button"
-                    @click="dismiss(); $store.authModal.open = true; $store.authModal.mode = 'register'"
+                    @click="dismiss(); $store.authModal.open = true"
                     class="h-12 w-full rounded-lg bg-green text-base font-bold text-white transition-colors hover:bg-dark-green"
                 >
-                    Registruotis nemokamai
+                    Prisijungti nemokamai
                 </button>
-                <p class="text-sm text-gray-500">
-                    Jau turite paskyrą?
-                    <button
-                        type="button"
-                        @click="dismiss(); $store.authModal.open = true; $store.authModal.mode = 'login'"
-                        class="font-medium text-green hover:text-dark-green hover:underline"
-                    >
-                        Prisijungti
-                    </button>
-                </p>
             </div>
         </div>
     </div>
