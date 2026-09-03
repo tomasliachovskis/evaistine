@@ -92,6 +92,7 @@
     <x-mobile-bottom-nav />
 
     <x-auth-modal />
+    <x-price-watch-modal />
     <x-cookie-consent />
     <x-signup-savings-popup />
     <script>

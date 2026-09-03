@@ -102,7 +102,6 @@
                         <div class="space-y-2">
                             <label class="text-sm font-medium text-gray-900">El. paštas</label>
                             <input type="email" name="email" value="{{ old('email') }}" required placeholder="jusu@pastas.lt" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-green focus:outline-none">
-                            <p class="text-xs text-gray-500">Įveskite el. paštą – atsiųsime vienkartinę prisijungimo nuorodą. Slaptažodžio nereikės.</p>
                         </div>
                         <button type="submit" :disabled="submitting" class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-green text-sm font-semibold text-white shadow-sm transition-colors hover:bg-dark-green disabled:cursor-not-allowed disabled:opacity-60">
                             <span x-show="submitting" class="size-4 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
@@ -116,7 +115,7 @@
 
         <template x-if="!sent">
             <div class="space-y-2 border-t border-gray-100 bg-gray-50/80 px-6 py-4 text-center text-sm leading-relaxed">
-                <p class="text-gray-600">Neturite paskyros? Ji bus sukurta automatiškai. Jokių papildomų formų.</p>
+                <p class="text-gray-600">Paskyra sukuriama automatiškai, be papildomų formų.</p>
             </div>
         </template>
     </div>

@@ -263,6 +263,7 @@ use App\Support\ProductPageMeta;
                                 :product-id="$product['id']"
                                 :favorited="\App\Support\FavoritedProducts::has($product['id'])"
                                 :product-name="$product['name']"
+                                :product-image="$product['image_url'] ?? null"
                                 :category-name="$product['category']['name'] ?? ''"
                                 :variant="$isNoActivePromotion ? 'noOffers' : 'offersHero'"
                             />
@@ -328,6 +329,7 @@ use App\Support\ProductPageMeta;
                             :product-id="$product['id']"
                             :favorited="\App\Support\FavoritedProducts::has($product['id'])"
                             :product-name="$product['name']"
+                            :product-image="$product['image_url'] ?? null"
                             :category-name="$product['category']['name'] ?? ''"
                             :variant="$isNoActivePromotion ? 'noOffers' : 'offersHero'"
                         />

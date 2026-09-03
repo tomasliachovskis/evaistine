@@ -2,6 +2,7 @@
     'productId',
     'favorited' => false,
     'productName' => '',
+    'productImage' => null,
     'categoryName' => '',
     'variant' => 'offersHero',
 ])
@@ -20,6 +21,10 @@
         'category' => $categoryName,
         'is_logged_in' => auth()->check(),
         'position' => 'hero',
+    ], JSON_UNESCAPED_UNICODE);
+    $priceWatchDetail = json_encode([
+        'productName' => $productName,
+        'productImage' => $productImage,
     ], JSON_UNESCAPED_UNICODE);
     $toggleHandler = <<<JS
         busy: false,
@@ -45,9 +50,10 @@
                 .then((r) => {
                     if (r.status === 401) {
                         this.favorited = prev;
-                        // So the login/register/OAuth flow that's about to
-                        // open can finish this favorite for them and land on
-                        // /favorites — see AuthController::redirectAfterAuth().
+                        // So the magic-link flow that's about to open can
+                        // finish this favorite once the emailed link is
+                        // clicked, and land on /favorites — see
+                        // AuthController::redirectAfterAuth().
                         fetch('/auth/pending-favorite', {
                             method: 'POST',
                             headers: {
@@ -57,7 +63,7 @@
                             },
                             body: JSON.stringify({ product_id: {$productId} }),
                         }).catch(() => {});
-                        window.dispatchEvent(new CustomEvent('open-auth-modal'));
+                        window.dispatchEvent(new CustomEvent('open-price-watch-modal', { detail: {$priceWatchDetail} }));
                         return null;
                     }
                     return r.json();
