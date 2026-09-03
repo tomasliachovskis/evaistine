@@ -58,16 +58,16 @@
             <template x-if="!sent">
                 <div>
                     <div class="flex items-start gap-3">
-                        <div class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-amber-50">
+                        <div class="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-green/10">
                             <template x-if="productImage">
                                 <img :src="productImage" :alt="productName" class="h-full w-full object-contain p-1.5">
                             </template>
                             <template x-if="!productImage">
-                                <x-app-icon name="bell" class="size-6 fill-none text-amber-500" />
+                                <x-app-icon name="bell" class="size-6 fill-none text-green" />
                             </template>
                         </div>
                         <div class="min-w-0 pt-0.5">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Kainos pranešimas</p>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-dark-green">Kainos pranešimas</p>
                             <h2 class="text-xl font-bold text-gray-900">Sekti šią prekę?</h2>
                         </div>
                     </div>
@@ -78,11 +78,11 @@
 
                     <div class="mt-4 space-y-2.5">
                         <div class="flex items-center gap-2.5 text-sm text-gray-700">
-                            <x-app-icon name="bell" class="size-4 shrink-0 fill-none text-amber-600" />
+                            <x-app-icon name="bell" class="size-4 shrink-0 fill-none text-dark-green" />
                             Tik apie šios prekės kainą — be kasdienių reklamų
                         </div>
                         <div class="flex items-center gap-2.5 text-sm text-gray-700">
-                            <x-app-icon name="user" class="size-4 shrink-0 text-amber-600" />
+                            <x-app-icon name="user" class="size-4 shrink-0 text-dark-green" />
                             Jokios registracijos formos ar slaptažodžio
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                             <x-app-icon name="check" class="size-6 text-dark-green" style="stroke-width:2.5" />
                         </div>
                         <div class="min-w-0 pt-0.5">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Kainos pranešimas</p>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-dark-green">Kainos pranešimas</p>
                             <h2 class="text-xl font-bold text-gray-900">Nuoroda išsiųsta!</h2>
                         </div>
                     </div>
@@ -115,8 +115,8 @@
                         <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700" x-text="firstError(errors)"></p>
                     </template>
                     <label class="block text-sm font-semibold text-gray-900">Kur atsiųsti pranešimą?</label>
-                    <input type="email" name="email" required placeholder="jusu@email.lt" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-amber-500 focus:outline-none">
-                    <button type="submit" :disabled="submitting" class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-amber-500 text-sm font-bold text-white shadow-sm transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60">
+                    <input type="email" name="email" required placeholder="jusu@email.lt" class="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-green focus:outline-none">
+                    <button type="submit" :disabled="submitting" class="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-green text-sm font-bold text-white shadow-sm transition-colors hover:bg-dark-green disabled:cursor-not-allowed disabled:opacity-60">
                         <span x-show="submitting" class="size-4 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
                         <x-app-icon name="mail" class="size-4" x-show="!submitting" />
                         Pranešti, kai atpigs
