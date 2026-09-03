@@ -750,7 +750,7 @@ class ProductController extends Controller
         // other caches here, so cache:clear-discounts does not invalidate it.
         // Its 7-day TTL means a stale shape (e.g. an image_url path change)
         // would otherwise linger for up to a week after deploy.
-        return "product_with_similar_v12_{$slug}";
+        return "product_with_similar_v13_{$slug}";
     }
 
     public function resolveDiscountsCacheKey($storeOrCategory, $category = null): string
@@ -901,6 +901,19 @@ class ProductController extends Controller
             $data = $this->formatter->formatProductDiscounts($product);
         }
 
+        // $product->discounts->isEmpty() alone is wrong here — it's true for
+        // any product that has ever had a discount row, including one whose
+        // only discount already ended (e.g. end_at yesterday). That silently
+        // hid the alternatives block on expired-promo product pages even
+        // though the page itself (product.blade.php's $isNoActivePromotion,
+        // which checks end_at against now()) correctly showed "no active
+        // promotion" UI — https://superakcijos.lt/akcijos/mesa-ir-zuvis/virtos-hot-dog-desreles-1-kg
+        // was one such case. Match that same "is there a discount active
+        // right now" check instead of "has a discount row ever existed".
+        $hasActiveDiscount = $product->discounts->contains(
+            fn ($discount) => empty($discount->end_at) || $discount->end_at->endOfDay()->gte(now())
+        );
+
         $responseData = [
             'data' => $data,
             'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
@@ -913,7 +926,7 @@ class ProductController extends Controller
             // a loosely-related $similar entry from the same broad category.
             // $similar surfaced blueberries for a cucumber page — same
             // category, no actual relation to the product itself.
-            'generic_alternatives' => $product->discounts->isEmpty()
+            'generic_alternatives' => ! $hasActiveDiscount
                 ? $this->activeGenericAlternatives($product)
                 : [],
         ];
