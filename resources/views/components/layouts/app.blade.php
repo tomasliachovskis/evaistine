@@ -100,6 +100,9 @@
             Alpine.store('authModal', {
                 open: @json((isset($errors) && $errors->any()) || request()->boolean('login')),
             });
+            Alpine.store('priceWatchModal', {
+                open: false,
+            });
         });
     </script>
 
