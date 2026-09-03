@@ -16,7 +16,7 @@ const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 
 // Same target as deploy.sh's rsync — kept in sync manually since this is
 // the same one-off VPS deploy.sh already hardcodes.
-const PROD_SERVER = 'root@195.181.245.125';
+const PROD_SERVER = 'deploy@84.247.186.143';
 const PROD_REMOTE_DIR = '/var/www/api';
 
 export const sleep = ms => new Promise(res => setTimeout(res, ms));
@@ -31,8 +31,12 @@ export async function launchBrowser() {
         ],
     };
 
+    const systemChromePath = '/usr/bin/google-chrome-stable';
+
     if (fs.existsSync(chromePath)) {
         launchOptions.executablePath = chromePath;
+    } else if (fs.existsSync(systemChromePath)) {
+        launchOptions.executablePath = systemChromePath;
     } else {
         launchOptions.executablePath = puppeteer.executablePath();
     }
