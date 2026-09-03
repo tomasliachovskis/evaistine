@@ -1,7 +1,9 @@
-@props(['productId', 'variant' => 'icon', 'favorited' => false])
+@props(['productId', 'productName' => '', 'productImage' => null, 'variant' => 'icon', 'favorited' => false])
 
 @php
     $productId = (int) $productId;
+    $productNameJs = json_encode($productName, JSON_UNESCAPED_UNICODE);
+    $productImageJs = json_encode($productImage);
 @endphp
 
 @if ($variant === 'button')
@@ -9,7 +11,7 @@
          solid green pill on the product hero, label flips once favorited. --}}
     <button
         type="button"
-        x-data="favoriteButton({{ $productId }}, {{ $favorited ? 'true' : 'false' }})"
+        x-data="favoriteButton({{ $productId }}, {{ $favorited ? 'true' : 'false' }}, {{ $productNameJs }}, {{ $productImageJs }})"
         @click.stop.prevent="toggle()"
         class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-colors"
         :class="favorited ? 'bg-dark-green' : 'bg-green hover:bg-dark-green'"
@@ -29,7 +31,7 @@
          icon looks. --}}
     <button
         type="button"
-        x-data="favoriteButton({{ $productId }}, {{ $favorited ? 'true' : 'false' }})"
+        x-data="favoriteButton({{ $productId }}, {{ $favorited ? 'true' : 'false' }}, {{ $productNameJs }}, {{ $productImageJs }})"
         @click.stop.prevent="toggle()"
         class="flex h-11 w-11 items-center justify-center hover:bg-transparent"
         x-bind:aria-label="favorited ? 'Pašalinti iš stebimų' : 'Pridėti į stebimas'"

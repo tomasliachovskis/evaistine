@@ -109,6 +109,6 @@
     </a>
 
     <div class="absolute right-2 top-2 z-20">
-        <x-favorite-button :product-id="$product['id']" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
+        <x-favorite-button :product-id="$product['id']" :product-name="$product['name']" :product-image="$product['image_url'] ?? null" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
     </div>
 </div>

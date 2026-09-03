@@ -109,7 +109,7 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    Alpine.data('favoriteButton', (productId, favorited = false) => ({
+    Alpine.data('favoriteButton', (productId, favorited = false, productName = '', productImage = null) => ({
         busy: false,
         favorited: !!favorited,
         toggle() {
@@ -140,7 +140,9 @@ document.addEventListener('alpine:init', () => {
                             },
                             body: JSON.stringify({ product_id: productId }),
                         }).catch(() => {});
-                        window.dispatchEvent(new CustomEvent('open-auth-modal'));
+                        window.dispatchEvent(new CustomEvent('open-price-watch-modal', {
+                            detail: { productName, productImage },
+                        }));
 
                         return null;
                     }
