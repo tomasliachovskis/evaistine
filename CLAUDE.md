@@ -55,6 +55,7 @@ Based on onboarding Gulbelė, Vynoteka, and Thomas Philipps. Do these in order �
 ### 4. Refresh cache
 
 - `discounts:process` wraps discount creation in `Discount::withoutEvents()`, so it does **not** bump the versioned discount cache (`App\Support\CacheVersion`, group `discounts`) or sync to Meilisearch. Run `sail artisan cache:clear-discounts` after processing or the frontend will keep showing stale counts. `sail artisan discounts:index-meilisearch` (Meilisearch sync) is a separate step, unreachable in local dev without an SSH tunnel — not needed for basic local verification.
+- The "Geriausi pasiūlymai" strip and per-category carousels on `/akcijos/{store}`/`/leidinys/{store}` are **not** cached — they're persisted rows in `curated_deals` (`App\Services\DealPoolRefresher`), which `discounts:process` already refreshes automatically for whichever store(s) it just touched (no manual step needed for a normal run). If you ever bypass `discounts:process` and write `Discount` rows another way, run `sail artisan deal-pool:refresh --store={store}` afterward.
 
 ### 5. Store logo (this repo only)
 

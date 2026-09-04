@@ -73,6 +73,20 @@ class Kernel extends ConsoleKernel
             ->everyFiveMinutes()
             ->withoutOverlapping(5);
 
+        // curated_deals (App\Services\DealPoolRefresher) is kept fresh
+        // per-store — and, since refreshHomePools() now derives the home
+        // page pools from the already-persisted global_category rows instead
+        // of a separate ~19s keyword-page fan-out, the home pools too — by
+        // discounts:process itself as stores change (see refreshAfterBatch()).
+        // This nightly full refresh is only the safety net for what that
+        // event-driven path can't cover: deal_score partly depends on NOW()
+        // (the "expiring soon"/"added today" bonuses), so a discount's ideal
+        // rank can drift over time with no new scrape data to trigger a
+        // refresh.
+        $schedule->command('deal-pool:refresh')
+            ->dailyAt('04:30')
+            ->withoutOverlapping(60);
+
         // Store working hours change rarely (unlike flyers/discounts), so
         // weekly is plenty. No file-transfer complexity here (unlike
         // flyers) — it's plain JSON straight into the shared DB — so this

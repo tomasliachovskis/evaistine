@@ -45,6 +45,11 @@ class Store extends Model
         return $this->hasMany(StoreLocation::class);
     }
 
+    public function curatedDeals()
+    {
+        return $this->hasMany(CuratedDeal::class);
+    }
+
     public function latestFlyerValidity(): ?array
     {
         $flyer = $this->flyers()

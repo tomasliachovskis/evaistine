@@ -1,10 +1,21 @@
-@props(['sections', 'primarySlug' => null, 'secondarySlug' => null])
+@props(['sections', 'primarySlug' => null, 'secondarySlug' => null, 'topOffers' => []])
 
 @php
     $contextStoreSlug = $primarySlug && \App\Support\StoreDisplayMeta::isStoreSlug($primarySlug)
         ? $primarySlug
         : null;
 @endphp
+
+@if (! empty($topOffers))
+    <x-landing-deals-section
+        id="geriausi-pasiulymai"
+        title="Geriausi pasiūlymai"
+        :deals="$topOffers"
+        icon="flame"
+        layout="carousel"
+        :context-store-slug="$contextStoreSlug"
+    />
+@endif
 
 @foreach ($sections as $section)
     <x-landing-deals-section

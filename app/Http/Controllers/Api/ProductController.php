@@ -63,13 +63,16 @@ class ProductController extends Controller
         $this->homeDealPoolService = $homeDealPoolService;
     }
 
+    /**
+     * All three of these now read the persisted curated_deals table instead
+     * of Cache::remember() — see App\Services\DealPoolRefresher, which keeps
+     * these rows up to date as discounts change, scoped to whichever store(s)
+     * actually changed rather than recomputing for every store on every
+     * discounts:process batch.
+     */
     public function getBestDiscountsByCategory()
     {
-        $cacheKey = 'best_discounts_by_category_'.CacheVersion::suffix(['discounts']);
-
-        return Cache::remember($cacheKey, 3600, function () {
-            return response()->json($this->buildBestByCategorySections(null));
-        });
+        return response()->json($this->buildBestByCategorySectionsFromPool(null, 'global_category'));
     }
 
     public function getBestDiscountsByCategoryForStore($storeSlug)
@@ -80,62 +83,74 @@ class ProductController extends Controller
             return response()->json(['error' => 'Store not found'], 404);
         }
 
-        $cacheKey = "best_discounts_by_category_store_{$store->id}_".CacheVersion::suffix(['discounts']);
-
-        return Cache::remember($cacheKey, 3600, function () use ($store) {
-            return response()->json($this->buildBestByCategorySections($store->id));
-        });
+        return response()->json($this->buildBestByCategorySectionsFromPool($store->id, 'store_category'));
     }
 
     /**
-     * Fixed display order for the /akcijos and /akcijos/{store} category carousels,
-     * hand-picked for shopper interest rather than raw inventory count: everyday
-     * food staples first (widest, most frequent deal-hunting audience), then
-     * household/personal care, then narrower-audience categories last. Any
-     * category not listed here falls back to the end, in name order.
+     * Flat, cross-category "Geriausi pasiūlymai" pool for a single store's
+     * /akcijos/{store} and /leidinys/{store} pages — shown as one curated
+     * strip above the per-category carousels.
      */
-    private const CATEGORY_CAROUSEL_ORDER = [
-        'bakaleja',
-        'gerimai-kava-arbata',
-        'pieno-produktai-ir-kiausiniai',
-        'mesa-ir-zuvis',
-        'duonos-gaminiai',
-        'saldumynai-ir-uzkandziai',
-        'saldytas-maistas-ir-ledai',
-        'vaisiai-ir-darzoves',
-        'kosmetika-ir-higiena',
-        'buitine-chemija-valymo-priemones',
-        'namu-ukio-ir-laisvalaikio-prekes',
-        'gyvunu-prekes',
-        'vaiku-ir-kudikiu-prekes',
-        'augalai-geles',
-    ];
-
-    private function buildBestByCategorySections(?int $storeId, int $limit = 8)
+    public function getBestOffersForStore($storeSlug)
     {
-        $categories = Category::whereNull('parent_id')
-            ->where('hide', false)
-            ->withCount('discounts')
-            ->having('discounts_count', '>', 0)
-            ->orderBy('name')
-            ->get(['id', 'name', 'slug'])
-            ->sortBy(function (Category $category) {
-                $position = array_search($category->slug, self::CATEGORY_CAROUSEL_ORDER, true);
+        $store = \App\Models\Store::where('slug', $storeSlug)->first();
 
-                return $position === false ? count(self::CATEGORY_CAROUSEL_ORDER) : $position;
+        if (! $store) {
+            return response()->json(['error' => 'Store not found'], 404);
+        }
+
+        $discounts = $this->discountsForScope($store->id, 'store_top_offers');
+
+        return response()->json($this->formatter->formatList($discounts));
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, array{id:int,name:string,slug:string,discounts:array}>
+     */
+    private function buildBestByCategorySectionsFromPool(?int $storeId, string $scope)
+    {
+        // Ordered by id (not category_id) to preserve DealPoolRefresher's
+        // hand-picked CATEGORY_CAROUSEL_ORDER display order: rows for a full
+        // refresh are always bulk-inserted in one pass, category-by-category
+        // in that order, so ascending id reflects it — category_id ASC would
+        // silently re-sort sections into numeric category-id order instead.
+        $rows = \App\Models\CuratedDeal::query()
+            ->where('store_id', $storeId)
+            ->where('scope', $scope)
+            ->with(['category', 'discount.product.category', 'discount.product.discounts.store', 'discount.product.discountHistories.store', 'discount.store'])
+            ->orderBy('id')
+            ->get();
+
+        return $rows->groupBy('category_id')
+            ->map(function ($categoryRows) {
+                $category = $categoryRows->first()->category;
+                $discounts = $categoryRows->pluck('discount')->filter()->values();
+
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'discounts' => $this->formatter->formatList($discounts),
+                ];
             })
+            ->filter(fn (array $section) => count($section['discounts']) > 0)
             ->values();
+    }
 
-        return $categories->map(function (Category $category) use ($storeId, $limit) {
-            $discounts = $this->homeDealPoolService->bestForCategory($category->id, $limit, $storeId);
-
-            return [
-                'id' => $category->id,
-                'name' => $category->name,
-                'slug' => $category->slug,
-                'discounts' => $this->formatter->formatList($discounts),
-            ];
-        })->filter(fn (array $section) => count($section['discounts']) > 0)->values();
+    /**
+     * @return \Illuminate\Support\Collection<int, \App\Models\Discount>
+     */
+    private function discountsForScope(?int $storeId, string $scope)
+    {
+        return \App\Models\CuratedDeal::query()
+            ->where('store_id', $storeId)
+            ->where('scope', $scope)
+            ->with(['discount.product.category', 'discount.product.discounts.store', 'discount.product.discountHistories.store', 'discount.store'])
+            ->orderBy('position')
+            ->get()
+            ->pluck('discount')
+            ->filter()
+            ->values();
     }
 
     public function getDiscounts($storeOrCategory, $category = null)

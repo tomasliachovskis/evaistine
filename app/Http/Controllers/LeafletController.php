@@ -38,16 +38,14 @@ class LeafletController extends Controller
         $path = "/leidinys/{$store}";
         $breadcrumbs = $this->mapBreadcrumbs($payload['breadcrumbs']);
 
-        // Ported from listing-store-hub-page.tsx: the hub also shows the same
-        // per-category "best deals" carousels as a plain store page.
-        $sections = json_decode($api->getBestDiscountsByCategoryForStore($store)->getContent(), true);
+        $topOffers = json_decode($api->getBestOffersForStore($store)->getContent(), true);
 
         return view('leaflets.hub', [
             'listingMeta' => $payload['listing_meta'],
             'seo' => $payload['seo'],
             'totalOffers' => $payload['total_offers'],
             'storeSlug' => $store,
-            'sections' => $sections,
+            'topOffers' => $topOffers,
             'canonical' => CanonicalUrl::build($path),
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,

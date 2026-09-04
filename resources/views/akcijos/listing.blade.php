@@ -156,11 +156,12 @@
         @endif
 
         @php
-            $carouselHtml = ! empty($sections)
+            $carouselHtml = ! empty($sections) || ($isStoreHeader && ! empty($topOffers))
                 ? view('components.partials.listing-category-carousels', [
                     'sections' => $sections,
                     'primarySlug' => $filtersPrimarySlug,
                     'secondarySlug' => $filtersSecondarySlug,
+                    'topOffers' => $isStoreHeader ? $topOffers : [],
                 ])->render()
                 : '';
         @endphp
@@ -194,7 +195,7 @@
                 :initial-deals="$deals"
                 :initial-pagination="$pagination"
                 :carousel-html="$carouselHtml"
-                :show-carousels="! empty($sections)"
+                :show-carousels="! empty($sections) || ($isStoreHeader && ! empty($topOffers))"
                 :sidebar-mode="$sidebarMode"
                 :primary-store-name="$listingMeta['store_name'] ?? null"
                 :key="'filters-'.$basePath"

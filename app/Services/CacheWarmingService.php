@@ -37,7 +37,11 @@ class CacheWarmingService
         $this->warmStoreCaches();
         $this->warmCategoryCaches();
         $this->warmStoreCategoryCaches();
-        $this->warmBestByCategoryCaches();
+        // "Best deals" (store carousels, global categories, home pools) are
+        // no longer a cache — they're persisted in curated_deals, kept fresh
+        // by App\Services\DealPoolRefresher from discounts:process itself
+        // (plus a nightly `deal-pool:refresh` safety net), so there's nothing
+        // to warm here anymore.
         $this->warmPopularProductsCache();
         // Guest HTML before the (slower, bulk) all-discounts cache — real
         // visitors hitting the site mid-warm benefit from fast cached pages
@@ -47,22 +51,6 @@ class CacheWarmingService
         // depends on it running first.
         $this->warmGuestHtmlCaches();
         $this->warmAllDiscountsCache();
-    }
-
-    public function warmBestByCategoryCaches()
-    {
-        $stores = Store::select('id', 'slug')->get();
-        $this->section('best-by-category', $stores->count() + 1);
-
-        $rootCacheKey = 'best_discounts_by_category_'.CacheVersion::suffix(['discounts']);
-        $this->logWarm('best-by-category', '/akcijos', $rootCacheKey);
-        $this->productController->getBestDiscountsByCategory();
-
-        foreach ($stores as $store) {
-            $cacheKey = "best_discounts_by_category_store_{$store->id}_".CacheVersion::suffix(['discounts']);
-            $this->logWarm('best-by-category', "/akcijos/{$store->slug}", $cacheKey);
-            $this->productController->getBestDiscountsByCategoryForStore($store->slug);
-        }
     }
 
     public function warmAllDiscountsCache()

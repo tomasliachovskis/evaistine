@@ -82,11 +82,14 @@ class ProcessStoreDiscountsJob implements ShouldBeUnique, ShouldQueue
             $query->where('updated_at', '>=', $batchStartedAt);
         })->pluck('slug')->all();
 
+        // "Best deals" (store carousels, global categories, home pools) are
+        // no longer warmed here — discounts:process (called per store in
+        // processStore() above) already refreshes App\Services\DealPoolRefresher's
+        // curated_deals rows for whichever store(s) it actually touched.
         $cacheWarmingService = app(CacheWarmingService::class);
         $cacheWarmingService->warmStoreCaches();
         $cacheWarmingService->warmCategoryCaches();
         $cacheWarmingService->warmStoreCategoryCaches();
-        $cacheWarmingService->warmBestByCategoryCaches();
         $cacheWarmingService->warmAllDiscountsCache();
         $cacheWarmingService->warmFavoritesCache();
         $cacheWarmingService->warmPopularProductsCache($touchedProductSlugs);

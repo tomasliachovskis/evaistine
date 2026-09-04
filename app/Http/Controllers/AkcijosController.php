@@ -120,11 +120,13 @@ class AkcijosController extends Controller
         // h1, back-link, seoDescription, FAQ) is already identical to
         // CategoryCarouselsLayout's, so no separate view is needed.
         $sections = [];
+        $topOffers = [];
         if (StoreDisplayMeta::isStoreSlug($storeOrCategory) && $category === null && ! $request->query('category')) {
             $sections = json_decode($api->getBestDiscountsByCategoryForStore($storeOrCategory)->getContent(), true);
+            $topOffers = json_decode($api->getBestOffersForStore($storeOrCategory)->getContent(), true);
         }
 
-        return $this->renderListingPayload($request, $payload, $path, 'discounts', $storeOrCategory, $category, $sections);
+        return $this->renderListingPayload($request, $payload, $path, 'discounts', $storeOrCategory, $category, $sections, $topOffers);
     }
 
     private function renderKeyword(Request $request, KeywordPageController $keywordApi, string $slug): View|Response
@@ -135,7 +137,7 @@ class AkcijosController extends Controller
         return $this->renderListingPayload($request, $payload, "/akcijos/{$slug}", 'keyword', $slug, null);
     }
 
-    private function renderListingPayload(Request $request, array $payload, string $path, string $filtersMode, ?string $filtersPrimarySlug, ?string $filtersSecondarySlug, array $sections = []): View|Response
+    private function renderListingPayload(Request $request, array $payload, string $path, string $filtersMode, ?string $filtersPrimarySlug, ?string $filtersSecondarySlug, array $sections = [], array $topOffers = []): View|Response
     {
         $data = $payload['data'] ?? [];
         $breadcrumbs = $payload['breadcrumbs'] ?? [];
@@ -192,6 +194,7 @@ class AkcijosController extends Controller
             'filtersSecondarySlug' => $filtersSecondarySlug,
             'sidebarMode' => $sidebarMode,
             'sections' => $sections,
+            'topOffers' => $topOffers,
             'canonical' => CanonicalUrl::build($path, $query),
             'robots' => CanonicalUrl::robotsMeta($path, $query),
             'breadcrumbSchema' => BreadcrumbSchema::build(

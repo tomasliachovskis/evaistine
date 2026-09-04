@@ -6,11 +6,9 @@ use App\Models\Category;
 use App\Models\Discount;
 use App\Models\KeywordPage;
 use App\Models\Store;
-use App\Support\CacheVersion;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 
 class KeywordPageService
 {
@@ -24,16 +22,6 @@ class KeywordPageService
 
     private const MIN_CHIP_OFFERS = 3;
 
-    private const HOME_TOP_DEALS_FETCH = 30;
-
-    private const HOME_POOL_MAX_SEARCH_TERMS = 2;
-
-    private const MIN_HOME_POOL_PRICE = 5.0;
-
-    private const EXCLUDED_HOME_POOL_CATEGORY_SLUGS = [
-        'namu-ukio-ir-laisvalaikio-prekes',
-    ];
-
     public function __construct(
         private MeilisearchService $meilisearchService,
         private DiscountResponseFormatter $formatter,
@@ -41,7 +29,6 @@ class KeywordPageService
         private StoreFlyerTitleBuilder $flyerTitleBuilder,
         private KeywordPageDynamicMetaService $dynamicMetaService,
         private KeywordPageCategoryResolver $categoryResolver,
-        private HomeDealScorer $homeDealScorer,
     ) {
     }
 
@@ -212,145 +199,9 @@ class KeywordPageService
             ->exists();
     }
 
-    public function fetchTopDiscountsForPage(KeywordPage $page, int $limit): Collection
-    {
-        if ($limit <= 0) {
-            return collect();
-        }
-
-        $cacheKey = "home_kw_top_deals_{$page->slug}_v3_" . CacheVersion::suffix(['discounts']);
-
-        $discounts = Cache::remember($cacheKey, 7200, function () use ($page) {
-            return $this->fetchTopDiscountsForHomePoolFromDatabase($page);
-        });
-
-        return $this->homeDealScorer
-            ->sortByScore(
-                $discounts->filter(fn (Discount $discount) => $this->passesHomePoolFilters($discount, $page))
-            )
-            ->take($limit)
-            ->values();
-    }
-
-    private function fetchTopDiscountsForHomePoolFromDatabase(KeywordPage $page): Collection
-    {
-        $terms = $this->resolveHomePoolSearchTerms($page);
-
-        if ($terms === []) {
-            return collect();
-        }
-
-        // product.discounts.store and product.discountHistories.store are
-        // eager-loaded here for the same reason as HomeDealPoolService::baseQuery()
-        // — without them, DiscountResponseFormatter falls back to one query per
-        // product to compute offer_count/min_price/history.
-        $query = Discount::query()
-            ->with(['product.category', 'product.discounts.store', 'product.discountHistories.store', 'store'])
-            ->whereNotNull('discounts.discount_percent')
-            ->where('discounts.discount_percent', '>', 0)
-            ->whereNotNull('discounts.discounted_price')
-            ->where('discounts.discounted_price', '>=', self::MIN_HOME_POOL_PRICE)
-            ->whereHas('product', function ($productQuery) use ($terms, $page) {
-                $this->applyHomePoolCategoryFilter($productQuery, $page);
-
-                $productQuery->where(function ($termQuery) use ($terms) {
-                    foreach ($terms as $term) {
-                        $termQuery->orWhere('name', 'like', '%' . $term . '%');
-                    }
-                });
-            });
-
-        return $query
-            ->orderByDesc('discounts.discount_percent')
-            ->limit(self::HOME_TOP_DEALS_FETCH)
-            ->get()
-            ->filter(fn (Discount $discount) => $this->passesKeywordFilters($discount, $page))
-            ->values();
-    }
-
-    private function applyHomePoolCategoryFilter($productQuery, KeywordPage $page): void
-    {
-        $listingSlugs = $this->categoryResolver->resolvePrimaryListingCategorySlugs(
-            (array) ($page->category_slugs ?? []),
-        );
-
-        if ($listingSlugs === []) {
-            $productQuery->whereHas('category', function ($categoryQuery) {
-                $categoryQuery->whereNotIn('slug', self::EXCLUDED_HOME_POOL_CATEGORY_SLUGS);
-            });
-
-            return;
-        }
-
-        $productQuery->whereHas('category', function ($categoryQuery) use ($listingSlugs) {
-            $categoryQuery
-                ->whereNotIn('slug', self::EXCLUDED_HOME_POOL_CATEGORY_SLUGS)
-                ->where(function ($slugQuery) use ($listingSlugs) {
-                    $slugQuery
-                        ->whereIn('slug', $listingSlugs)
-                        ->orWhereIn('parent_id', function ($subQuery) use ($listingSlugs) {
-                            $subQuery
-                                ->select('id')
-                                ->from('categories')
-                                ->whereIn('slug', $listingSlugs);
-                        });
-                });
-        });
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function resolveHomePoolSearchTerms(KeywordPage $page): array
-    {
-        $terms = [];
-        $slug = trim($page->slug);
-
-        if ($slug !== '') {
-            $terms[] = $slug;
-        }
-
-        foreach ((array) ($page->search_terms ?? []) as $term) {
-            $term = trim((string) $term);
-            if ($term === '' || in_array($term, $terms, true)) {
-                continue;
-            }
-
-            $terms[] = $term;
-
-            if (count($terms) >= self::HOME_POOL_MAX_SEARCH_TERMS) {
-                break;
-            }
-        }
-
-        return $terms;
-    }
-
     public function productMatchesKeywordPage(Discount $discount, KeywordPage $page): bool
     {
         return $this->passesKeywordFilters($discount, $page);
-    }
-
-    private function passesHomePoolFilters(Discount $discount, KeywordPage $page): bool
-    {
-        if (!$this->passesKeywordFilters($discount, $page)) {
-            return false;
-        }
-
-        if ((float) ($discount->discount_percent ?? 0) <= 0) {
-            return false;
-        }
-
-        if ((float) ($discount->discounted_price ?? 0) < self::MIN_HOME_POOL_PRICE) {
-            return false;
-        }
-
-        $categorySlug = $discount->product?->category?->slug;
-        if ($categorySlug !== null && in_array($categorySlug, self::EXCLUDED_HOME_POOL_CATEGORY_SLUGS, true)) {
-            return false;
-        }
-
-        return true;
     }
 
     private function collectMatchingDiscountsCollection(KeywordPage $page): Collection

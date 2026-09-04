@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Discount;
-use App\Support\FoodCategorySlugs;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -15,167 +14,42 @@ class HomeDealPoolService
         'namu-ukio-ir-laisvalaikio-prekes',
     ];
 
-    private const MIN_TOP_PRODUCT_PRICE = 5.0;
-
     private const POPULAR_CATEGORY_IDS = [1, 52, 121, 352, 380];
-
-    private const FOOD_POOL_LIMIT = 50;
-
-    private const NON_FOOD_POOL_LIMIT = 25;
 
     private const CANDIDATE_LIMIT = 600;
 
-    private const BEST_MAX_PER_CATEGORY = 10;
+    /**
+     * Some stores (seen on Iki) publish storewide "-40% visiems X prekės
+     * ženklo produktams" conditional promos with a real discount_percent but
+     * no concrete original_price/discounted_price for any single SKU —
+     * excluding these entirely starved thin store+category combos down to
+     * 1-2 displayable items even though the store genuinely has more deals
+     * running. deal-card.blade.php already has a "Sutaupyk iki X%" pill for
+     * exactly this case (no price to show), so these are let in when the
+     * percent is at least this — but capped (MAX_PRICELESS_PER_SECTION
+     * below) so a section can't fill up entirely with price-less pills.
+     */
+    private const MIN_PRICELESS_DISCOUNT_PERCENT = 20;
 
-    private const FOOD_MAX_PER_CATEGORY = 1;
-
-    private const NON_FOOD_MAX_PER_CATEGORY = 1;
-
-    private const FOOD_POOL_MIN_SIZE = 40;
-
-    private const NON_FOOD_POOL_MIN_SIZE = 20;
-
-    private const MAX_DEALS_PER_KEYWORD = 2;
-
-    /** @var HomeKeywordDealPoolBuilder */
-    private $keywordPoolBuilder;
-
-    /** @var HomeSectionDealExclusionService */
-    private $homeSectionDealExclusion;
-
-    public function __construct(
-        HomeKeywordDealPoolBuilder $keywordPoolBuilder,
-        HomeSectionDealExclusionService $homeSectionDealExclusion
-    ) {
-        $this->keywordPoolBuilder = $keywordPoolBuilder;
-        $this->homeSectionDealExclusion = $homeSectionDealExclusion;
-    }
-
-    public function buildPools(?int $excludeId = null): array
-    {
-        $allCandidates = $this->fetchScoredCandidates($excludeId);
-        $sectionCandidates = $this->homeSectionDealExclusion->filterDiscounts($allCandidates);
-
-        $food = $this->homeSectionDealExclusion->filterDiscountArray(
-            $this->keywordPoolBuilder->buildFoodPool()
-        );
-        if (count($food) < self::FOOD_POOL_MIN_SIZE) {
-            $food = $this->supplementPool(
-                $food,
-                $sectionCandidates,
-                FoodCategorySlugs::FOOD,
-                [],
-                self::FOOD_MAX_PER_CATEGORY,
-                self::FOOD_POOL_LIMIT,
-            );
-        }
-        $food = $this->enforceKeywordPoolLimits($food, 'food');
-
-        $nonFood = $this->homeSectionDealExclusion->filterDiscountArray(
-            $this->keywordPoolBuilder->buildNonFoodPool()
-        );
-        if (count($nonFood) < self::NON_FOOD_POOL_MIN_SIZE) {
-            $nonFood = $this->supplementPool(
-                $nonFood,
-                $sectionCandidates,
-                FoodCategorySlugs::NON_FOOD,
-                FoodCategorySlugs::EXCLUDED_FROM_BEST_AND_NON_FOOD,
-                self::NON_FOOD_MAX_PER_CATEGORY,
-                self::NON_FOOD_POOL_LIMIT,
-            );
-        }
-        $nonFood = $this->enforceKeywordPoolLimits($nonFood, 'non_food');
-
-        return [
-            'best' => $this->pickDiversePool(
-                $allCandidates,
-                FoodCategorySlugs::NON_FOOD,
-                array_merge(
-                    FoodCategorySlugs::EXCLUDED_FROM_BEST_AND_NON_FOOD,
-                    FoodCategorySlugs::FOOD
-                ),
-                self::BEST_MAX_PER_CATEGORY
-            ),
-            'food' => $food,
-            'non_food' => $nonFood,
-        ];
-    }
+    private const MAX_PRICELESS_PER_SECTION = 2;
 
     /**
-     * @param  list<Discount>  $existing
-     * @return list<Discount>
+     * A section with only 1-3 cards looks broken next to every other section
+     * on the page — the priceless cap above is a soft preference for once a
+     * section is already presentable, not a hard rule that should shrink a
+     * whole row down to 3 items. Below this floor, pricelessCapReached()
+     * ignores the cap so a thin category still fills out to a normal-looking
+     * row; above it, the cap re-applies so slots beyond the floor still
+     * prefer real, priced cards over more percent-only pills.
      */
-    private function supplementPool(
-        array $existing,
-        Collection $candidates,
-        ?array $allowedSlugs,
-        array $excludedSlugs,
-        int $maxPerCategory,
-        int $poolLimit
-    ): array {
-        $remaining = $poolLimit - count($existing);
+    private const MIN_SECTION_SIZE = 5;
 
-        if ($remaining <= 0) {
-            return $existing;
-        }
+    /** @var DealFamilyKeyResolver */
+    private $familyKeyResolver;
 
-        $existingDiscountIds = array_flip(array_map(fn (Discount $discount) => $discount->id, $existing));
-        $existingProductIds = array_flip(array_map(fn (Discount $discount) => $discount->product_id, $existing));
-
-        $filteredCandidates = $candidates->filter(function (Discount $discount) use ($existingDiscountIds, $existingProductIds) {
-            return !isset($existingDiscountIds[$discount->id])
-                && !isset($existingProductIds[$discount->product_id]);
-        });
-
-        $additional = $this->pickDiversePool(
-            $filteredCandidates,
-            $allowedSlugs,
-            $excludedSlugs,
-            $maxPerCategory,
-            $remaining,
-        );
-
-        return array_merge($existing, $this->homeSectionDealExclusion->filterDiscountArray($additional));
-    }
-
-    /**
-     * @param  list<Discount>  $pool
-     * @return list<Discount>
-     */
-    private function enforceKeywordPoolLimits(array $pool, string $segment): array
+    public function __construct(DealFamilyKeyResolver $familyKeyResolver)
     {
-        $counts = [];
-        $result = [];
-
-        foreach ($pool as $discount) {
-            $keywordSlug = $discount->getAttribute('home_keyword_slug')
-                ?: $this->keywordPoolBuilder->resolveKeywordSlugForDiscount($discount, $segment);
-
-            if ($keywordSlug !== null) {
-                $discount->setAttribute('home_keyword_slug', $keywordSlug);
-            }
-
-            $groupKey = $keywordSlug
-                ?? ('category:' . ($discount->product->category->slug ?? 'unknown'));
-
-            if (($counts[$groupKey] ?? 0) >= self::MAX_DEALS_PER_KEYWORD) {
-                continue;
-            }
-
-            $counts[$groupKey] = ($counts[$groupKey] ?? 0) + 1;
-            $result[] = $discount;
-        }
-
-        return $result;
-    }
-
-    private function fetchScoredCandidates(?int $excludeId): Collection
-    {
-        return $this->scoredCandidatesQuery($excludeId)
-            ->orderByDesc('deal_score')
-            ->orderByDesc('discounts.discount_percent')
-            ->limit(self::CANDIDATE_LIMIT)
-            ->get();
+        $this->familyKeyResolver = $familyKeyResolver;
     }
 
     /**
@@ -186,32 +60,71 @@ class HomeDealPoolService
      */
     public function bestForCategory(int $categoryId, int $limit, ?int $storeId = null): Collection
     {
-        // Deliberately skips applyTopProductFilters()'s home-page-only heuristics
-        // (min €5 price, excluded "namu-ukio" category) — every category needs
-        // its own best deals here, including cheap ones (produce, plants) and
-        // the one category the home page spotlight excludes.
-        return $this->scoredCandidatesQuery(null, false)
-            ->whereNotNull('discounts.discounted_price')
+        // No minimum price filter here — every category needs its own best
+        // deals, including cheap ones (produce, plants).
+        //
+        // Over-fetches a larger candidate pool (4x the display limit, capped)
+        // than it needs, then applies a max-1-per-family-key cap below —
+        // without this, a single campaign discounting a whole flavor lineup
+        // at the same % off would otherwise dominate the top-N by score alone
+        // (e.g. 5 different flavors of the same chips bag in one carousel).
+        $candidates = $this->scoredCandidatesQuery(null)
+            ->where(function ($query) {
+                $query->whereNotNull('discounts.discounted_price')
+                    ->orWhere('discounts.discount_percent', '>=', self::MIN_PRICELESS_DISCOUNT_PERCENT);
+            })
             ->when($storeId, function ($query) use ($storeId) {
                 $query->where('discounts.store_id', $storeId);
             })
             ->where('products.category_id', $categoryId)
             ->orderByDesc('deal_score')
             ->orderByDesc('discounts.discount_percent')
-            ->limit($limit)
+            ->limit(min($limit * 4, 40))
             ->get();
+
+        return collect($this->applyFamilyCap($candidates, $limit));
     }
 
-    private function scoredCandidatesQuery(?int $excludeId, bool $applyTopProductFilters = true): Builder
+    /**
+     * Cross-category "best offers" pool for a single store's /akcijos and
+     * /leidinys hub pages — same deal_score ranking as bestForCategory(), but
+     * diversified across categories (max $maxPerCategory per category)
+     * instead of one category at a time. Excludes the
+     * "namu-ukio-ir-laisvalaikio-prekes" catch-all category: a UX audit found
+     * it surfacing unrelated high-ticket items (e.g. an electric toothbrush)
+     * alongside grocery deals when mixed into a single cross-category list.
+     *
+     * @return list<Discount>
+     */
+    public function bestForStore(int $storeId, int $limit = 10, int $maxPerCategory = 2): array
+    {
+        $candidates = $this->scoredCandidatesQuery(null)
+            ->where(function ($query) {
+                $query->whereNotNull('discounts.discounted_price')
+                    ->orWhere('discounts.discount_percent', '>=', self::MIN_PRICELESS_DISCOUNT_PERCENT);
+            })
+            ->where('discounts.store_id', $storeId)
+            ->orderByDesc('deal_score')
+            ->orderByDesc('discounts.discount_percent')
+            ->limit(self::CANDIDATE_LIMIT)
+            ->get();
+
+        return $this->pickDiversePool(
+            $candidates,
+            null,
+            self::EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS,
+            $maxPerCategory,
+            $limit
+        );
+    }
+
+    private function scoredCandidatesQuery(?int $excludeId): Builder
     {
         $popularIds = implode(',', self::POPULAR_CATEGORY_IDS);
         $today = Carbon::today()->toDateString();
         $urgencyCutoff = Carbon::now()->copy()->addDays(3)->toDateTimeString();
 
         $query = $this->baseQuery();
-        if ($applyTopProductFilters) {
-            $this->applyTopProductFilters($query);
-        }
         $this->excludeIds($query, $excludeId);
 
         // "prev" = the discount_history row immediately before this discount's
@@ -302,6 +215,8 @@ class HomeDealPoolService
         $categoryCounts = array_fill_keys($categoryKeys, 0);
         $picked = [];
         $pickedIds = [];
+        $pickedFamilyKeys = [];
+        $pricelessCount = 0;
 
         while (count($picked) < $limit) {
             $addedThisRound = false;
@@ -329,8 +244,25 @@ class HomeDealPoolService
                         continue;
                     }
 
+                    // Same-family skip mirrors applyFamilyCap() below — a
+                    // category-diverse pool can still stack several near-
+                    // identical variants (e.g. chip flavors) inside one
+                    // category slot without this.
+                    $familyKey = $this->familyKeyResolver->resolve($discount);
+                    if (in_array($familyKey, $pickedFamilyKeys, true)) {
+                        continue;
+                    }
+
+                    if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
+                        continue;
+                    }
+
                     $picked[] = $discount;
                     $pickedIds[] = $discount->id;
+                    $pickedFamilyKeys[] = $familyKey;
+                    if ($this->isPriceless($discount)) {
+                        $pricelessCount++;
+                    }
                     $categoryCounts[$slug]++;
                     $addedThisRound = true;
                     break;
@@ -342,6 +274,14 @@ class HomeDealPoolService
             }
         }
 
+        // Two-tier backfill, same reasoning as applyFamilyCap(): the
+        // round-robin loop above can legitimately fall short of $limit
+        // because of the category/family caps rather than genuinely thin
+        // inventory (e.g. only 2 categories have any candidates left) — fill
+        // remaining slots still respecting the family cap first, and only
+        // ignore it as a last resort so two Oral-B toothbrushes don't both
+        // land in "Geriausi pasiūlymai" just because the diversity loop
+        // stopped early.
         if (count($picked) < $limit) {
             foreach ($available as $discount) {
                 if (count($picked) >= $limit) {
@@ -352,12 +292,153 @@ class HomeDealPoolService
                     continue;
                 }
 
+                $familyKey = $this->familyKeyResolver->resolve($discount);
+                if (in_array($familyKey, $pickedFamilyKeys, true)) {
+                    continue;
+                }
+
+                if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
+                    continue;
+                }
+
                 $picked[] = $discount;
                 $pickedIds[] = $discount->id;
+                $pickedFamilyKeys[] = $familyKey;
+                if ($this->isPriceless($discount)) {
+                    $pricelessCount++;
+                }
+            }
+        }
+
+        // Last resort ignores the family cap (a repeated product beats an
+        // empty slot) but deliberately still enforces the priceless cap —
+        // unlike a same-family duplicate, flooding a thin section with
+        // "Sutaupyk iki X%" pills instead of stopping short is the opposite
+        // of what this cap is for; a shorter, honestly-priced section is
+        // better than padding it out with priceless ones.
+        if (count($picked) < $limit) {
+            foreach ($available as $discount) {
+                if (count($picked) >= $limit) {
+                    break;
+                }
+
+                if (in_array($discount->id, $pickedIds, true)) {
+                    continue;
+                }
+
+                if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
+                    continue;
+                }
+
+                $picked[] = $discount;
+                $pickedIds[] = $discount->id;
+                if ($this->isPriceless($discount)) {
+                    $pricelessCount++;
+                }
             }
         }
 
         return $picked;
+    }
+
+    /**
+     * Greedily picks up to $limit discounts from an already deal_score-sorted
+     * candidate list, allowing at most $maxPerFamily per DealFamilyKeyResolver
+     * family key — falls back to filling remaining slots ignoring the cap if
+     * the candidate pool is too thin for the family rule alone to reach the
+     * limit (thin inventory beats an artificially short list).
+     *
+     * @return list<Discount>
+     */
+    private function applyFamilyCap(Collection $candidates, int $limit, int $maxPerFamily = 1): array
+    {
+        $picked = [];
+        $familyCounts = [];
+        $pricelessCount = 0;
+
+        foreach ($candidates as $discount) {
+            if (count($picked) >= $limit) {
+                break;
+            }
+
+            $familyKey = $this->familyKeyResolver->resolve($discount);
+            if (($familyCounts[$familyKey] ?? 0) >= $maxPerFamily) {
+                continue;
+            }
+
+            if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
+                continue;
+            }
+
+            $picked[] = $discount;
+            $familyCounts[$familyKey] = ($familyCounts[$familyKey] ?? 0) + 1;
+            if ($this->isPriceless($discount)) {
+                $pricelessCount++;
+            }
+        }
+
+        // Same two-tier backfill reasoning as pickDiversePool(): relax the
+        // family cap first if still short, but keep the priceless cap as
+        // long as possible so a thin category doesn't fill up entirely with
+        // "Sutaupyk iki X%" pills instead of real priced cards.
+        if (count($picked) < $limit) {
+            $pickedIds = array_map(fn (Discount $d) => $d->id, $picked);
+            foreach ($candidates as $discount) {
+                if (count($picked) >= $limit) {
+                    break;
+                }
+                if (in_array($discount->id, $pickedIds, true)) {
+                    continue;
+                }
+                if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
+                    continue;
+                }
+
+                $picked[] = $discount;
+                $pickedIds[] = $discount->id;
+                if ($this->isPriceless($discount)) {
+                    $pricelessCount++;
+                }
+            }
+        }
+
+        // Last resort ignores the family cap but still enforces the
+        // priceless cap — see the matching comment in pickDiversePool().
+        if (count($picked) < $limit) {
+            $pickedIds = array_map(fn (Discount $d) => $d->id, $picked);
+            foreach ($candidates as $discount) {
+                if (count($picked) >= $limit) {
+                    break;
+                }
+                if (in_array($discount->id, $pickedIds, true)) {
+                    continue;
+                }
+                if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
+                    continue;
+                }
+                $picked[] = $discount;
+                $pickedIds[] = $discount->id;
+                if ($this->isPriceless($discount)) {
+                    $pricelessCount++;
+                }
+            }
+        }
+
+        return $picked;
+    }
+
+    private function isPriceless(Discount $discount): bool
+    {
+        return (float) ($discount->discounted_price ?? 0) <= 0;
+    }
+
+    private function pricelessCapReached(int $pricelessCount, int $pickedCount): bool
+    {
+        if ($pickedCount < self::MIN_SECTION_SIZE) {
+            return false;
+        }
+
+        return $pricelessCount >= self::MAX_PRICELESS_PER_SECTION;
     }
 
     private function resolveDealScore(Discount $discount): float
@@ -390,16 +471,6 @@ class HomeDealPoolService
             ->with(['product.category', 'product.discounts.store', 'product.discountHistories.store', 'store'])
             ->whereNotNull('discounts.discount_percent')
             ->where('discounts.discount_percent', '>', 0);
-    }
-
-    private function applyTopProductFilters(Builder $query): Builder
-    {
-        return $query
-            ->whereNotNull('discounts.discounted_price')
-            ->where('discounts.discounted_price', '>=', self::MIN_TOP_PRODUCT_PRICE)
-            ->whereHas('product.category', function ($categoryQuery) {
-                $categoryQuery->whereNotIn('slug', self::EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS);
-            });
     }
 
     private function excludeIds(Builder $query, ?int $excludeId): Builder

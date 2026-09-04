@@ -101,14 +101,10 @@
             };
         @endphp
 
-        @foreach ([['heading' => null, 'items' => $activeLeaflets], ['heading' => 'Pasibaigę leidiniai', 'items' => $expiredLeaflets]] as $group)
-            @continue(empty($group['items']))
-            <section class="{{ $loop->index > 0 ? 'mt-8' : '' }}">
-                @if ($group['heading'])
-                    <h2 class="mb-3 text-base font-bold text-gray-900">{{ $group['heading'] }}</h2>
-                @endif
+        @if (! empty($activeLeaflets))
+            <section>
                 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-                    @foreach ($group['items'] as $leaflet)
+                    @foreach ($activeLeaflets as $leaflet)
                         @php
                             $isExpired = ($leaflet['status'] ?? null) === 'expired';
                             $href = $leaflet['view_url'] ?? "/leidinys/{$storeSlug}";
@@ -142,21 +138,50 @@
                     @endforeach
                 </div>
             </section>
-        @endforeach
+        @endif
 
-        @if (count($sections ?? []))
-            <div class="flex min-w-0 flex-col">
-                @foreach ($sections as $section)
-                    <x-landing-deals-section
-                        :id="'category-'.$section['slug']"
-                        :title="$section['name']"
-                        :deals="$section['discounts']"
-                        icon="shopping-basket"
-                        layout="carousel"
-                        :see-all-href="'/akcijos/'.$storeSlug.'/'.$section['slug']"
-                    />
-                @endforeach
-            </div>
+        @if (! empty($topOffers))
+            <x-landing-deals-section
+                id="geriausi-pasiulymai"
+                title="Geriausi pasiūlymai"
+                :deals="$topOffers"
+                icon="flame"
+                layout="carousel"
+            />
+        @endif
+
+        @if (! empty($expiredLeaflets))
+            <section class="mt-8">
+                <h2 class="mb-3 text-base font-bold text-gray-900">Pasibaigę leidiniai</h2>
+                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+                    @foreach ($expiredLeaflets as $leaflet)
+                        @php
+                            $isExpired = ($leaflet['status'] ?? null) === 'expired';
+                            $href = $leaflet['view_url'] ?? "/leidinys/{$storeSlug}";
+                            $days = $leaflet['days_remaining'] ?? null;
+                            $dateRange = $formatLeafletDateRange($leaflet);
+                        @endphp
+                        <article class="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
+                            <a href="{{ $href }}" class="relative block aspect-[6/5] w-full overflow-hidden bg-gray-50">
+                                @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
+                                    <img src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}" alt="{{ $leaflet['title'] ?? $storeName }}" loading="lazy" class="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.03] {{ $isExpired ? 'grayscale' : '' }}">
+                                @endif
+                            </a>
+                            <div class="flex flex-1 flex-col gap-2 p-4">
+                                <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
+                                @if ($dateRange)
+                                    <p class="text-xs font-medium text-gray-500">{{ $dateRange }}</p>
+                                @endif
+                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ $isExpired ? 'text-gray-400' : ($days !== null && $days <= 2 ? 'text-red-600' : 'text-dark-green') }}">
+                                    <x-app-icon name="clock" class="size-3.5" />
+                                    {{ $isExpired ? 'Nebegalioja' : ($days !== null ? "Galioja dar {$days} {$daysWord($days)}" : 'Galioja') }}
+                                </span>
+                                <a href="{{ $href }}" class="mt-auto inline-flex h-9 w-full items-center justify-center rounded-lg bg-green text-sm font-bold text-white hover:bg-dark-green">Peržiūrėti</a>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
         @endif
 
         @if ($hasAbout)

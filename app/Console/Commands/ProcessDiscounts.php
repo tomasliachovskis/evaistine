@@ -25,6 +25,7 @@ use App\Rules\StoreRules\RimiRules;
 use App\Rules\StoreRules\SilasRules;
 use App\Rules\StoreRules\ThomasPhilippsRules;
 use App\Rules\StoreRules\VynotekaRules;
+use App\Services\DealPoolRefresher;
 use App\Support\NormalizesDiscountDates;
 use App\Support\ProductPackSizeExtractor;
 use Illuminate\Console\Command;
@@ -80,7 +81,10 @@ class ProcessDiscounts extends Command
     /** @var list<string>|null */
     private ?array $skipStoreNames = null;
 
-    public function handle(): int
+    /** @var array<int, true> store_id => true, for stores that actually got a new Discount row this run */
+    private array $touchedStoreIds = [];
+
+    public function handle(DealPoolRefresher $dealPoolRefresher): int
     {
         if ($this->option('map-categories')) {
             $this->info('Starting bulk category mapping...');
@@ -119,6 +123,12 @@ class ProcessDiscounts extends Command
             });
 
         $this->info('Discounts processed successfully');
+
+        if ($this->touchedStoreIds !== []) {
+            $storeIds = array_keys($this->touchedStoreIds);
+            $this->info('Refreshing curated deals for touched store(s): '.implode(',', $storeIds));
+            $dealPoolRefresher->refreshAfterBatch($storeIds);
+        }
 
         return self::SUCCESS;
     }
@@ -347,6 +357,7 @@ class ProcessDiscounts extends Command
         });
 
         $this->markDiscountExists($product->id, $store->id, $startAt, $endAt);
+        $this->touchedStoreIds[$store->id] = true;
 
         return true;
     }

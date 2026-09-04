@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CuratedDeal;
 use App\Models\Discount;
 use App\Models\DiscountHistory;
 use App\Models\Store;
@@ -11,9 +12,6 @@ use Illuminate\Support\Collection;
 
 class HomePageSectionsService
 {
-    /** @var HomeDealPoolService */
-    private $poolService;
-
     private const EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS = [
         'namu-ukio-ir-laisvalaikio-prekes',
     ];
@@ -24,23 +22,41 @@ class HomePageSectionsService
     private $formatter;
 
     public function __construct(
-        DiscountResponseFormatter $formatter,
-        HomeDealPoolService $poolService
+        DiscountResponseFormatter $formatter
     ) {
         $this->formatter = $formatter;
-        $this->poolService = $poolService;
     }
 
+    /**
+     * best_pool/food_pool/non_food_pool now read App\Services\DealPoolRefresher's
+     * persisted curated_deals rows (scope home_best/home_food/home_non_food)
+     * instead of calling HomeDealPoolService::buildPools() live — that call
+     * fans out to a DB query per keyword page across ~38 keyword pages and is
+     * documented as running ~45s uncached, so it gets its own, much less
+     * frequent refresh schedule (see DealPoolRefresher::refreshHomePools())
+     * rather than being recomputed on every request or every discount batch.
+     */
     public function build(): array
     {
-        $pools = $this->poolService->buildPools();
-
         return [
-            'best_pool' => $this->formatDeals(collect($pools['best'])),
-            'food_pool' => $this->formatDeals(collect($pools['food'])),
-            'non_food_pool' => $this->formatDeals(collect($pools['non_food'])),
+            'best_pool' => $this->formatDeals($this->poolFromScope('home_best')),
+            'food_pool' => $this->formatDeals($this->poolFromScope('home_food')),
+            'non_food_pool' => $this->formatDeals($this->poolFromScope('home_non_food')),
             'store_ranking' => $this->getStoreRanking(),
         ];
+    }
+
+    private function poolFromScope(string $scope): Collection
+    {
+        return CuratedDeal::query()
+            ->whereNull('store_id')
+            ->where('scope', $scope)
+            ->with(['discount.product.category', 'discount.product.discounts.store', 'discount.product.discountHistories.store', 'discount.store'])
+            ->orderBy('position')
+            ->get()
+            ->pluck('discount')
+            ->filter()
+            ->values();
     }
 
     public static function getNewTodayCount(): int
