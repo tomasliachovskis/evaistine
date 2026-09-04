@@ -97,6 +97,21 @@ puppeteer.use(StealthPlugin());
                     return new Date(year, month - 1, day).toLocaleDateString('en-CA');
                 }
 
+                // "SUPERKAINA!"/flat-price tiles (no % discount to compute,
+                // just a slogan badge like "SUPERKAINA!", "5už1€") render
+                // with NO .product-grid-box__availabilities element at all —
+                // verified live on lidl.lt, unlike every regular discount
+                // tile around them which has one. There's no page-level
+                // validity banner to fall back to either, so carry the last
+                // real validity window seen among surrounding cards instead
+                // — without this, both start_at/end_at end up blank and
+                // discounts:process silently drops the row entirely (9 of 52
+                // Lidl products a week were vanishing this way). Stored on
+                // `window` because $$eval's callback runs fresh each call
+                // (once per scroll step, see the caller's loop below) with
+                // no closure over Node-side state.
+                window.__lidlLastValidity = window.__lidlLastValidity || { start_at: null, end_at: null };
+
                 function extractCategory(block) {
                     try {
                         const impressionData = block.getAttribute('data-gridbox-impression');
@@ -135,12 +150,24 @@ puppeteer.use(StealthPlugin());
                         [start_atStr, end_atStr] = valid.split(' - ');
                         start_at = parseDate(start_atStr);
                         end_at = parseDate(end_atStr);
+                        window.__lidlLastValidity = { start_at, end_at };
                     } else if (typeof valid === 'string' && valid.includes('Nuo ')) {
                         start_atStr = valid.replace('Nuo ', '');
                         start_at = parseDate(start_atStr);
-                    } else {
+                        end_at = null;
+                        window.__lidlLastValidity = { start_at, end_at };
+                    } else if (valid) {
+                        // Some other non-empty, unrecognized format — keep
+                        // the previous behavior of using it as-is rather
+                        // than silently discarding it.
                         start_at = valid;
                         end_at = null;
+                    } else {
+                        // No availabilities element at all — fall back to
+                        // the last real validity window from a nearby card
+                        // instead of leaving both dates blank.
+                        start_at = window.__lidlLastValidity.start_at;
+                        end_at = window.__lidlLastValidity.end_at;
                     }
 
                     return {
