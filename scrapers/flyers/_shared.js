@@ -147,7 +147,11 @@ export async function compressPdfByRasterizing(pdfUrl, pdfBuffer, { quality = 80
 
         const buffers = [];
         for (let n = 1; n <= pageCount; n++) {
-            await page.goto(`${pdfUrl}#page=${n}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            // toolbar=0/navpanes=0/scrollbar=0 are standard PDF-open params
+            // Chrome's built-in viewer also honors — without them every
+            // screenshot includes the viewer's own toolbar and thumbnail
+            // sidebar baked permanently into the page image.
+            await page.goto(`${pdfUrl}#page=${n}&toolbar=0&navpanes=0&scrollbar=0`, { waitUntil: 'domcontentloaded', timeout: 30000 });
             await sleep(n === 1 ? 6000 : 3000);
 
             let screenshot = await page.screenshot({ type: 'jpeg', quality });
