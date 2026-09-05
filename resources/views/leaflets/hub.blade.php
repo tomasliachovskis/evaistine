@@ -103,7 +103,7 @@
 
         @if (! empty($activeLeaflets))
             <section>
-                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
                     @foreach ($activeLeaflets as $leaflet)
                         @php
                             $isExpired = ($leaflet['status'] ?? null) === 'expired';
@@ -153,7 +153,7 @@
         @if (! empty($expiredLeaflets))
             <section class="mt-8">
                 <h2 class="mb-3 text-base font-bold text-gray-900">Pasibaigę leidiniai</h2>
-                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
                     @foreach ($expiredLeaflets as $leaflet)
                         @php
                             $isExpired = ($leaflet['status'] ?? null) === 'expired';
