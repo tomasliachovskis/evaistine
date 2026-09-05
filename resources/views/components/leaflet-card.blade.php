@@ -16,9 +16,8 @@
 
 {{-- Same card design as leaflets/hub.blade.php's (/leidinys/{store}) — kept
      identical on purpose so /leidiniai (all stores) and a single store's own
-     hub page don't look like two different products. The one addition
-     store_name in place of hub's leaflet-title line, since across multiple
-     stores that's the differentiator a single-store page doesn't need. --}}
+     hub page don't look like two different products, right down to showing
+     the leaflet's own title (not the store name) as the bold line. --}}
 <article {{ $attributes->merge(['class' => 'group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all sm:flex-col sm:gap-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg']) }}>
     <a href="{{ $href }}" class="relative block w-32 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
         @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
@@ -33,7 +32,7 @@
         @endif
     </a>
     <div class="flex flex-1 flex-col gap-1.5 py-3 pr-3 sm:gap-2 sm:p-4">
-        <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['store_name'] }}</p>
+        <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
         @if ($dateRange)
             {{-- A consistent, real identifier for every card — some
                  leaflets carry a themed campaign name instead of a
