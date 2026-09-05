@@ -100,6 +100,61 @@ async function syncPdfToProduction(relativePath) {
     }
 }
 
+// Rebuilds an oversized source PDF (over the backend's 60MB cap — see
+// submitFlyer below) into a much smaller one by rasterizing each page as a
+// JPEG and reassembling, rather than just skipping it. Works for any PDF
+// Chromium can render inline (no Content-Disposition:attachment) — same
+// technique as the cover-only screenshot used elsewhere (e.g. kubas.js),
+// just driven page-by-page via the `#page=N` viewer fragment. pdf-lib reads
+// the page count without needing to rasterize anything itself.
+export async function compressPdfByRasterizing(pdfUrl, pdfBuffer, { quality = 80, viewport = { width: 1200, height: 1600, deviceScaleFactor: 2 } } = {}) {
+    const pageCount = (await PDFDocument.load(pdfBuffer, { ignoreEncryption: true })).getPageCount();
+    const browser = await launchBrowser();
+
+    try {
+        const page = await browser.newPage();
+        await page.setViewport(viewport);
+
+        const buffers = [];
+        for (let n = 1; n <= pageCount; n++) {
+            await page.goto(`${pdfUrl}#page=${n}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await sleep(n === 1 ? 4000 : 1500);
+            buffers.push(await page.screenshot({ type: 'jpeg', quality }));
+        }
+
+        return imagesToPdf(buffers);
+    } finally {
+        await browser.close();
+    }
+}
+
+// Asks the backend's Gemini-backed cover-page OCR for a title/valid_from/
+// valid_to when a leaflet's listing/detail page gives no date any other way
+// (e.g. Aibė's cover-only "Kainos galioja ..." text, with nothing in the
+// surrounding page HTML). Returns null on any failure (Gemini not
+// configured, no reliable dates found, etc.) — callers should fall back to
+// submitting without dates rather than treat this as fatal.
+export async function extractCoverInfo({ store, imageBuffer, filename = 'cover.jpg' }) {
+    const form = new FormData();
+    form.append('store', store);
+    form.append('image', new Blob([imageBuffer]), filename);
+
+    try {
+        const response = await fetch('http://127.0.0.1/api/scrapers/extract-flyer-info', {
+            method: 'POST',
+            body: form,
+        });
+
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        return { title: data.title ?? null, validFrom: data.valid_from ?? null, validTo: data.valid_to ?? null };
+    } catch (error) {
+        console.error('extractCoverInfo failed:', error.message);
+        return null;
+    }
+}
+
 // Posts one flyer (PDF + metadata) to the backend. The backend enforces both
 // "skip if expired" and "skip if we already have this exact valid_from/
 // valid_to for this store", so scrapers can safely re-submit everything they
@@ -113,7 +168,29 @@ export async function submitFlyer({
     validTo,
     pdfBuffer,
     filename = 'leidinys.pdf',
+    // The original hosted URL `pdfBuffer` was fetched from, if any — needed
+    // to rasterize-and-shrink an oversized PDF (Chromium re-renders it page
+    // by page from this URL). Omit for PDFs already built from page images
+    // (imagesToPdf), which are never this large to begin with.
+    sourcePdfUrl,
 }) {
+    // A handful of stores' source PDFs are high-res print masters tens of
+    // MB past what anyone needs on the web — rather than reject or silently
+    // fail on every one of those (first hit: Elimart, 61MB), rasterize and
+    // rebuild as a much smaller JPEG-based PDF whenever it's non-trivially
+    // large. 20MB is well under the backend's 60MB hard cap, leaving room
+    // for genuinely large-but-under-cap leaflets to pass through untouched.
+    const RESIZE_THRESHOLD_BYTES = 20 * 1024 * 1024;
+    if (pdfBuffer.length > RESIZE_THRESHOLD_BYTES && sourcePdfUrl) {
+        console.log(`[${store}] ${title || ''}: PDF is ${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB — rasterizing to shrink it`);
+        try {
+            pdfBuffer = await compressPdfByRasterizing(sourcePdfUrl, pdfBuffer);
+            console.log(`[${store}] ${title || ''}: rasterized down to ${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB`);
+        } catch (error) {
+            console.error(`[${store}] ${title || ''}: rasterizing failed (${error.message}) — submitting original`);
+        }
+    }
+
     const form = new FormData();
     form.append('store', store);
     if (title) form.append('title', title);
@@ -125,6 +202,18 @@ export async function submitFlyer({
     if (validFrom) form.append('valid_from', validFrom);
     if (validTo) form.append('valid_to', validTo);
     form.append('pdf', new Blob([pdfBuffer], { type: 'application/pdf' }), filename);
+
+    // The backend's `max:61440` (60MB) file-size validation rejects a
+    // request expecting JSON with a redirect instead of a 422 — which
+    // otherwise surfaces here as a silent-looking "HTTP 200 {}" that's easy
+    // to mistake for success. Check client-side first for a clear failure —
+    // reachable if rasterizing above didn't happen (no sourcePdfUrl) or
+    // didn't get it under the cap.
+    const MAX_PDF_BYTES = 60 * 1024 * 1024;
+    if (pdfBuffer.length > MAX_PDF_BYTES) {
+        console.error(`[${store}] ${title || ''}: PDF is ${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB, over the backend's 60MB cap — skipping`);
+        return { skipped: true, reason: 'pdf_too_large' };
+    }
 
     const response = await fetch('http://127.0.0.1/api/scrapers/store-flyer', {
         method: 'POST',
