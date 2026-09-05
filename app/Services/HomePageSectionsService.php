@@ -36,23 +36,31 @@ class HomePageSectionsService
      * frequent refresh schedule (see DealPoolRefresher::refreshHomePools())
      * rather than being recomputed on every request or every discount batch.
      */
+    // How many of home_best's persisted candidates (DealPoolRefresher stores
+    // 40, see HOME_BEST_LIMIT there) actually show per request — randomly
+    // resampled every time so the strip visibly rotates without needing its
+    // own refresh schedule, unlike food_pool/non_food_pool below whose
+    // stored count still equals what's shown.
+    private const HOME_BEST_DISPLAY_LIMIT = 10;
+
     public function build(): array
     {
         return [
-            'best_pool' => $this->formatDeals($this->poolFromScope('home_best')),
+            'best_pool' => $this->formatDeals($this->poolFromScope('home_best', self::HOME_BEST_DISPLAY_LIMIT)),
             'food_pool' => $this->formatDeals($this->poolFromScope('home_food')),
             'non_food_pool' => $this->formatDeals($this->poolFromScope('home_non_food')),
             'store_ranking' => $this->getStoreRanking(),
         ];
     }
 
-    private function poolFromScope(string $scope): Collection
+    private function poolFromScope(string $scope, ?int $randomSampleLimit = null): Collection
     {
         return CuratedDeal::query()
             ->whereNull('store_id')
             ->where('scope', $scope)
             ->with(['discount.product.category', 'discount.product.discounts.store', 'discount.product.discountHistories.store', 'discount.store'])
-            ->orderBy('position')
+            ->when($randomSampleLimit, fn ($query) => $query->inRandomOrder()->limit($randomSampleLimit))
+            ->unless($randomSampleLimit, fn ($query) => $query->orderBy('position'))
             ->get()
             ->pluck('discount')
             ->filter()

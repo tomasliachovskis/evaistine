@@ -25,9 +25,19 @@ class DealPoolRefresher
 
     private const TOP_OFFERS_LIMIT = 10;
 
-    private const HOME_BEST_LIMIT = 10;
+    // Persists a wider candidate pool than the 10 actually shown on the
+    // homepage — HomePageSectionsService::poolFromScope() randomly samples
+    // 10 out of these each request, so the "best deals" strip visibly
+    // rotates without needing its own refresh schedule. 40 is the real
+    // ceiling here, not an arbitrary round number: home_best only draws from
+    // 5 eligible non-food categories (see EXCLUDED_FROM_BEST_AND_NON_FOOD),
+    // each already capped at CATEGORY_LIMIT=8 rows upstream in the
+    // global_category scope — 5 × 8 = 40 is everything there is to draw
+    // from without also widening CATEGORY_LIMIT itself, which feeds store
+    // carousels too and would be a much wider blast radius for this.
+    private const HOME_BEST_LIMIT = 40;
 
-    private const HOME_BEST_MAX_PER_CATEGORY = 2;
+    private const HOME_BEST_MAX_PER_CATEGORY = 8;
 
     private const HOME_NON_FOOD_LIMIT = 25;
 
