@@ -59,7 +59,7 @@
                     @if ($group['heading'])
                         <h2 class="mb-3 text-lg font-bold text-gray-900">{{ $group['heading'] }}</h2>
                     @endif
-                    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
                         @foreach ($group['items'] as $leaflet)
                             <x-leaflet-card :leaflet="$leaflet" />
                         @endforeach
