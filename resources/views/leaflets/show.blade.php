@@ -3,8 +3,10 @@
     $pages = $listingMeta['pages'] ?? [];
     $storeName = $listingMeta['store_name'] ?? $storeSlug;
     $otherLeaflets = collect($listingMeta['leaflets'] ?? [])->filter(fn ($l) => ($l['slug'] ?? null) !== $flyer['slug'])->values();
+    // Y.m.d (dots), not Y-m-d — matches every listing card's date range
+    // format (leaflets/hub.blade.php, components/leaflet-card.blade.php).
     $dateRange = ($flyer['valid_from'] ?? null) && ($flyer['valid_to'] ?? null)
-        ? \Illuminate\Support\Carbon::parse($flyer['valid_from'])->translatedFormat('Y-m-d') . ' – ' . \Illuminate\Support\Carbon::parse($flyer['valid_to'])->translatedFormat('Y-m-d')
+        ? \Illuminate\Support\Carbon::parse($flyer['valid_from'])->format('Y.m.d') . ' – ' . \Illuminate\Support\Carbon::parse($flyer['valid_to'])->format('Y.m.d')
         : null;
 @endphp
 
