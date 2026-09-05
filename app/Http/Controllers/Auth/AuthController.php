@@ -50,7 +50,7 @@ class AuthController extends Controller
     // success (window.location.href = data.redirect), same end state as the
     // old back()/redirect() responses, just told via JSON instead of a
     // redirect response. A no-JS <form> submit still gets a real redirect.
-    private function redirectAfterAuth(Request $request): RedirectResponse|JsonResponse
+    private function redirectAfterAuth(Request $request, ?string $redirectTo = null): RedirectResponse|JsonResponse
     {
         $productId = session()->pull(self::PENDING_FAVORITE_SESSION_KEY);
 
@@ -58,11 +58,13 @@ class AuthController extends Controller
             ProductFavorite::firstOrCreate(['user_id' => auth()->id(), 'product_id' => $productId]);
         }
 
+        $redirectTo = $redirectTo ?: '/favorites';
+
         if ($request->wantsJson()) {
-            return response()->json(['redirect' => '/favorites']);
+            return response()->json(['redirect' => $redirectTo]);
         }
 
-        return redirect('/favorites');
+        return redirect($redirectTo);
     }
 
     private function validationFailed(Request $request, $validator): RedirectResponse|JsonResponse
@@ -127,7 +129,7 @@ class AuthController extends Controller
         Auth::login($user, remember: true);
         $request->session()->regenerate();
 
-        return $this->redirectAfterAuth($request);
+        return $this->redirectAfterAuth($request, $link->redirect_to);
     }
 
     public function logout(Request $request): RedirectResponse
