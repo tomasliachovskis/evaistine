@@ -107,6 +107,36 @@ async function syncPdfToProduction(relativePath) {
 // technique as the cover-only screenshot used elsewhere (e.g. kubas.js),
 // just driven page-by-page via the `#page=N` viewer fragment. pdf-lib reads
 // the page count without needing to rasterize anything itself.
+//
+// Screenshotting Chrome's own built-in PDF viewer is a real race: its
+// `#page=N` navigation resolves 'domcontentloaded' almost instantly (that's
+// just the viewer shell), well before the PDF's own bytes finish streaming
+// in and decoding — a fixed short sleep after that can fire while the
+// viewer is still showing its loading chrome (toolbar/sidebar) over a blank
+// page. Seen live on Grustė's 34MB "gėrimų gidas": stored and served as a
+// blank page under the viewer's own UI. Tried waiting on a network-idle
+// signal instead of a fixed sleep first ('networkidle0' and 'networkidle2'
+// both) — confirmed live against this exact 32MB file that Chrome's PDF
+// viewer keeps some background connection open indefinitely while a large
+// file is loading, so navigation just times out every time regardless of
+// threshold. So: 'domcontentloaded' (fast, never hangs) plus a generous
+// fixed sleep as a first pass, with screenshotIsLikelyBlank() below doing
+// the actual work — it measures the real output and retries with a much
+// longer wait if that first pass wasn't actually enough, rather than
+// trying to guess the right timeout in advance.
+function screenshotIsLikelyBlank(buffer, { quality }) {
+    // A near-solid-white capture (the viewer's loading state, dark toolbar
+    // chrome included) still JPEG-compresses far smaller than one with real
+    // page content underneath — confirmed live against Grustė's "gėrimų
+    // gidas": a blank first-page capture came to 62KB, the same page once
+    // actually rendered came to 1077KB at the same quality/viewport. The
+    // toolbar/sidebar chrome alone has enough visual complexity that a much
+    // lower threshold (previously quality * 60 =~ 4.8KB) never caught this.
+    const MIN_PLAUSIBLE_BYTES = quality * 3000;
+
+    return buffer.length < MIN_PLAUSIBLE_BYTES;
+}
+
 export async function compressPdfByRasterizing(pdfUrl, pdfBuffer, { quality = 80, viewport = { width: 1200, height: 1600, deviceScaleFactor: 2 } } = {}) {
     const pageCount = (await PDFDocument.load(pdfBuffer, { ignoreEncryption: true })).getPageCount();
     const browser = await launchBrowser();
@@ -118,8 +148,16 @@ export async function compressPdfByRasterizing(pdfUrl, pdfBuffer, { quality = 80
         const buffers = [];
         for (let n = 1; n <= pageCount; n++) {
             await page.goto(`${pdfUrl}#page=${n}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-            await sleep(n === 1 ? 4000 : 1500);
-            buffers.push(await page.screenshot({ type: 'jpeg', quality }));
+            await sleep(n === 1 ? 6000 : 3000);
+
+            let screenshot = await page.screenshot({ type: 'jpeg', quality });
+            if (screenshotIsLikelyBlank(screenshot, { quality })) {
+                console.log(`Page ${n}/${pageCount} looks blank (still rendering?) — waiting longer and retrying once`);
+                await sleep(6000);
+                screenshot = await page.screenshot({ type: 'jpeg', quality });
+            }
+
+            buffers.push(screenshot);
         }
 
         return imagesToPdf(buffers);
@@ -174,13 +212,19 @@ export async function submitFlyer({
     // (imagesToPdf), which are never this large to begin with.
     sourcePdfUrl,
 }) {
-    // A handful of stores' source PDFs are high-res print masters tens of
-    // MB past what anyone needs on the web — rather than reject or silently
-    // fail on every one of those (first hit: Elimart, 61MB), rasterize and
-    // rebuild as a much smaller JPEG-based PDF whenever it's non-trivially
-    // large. 20MB is well under the backend's 60MB hard cap, leaving room
-    // for genuinely large-but-under-cap leaflets to pass through untouched.
-    const RESIZE_THRESHOLD_BYTES = 20 * 1024 * 1024;
+    // A handful of stores' source PDFs are high-res print masters past the
+    // backend's 60MB hard cap (first hit: Elimart, 61MB) — rasterize and
+    // rebuild as a much smaller JPEG-based PDF only for those, rather than
+    // reject or silently fail. Screenshotting each page is a real race
+    // (Chromium's own PDF viewer can still be mid-render when the
+    // screenshot fires, capturing its loading chrome instead of the page —
+    // seen live on Grustė's 34MB "gėrimų gidas": a blank white page under
+    // the viewer's own toolbar/sidebar, stored and served as if it were
+    // real content), so this is worth avoiding whenever the original
+    // genuinely already fits — 40MB (not 20MB) leaves real buffer under the
+    // 60MB cap while letting every file between 20-40MB pass through as its
+    // real, correct self instead of risking that race for no reason.
+    const RESIZE_THRESHOLD_BYTES = 40 * 1024 * 1024;
     if (pdfBuffer.length > RESIZE_THRESHOLD_BYTES && sourcePdfUrl) {
         console.log(`[${store}] ${title || ''}: PDF is ${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB — rasterizing to shrink it`);
         try {
