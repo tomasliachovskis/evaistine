@@ -117,9 +117,7 @@
                              padding around the mobile thumbnail either — it fills the card's
                              full height edge-to-edge (article's own overflow-hidden +
                              rounded-2xl clips its left corners) instead of sitting inset with
-                             wasted space around it. The leaflet's own title is dropped on
-                             mobile: the date range below already identifies the card, and
-                             store identity is already the whole page's context here. --}}
+                             wasted space around it. --}}
                         <article class="group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all sm:flex-col sm:gap-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg">
                             <a href="{{ $href }}" class="relative block w-32 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
                                 @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
@@ -127,7 +125,7 @@
                                 @endif
                             </a>
                             <div class="flex flex-1 flex-col gap-1.5 py-3 pr-3 sm:gap-2 sm:p-4">
-                                <p class="hidden line-clamp-2 text-sm font-semibold text-gray-900 sm:block">{{ $leaflet['title'] ?? '' }}</p>
+                                <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
                                 @if ($dateRange)
                                     {{-- A consistent, real identifier for every card — some
                                          leaflets carry a themed campaign name instead of a
@@ -183,7 +181,7 @@
                                 @endif
                             </a>
                             <div class="flex flex-1 flex-col gap-1.5 py-3 pr-3 sm:gap-2 sm:p-4">
-                                <p class="hidden line-clamp-2 text-sm font-semibold text-gray-900 sm:block">{{ $leaflet['title'] ?? '' }}</p>
+                                <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
                                 @if ($dateRange)
                                     <p class="text-xs font-medium text-gray-500">{{ $dateRange }}</p>
                                 @endif
