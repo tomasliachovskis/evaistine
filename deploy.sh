@@ -69,6 +69,14 @@ rsync -avz --no-perms --no-owner --no-group -e "ssh $SSH_OPTS" \
 
 # Run Laravel commands on the server
 ssh $SSH_OPTS $SERVER << 'EOF'
+    # This heredoc is a SEPARATE remote bash invocation — the outer script's
+    # `set -euo pipefail` (line 2) has no effect here at all. Without its
+    # own copy, a failing step (e.g. the public/build-new swap below) was
+    # observed live to just get silently skipped over while every later
+    # command kept running, ending with the script printing "Deployment
+    # completed successfully!" over a genuinely broken production site.
+    set -euo pipefail
+
     cd /var/www/api
 
     if [ ! -f .env ]; then
@@ -171,6 +179,22 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     npm ci
     rm -rf public/build-new
     npm run build -- --outDir public/build-new
+
+    # Guard the swap explicitly instead of just trusting npm run build's own
+    # exit code: seen live (2026-09-05) — the build reported success but
+    # public/build-new didn't actually exist afterward (never fully root-
+    # caused; a transient race with npm ci is the leading suspect). The
+    # outer script's `set -euo pipefail` doesn't reach into this SSH heredoc
+    # (a separate remote bash invocation), so without this check the
+    # subsequent commands silently kept running on a broken state — the old
+    # build got renamed away as "old" and then deleted by the cleanup line
+    # below, leaving NO public/build at all while the script still printed
+    # "Deployment completed successfully!".
+    if [ ! -d public/build-new ] || [ ! -f public/build-new/manifest.json ]; then
+        echo "ERROR: npm run build did not produce public/build-new/manifest.json — aborting before touching the live public/build" >&2
+        exit 1
+    fi
+
     if [ -d public/build ]; then
         mv public/build "public/build-old-$$"
     fi
