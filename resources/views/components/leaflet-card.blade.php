@@ -16,8 +16,10 @@
 
 {{-- Same card design as leaflets/hub.blade.php's (/leidinys/{store}) — kept
      identical on purpose so /leidiniai (all stores) and a single store's own
-     hub page don't look like two different products, right down to showing
-     the leaflet's own title (not the store name) as the bold line. --}}
+     hub page don't look like two different products. One addition here:
+     a store-name line above the title — needed on this multi-store listing
+     to say which store a card is even for, unlike hub.blade.php's version
+     where the whole page is already scoped to one store. --}}
 <article {{ $attributes->merge(['class' => 'group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all sm:flex-col sm:gap-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg']) }}>
     <a href="{{ $href }}" class="relative block w-32 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
         @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
@@ -32,7 +34,8 @@
         @endif
     </a>
     <div class="flex flex-1 flex-col gap-1.5 py-3 pr-3 sm:gap-2 sm:p-4">
-        <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ $leaflet['store_name'] }}</p>
+        <p class="-mt-1 line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
         @if ($dateRange)
             {{-- A consistent, real identifier for every card — some
                  leaflets carry a themed campaign name instead of a
