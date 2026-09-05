@@ -63,7 +63,7 @@ class SeedGenericProducts extends Command
      * as 'manual' so they get revisited on the next Ahrefs export.
      */
     private const MANUAL_ADDITIONS = [
-        ['slug' => 'minkstiklis', 'name' => 'Minkštiklis', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'minkstiklis', 'name' => 'Minkštiklis', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['minkštiklis', 'audinių minkštiklis']],
         ['slug' => 'oro-gaiviklis', 'name' => 'Oro gaiviklis', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'arbuzai', 'name' => 'Arbūzai', 'emoji' => '🍉', 'category' => 'vaisiai-ir-darzoves'],
         ['slug' => 'persikai', 'name' => 'Persikai', 'emoji' => '🍑', 'category' => 'vaisiai-ir-darzoves'],
@@ -115,10 +115,10 @@ class SeedGenericProducts extends Command
         // saldyti-zuvies-pirsteliai, kudikiu-koses already exist; riesutai/
         // prieskoniai/silke/lasisa already act as an umbrella over the more
         // specific term that would've been proposed here).
-        ['slug' => 'veido-kauke', 'name' => 'Veido kaukė', 'emoji' => '🧖', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'veido-kauke', 'name' => 'Veido kaukė', 'emoji' => '🧖', 'category' => 'kosmetika-ir-higiena', 'terms' => ['veido kaukė', 'lakštinė kaukė']],
         ['slug' => 'lupu-dazai', 'name' => 'Lūpų dažai', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'plauku-kauke', 'name' => 'Plaukų kaukė', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
-        ['slug' => 'higieniniai-paketai', 'name' => 'Higieniniai paketai', 'emoji' => '🩸', 'category' => 'kosmetika-ir-higiena', 'terms' => ['higieniniai paketai', 'hig paketai']],
+        ['slug' => 'higieniniai-paketai', 'name' => 'Higieniniai paketai', 'emoji' => '🩸', 'category' => 'kosmetika-ir-higiena', 'terms' => ['higieniniai paketai', 'higieniniams paketams', 'hig paketai']],
         ['slug' => 'gaivusis-gerimas', 'name' => 'Gaivusis gėrimas', 'emoji' => '🥤', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'energinis-gerimas', 'name' => 'Energinis gėrimas', 'emoji' => '⚡', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'sausi-pusryciai', 'name' => 'Sausi pusryčiai', 'emoji' => '🥣', 'category' => 'bakaleja'],
@@ -126,7 +126,7 @@ class SeedGenericProducts extends Command
         ['slug' => 'stalo-zaidimai', 'name' => 'Stalo žaidimai', 'emoji' => '🎲', 'category' => 'vaiku-ir-kudikiu-prekes'],
         ['slug' => 'namu-kvapas-lazdelemis', 'name' => 'Namų kvapas (lazdelėmis)', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['namų kvapas', 'kvapas lazdelėmis']],
         ['slug' => 'saldainiu-rinkinys', 'name' => 'Saldainių rinkinys', 'emoji' => '🍬', 'category' => 'saldumynai-ir-uzkandziai'],
-        ['slug' => 'kramtomoji-guma', 'name' => 'Kramtomoji guma', 'emoji' => '🍬', 'category' => 'saldumynai-ir-uzkandziai'],
+        ['slug' => 'kramtomoji-guma', 'name' => 'Kramtomoji guma', 'emoji' => '🍬', 'category' => 'saldumynai-ir-uzkandziai', 'terms' => ['kramtomoji guma', 'kramt guma', 'kramtomajai guma']],
         ['slug' => 'plombyras', 'name' => 'Plombyras', 'emoji' => '🍦', 'category' => 'saldytas-maistas-ir-ledai'],
 
         // Round 2 — same frequency-analysis method, re-run against the
@@ -145,9 +145,9 @@ class SeedGenericProducts extends Command
         ['slug' => 'plauku-lakas', 'name' => 'Plaukų lakas', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'burnos-skalavimo-skystis', 'name' => 'Burnos skalavimo skystis', 'emoji' => '🦷', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'prieskoniu-misinys', 'name' => 'Prieskonių mišinys', 'emoji' => '🧂', 'category' => 'bakaleja'],
-        ['slug' => 'marinuoti-agurkai', 'name' => 'Marinuoti agurkai', 'emoji' => '🥒', 'category' => 'bakaleja'],
+        ['slug' => 'marinuoti-agurkai', 'name' => 'Marinuoti agurkai', 'emoji' => '🥒', 'category' => 'bakaleja', 'terms' => ['marinuoti agurkai', 'marinuoti agurkėliai']],
         ['slug' => 'riesutu-kremas', 'name' => 'Riešutų kremas', 'emoji' => '🥜', 'category' => 'bakaleja'],
-        ['slug' => 'sulciu-gerimas', 'name' => 'Sulčių gėrimas', 'emoji' => '🧃', 'category' => 'gerimai-kava-arbata'],
+        ['slug' => 'sulciu-gerimas', 'name' => 'Sulčių gėrimas', 'emoji' => '🧃', 'category' => 'gerimai-kava-arbata', 'terms' => ['sulčių gėrimas', 'sulčių gėrimams']],
         ['slug' => 'nealkoholinis-alus', 'name' => 'Nealkoholinis alus', 'emoji' => '🍺', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'pomidoru-padazas', 'name' => 'Pomidorų padažas', 'emoji' => '🍅', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'silkiu-file', 'name' => 'Silkių filė', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
@@ -179,7 +179,7 @@ class SeedGenericProducts extends Command
         ['slug' => 'micelinis-vanduo', 'name' => 'Micelinis vanduo', 'emoji' => '💧', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'makiazo-pagrindas', 'name' => 'Makiažo pagrindas', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'paakiu-kremas', 'name' => 'Paakių kremas', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
-        ['slug' => 'veido-prausiklis', 'name' => 'Veido prausiklis', 'emoji' => '🧼', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'veido-prausiklis', 'name' => 'Veido prausiklis', 'emoji' => '🧼', 'category' => 'kosmetika-ir-higiena', 'terms' => ['veido prausiklis', 'prausimosi putos', 'veido prausimosi putos']],
         // gazuoti-gerimai (round-0 keyword_page generic) apparently doesn't
         // match here — likely scoped to a different root category — so
         // gerimai-kava-arbata's own "gazuotas gėrimas" products (154+)
@@ -188,9 +188,14 @@ class SeedGenericProducts extends Command
         ['slug' => 'izotoninis-gerimas', 'name' => 'Izotoninis gėrimas', 'emoji' => '🏃', 'category' => 'gerimai-kava-arbata'],
         ['slug' => 'kojines', 'name' => 'Kojinės', 'emoji' => '🧦', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'kuprines', 'name' => 'Kuprinės', 'emoji' => '🎒', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
-        ['slug' => 'dubeneliai', 'name' => 'Dubenėliai', 'emoji' => '🥣', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        ['slug' => 'dubeneliai', 'name' => 'Dubenėliai', 'emoji' => '🥣', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['dubenėlis', 'dubenėliai', 'dubuo', 'dubenys']],
         ['slug' => 'puodai', 'name' => 'Puodai', 'emoji' => '🍲', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
-        ['slug' => 'elektriniai-virduliai', 'name' => 'Elektriniai virduliai', 'emoji' => '☕', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
+        // 'virdulys'/'virduliai' declines to a different stem than
+        // 'virduliai' after the two-word 'elektriniai virduliai' phrase
+        // (t→č palatalization, see 'rankšluosčiai' below) — a plain
+        // "Virdulys" product with no "elektrinis" in its name never matched
+        // the old two-word-only term.
+        ['slug' => 'elektriniai-virduliai', 'name' => 'Elektriniai virduliai', 'emoji' => '☕', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['virdulys', 'virduliai', 'elektrinis virdulys', 'elektriniai virduliai']],
         ['slug' => 'vazonai', 'name' => 'Vazonai', 'emoji' => '🪴', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'rasikliai', 'name' => 'Rašikliai', 'emoji' => '🖊️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
 
@@ -237,7 +242,11 @@ class SeedGenericProducts extends Command
         ['slug' => 'hermetiski-indeliai', 'name' => 'Hermetiški indeliai', 'emoji' => '🫙', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['hermetiškas indelis', 'hermetiški indeliai', 'indelis maistui']],
         ['slug' => 'daiktadezes', 'name' => 'Daiktadėžės', 'emoji' => '📦', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'baterijos-elementai', 'name' => 'Baterijos ir elementai', 'emoji' => '🔋', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['baterijos', 'elementai aaa', 'elementai aa']],
-        ['slug' => 'tekstiliniai-ranksluosciai', 'name' => 'Tekstiliniai rankšluosčiai', 'emoji' => '🧻', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['rankšluostis', 'kilpinis rankšluostis']],
+        // Declension gap: buildNameStem() stems singular 'rankšluostis' to
+        // 'rankšluost' but plural 'rankšluosčiai' to 'rankšluosč' (t→č
+        // palatalization before -čiai) — different stems, so the old
+        // singular-only term missed every plural-named product.
+        ['slug' => 'tekstiliniai-ranksluosciai', 'name' => 'Tekstiliniai rankšluosčiai', 'emoji' => '🧻', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['rankšluostis', 'rankšluosčiai', 'kilpinis rankšluostis']],
         ['slug' => 'sulankstomos-kedes', 'name' => 'Sulankstomos kėdės', 'emoji' => '🪑', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'skeciai', 'name' => 'Skėčiai', 'emoji' => '☂️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
         ['slug' => 'plauku-dziovintuvai', 'name' => 'Plaukų džiovintuvai', 'emoji' => '💨', 'category' => 'namu-ukio-ir-laisvalaikio-prekes'],
@@ -299,14 +308,14 @@ class SeedGenericProducts extends Command
         ['slug' => 'pastiles', 'name' => 'Pastilės', 'emoji' => '🍬', 'category' => 'bakaleja'],
         ['slug' => 'kukuruzu-traskuciai', 'name' => 'Kukurūzų traškučiai', 'emoji' => '🌽', 'category' => 'bakaleja'],
         ['slug' => 'baltyminis-batonelis', 'name' => 'Baltyminis batonėlis', 'emoji' => '🍫', 'category' => 'bakaleja'],
-        ['slug' => 'marinuoti-burokeliai', 'name' => 'Marinuoti burokėliai', 'emoji' => '🫐', 'category' => 'bakaleja'],
+        ['slug' => 'marinuoti-burokeliai', 'name' => 'Marinuoti burokėliai', 'emoji' => '🫐', 'category' => 'bakaleja', 'terms' => ['marinuoti burokėliai', 'konservuoti burokėliai']],
         ['slug' => 'alyvuoges', 'name' => 'Alyvuogės', 'emoji' => '🫒', 'category' => 'bakaleja', 'terms' => ['žaliosios alyvuogės', 'juodosios alyvuogės', 'alyvuogės']],
 
         ['slug' => 'plauku-serumas', 'name' => 'Plaukų serumas', 'emoji' => '💧', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'plauku-putos', 'name' => 'Plaukų putos', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'plauku-formavimo-priemone', 'name' => 'Plaukų formavimo priemonė', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena', 'terms' => ['plaukų formavimo gelis', 'plaukų modeliavimo pasta', 'plaukų purškiklis', 'plaukų pudra']],
         ['slug' => 'plauku-sepeciai-sukos', 'name' => 'Plaukų šepečiai ir šukos', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena', 'terms' => ['plaukų šepetys', 'plaukų šukos']],
-        ['slug' => 'plauku-gumeles', 'name' => 'Plaukų gumelės', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena'],
+        ['slug' => 'plauku-gumeles', 'name' => 'Plaukų gumelės', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena', 'terms' => ['plaukų gumelė', 'plaukų gumelės', 'gumelė', 'gumelės', 'šilkinė gumelė']],
         ['slug' => 'veido-tonikas', 'name' => 'Veido tonikas', 'emoji' => '💧', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'akiu-makiazo-valiklis', 'name' => 'Akių makiažo valiklis', 'emoji' => '💧', 'category' => 'kosmetika-ir-higiena'],
         ['slug' => 'lupu-balzamas', 'name' => 'Lūpų balzamas', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena'],
@@ -377,8 +386,8 @@ class SeedGenericProducts extends Command
         ['slug' => 'purskiamas-kvapas', 'name' => 'Purškiamas kvapas', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'sausas-kvapiklis', 'name' => 'Sausas kvapiklis', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'skalbiniu-kvepalai', 'name' => 'Skalbinių kvepalai', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones'],
-        ['slug' => 'kvapiosios-granules', 'name' => 'Kvapiosios granulės', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones'],
-        ['slug' => 'automobilio-gaiviklis', 'name' => 'Automobilio gaiviklis', 'emoji' => '🚗', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'kvapiosios-granules', 'name' => 'Kvapiosios granulės', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['kvapiosios granulės', 'kvapniosios granulės']],
+        ['slug' => 'automobilio-gaiviklis', 'name' => 'Automobilio gaiviklis', 'emoji' => '🚗', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['automobilio gaiviklis', 'auto gaiviklis']],
         ['slug' => 'indaploviu-druska', 'name' => 'Indaplovių druska', 'emoji' => '🧂', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'indaplovies-milteliai', 'name' => 'Indaplovės milteliai', 'emoji' => '🧼', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'valomasis-pienelis', 'name' => 'Valomasis pienelis', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones'],
@@ -387,8 +396,8 @@ class SeedGenericProducts extends Command
         ['slug' => 'dezinfekcijos-priemone', 'name' => 'Dezinfekcijos priemonė', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'kosmetines-serveteles', 'name' => 'Kosmetinės servetėlės', 'emoji' => '🧻', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'vienkartines-pirstines', 'name' => 'Vienkartinės pirštinės', 'emoji' => '🧤', 'category' => 'buitine-chemija-valymo-priemones'],
-        ['slug' => 'buitines-pirstines', 'name' => 'Buitinės pirštinės', 'emoji' => '🧤', 'category' => 'buitine-chemija-valymo-priemones'],
-        ['slug' => 'variklio-alyva', 'name' => 'Variklio alyva', 'emoji' => '🛢️', 'category' => 'buitine-chemija-valymo-priemones'],
+        ['slug' => 'buitines-pirstines', 'name' => 'Buitinės pirštinės', 'emoji' => '🧤', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['buitinės pirštinės', 'guminės pirštinės']],
+        ['slug' => 'variklio-alyva', 'name' => 'Variklio alyva', 'emoji' => '🛢️', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['variklio alyva', 'variklinė alyva', 'sintetinė alyva']],
         ['slug' => 'ausinimo-skystis', 'name' => 'Aušinimo skystis', 'emoji' => '🚗', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'impregnantas-avalynei', 'name' => 'Impregnantas avalynei', 'emoji' => '👟', 'category' => 'buitine-chemija-valymo-priemones'],
         ['slug' => 'metaliniai-sveistukai', 'name' => 'Metaliniai šveistukai', 'emoji' => '🧽', 'category' => 'buitine-chemija-valymo-priemones'],
@@ -442,6 +451,199 @@ class SeedGenericProducts extends Command
         ['slug' => 'sluotos', 'name' => 'Šluotos', 'emoji' => '🧹', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['šluota', 'šluotos']],
         ['slug' => 'semtuvelis', 'name' => 'Semtuvėliai', 'emoji' => '🧹', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['semtuvėlis']],
         ['slug' => 'javinukai', 'name' => 'Javinukai', 'emoji' => '🥣', 'category' => 'saldumynai-ir-uzkandziai'],
+
+        // Round 9 — word-frequency analysis of everything still missing a
+        // generic_product_id in namu-ukio-ir-laisvalaikio-prekes (biggest
+        // unmatched category, ~4,850 products). Skipped as too vague/
+        // umbrella on their own: "rinkinys" (any "X set"), "dėžutė" (headphone
+        // case vs lunch box vs decorative box — no single product identity),
+        // "krepšys"/"grilio"/"juosta"/"lapų" (each covers too many unrelated
+        // product types to mean one thing), "plaukimo"/"čežutės" (too
+        // heterogeneous or too uncertain in meaning to commit a term to).
+        ['slug' => 'penalai', 'name' => 'Penalai', 'emoji' => '✏️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['penalas', 'penalai']],
+        ['slug' => 'tusinukai', 'name' => 'Tušinukai', 'emoji' => '🖊️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['tušinukas', 'tušinukai']],
+        ['slug' => 'zymekliai', 'name' => 'Žymekliai', 'emoji' => '🖊️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['žymeklis', 'žymekliai']],
+        ['slug' => 'trintukai', 'name' => 'Trintukai', 'emoji' => '🧽', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['trintukas', 'trintukai']],
+        ['slug' => 'pienstukai-namu-ukis', 'name' => 'Pieštukai', 'emoji' => '✏️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['pieštukas', 'pieštukai']],
+        ['slug' => 'servetieles', 'name' => 'Servetėlės', 'emoji' => '🧻', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['servetėlė', 'servetėlės']],
+        ['slug' => 'kepimo-popierius', 'name' => 'Kepimo popierius', 'emoji' => '📄', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['kepimo popierius']],
+        ['slug' => 'taures', 'name' => 'Taurės', 'emoji' => '🍷', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['taurė', 'taurės']],
+        ['slug' => 'ausines', 'name' => 'Ausinės', 'emoji' => '🎧', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['ausinė', 'ausinės']],
+        ['slug' => 'balionai', 'name' => 'Balionai', 'emoji' => '🎈', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['balionas', 'balionai', 'folinis balionas']],
+        ['slug' => 'zirkles-namu-ukis', 'name' => 'Žirklės', 'emoji' => '✂️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['žirklės']],
+        ['slug' => 'kamuoliai', 'name' => 'Kamuoliai', 'emoji' => '⚽', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['kamuolys', 'kamuoliai']],
+        ['slug' => 'kilimeliai', 'name' => 'Kilimėliai', 'emoji' => '🧻', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['kilimėlis', 'kilimėliai']],
+        ['slug' => 'pagalves', 'name' => 'Pagalvės', 'emoji' => '🛏️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['pagalvė', 'pagalvės']],
+        ['slug' => 'kreideles', 'name' => 'Kreidelės', 'emoji' => '🖍️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['kreidelė', 'kreidelės']],
+        ['slug' => 'sviestuvai', 'name' => 'Šviestuvai', 'emoji' => '💡', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['šviestuvas', 'šviestuvai']],
+        ['slug' => 'pripuciamas-baseinas', 'name' => 'Pripučiamas baseinas', 'emoji' => '🏊', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['pripučiamas baseinas', 'pripučiami baseinai']],
+        ['slug' => 'pripuciamas-ciuzinys', 'name' => 'Pripučiamas čiužinys', 'emoji' => '🛏️', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['pripučiamas čiužinys', 'pripučiami čiužiniai']],
+        ['slug' => 'lipni-juosta', 'name' => 'Lipni juosta', 'emoji' => '📏', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['lipni juosta']],
+        ['slug' => 'saldymo-maiseliai', 'name' => 'Šaldymo maišeliai', 'emoji' => '🧊', 'category' => 'namu-ukio-ir-laisvalaikio-prekes', 'terms' => ['šaldymo maišeliai']],
+
+        // Round 10 — bigram frequency analysis (single-word frequency was
+        // too noisy here: "plaukų"/"veido"/"kūno" etc. are shared modifiers
+        // across dozens of already-covered product types, so counting
+        // adjacent word PAIRS surfaces the actual uncovered "[noun] [form]"
+        // product identities instead) of kosmetika-ir-higiena's remaining
+        // unmatched products (~2,750). "kontūro pieštukas" and "priežiūros
+        // priemonės" skipped — too ambiguous/umbrella to commit to one
+        // product identity.
+        ['slug' => 'veido-serumas', 'name' => 'Veido serumas', 'emoji' => '💧', 'category' => 'kosmetika-ir-higiena', 'terms' => ['veido serumas']],
+        ['slug' => 'plauku-balzamas', 'name' => 'Plaukų balzamas', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena', 'terms' => ['plaukų balzamas']],
+        ['slug' => 'skutimosi-gelis', 'name' => 'Skutimosi gelis', 'emoji' => '🪒', 'category' => 'kosmetika-ir-higiena', 'terms' => ['skutimosi gelis']],
+        ['slug' => 'kuno-prausiklis', 'name' => 'Kūno prausiklis', 'emoji' => '🧼', 'category' => 'kosmetika-ir-higiena', 'terms' => ['kūno prausiklis']],
+        ['slug' => 'vonios-burbulas', 'name' => 'Vonios burbulas', 'emoji' => '🛁', 'category' => 'kosmetika-ir-higiena', 'terms' => ['vonios burbulas']],
+        ['slug' => 'akiu-pienstukas', 'name' => 'Akių pieštukas', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena', 'terms' => ['akių pieštukas']],
+        ['slug' => 'parfumuotas-vanduo', 'name' => 'Parfumuotas vanduo', 'emoji' => '🌸', 'category' => 'kosmetika-ir-higiena', 'terms' => ['parfumuotas vanduo']],
+        ['slug' => 'dusas-putos', 'name' => 'Dušo putos', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena', 'terms' => ['dušo putos']],
+        ['slug' => 'lupu-pienstukas', 'name' => 'Lūpų pieštukas', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena', 'terms' => ['lūpų pieštukas']],
+        ['slug' => 'vonios-putos', 'name' => 'Vonios putos', 'emoji' => '🛁', 'category' => 'kosmetika-ir-higiena', 'terms' => ['vonios putos']],
+        ['slug' => 'antakiu-pienstukas', 'name' => 'Antakių pieštukas', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena', 'terms' => ['antakių pieštukas']],
+        ['slug' => 'vonios-druska', 'name' => 'Vonios druska', 'emoji' => '🛁', 'category' => 'kosmetika-ir-higiena', 'terms' => ['vonios druska']],
+        ['slug' => 'pudra', 'name' => 'Pudra', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena', 'terms' => ['kompaktinė pudra', 'skystoji pudra']],
+        ['slug' => 'apatines-kelnaites', 'name' => 'Apatinės kelnaitės', 'emoji' => '🩲', 'category' => 'kosmetika-ir-higiena', 'terms' => ['kelnaitės', 'apatinės kelnaitės', 'vyriškos kelnaitės', 'moteriškos kelnaitės', 'vyriški apatiniai']],
+        ['slug' => 'kuno-dulksna', 'name' => 'Kūno dulksna', 'emoji' => '🌸', 'category' => 'kosmetika-ir-higiena', 'terms' => ['kūno dulksna']],
+        ['slug' => 'popieriniai-ranksluosciai', 'name' => 'Popieriniai rankšluosčiai', 'emoji' => '🧻', 'category' => 'kosmetika-ir-higiena', 'terms' => ['popieriniai rankšluosčiai', 'popieriniams rankšluosčiams']],
+        ['slug' => 'tualetinis-popierius-kosmetika', 'name' => 'Tualetinis popierius', 'emoji' => '🧻', 'category' => 'kosmetika-ir-higiena', 'terms' => ['tualetinis popierius']],
+        ['slug' => 'vatos-pagaliukai', 'name' => 'Vatos pagaliukai', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena', 'terms' => ['vatos pagaliukai']],
+        ['slug' => 'kuno-pienelis', 'name' => 'Kūno pienelis', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena', 'terms' => ['kūno pienelis']],
+        ['slug' => 'lupu-aliejus', 'name' => 'Lūpų aliejus', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena', 'terms' => ['lūpų aliejus']],
+        ['slug' => 'veido-sveitiklis', 'name' => 'Veido šveitiklis', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena', 'terms' => ['veido šveitiklis']],
+        ['slug' => 'vasko-juosteles', 'name' => 'Vaško juostelės', 'emoji' => '🪒', 'category' => 'kosmetika-ir-higiena', 'terms' => ['vaško juostelės']],
+        ['slug' => 'plauku-segtukai', 'name' => 'Plaukų segtukai', 'emoji' => '💇', 'category' => 'kosmetika-ir-higiena', 'terms' => ['plaukų segtukai']],
+        ['slug' => 'antakiu-dazai', 'name' => 'Antakių dažai', 'emoji' => '💄', 'category' => 'kosmetika-ir-higiena', 'terms' => ['antakių dažai']],
+
+        // Round 11 — bigram analysis of bakalėja's remaining unmatched
+        // products (~2,500). Two recurring findings again: (1) same
+        // cross-category split as silke/lasisa/pėdkelnės/duona/kumpis —
+        // 'Silkių filė' and 'Bulvių traškučiai' already exist as generics
+        // scoped to mesa-ir-zuvis and gerimai-kava-arbata respectively, but
+        // bakalėja's own listing of the same real product types never
+        // touched either pool (category-scoped matching); (2) an adjective
+        // vs. noun-form mismatch ("konservuoti" the adjective vs "konservai"
+        // the noun stem differently) that exact-word matching can't bridge
+        // without an explicit term for the adjective form actually used in
+        // product names. Skipped as too low-volume/ambiguous to commit:
+        // persikų puselės, sprandinės šašlykas (likely miscategorized into
+        // bakalėja rather than a real bakalėja product), lazanijos lakštai,
+        // jūrų dumblių užkandis, vaflinis/šokoladinis batonėlis (probably
+        // duplicates of existing baltyminis-batonelis — needs closer look
+        // before committing a term).
+        ['slug' => 'silkiu-file-bak', 'name' => 'Silkių filė', 'emoji' => '🐟', 'category' => 'bakaleja', 'terms' => ['silkių filė', 'silkės filė']],
+        ['slug' => 'bulviu-traskuciai-bak', 'name' => 'Bulvių traškučiai', 'emoji' => '🥔', 'category' => 'bakaleja', 'terms' => ['bulvių traškučiai', 'traškučiai grietinės']],
+        ['slug' => 'konservuoti-zalieji-zirneliai', 'name' => 'Žalieji žirneliai (konservuoti)', 'emoji' => '🟢', 'category' => 'bakaleja', 'terms' => ['žalieji žirneliai', 'konservuoti žalieji žirneliai', 'konservuoti žirneliai']],
+        ['slug' => 'konservuoti-kukuruzai', 'name' => 'Konservuoti kukurūzai', 'emoji' => '🌽', 'category' => 'bakaleja', 'terms' => ['konservuoti kukurūzai', 'saldieji kukurūzai']],
+        ['slug' => 'konservuoti-pomidorai', 'name' => 'Konservuoti pomidorai', 'emoji' => '🍅', 'category' => 'bakaleja', 'terms' => ['konservuoti pomidorai', 'smulkinti pomidorai', 'džiovinti pomidorai', 'saulėje džiovinti pomidorai', 'lupti pomidorai']],
+        ['slug' => 'bulviu-kose', 'name' => 'Bulvių košė', 'emoji' => '🥔', 'category' => 'bakaleja', 'terms' => ['bulvių košė']],
+        ['slug' => 'maistine-soda', 'name' => 'Maistinė soda', 'emoji' => '🧂', 'category' => 'bakaleja', 'terms' => ['maistinė soda']],
+        ['slug' => 'darzoviu-sultinys', 'name' => 'Daržovių sultinys', 'emoji' => '🍲', 'category' => 'bakaleja', 'terms' => ['daržovių sultinys']],
+        ['slug' => 'pomidoru-tyre-bak', 'name' => 'Pomidorų tyrė', 'emoji' => '🍅', 'category' => 'bakaleja', 'terms' => ['pomidorų tyrė']],
+        ['slug' => 'kepimo-milteliai', 'name' => 'Kepimo milteliai', 'emoji' => '🧁', 'category' => 'bakaleja', 'terms' => ['kepimo milteliai']],
+        ['slug' => 'kavos-gerimas', 'name' => 'Kavos gėrimas', 'emoji' => '☕', 'category' => 'bakaleja', 'terms' => ['kavos gėrimas', 'kokosų gėrimas']],
+        ['slug' => 'arbata-bakaleja', 'name' => 'Arbata', 'emoji' => '🍵', 'category' => 'bakaleja', 'terms' => ['vaisinė arbata', 'juodoji arbata', 'žalioji arbata']],
+        // Adjective-form gap: 'acto rūgštis' stems to 'acto rūgšt' — the
+        // existing 'actas' generic's terms are all noun-form ("actas",
+        // "obuolių actas" etc.), none matching this genitive-form phrase.
+        ['slug' => 'acto-rugstis', 'name' => 'Acto rūgštis', 'emoji' => '🧂', 'category' => 'bakaleja', 'terms' => ['acto rūgštis']],
+        // Same gap on 'makaronai': the dative-plural "makaronams" in
+        // "paruošiamiems makaronams" doesn't reduce to the same stem as the
+        // nominative "makaronai" the existing keyword_page terms use.
+        ['slug' => 'greitieji-makaronai', 'name' => 'Greitai paruošiami makaronai', 'emoji' => '🍜', 'category' => 'bakaleja', 'terms' => ['greitai paruošiami makaronai', 'greitai paruošiamiems makaronams']],
+
+        // Round 12 — bigram analysis of gerimai-kava-arbata's remaining
+        // unmatched (~1,880). "Skonio gėrimas" (48, the single biggest
+        // bigram) skipped — it just means "[some flavor]-flavored drink"
+        // and isn't a distinct product type on its own. Also skipped a
+        // miscategorized-looking cluster (kvietiniai miltai, ilgagrūdžiai/
+        // plikyti ryžiai, juodieji pipirai/prieskonių mišinys, barbekiu
+        // padažas) — these read like flour/rice/spice/sauce products that
+        // ended up under the drinks root category via a category_mapper
+        // issue rather than a real second sales channel for the same
+        // product type; duplicating a generic here without confirming that
+        // risks the exact mistake flagged in round 6b (skip rather than
+        // guess).
+        ['slug' => 'nektaras', 'name' => 'Nektaras', 'emoji' => '🧃', 'category' => 'gerimai-kava-arbata', 'terms' => ['nektaras']],
+        ['slug' => 'augalinis-gerimas', 'name' => 'Augalinis gėrimas', 'emoji' => '🥛', 'category' => 'gerimai-kava-arbata', 'terms' => ['avižų gėrimas', 'migdolų gėrimas', 'sojos gėrimas', 'sojų gėrimas']],
+        ['slug' => 'vaisiu-gerimas', 'name' => 'Vaisių gėrimas', 'emoji' => '🥤', 'category' => 'gerimai-kava-arbata', 'terms' => ['obuolių gėrimas', 'apelsinų gėrimas', 'alavijų gėrimas', 'citrinų gėrimas']],
+        // Same cross-category pattern as silke/pėdkelnės/duona: real
+        // product, already generic-ised elsewhere (saldumynai-ir-uzkandziai
+        // / bakaleja), independently listed under this root category too.
+        ['slug' => 'zemes-riesutai-gerimai', 'name' => 'Žemės riešutai', 'emoji' => '🥜', 'category' => 'gerimai-kava-arbata', 'terms' => ['žemės riešutai', 'riešutai traškioje luobelėje']],
+        ['slug' => 'baltyminis-batonelis-gerimai', 'name' => 'Baltyminis batonėlis', 'emoji' => '🍫', 'category' => 'gerimai-kava-arbata', 'terms' => ['baltyminis batonėlis']],
+
+        // Round 13 — bigram analysis of vaikų-ir-kūdikių-prekės's remaining
+        // unmatched (~1,800). Biggest single find: the existing
+        // keyword_page-sourced 'sauskelnems' (Sauskelnės/diapers — a huge,
+        // high-value category) has no explicit search_terms at all, so it
+        // falls back to stemming its own name — but real diaper products
+        // are catalog-abbreviated ("Sauskel I LOVE ECO MAXI S4", "Sausk.
+        // SALLING FRI") and never spell out the full word "sauskelnės"
+        // anywhere in the name. New override entry, same pattern as
+        // 'gazuotas-gerimas-gk' overriding a keyword_page generic that
+        // doesn't cover real product phrasing. Skipped as too vague/low-
+        // confidence: "glotnutis" (uncertain product identity), "žaidimų
+        // rinkinys"/"siurprizų rinkinys"/"magnetų rink." (umbrella "set"
+        // terms), "loginis žaidimas"/"obuolių bananų/kriaušių" purées
+        // (likely already covered by tyre-vaikams, needs closer look, not
+        // a clear new gap).
+        ['slug' => 'sauskelnes-override', 'name' => 'Sauskelnės', 'emoji' => '🍼', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['sauskelnės', 'sauskel', 'sauskel kelnait']],
+        ['slug' => 'vaikiska-dantu-pasta', 'name' => 'Vaikiška dantų pasta', 'emoji' => '🦷', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['dantų pasta']],
+        ['slug' => 'ciulptukai', 'name' => 'Čiulptukai', 'emoji' => '🍼', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['čiulptukas', 'čiulptukai', 'silikoninis čiulptukas']],
+        ['slug' => 'vaikiskas-dantu-sepetelis', 'name' => 'Vaikiškas dantų šepetėlis', 'emoji' => '🦷', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['dantų šepetėlis']],
+        // Declension gap: 'drėgnosios servetėlės' (existing term) stems
+        // differently than the short-form adjective 'drėgnos servetėlės'
+        // real product names commonly use instead.
+        ['slug' => 'dregnosios-servetieles-kudikiams-2', 'name' => 'Drėgnosios servetėlės', 'emoji' => '🧻', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['drėgnos servetėlės', 'kūdikių servetėlės', 'antibakterinės servetėlės']],
+        ['slug' => 'vaikiskas-dusas', 'name' => 'Vaikiškas dušo gelis', 'emoji' => '🧴', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['dušo želė', 'dušo gelis']],
+        ['slug' => 'kortu-zaidimai', 'name' => 'Kortų žaidimai', 'emoji' => '🃏', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['kortų žaidimas']],
+        ['slug' => 'vonios-putos-vaikams', 'name' => 'Vonios putos vaikams', 'emoji' => '🛁', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['vonios putos']],
+        ['slug' => 'sultys-vaikams', 'name' => 'Sultys vaikams', 'emoji' => '🧃', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['sultys']],
+        ['slug' => 'zaislines-transporto-priemones', 'name' => 'Žaislinės transporto priemonės', 'emoji' => '🚓', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['transporto priemonė', 'žaislinis automobilis']],
+        ['slug' => 'zaislinis-sautuvas', 'name' => 'Žaislinis šautuvas', 'emoji' => '🔫', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['žaislinis šautuvas']],
+        ['slug' => 'kramtukai', 'name' => 'Kramtukai', 'emoji' => '🦷', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['kramtukas', 'silikoninis kramtukas']],
+        ['slug' => 'kudikiu-kuno-aliejus', 'name' => 'Kūdikių kūno aliejus', 'emoji' => '🧴', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['kūno aliejus']],
+
+        // Round 14 — buitinė-chemija's remaining unmatched (~1,100). Several
+        // of this round's "gaps" turned out to be term-fixes on existing
+        // entries rather than new product types (see edits above this
+        // block): "AUTO GAIVIKLIS" vs the existing term's "automobilio
+        // gaiviklis", "variklinė" vs "variklio" alyva, "kvapniosios" vs
+        // "kvapiosios" granulės, "guminės" vs "buitinės" pirštinės,
+        // "audinių minkštiklis" never spelling out plain "minkštiklis".
+        // Genuinely-vague/umbrella skips: "valymo rinkinys"/"šluosčių
+        // rinkinys" (any "set"), "valymo priemonė" (means anything),
+        // "pirštinės dydis" (a size spec, not a product noun).
+        ['slug' => 'popieriniai-ranksluosciai-buitine-chemija', 'name' => 'Popieriniai rankšluosčiai', 'emoji' => '🧻', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['popieriniai rankšluosčiai']],
+        ['slug' => 'vienkartines-nosinaites-buitine-chemija', 'name' => 'Vienkartinės nosinaitės', 'emoji' => '🤧', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['vienkartinės nosinaitės']],
+        ['slug' => 'skalbimo-milteliai', 'name' => 'Skalbimo milteliai', 'emoji' => '🧺', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['skalbimo milteliai', 'skalbiamieji milteliai']],
+        ['slug' => 'skalbimo-kapsules', 'name' => 'Skalbimo kapsulės', 'emoji' => '🧺', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['skalbimo kapsulės']],
+        ['slug' => 'valymo-putos', 'name' => 'Valymo putos', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['valymo putos']],
+        ['slug' => 'indu-ploviklis-skystis', 'name' => 'Indų ploviklis', 'emoji' => '🧼', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['indų ploviklis']],
+        ['slug' => 'langu-valytuvas', 'name' => 'Langų valytuvas', 'emoji' => '🪟', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['langų valytuvas', 'stiklo valytuvas', 'stiklų ploviklis']],
+        ['slug' => 'aromatine-kortele', 'name' => 'Aromatinė kortelė', 'emoji' => '🌸', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['aromatinė kortelė']],
+        ['slug' => 'siuksliu-maisai', 'name' => 'Šiukšlių maišai', 'emoji' => '🗑️', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['šiukšlių maišai', 'šiukšlių maišams']],
+        ['slug' => 'grindu-valiklis-2', 'name' => 'Grindų valiklis', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['grindų valiklis', 'grindų ploviklis']],
+        ['slug' => 'priemones-nuo-grauziku', 'name' => 'Priemonės nuo graužikų', 'emoji' => '🐭', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['nuo pelių', 'pelių žiurkių']],
+        ['slug' => 'indaploviu-skalavimo-skystis', 'name' => 'Indaplovių skalavimo skystis', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['indaplovių skalavimo skystis', 'skalavimo skystis']],
+        ['slug' => 'sveiciamasis-pienelis', 'name' => 'Šveičiamasis pienelis', 'emoji' => '🧴', 'category' => 'buitine-chemija-valymo-priemones', 'terms' => ['šveičiamasis pienelis']],
+
+        // Round 15 — saldumynai-ir-uzkandziai's remaining unmatched (~1,020).
+        // Mostly the same cross-category story again: riešutai, bulvių
+        // traškučiai, pieninis šokoladas and džiovinti vaisiai already have
+        // generics elsewhere (bakalėja/gerimai-kava-arbata) but this is
+        // "sweets and snacks" — arguably their most natural home — so
+        // duplicating the generic here, not editing the original, per the
+        // pėdkelnės precedent. Plus one abbreviation fix (kramtomoji-guma
+        // above): "Kramt. guma"/"Kramtomajai" never contained the word
+        // "kramtomoji" the old term required.
+        ['slug' => 'riesutai-saldumynai', 'name' => 'Riešutai', 'emoji' => '🥜', 'category' => 'saldumynai-ir-uzkandziai', 'terms' => ['riešutai', 'migdolai', 'graikiniai riešutai', 'lazdyno riešutai', 'kešu', 'anakardžiai', 'anakardžių riešutai', 'riešutų mišinys', 'džiovinti riešutai', 'skrudyti riešutai', 'žali riešutai']],
+        ['slug' => 'bulviu-traskuciai-saldumynai', 'name' => 'Bulvių traškučiai', 'emoji' => '🥔', 'category' => 'saldumynai-ir-uzkandziai', 'terms' => ['bulvių traškučiai']],
+        ['slug' => 'pieninis-sokoladas-saldumynai', 'name' => 'Pieninis šokoladas', 'emoji' => '🍫', 'category' => 'saldumynai-ir-uzkandziai', 'terms' => ['pieninis šokoladas']],
+        ['slug' => 'dziovinti-vaisiai-saldumynai', 'name' => 'Džiovinti vaisiai', 'emoji' => '🍇', 'category' => 'saldumynai-ir-uzkandziai', 'terms' => ['džiovintos slyvos', 'uogų mišinys']],
+        ['slug' => 'spragesiai', 'name' => 'Spragėsiai', 'emoji' => '🍿', 'category' => 'saldumynai-ir-uzkandziai', 'terms' => ['spragėsiai', 'spraginamieji kukurūzai', 'spraginti kukurūzai']],
+        ['slug' => 'kukuruzu-lazdeles', 'name' => 'Kukurūzų lazdelės', 'emoji' => '🌽', 'category' => 'saldumynai-ir-uzkandziai', 'terms' => ['kukurūzų lazdelės']],
+        ['slug' => 'seklos-saldumynai', 'name' => 'Sėklos', 'emoji' => '🌻', 'category' => 'saldumynai-ir-uzkandziai', 'terms' => ['moliūgų sėklos', 'saulėgrąžų sėklos', 'skrudintos saulėgrąžos']],
     ];
 
     public function handle(): int
