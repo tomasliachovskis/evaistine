@@ -760,12 +760,15 @@ class ProductController extends Controller
 
     public static function productWithSimilarCacheKey(string $slug): string
     {
-        // Bump this suffix whenever the cached payload shape changes — this
-        // key is NOT wrapped in CacheVersion::suffix(['discounts']) like most
-        // other caches here, so cache:clear-discounts does not invalidate it.
-        // Its 7-day TTL means a stale shape (e.g. an image_url path change)
+        // Bump this suffix whenever the cached payload shape OR its
+        // generation logic changes — this key is NOT wrapped in
+        // CacheVersion::suffix(['discounts']) like most other caches here,
+        // so cache:clear-discounts does not invalidate it. Its 7-day TTL
+        // means stale data (a shape change, or a fixed bug in what gets
+        // cached — v13->v14: similar-products tier 1+2 could combine past
+        // the intended 10-item cap with nothing to trim it back down)
         // would otherwise linger for up to a week after deploy.
-        return "product_with_similar_v13_{$slug}";
+        return "product_with_similar_v14_{$slug}";
     }
 
     public function resolveDiscountsCacheKey($storeOrCategory, $category = null): string
@@ -885,8 +888,13 @@ class ProductController extends Controller
             $nameStem = MeilisearchService::buildNameStem($product->name);
 
             if ($nameStem !== '') {
+                // Remaining slots, not the full $similarLimit again — passing
+                // the full limit here let tier 1 (brand match) + tier 2
+                // combine past $similarLimit with nothing left to trim them
+                // back down (seen live: 3 brand + 8 stem = 11 shown on a
+                // "kavos pupelės" page against the intended cap of 10).
                 $stemDiscounts = $this->meilisearchService
-                    ->findSimilarDiscounts($nameStem, $product->id, $product->category_id, $similarLimit)
+                    ->findSimilarDiscounts($nameStem, $product->id, $product->category_id, $similarLimit - $similarDiscounts->count())
                     ->whereNotIn('product_id', $excludeProductIds)
                     ->values();
 
@@ -909,6 +917,12 @@ class ProductController extends Controller
 
             $similarDiscounts = $similarDiscounts->concat($fallbackDiscounts);
         }
+
+        // Defense-in-depth: each tier above is meant to only fill remaining
+        // slots, but nothing enforced the combined total actually stayed at
+        // $similarLimit — take() here guarantees it regardless of how any
+        // individual tier's own math works out.
+        $similarDiscounts = $similarDiscounts->take($similarLimit);
 
         if ($product->discounts->isEmpty()) {
             $data = $this->formatter->formatProduct($product);
