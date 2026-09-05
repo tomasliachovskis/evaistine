@@ -11,12 +11,23 @@ class StoreFlyerTitleBuilder
 {
     public function build(StoreFlyer $flyer, Store $store): string
     {
+        $issuePart = $flyer->issue_number ? " Nr.{$flyer->issue_number}" : '';
+
         if ($flyer->title) {
-            return $flyer->title;
+            // A themed campaign title (e.g. Aibė's "Mes - Jūsų kaimynai!")
+            // carries no store context or issue number at all on its own —
+            // shown bare, a visitor landing straight on the page (not via
+            // the store's own hub, where the logo/breadcrumb already say
+            // which store) has no way to tell which store it's even for.
+            // Only titles that already name the store are left untouched.
+            if ($this->mentionsStore($flyer->title, $store->name)) {
+                return $flyer->title;
+            }
+
+            return trim("Naujas {$store->name} leidinys - {$flyer->title}{$issuePart}");
         }
 
         $catalogName = $flyer->catalog_name ?: $this->defaultCatalogName($store);
-        $issuePart = $flyer->issue_number ? " Nr.{$flyer->issue_number}" : '';
         $datePart = $this->formatDateRange($flyer->valid_from, $flyer->valid_to);
 
         if ($store->slug === 'iki') {
@@ -24,6 +35,23 @@ class StoreFlyerTitleBuilder
         }
 
         return trim("{$catalogName} akcijų leidinys{$issuePart} {$datePart}");
+    }
+
+    /**
+     * Diacritic-insensitive substring check — a scraped title can spell the
+     * store's own name with different diacritics than the stores.name row
+     * does (seen live: "GRŪSTĖ" in a flyer title vs the store record's
+     * "Grustė", a macron-ū vs plain-u difference that a plain case-
+     * insensitive str_contains wouldn't catch).
+     */
+    private function mentionsStore(string $title, string $storeName): bool
+    {
+        $fold = fn (string $s) => strtr(mb_strtolower($s), [
+            'ą' => 'a', 'č' => 'c', 'ę' => 'e', 'ė' => 'e', 'į' => 'i',
+            'š' => 's', 'ų' => 'u', 'ū' => 'u', 'ž' => 'z',
+        ]);
+
+        return mb_strlen($storeName) > 0 && str_contains($fold($title), $fold($storeName));
     }
 
     public function toListingArray(StoreFlyer $flyer, Store $store): array
