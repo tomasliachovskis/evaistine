@@ -113,15 +113,21 @@
                         @endphp
                         {{-- Mobile gets a horizontal row (thumbnail left, info right) instead
                              of the sm:+ vertical grid card — a full-width vertical card wastes
-                             most of its height on empty space at one-per-row mobile width. --}}
-                        <article class="group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition-all sm:flex-col sm:gap-0 sm:p-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg">
-                            <a href="{{ $href }}" class="relative block aspect-square w-28 shrink-0 self-start overflow-hidden rounded-lg bg-gray-50 sm:aspect-[6/5] sm:w-full sm:self-auto sm:rounded-none">
+                             most of its height on empty space at one-per-row mobile width. No
+                             padding around the mobile thumbnail either — it fills the card's
+                             full height edge-to-edge (article's own overflow-hidden +
+                             rounded-2xl clips its left corners) instead of sitting inset with
+                             wasted space around it. The leaflet's own title is dropped on
+                             mobile: the date range below already identifies the card, and
+                             store identity is already the whole page's context here. --}}
+                        <article class="group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all sm:flex-col sm:gap-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg">
+                            <a href="{{ $href }}" class="relative block w-32 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
                                 @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
                                     <img src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}" alt="{{ $leaflet['title'] ?? $storeName }}" loading="lazy" class="h-full w-full object-cover object-top transition-transform duration-300 sm:group-hover:scale-[1.03] {{ $isExpired ? 'grayscale' : '' }}">
                                 @endif
                             </a>
-                            <div class="flex flex-1 flex-col gap-1.5 sm:gap-2 sm:p-4">
-                                <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
+                            <div class="flex flex-1 flex-col gap-1.5 py-3 pr-3 sm:gap-2 sm:p-4">
+                                <p class="hidden line-clamp-2 text-sm font-semibold text-gray-900 sm:block">{{ $leaflet['title'] ?? '' }}</p>
                                 @if ($dateRange)
                                     {{-- A consistent, real identifier for every card — some
                                          leaflets carry a themed campaign name instead of a
@@ -164,14 +170,20 @@
                             $days = $leaflet['days_remaining'] ?? null;
                             $dateRange = $formatLeafletDateRange($leaflet);
                         @endphp
-                        <article class="group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition-all sm:flex-col sm:gap-0 sm:p-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg">
-                            <a href="{{ $href }}" class="relative block aspect-square w-28 shrink-0 self-start overflow-hidden rounded-lg bg-gray-50 sm:aspect-[6/5] sm:w-full sm:self-auto sm:rounded-none">
+                        {{-- No padding around the mobile thumbnail — it fills the card's full
+                             height edge-to-edge (article's own overflow-hidden + rounded-2xl
+                             clips its left corners), rather than sitting inset with wasted
+                             space around it. The leaflet's own title is dropped on mobile: the
+                             date range below already identifies the card, and store identity
+                             is already the whole page's context here. --}}
+                        <article class="group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all sm:flex-col sm:gap-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg">
+                            <a href="{{ $href }}" class="relative block w-32 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
                                 @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
                                     <img src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}" alt="{{ $leaflet['title'] ?? $storeName }}" loading="lazy" class="h-full w-full object-cover object-top transition-transform duration-300 sm:group-hover:scale-[1.03] {{ $isExpired ? 'grayscale' : '' }}">
                                 @endif
                             </a>
-                            <div class="flex flex-1 flex-col gap-1.5 sm:gap-2 sm:p-4">
-                                <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
+                            <div class="flex flex-1 flex-col gap-1.5 py-3 pr-3 sm:gap-2 sm:p-4">
+                                <p class="hidden line-clamp-2 text-sm font-semibold text-gray-900 sm:block">{{ $leaflet['title'] ?? '' }}</p>
                                 @if ($dateRange)
                                     <p class="text-xs font-medium text-gray-500">{{ $dateRange }}</p>
                                 @endif
