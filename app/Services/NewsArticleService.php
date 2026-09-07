@@ -119,11 +119,18 @@ class NewsArticleService
     }
 
     /**
-     * Stories already used, by a slug-of-title dedup key. Google's redirect
-     * links change per-request, so link-matching alone would never dedupe.
+     * Stories already used. Google's per-article RSS redirect link is stable
+     * across separate fetches (confirmed empirically — it is NOT a per-request
+     * token), so an exact source_url match is the primary, reliable dedup key.
+     * Title similarity is a fallback only, for the same story surfacing under
+     * a genuinely different link (e.g. syndicated to another outlet).
      */
     public function isAlreadyCovered(array $story): bool
     {
+        if (BlogPost::where('source_url', $story['link'])->exists()) {
+            return true;
+        }
+
         return BlogPost::where('source_name', $story['source'])
             ->whereNotNull('source_url')
             ->get(['title'])
