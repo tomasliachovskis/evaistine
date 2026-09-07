@@ -51,7 +51,7 @@ class NewsArticleService
     /**
      * @return list<array{title: string, link: string, source: string, snippet: string, published_at: ?\Carbon\Carbon}>
      */
-    public function fetchCandidateStories(int $maxAgeDays = 3): array
+    public function fetchCandidateStories(int $maxAgeDays = 7): array
     {
         // Bing News RSS, not Google News RSS: Google's feed returns literally
         // nothing but the bare headline (confirmed empirically — no snippet,
@@ -320,10 +320,10 @@ class NewsArticleService
      *
      * @return list<BlogPost>
      */
-    public function generateDrafts(int $limit = 3): array
+    public function generateDrafts(int $limit = 3, int $maxAgeDays = 7): array
     {
         $created = [];
-        $stories = $this->fetchCandidateStories();
+        $stories = $this->fetchCandidateStories($maxAgeDays);
 
         foreach ($stories as $story) {
             if (count($created) >= $limit) {

@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class GenerateNewsArticles extends Command
 {
-    protected $signature = 'news:generate {--limit=3 : Max number of draft articles to create}';
+    protected $signature = 'news:generate {--limit=3 : Max number of draft articles to create} {--max-age-days=7 : Only consider stories published within this many days}';
 
     protected $description = 'Research real Lithuanian retail/pricing news via Bing News RSS and draft attributed blog articles for review';
 
@@ -20,9 +20,10 @@ class GenerateNewsArticles extends Command
         }
 
         $limit = (int) $this->option('limit');
+        $maxAgeDays = (int) $this->option('max-age-days');
 
-        $this->info("Fetching real candidate stories from Google News RSS...");
-        $posts = $service->generateDrafts($limit);
+        $this->info("Fetching real candidate stories from Bing News RSS (last {$maxAgeDays} days)...");
+        $posts = $service->generateDrafts($limit, $maxAgeDays);
 
         if (empty($posts)) {
             $this->warn('No draft articles created — either no new stories were found, or all candidates were already covered or too thin to write about.');
