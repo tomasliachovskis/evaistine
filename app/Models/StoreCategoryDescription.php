@@ -13,7 +13,6 @@ class StoreCategoryDescription extends Model
         'store_id',
         'category_id',
         'intro_html',
-        'top_products_html',
     ];
 
     public function store()

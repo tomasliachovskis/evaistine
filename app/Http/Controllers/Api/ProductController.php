@@ -1206,9 +1206,8 @@ class ProductController extends Controller
                     'meta_description' => "Naujausios {$entity->name} {$categoryLower} akcijos".($maxDiscount > 0 ? " – iki {$maxDiscount}% nuolaidos" : '').", {$countLabel}+ prekių. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
                 ];
 
-                if ($storeCategoryDescription) {
-                    $seoData['seo_description'] = ($storeCategoryDescription->intro_html ?? '')
-                        . ($storeCategoryDescription->top_products_html ?? '');
+                if ($storeCategoryDescription && $storeCategoryDescription->intro_html) {
+                    $seoData['seo_description'] = $storeCategoryDescription->intro_html;
                 }
 
                 return $seoData;

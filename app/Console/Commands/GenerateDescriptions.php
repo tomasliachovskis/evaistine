@@ -291,13 +291,12 @@ class GenerateDescriptions extends Command
                 })
                 ->values();
 
-            $this->info("Generating top products tables for {$combinations->count()} store+category combinations...");
+            $this->info("Generating intros for {$combinations->count()} store+category combinations...");
 
             $bar = $this->output->createProgressBar($combinations->count());
             $bar->start();
 
             foreach ($combinations as $combination) {
-                $this->generateStoreCategoryTable($combination['store'], $combination['category']);
                 $this->generateStoreCategoryIntro($combination['store'], $combination['category']);
                 $bar->advance();
                 sleep(2);
@@ -305,24 +304,9 @@ class GenerateDescriptions extends Command
 
             $bar->finish();
             $this->newLine();
-            $this->info('Completed generating top products tables for all store+category combinations.');
+            $this->info('Completed generating intros for all store+category combinations.');
         } else {
             $this->error('Please specify --all option for store-category type.');
-        }
-    }
-
-    private function generateStoreCategoryTable(Store $store, Category $category): void
-    {
-        try {
-            $success = $this->descriptionService->saveTopProductsTable($store, $category);
-
-            if ($success) {
-                $this->info("✓ Successfully generated table for {$store->name} + {$category->name}");
-            } else {
-                $this->warn("✗ No active discounts for {$store->name} + {$category->name}");
-            }
-        } catch (\Exception $e) {
-            $this->error("✗ Error generating table for {$store->name} + {$category->name}: " . $e->getMessage());
         }
     }
 
