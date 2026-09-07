@@ -13,6 +13,9 @@ class BlogPost extends Model
         'title',
         'slug',
         'content',
+        'source_url',
+        'source_name',
+        'source_published_at',
         'published_at',
         'meta_title',
         'meta_description',
@@ -22,6 +25,7 @@ class BlogPost extends Model
 
     protected $casts = [
         'published_at' => 'datetime',
+        'source_published_at' => 'datetime',
     ];
 
     public function scopePublished($query)
