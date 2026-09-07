@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
- * Generates real, Google-News-grounded blog articles about Lithuanian
+ * Generates real, search-engine-grounded blog articles about Lithuanian
  * retail/grocery pricing — the "external news" counterpart to pricer.lt's
  * translated trade-press feed, except transformative (summary + commentary
  * + linked source) rather than a wholesale translation-copy of the original.
@@ -47,26 +47,36 @@ class NewsArticleService
     }
 
     /**
-     * @return list<array{title: string, link: string, source: string, published_at: ?\Carbon\Carbon}>
+     * @return list<array{title: string, link: string, source: string, snippet: string, published_at: ?\Carbon\Carbon}>
      */
     public function fetchCandidateStories(int $maxAgeDays = 3): array
     {
+        // Bing News RSS, not Google News RSS: Google's feed returns literally
+        // nothing but the bare headline (confirmed empirically — no snippet,
+        // <description> just repeats the title), which starves the writer of
+        // real material to ground more than one or two generic sentences in.
+        // Bing's <description> carries a genuine 2-3 sentence excerpt of the
+        // actual article (real names/dates/numbers), and its redirect link
+        // embeds the true publisher URL in a plain query param — no JS-gated
+        // consent interstitial like Google's news.google.com/rss/articles/...
+        // links have, which can't be resolved by a simple server-side fetch.
         $seenLinks = [];
         $candidates = [];
 
         foreach (self::SEARCH_QUERIES as $query) {
-            $url = 'https://news.google.com/rss/search?' . http_build_query([
-                'q' => "{$query} when:{$maxAgeDays}d",
-                'hl' => 'lt',
-                'gl' => 'LT',
-                'ceid' => 'LT:lt',
+            $url = 'https://www.bing.com/news/search?' . http_build_query([
+                'q' => $query,
+                'format' => 'rss',
+                'setlang' => 'lt-LT',
             ]);
 
             try {
-                $response = Http::timeout(20)->get($url);
+                $response = Http::timeout(20)
+                    ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+                    ->get($url);
 
                 if (!$response->successful()) {
-                    Log::warning('Google News RSS request failed', ['query' => $query, 'status' => $response->status()]);
+                    Log::warning('Bing News RSS request failed', ['query' => $query, 'status' => $response->status()]);
                     continue;
                 }
 
@@ -76,8 +86,11 @@ class NewsArticleService
                     continue;
                 }
 
+                $namespaces = $xml->getNamespaces(true);
+
                 foreach ($xml->channel->item as $item) {
-                    $link = (string) $item->link;
+                    $rawLink = (string) $item->link;
+                    $link = $this->extractRealUrlFromBingRedirect($rawLink);
 
                     if ($link === '' || isset($seenLinks[$link])) {
                         continue;
@@ -85,28 +98,27 @@ class NewsArticleService
 
                     $seenLinks[$link] = true;
 
-                    // Titles arrive as "Headline - Source Name".
-                    $rawTitle = trim((string) $item->title);
-                    $source = '';
-                    $title = $rawTitle;
-                    if (preg_match('/^(.*)\s-\s([^-]+)$/u', $rawTitle, $m)) {
-                        $title = trim($m[1]);
-                        $source = trim($m[2]);
-                    }
+                    $newsMeta = isset($namespaces['News']) ? $item->children($namespaces['News']) : null;
+                    $source = $newsMeta !== null ? trim((string) $newsMeta->Source) : '';
 
                     $pubDate = (string) $item->pubDate;
                     $publishedAt = $pubDate !== '' ? \Carbon\Carbon::parse($pubDate) : null;
 
+                    if ($publishedAt !== null && $publishedAt->lt(now()->subDays($maxAgeDays))) {
+                        continue;
+                    }
+
                     $candidates[] = [
-                        'title' => $title,
+                        'title' => trim((string) $item->title),
                         'link' => $link,
                         'source' => $source,
+                        'snippet' => trim((string) $item->description),
                         'published_at' => $publishedAt,
                         'search_query' => $query,
                     ];
                 }
             } catch (\Exception $e) {
-                Log::error('Error fetching Google News RSS', ['query' => $query, 'error' => $e->getMessage()]);
+                Log::error('Error fetching Bing News RSS', ['query' => $query, 'error' => $e->getMessage()]);
             }
         }
 
@@ -118,12 +130,25 @@ class NewsArticleService
         return $candidates;
     }
 
+    private function extractRealUrlFromBingRedirect(string $bingLink): string
+    {
+        $query = parse_url($bingLink, PHP_URL_QUERY);
+
+        if ($query === null) {
+            return $bingLink;
+        }
+
+        parse_str($query, $params);
+
+        return $params['url'] ?? $bingLink;
+    }
+
     /**
-     * Stories already used. Google's per-article RSS redirect link is stable
-     * across separate fetches (confirmed empirically — it is NOT a per-request
-     * token), so an exact source_url match is the primary, reliable dedup key.
-     * Title similarity is a fallback only, for the same story surfacing under
-     * a genuinely different link (e.g. syndicated to another outlet).
+     * Stories already used. The extracted real publisher URL (not Bing's
+     * apiclick wrapper) is stable across separate fetches, so an exact
+     * source_url match is the primary, reliable dedup key. Title similarity
+     * is a fallback only, for the same story genuinely re-syndicated under a
+     * different link (e.g. picked up by another outlet).
      */
     public function isAlreadyCovered(array $story): bool
     {
@@ -261,21 +286,22 @@ class NewsArticleService
 
     private function getSystemPrompt(): string
     {
-        return "You are a Lithuanian editorial writer for a deals-aggregator site (superakcijos.lt)'s news section ('Naujienos'). You will receive ONE real Google News search result: a headline, a source name, a link, and a publish date, about Lithuanian retail/grocery pricing.
+        return "You are a Lithuanian editorial writer for a deals-aggregator site (superakcijos.lt)'s news section ('Naujienos'). You will receive ONE real search-engine news result: a headline, a source name, a real excerpt/snippet of the actual article (2-3 sentences, genuine facts), a link, and a publish date, about Lithuanian retail/grocery pricing.
 
-RELEVANCE CHECK FIRST: this site is specifically about retail pricing, discounts, and grocery/retail chains in Lithuania — NOT general human-interest, restaurant reviews, travel, or lifestyle stories that merely mention a store in passing. If the headline is not genuinely about retail chain business/pricing/market news (e.g. a chain's finances, a new store opening, a management change, an industry price trend, a market entry) — for example a human-interest piece like someone's restaurant road trip — set insufficient_information: true immediately, regardless of how much you could write about it.
+RELEVANCE CHECK FIRST: this site is specifically about retail pricing, discounts, and grocery/retail chains in Lithuania — NOT general human-interest, restaurant reviews, travel, or lifestyle stories that merely mention a store in passing. If the headline/snippet is not genuinely about retail chain business/pricing/market news (e.g. a chain's finances, a new store opening, a management change, an industry price trend, a market entry) — for example a human-interest piece like someone's restaurant road trip — set insufficient_information: true immediately, regardless of how much you could write about it.
 
-CRITICAL — you do NOT have the full article text, only the headline and source/date. This means:
-- Do NOT invent facts, numbers, quotes, or details beyond what the headline itself states or strongly implies. If the headline alone ('Maxima grupės pajamos pirmąjį pusmetį augo 2,8 proc. iki 2 mlrd. Eur') gives you a real, self-contained fact, you may write a short article ABOUT that fact, elaborating only with genuinely obvious context (e.g. explaining what EBITDA means, or generic industry context), never fabricated specifics (no invented executive quotes, no invented specific store names/products/dates not in the headline).
-- If the headline is too vague/thin to support a genuine, factually-grounded article (e.g. a clickbait-style headline with no real content, or one where you'd have to guess at the substance), set insufficient_information: true and leave other fields empty. Returning nothing is much better than fabricating.
-- ALWAYS attribute the story to its real source by name in the article body (e.g. 'Kaip skelbia LRT.lt...', '„Delfi\" praneša...') — never present the source's reporting as your own original finding.
-- This must be a TRANSFORMATIVE piece — your own commentary/framing/relevance-to-shoppers angle — not a translation or close paraphrase of the headline into a full article pretending to have more detail than a headline provides.
+CRITICAL — you only have the headline + a short excerpt, NOT the full article. This means:
+- Use every genuine fact in the snippet (names, dates, numbers, roles, figures) — the snippet is real reporting, not a summary you need to compress further. Write AROUND those real facts with your own framing/context/relevance-to-shoppers angle.
+- Do NOT invent facts, numbers, quotes, or details beyond what the headline+snippet state or strongly imply. You may add genuinely obvious, generic context (e.g. explaining what a management change at a retailer typically means for shoppers, or general industry background) — never fabricated specifics (no invented quotes, no invented figures, no invented names not in the snippet).
+- If the headline+snippet together are still too thin to support a genuine, factually-grounded article, set insufficient_information: true and leave other fields empty. Returning nothing is much better than fabricating.
+- ALWAYS attribute the story to its real source by name in the article body (e.g. 'Kaip skelbia 15min.lt...', '„Delfi\" praneša...') — never present the source's reporting as your own original finding.
+- This must be a TRANSFORMATIVE piece — your own commentary/framing/relevance-to-shoppers angle woven around the real facts — not a translation or close paraphrase of the snippet.
 
 OUTPUT: a single JSON object: {\"title\": \"...\", \"content\": \"<HTML>...\", \"meta_title\": \"...\", \"meta_description\": \"...\", \"insufficient_information\": false}.
-- content: 2-4 short HTML paragraphs (<p class=\"leading-relaxed\">...</p>), Lithuanian, conversational but factual tone — no bold/italic emphasis (<strong>/<b>/<em>/<i> — reads as generated filler), no invented statistics.
+- content: 3-5 HTML paragraphs (<p class=\"leading-relaxed\">...</p>), Lithuanian, conversational but factual tone — no bold/italic emphasis (<strong>/<b>/<em>/<i> — reads as generated filler), no invented statistics. Use the real facts in the snippet as the backbone of multiple paragraphs (e.g. one paragraph on what happened, one on the real names/numbers involved, one on what it means for shoppers/the market) rather than compressing everything into one thin paragraph.
 - title: a genuine, non-clickbait Lithuanian headline for OUR article (can echo the source headline's real content, don't just copy it verbatim).
 - meta_title/meta_description: SEO fields, evergreen-safe (don't bake in an exact date that will look stale in a week unless the story is explicitly about a dated event).
-- Keep the whole thing honest and modest in scope — a short, well-attributed note about a real story, not a padded 'article' pretending to more substance than a headline supports.
+- Keep the whole thing honest — a well-attributed, properly fleshed-out piece built on the real snippet facts, never padded with content those facts don't support.
 ";
     }
 }

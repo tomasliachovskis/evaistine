@@ -9,7 +9,7 @@ class GenerateNewsArticles extends Command
 {
     protected $signature = 'news:generate {--limit=3 : Max number of draft articles to create}';
 
-    protected $description = 'Research real Lithuanian retail/pricing news via Google News RSS and draft attributed blog articles for review';
+    protected $description = 'Research real Lithuanian retail/pricing news via Bing News RSS and draft attributed blog articles for review';
 
     public function handle(NewsArticleService $service): int
     {
