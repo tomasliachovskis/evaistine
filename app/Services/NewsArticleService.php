@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\BlogPost;
+use App\Models\Category;
+use App\Models\Store;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -170,6 +172,25 @@ class NewsArticleService
     }
 
     /**
+     * Real store/category pages this news article can link to — the point of
+     * running this feature at all is for these articles to funnel readers
+     * into our own deals pages, not just credit an external news source.
+     *
+     * @return array{stores: list<array{name: string, url: string}>, categories: list<array{name: string, url: string}>}
+     */
+    private function getInternalLinkTargets(): array
+    {
+        return [
+            'stores' => Store::orderBy('name')->get(['name', 'slug'])
+                ->map(fn ($s) => ['name' => $s->name, 'url' => "/akcijos/{$s->slug}"])
+                ->values()->all(),
+            'categories' => Category::whereNull('parent_id')->orderBy('name')->get(['name', 'slug'])
+                ->map(fn ($c) => ['name' => $c->name, 'url' => "/akcijos/{$c->slug}"])
+                ->values()->all(),
+        ];
+    }
+
+    /**
      * @param array{title: string, link: string, source: string, published_at: ?\Carbon\Carbon} $story
      * @return array{title: string, content: string, meta_title: string, meta_description: string}|null
      */
@@ -178,6 +199,8 @@ class NewsArticleService
         if (!$this->isConfigured()) {
             return null;
         }
+
+        $payload = $story + ['internal_link_targets' => $this->getInternalLinkTargets()];
 
         try {
             $response = Http::timeout(120)
@@ -190,7 +213,7 @@ class NewsArticleService
                     'response_format' => ['type' => 'json_object'],
                     'messages' => [
                         ['role' => 'system', 'content' => $this->getSystemPrompt()],
-                        ['role' => 'user', 'content' => json_encode($story, JSON_UNESCAPED_UNICODE)],
+                        ['role' => 'user', 'content' => json_encode($payload, JSON_UNESCAPED_UNICODE)],
                     ],
                 ]);
 
@@ -296,6 +319,8 @@ CRITICAL — you only have the headline + a short excerpt, NOT the full article.
 - If the headline+snippet together are still too thin to support a genuine, factually-grounded article, set insufficient_information: true and leave other fields empty. Returning nothing is much better than fabricating.
 - ALWAYS attribute the story to its real source by name in the article body (e.g. 'Kaip skelbia 15min.lt...', '„Delfi\" praneša...') — never present the source's reporting as your own original finding.
 - This must be a TRANSFORMATIVE piece — your own commentary/framing/relevance-to-shoppers angle woven around the real facts — not a translation or close paraphrase of the snippet.
+
+INTERNAL LINKS (important — this is why we publish these at all, not just to credit an external source): the JSON includes 'internal_link_targets' with our own real store and category pages ({name, url} pairs). Whenever the article genuinely discusses/names a store or product category that appears in that list, link it inline the first time it's mentioned using '<a href=\"[url]\">[name]</a>' (relative URL, exactly as given — do not prefix a domain). Do NOT force a link where the topic doesn't naturally fit, and NEVER invent a URL for a store/category not present in internal_link_targets. If the story is about a store not in our list (e.g. a foreign chain, or a brand new entrant we don't carry yet), don't link it — just name it plainly. Aim for 1-3 genuine internal links per article, not one in every sentence.
 
 OUTPUT: a single JSON object: {\"title\": \"...\", \"content\": \"<HTML>...\", \"meta_title\": \"...\", \"meta_description\": \"...\", \"insufficient_information\": false}.
 - content: 3-5 HTML paragraphs (<p class=\"leading-relaxed\">...</p>), Lithuanian, conversational but factual tone — no bold/italic emphasis (<strong>/<b>/<em>/<i> — reads as generated filler), no invented statistics. Use the real facts in the snippet as the backbone of multiple paragraphs (e.g. one paragraph on what happened, one on the real names/numbers involved, one on what it means for shoppers/the market) rather than compressing everything into one thin paragraph.
