@@ -1206,8 +1206,9 @@ class ProductController extends Controller
                     'meta_description' => "Naujausios {$entity->name} {$categoryLower} akcijos".($maxDiscount > 0 ? " – iki {$maxDiscount}% nuolaidos" : '').", {$countLabel}+ prekių. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
                 ];
 
-                if ($storeCategoryDescription && $storeCategoryDescription->top_products_html) {
-                    $seoData['seo_description'] = $storeCategoryDescription->top_products_html;
+                if ($storeCategoryDescription) {
+                    $seoData['seo_description'] = ($storeCategoryDescription->intro_html ?? '')
+                        . ($storeCategoryDescription->top_products_html ?? '');
                 }
 
                 return $seoData;
@@ -1233,11 +1234,26 @@ class ProductController extends Controller
                     'meta_description' => 'Paieškos rezultatai pagal užklausą: '.$entity,
                 ];
             case 'all_discounts':
+                // Hand-written (not GPT-generated, unlike Store/Category::description) —
+                // this is a single global page, not one of hundreds of per-entity rows,
+                // so it doesn't need the generation pipeline. Grounded in real search
+                // research (WebSearch, Sep 2026) into how people actually look for this
+                // kind of page: "akcijos šią savaitę", "savaitės pasiūlymai", "akcijų
+                // leidiniai", "palyginti kainas vienoje vietoje", "rask akciją" — mirrors
+                // the real competitive space (akcijos.lt, kainos.lt, gudrusis.lt,
+                // topakcijos.lt, raskakcija.lt) rather than generic aggregator copy.
+                // "Rask akciją" specifically forced in below — confirmed high-volume
+                // search phrase for this page type, not just a competitor's brand name.
                 return [
                     'seo_title' => 'Akcijos ir nuolaidos Lietuvoje',
-                    'seo_description' => 'Visi akcijų leidiniai vienoje vietoje – Maxima, Lidl, Iki, Rimi, Norfa ir kiti prekybos tinklai.',
-                    'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – Maxima, Lidl, Iki, Rimi, Norfa',
-                    'meta_description' => 'Visi akcijų leidiniai vienoje vietoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai, savaitės ir savaitgalio akcijos.',
+                    'seo_description' => '<div class="space-y-4">
+  <h2 class="text-2xl md:text-3xl font-semibold leading-tight mb-3">Akcijos ir nuolaidos Lietuvoje – visi prekybos tinklai vienoje vietoje</h2>
+  <p class="leading-relaxed">Norite greitai rasti akciją, o ne vartytis po kiekvieno prekybos tinklo puslapį atskirai? Čia rasite šios savaitės pasiūlymus iš <a href="/akcijos/maxima">Maxima</a>, <a href="/akcijos/lidl">Lidl</a>, <a href="/akcijos/iki">Iki</a>, <a href="/akcijos/rimi">Rimi</a>, <a href="/akcijos/norfa">Norfa</a> ir kitų parduotuvių sudėtus į vieną vietą – patogu palyginti kainas prieš perkant, o ne po to.</p>
+  <p class="leading-relaxed">Akcijos rūšiuojamos pagal kategorijas, tad greičiau rasite tai, ko šiuo metu ieškote: <a href="/akcijos/vaisiai-ir-darzoves">vaisius ir daržoves</a>, <a href="/akcijos/mesa-ir-zuvis">mėsą ir žuvį</a>, <a href="/akcijos/buitine-chemija-valymo-priemones">buitinę chemiją</a>, <a href="/akcijos/kosmetika-ir-higiena">kosmetiką ir higienos prekes</a> ar <a href="/akcijos/namu-ukio-ir-laisvalaikio-prekes">namų ūkio prekes</a>. Kiekvienos kategorijos viduje matysite, kuris tinklas tuo metu siūlo geriausią kainą, be reikalo neapsiperkant kitur.</p>
+  <p class="leading-relaxed">Pasiūlymai atnaujinami kiekvieną savaitę, kai prekybos tinklai išleidžia naujus akcijų leidinius – jei ieškote konkretaus tinklo savaitės leidinio, jį rasite ir čia, ir per <a href="/leidiniai">visų parduotuvių leidinių sąrašą</a>.</p>
+</div>',
+                    'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – rask akciją iš Maxima, Lidl, Iki, Rimi, Norfa',
+                    'meta_description' => 'Rask akciją greičiau – visi akcijų leidiniai vienoje vietoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai, savaitės ir savaitgalio akcijos.',
                 ];
             case 'leaflets_index':
                 return [

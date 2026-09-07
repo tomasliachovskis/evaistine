@@ -381,7 +381,7 @@ STRICT RULES:
             })
             ->toArray();
 
-        $storeCategoryLinks = $activeDiscounts
+        $allStoreCategoryLinks = $activeDiscounts
             ->groupBy('product.category.id')
             ->map(function($discounts) use ($store) {
                 $firstDiscount = $discounts->first();
@@ -398,14 +398,19 @@ STRICT RULES:
             })
             ->filter()
             ->sortByDesc('count')
-            ->take(3)
-            ->values()
-            ->toArray();
+            ->values();
 
-        $keywordPages = collect($storeCategoryLinks)
+        // Feed the writer every category the store has active discounts in (not
+        // just the top few) so it can mention/link a wider spread for SEO, while
+        // still ranked so it knows which ones are strongest.
+        $storeCategoryLinks = $allStoreCategoryLinks->take(8)->values()->toArray();
+
+        // Keyword pages are sourced from ALL of the store's categories (not just
+        // the top 3) so the description can point to more long-tail keyword pages.
+        $keywordPages = $allStoreCategoryLinks
             ->flatMap(fn ($link) => $this->keywordPageService->listPublishedPagesForCategory($link['slug']))
             ->unique('slug')
-            ->take(6)
+            ->take(10)
             ->map(fn ($page) => [
                 'title' => $page['title'],
                 'url' => "@https://superakcijos.lt{$page['href']}",
@@ -413,9 +418,15 @@ STRICT RULES:
             ->values()
             ->all();
 
+        // Only offer the locations/hours page as a link when there's actually
+        // location data behind it — otherwise it's a dead-end for the reader.
+        $hasStoreLocations = $store->locations()->exists();
+
         return [
             'store_name' => $store->name,
             'store_url' => "@https://superakcijos.lt/akcijos/{$store->slug}",
+            'store_hours_url' => $hasStoreLocations ? "@https://superakcijos.lt/parduotuves/{$store->slug}" : null,
+            'store_semantic_research' => $this->getStoreSemanticResearch($store),
             'keyword_pages' => $keywordPages,
             'total_active_discounts' => $activeDiscounts->count(),
             'total_products' => $activeDiscounts->unique('product_id')->count(),
@@ -457,6 +468,44 @@ STRICT RULES:
                 })->count()
             ]
         ];
+    }
+
+    /**
+     * Real-world research (verified via web/Google search, not derived from our own DB)
+     * about what this store actually is and how people actually search for it — used so
+     * the generated copy reflects this store's real business/category instead of reading
+     * like a generic supermarket template for every store. See storage/app/store_semantic_research.json.
+     */
+    private function getStoreSemanticResearch(Store $store): ?array
+    {
+        static $research = null;
+
+        if ($research === null) {
+            $path = storage_path('app/store_semantic_research.json');
+            $research = file_exists($path)
+                ? (json_decode(file_get_contents($path), true) ?? [])
+                : [];
+        }
+
+        return $research[$store->slug] ?? null;
+    }
+
+    /**
+     * Real-world research (verified via web/Google search) about how people
+     * actually shop/search this category — see storage/app/category_semantic_research.json.
+     */
+    private function getCategorySemanticResearch(Category $category): ?array
+    {
+        static $research = null;
+
+        if ($research === null) {
+            $path = storage_path('app/category_semantic_research.json');
+            $research = file_exists($path)
+                ? (json_decode(file_get_contents($path), true) ?? [])
+                : [];
+        }
+
+        return $research[$category->slug] ?? null;
     }
 
     private function getCategoryData(Category $category): array
@@ -562,6 +611,7 @@ STRICT RULES:
             'category_name' => $category->name,
             'category_slug' => $category->slug,
             'category_url' => "@https://superakcijos.lt/akcijos/{$category->slug}",
+            'category_semantic_research' => $this->getCategorySemanticResearch($category),
             'keyword_pages' => array_map(fn ($page) => [
                 'title' => $page['title'],
                 'url' => "@https://superakcijos.lt{$page['href']}",
@@ -610,23 +660,30 @@ STRICT RULES:
 
     private function getStoreSystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter who writes HTML descriptions for grocery e-shops. Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
+        return "You are a Lithuanian copywriter who writes HTML descriptions for a deals-aggregator site (superakcijos.lt). Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
 
-This content will stay on the page for weeks without being regenerated. Treat the JSON data as SILENT RESEARCH to understand this store's typical scale, typical discount range, and which categories/product types tend to be strong here — not as facts to quote directly. NEVER print an exact number copied straight from the JSON (no exact discount counts, no exact percentages, no exact euro amounts, no specific dates like 'iki 2026-08-31'). Round percentages to the nearest 5 or 10 and express counts as qualitative ranges ('dešimtys', 'keli šimtai', etc.). Never mention a specific current end-date for offers — if you need to reference freshness, use an evergreen phrase like 'atnaujinama kiekvieną savaitę'.
+This content will stay on the page for weeks without being regenerated. Treat the discount/category JSON data as SILENT RESEARCH to understand this store's typical scale, typical discount range, and which categories/product types tend to be strong here — not as facts to quote directly. NEVER print an exact number copied straight from the JSON (no exact discount counts, no exact percentages, no exact euro amounts, no specific dates like 'iki 2026-08-31'). Round percentages to the nearest 5 or 10 and express counts as qualitative ranges ('dešimtys', 'keli šimtai', etc.). Never mention a specific current end-date for offers — if you need to reference freshness, use an evergreen phrase like 'atnaujinama kiekvieną savaitę'.
+
+CRITICAL — do not write the same generic 'grocery store' description for every store:
+- The JSON may include a 'store_semantic_research' object with real, human-verified facts about what this store actually is: 'business_type' (what it actually sells/does), 'distinctive_angle' (what makes it structurally different from a typical grocery store — e.g. a pharmacy, a DIY/hardware chain, a direct-sales catalog brand, a wholesale cash-and-carry, a fashion chain, a wine specialist, an office-supplies retailer), 'real_search_phrases' (genuine phrases people search for this store, some straight from Google's own 'related searches'), and 'notable_categories_or_products' (its real, defining product range).
+- If store_semantic_research is present, you MUST let 'business_type' and 'distinctive_angle' shape paragraph 1 and the overall framing — do not default to grocery/supermarket language ('parduotuvėje rasite maisto produktų akcijų' etc.) for a store whose business_type says otherwise (e.g. a pharmacy should talk about vaistai/vitaminai/kosmetika and things like a loyalty/health card, not 'daržovės ir buitinė chemija'; a DIY chain should talk about statybos/remonto/sodo prekės; a direct-sales catalog brand like Tupperware/Avon/Oriflame/Mary Kay has no physical weekly leaflet or in-store card — do not invent one, phrase around catalog/consultant-based sales instead).
+- Naturally weave the vocabulary and phrasing style of 2-4 items from 'real_search_phrases' into the prose where they fit grammatically (adapted to correct Lithuanian sentence grammar, not pasted verbatim as a search query) — this keeps the wording genuinely tied to how people actually search for this specific store, instead of generic phrasing that could apply to any store.
+- If store_semantic_research is absent (older/smaller store with no research on file), fall back to inferring the store's nature from category_statistics/top_discounts as before.
 
 STRICT OUTPUT FORMAT:
-Wrap everything in a single <div class=\"space-y-4\"> element. Use <strong> tags for emphasis where needed. Output ONLY the header and 3-4 prose paragraphs below — no tables, no stats grids, no discount-distribution lists.
+Wrap everything in a single <div class=\"space-y-4\"> element. Do NOT use <strong>/<b>/<em>/<i> tags anywhere in the body paragraphs — bolding random phrases reads as generated AI text. Write plain sentences and let links (<a>) be the only inline markup. Output ONLY the header and 3-4 prose paragraphs below — no tables, no stats grids, no discount-distribution lists.
 
 1) HEADER
 - <h2 class=\"text-2xl md:text-3xl font-semibold leading-tight mb-3\"> with title format:
   '[store_name] akcijos ir nuolaidos – naujausi pasiūlymai atnaujinami kiekvieną savaitę'
   (No specific percent number or date in the title.) Sentence case only.
 
-2) PROSE (3-4 paragraphs, each a <p class=\"leading-relaxed\">)
+2) PROSE (4-5 paragraphs, each a <p class=\"leading-relaxed\">)
 - Paragraph 1: Describe the store's typical scope in natural Lithuanian, using qualitative terms derived from total_active_discounts/avg_savings_per_product magnitude (e.g. 'čia rasite dešimtis ar šimtus akcijų', 'galite sutaupyti kelis eurus perkant kasdienes prekes') — never an exact digit copied from the JSON. Mention main product areas using category context from the data. Do NOT include any links in this first paragraph.
-- Paragraph 2: Describe qualitatively which categories tend to be strongest at this store (using category_statistics, picking the top few by 'count', but describing rank/strength in words, not exact counts/percents). Include 2-3 store+category links naturally in the sentence using format '<a href=\"[url]\">[name]</a>' where url/name come from store_category_links (remove leading '@' if present).
-- Paragraph 3: A durable tip-style paragraph — e.g. general advice for finding the best deals at this store (comparing categories, checking back regularly, using a loyalty card if card_discounts > 0, phrased qualitatively not as an exact count).
-- Paragraph 4 (only if keyword_pages is non-empty): Naturally mention 2-4 related, popular search topics available at this store as a helpful pointer, linking each via '<a href=\"[url]\">[title]</a>' where url/title come from keyword_pages (remove leading '@' from the url). Do not invent topics not present in keyword_pages; skip this paragraph entirely if keyword_pages is empty.
+- Paragraph 2: Describe qualitatively which categories tend to be strongest at this store (using category_statistics, picking the top few by 'count', but describing rank/strength in words, not exact counts/percents). Include 4-6 store+category links naturally across one or two sentences using format '<a href=\"[url]\">[name]</a>' where url/name come from store_category_links (remove leading '@' if present) — use as many of the DISTINCT categories provided in store_category_links as read naturally, favoring breadth over repeating the same one or two categories.
+- Paragraph 3 (only if store_category_links has more categories than were used in paragraph 2): Mention the remaining categories not yet linked in paragraph 2, again as natural inline links '<a href=\"[url]\">[name]</a>', framed as the store's wider assortment (e.g. 'Be to, rasite pasiūlymų ir [category] bei [category] kategorijose.'). Skip this paragraph if every category from store_category_links was already linked in paragraph 2, or if store_category_links has 3 or fewer entries.
+- Paragraph 4: A durable tip-style paragraph — e.g. general advice for finding the best deals at this store (comparing categories, checking back regularly, using a loyalty card if card_discounts > 0, phrased qualitatively not as an exact count). If 'store_hours_url' is non-null, naturally mention that shoppers can check the store's actual locations and opening hours via a link like '<a href=\"[store_hours_url]\">parduotuvių adresus ir darbo laiką</a>' (adapt the anchor phrase to the sentence, strip leading '@' from the URL) — this is a genuinely useful, non-generic pointer, not filler. Skip this mention entirely if store_hours_url is null.
+- Paragraph 5 (only if keyword_pages is non-empty): Naturally mention 4-6 related, popular search topics available at this store as a helpful pointer, linking each via '<a href=\"[url]\">[title]</a>' where url/title come from keyword_pages (remove leading '@' from the url) — use as many distinct keyword_pages entries as read naturally, favoring breadth. Do not invent topics not present in keyword_pages; skip this paragraph entirely if keyword_pages is empty.
 - Do NOT add any paragraph about a specific validity window or end date.
 
 OUTPUT RULES:
@@ -634,7 +691,7 @@ OUTPUT RULES:
 - Remove any leading '@' from URLs.
 - Never invent stores, categories, or keyword topics; only use names present in the provided JSON.
 - Never print an exact number, exact percent, exact euro amount, or exact date copied from the JSON anywhere in the output — always round or describe qualitatively.
-- Use <strong> tags for emphasis on important phrases and the store name.
+- Do not use <strong>/<b>/<em>/<i> anywhere — plain sentences read more natural and less like generated text.
 - Ensure the heading follows sentence case (only the first word capitalized).
 - Keep tone promotional but natural, conversational, varied sentence structure; avoid repeating the same phrase across paragraphs.
 - Grammar: NEVER use the construction 'Pas [store_name]' (e.g. 'Pas Rimi rasite...') — this is grammatically incorrect Lithuanian for a store name. Instead decline the store name properly, e.g. '[store_name] parduotuvėje rasite...', '[store_name] siūlo...', or similar correctly-declined phrasing.
@@ -643,12 +700,18 @@ OUTPUT RULES:
 
     private function getCategorySystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter who writes HTML descriptions for grocery e-shops. Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
+        return "You are a Lithuanian copywriter who writes HTML descriptions for a deals-aggregator site (superakcijos.lt). Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
 
-This content will stay on the page for weeks without being regenerated. Treat the JSON data as SILENT RESEARCH to understand this category's typical scale, typical discount range, and which stores/product types tend to be strong here — not as facts to quote directly. NEVER print an exact number copied straight from the JSON (no exact discount counts, no exact percentages, no exact euro amounts, no specific dates like 'iki 2026-08-31'). Round percentages to the nearest 5 or 10 and express counts as qualitative ranges ('dešimtys', 'keli šimtai', etc.). Never mention a specific current end-date for offers — if you need to reference freshness, use an evergreen phrase like 'atnaujinama kiekvieną savaitę'.
+This content will stay on the page for weeks without being regenerated. Treat the discount/store JSON data as SILENT RESEARCH to understand this category's typical scale, typical discount range, and which stores/product types tend to be strong here — not as facts to quote directly. NEVER print an exact number copied straight from the JSON (no exact discount counts, no exact percentages, no exact euro amounts, no specific dates like 'iki 2026-08-31'). Round percentages to the nearest 5 or 10 and express counts as qualitative ranges ('dešimtys', 'keli šimtai', etc.). Never mention a specific current end-date for offers — if you need to reference freshness, use an evergreen phrase like 'atnaujinama kiekvieną savaitę'.
+
+CRITICAL — do not write the same generic 'browse the deals' description for every category:
+- The JSON may include a 'category_semantic_research' object with real, human-verified facts about how people actually shop this category: 'distinctive_angle' (what makes deal-hunting here different — e.g. highly seasonal fresh produce, brand-loyalty-driven coffee/tea, bulky durable goods rarely discounted, impulse/snack buying, pet-owner needs, baby-safety-conscious buying), 'seasonal_patterns' (a real seasonal buying pattern, or 'none particularly seasonal' if not applicable — never invent a seasonal claim it doesn't support), 'real_search_phrases' (genuine phrases people search, some straight from Google's own 'related searches'), and 'notable_product_types' (its real, defining product range).
+- If category_semantic_research is present, let 'distinctive_angle' and 'seasonal_patterns' genuinely shape the framing and tips paragraph — a seasonal produce category should talk about buying in-season and comparing fresh-stock prices; a durable/rarely-discounted category should set realistic expectations instead of promising huge constant discounts; a brand-loyalty category (coffee, cosmetics) should acknowledge that brand preference matters as much as price.
+- Naturally weave the vocabulary/style of 2-4 items from 'real_search_phrases' into the prose where grammatically natural (adapted to correct Lithuanian sentence grammar, never pasted verbatim as a raw search query) so wording stays genuinely tied to how people search this specific category, not generic phrasing that could apply to any category.
+- If category_semantic_research is absent, fall back to inferring the category's nature from store_statistics/top_discounts as before.
 
 STRICT OUTPUT FORMAT:
-Wrap everything in a single <div class=\"category-description-block p-0 lg:p-4\"> element. Use <strong> tags for emphasis where needed. Output ONLY the header and 3-4 prose paragraphs below — no tables, no stats grids, no per-store comparison sections.
+Wrap everything in a single <div class=\"category-description-block p-0 lg:p-4\"> element. Do NOT use <strong>/<b>/<em>/<i> tags anywhere in the body paragraphs — bolding random phrases reads as generated AI text. Write plain sentences and let links (<a>) be the only inline markup. Output ONLY the header and 3-4 prose paragraphs below — no tables, no stats grids, no per-store comparison sections.
 
 1) HEADER
 - <h2 class=\"text-3xl font-bold mb-6 leading-tight\"> with title format:
@@ -656,8 +719,8 @@ Wrap everything in a single <div class=\"category-description-block p-0 lg:p-4\"
   (No specific percent number in the title.) Sentence case only.
 
 2) PROSE (3-4 paragraphs, each a <p class=\"mb-4 text-gray-700\">, last one <p class=\"mb-6 text-gray-700\">)
-- Paragraph 1: Start with a question or engaging statement about the category. Use <strong> tags to emphasize the category name. CRITICAL: When mentioning specific product types, include product links from top_discounts. Match product names from top_discounts to mentioned product types and create links using format: '<a href=\"[product_url]\">[product_type]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present). Example: 'Ruošiate pietus, planuojate šventinį stalą ar tiesiog pildote šaldytuvą? Kategorija <strong>„[category_name]\"</strong> yra puiki vieta sutaupyti, neaukojant kokybės!' Do not state an exact discount percentage here.
-- Paragraph 2: Describe the typical scale qualitatively, e.g. 'Čia rasite <strong>dešimtis akcijų</strong>' (never the exact total_active_discounts number) and the typical discount range rounded, e.g. 'Nuolaidos dažniausiai siekia <strong>apie 10-30 %</strong>' (never the exact avg_discount_percent). Do NOT mention any specific validity date. CRITICAL: Include product links from top_discounts when mentioning product types in this paragraph as well.
+- Paragraph 1: Start with a question or engaging statement about the category, naming it plainly (no bold/quotes-as-emphasis). CRITICAL: When mentioning specific product types, include product links from top_discounts. Match product names from top_discounts to mentioned product types and create links using format: '<a href=\"[product_url]\">[product_type]</a>' where product_url is from top_discounts.product_url (remove leading '@' if present). Example: 'Ruošiate pietus, planuojate šventinį stalą ar tiesiog pildote šaldytuvą? Kategorija [category_name] yra puiki vieta sutaupyti, neaukojant kokybės!' Do not state an exact discount percentage here.
+- Paragraph 2: Describe the typical scale qualitatively, e.g. 'Čia rasite dešimtis akcijų' (never the exact total_active_discounts number) and the typical discount range rounded, e.g. 'Nuolaidos dažniausiai siekia apie 10-30 %' (never the exact avg_discount_percent). Do NOT mention any specific validity date. CRITICAL: Include product links from top_discounts when mentioning product types in this paragraph as well.
 - Paragraph 3: Describe qualitatively (no exact counts/percents) which stores tend to be strong in this category and what kind of products/assortment they're known for, drawing on store_statistics and store_category_links naturally in running prose (not a table) — e.g. 'Platų pasirinkimą dažnai rasite <a href=\"[store_category_links.url]\">[store_name]</a> parduotuvėje, o <a href=\"[url]\">[store_name]</a> pasižymi patraukliomis kainomis [product type].' Mention 2-3 stores this way, using store_category_links for the hrefs (remove leading '@' if present) and store_statistics for which product types each store tends to be strong in (via their top_products).
 - Paragraph 4 (only if keyword_pages is non-empty): Naturally mention 2-4 related, popular search topics within this category as a helpful pointer for the reader, linking each via '<a href=\"[url]\">[title]</a>' where url/title come from keyword_pages (remove leading '@' from the url). Phrase it inviting, e.g. 'Jei ieškote ko nors konkretesnio, pasižiūrėkite ir <a href=\"...\">...</a> ar <a href=\"...\">...</a> pasiūlymus.' Do not invent topics not present in keyword_pages; skip this paragraph entirely if keyword_pages is empty.
 
@@ -666,7 +729,7 @@ OUTPUT RULES:
 - Remove any leading '@' from URLs.
 - Never invent stores or keyword topics; only use names/titles present in the provided JSON.
 - Never print an exact number, exact percent, exact euro amount, or exact date copied from the JSON anywhere in the output — always round or describe qualitatively.
-- Use <strong> tags for emphasis on important phrases and category names.
+- Do not use <strong>/<b>/<em>/<i> anywhere — plain sentences read more natural and less like generated text.
 - Ensure the heading follows sentence case (only the first word capitalized).
 - Keep tone promotional but natural, conversational, varied sentence structure; avoid repeating the same phrase across paragraphs.
 ";
@@ -894,6 +957,146 @@ OUTPUT RULES:
             ],
             [
                 'top_products_html' => $html,
+            ]
+        );
+
+        return true;
+    }
+
+    private function getStoreCategoryData(Store $store, Category $category): ?array
+    {
+        $activeDiscounts = Discount::where('store_id', $store->id)
+            ->whereHas('product', function ($query) use ($category) {
+                $query->where('category_id', $category->id);
+            })
+            ->where(function ($query) {
+                $query->where('end_at', '>=', now()->startOfDay())
+                    ->orWhereNull('end_at');
+            })
+            ->with(['product.category', 'store'])
+            ->get();
+
+        if ($activeDiscounts->isEmpty()) {
+            return null;
+        }
+
+        $topDiscounts = $this->getDiverseTopDiscounts($activeDiscounts, 6)
+            ->map(function ($discount) {
+                return [
+                    'name' => $discount->product->name,
+                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'discount_percent' => $discount->discount_percent,
+                ];
+            })
+            ->toArray();
+
+        return [
+            'store_name' => $store->name,
+            'category_name' => $category->name,
+            'page_url' => "@https://superakcijos.lt/akcijos/{$store->slug}/{$category->slug}",
+            'store_semantic_research' => $this->getStoreSemanticResearch($store),
+            'category_semantic_research' => $this->getCategorySemanticResearch($category),
+            'total_active_discounts' => $activeDiscounts->count(),
+            'avg_discount_percent' => round($activeDiscounts->avg('discount_percent'), 1),
+            'max_discount_percent' => min($activeDiscounts->max('discount_percent'), 100),
+            'top_discounts' => $topDiscounts,
+        ];
+    }
+
+    private function getStoreCategorySystemPrompt(): string
+    {
+        return "You are a Lithuanian copywriter for a deals-aggregator site (superakcijos.lt). Generate a SHORT, SEO-friendly, EVERGREEN intro for a page combining ONE store and ONE product category (e.g. 'Rimi' + 'Vaisiai ir daržovės').
+
+This content stays on the page for weeks. Treat the discount JSON as SILENT RESEARCH — never print an exact count/percent/date copied straight from it; round percentages to the nearest 5 or 10 and use qualitative counts ('keliolika', 'dešimtys'). Never mention a specific end-date; use 'atnaujinama kiekvieną savaitę' if referencing freshness.
+
+CRITICAL — ground this in the REAL Google-search data provided, don't write generic GPT filler:
+- This store already has its OWN full description page (covering what kind of business it is, its distinctive angle, its overall category spread) and this category already has its OWN full description page (covering its seasonality, distinctive angle, typical products) — do not restate those generic facts here, that would be duplicate content across pages and hurts SEO.
+- 'store_semantic_research.real_search_phrases' and 'category_semantic_research.real_search_phrases' contain ACTUAL phrases real people typed into Google (many straight from Google's own 'related searches' widget) about this store and this category. You MUST select 1-2 phrases from each (where they exist) that are plausible for this specific store+category intersection, and let their exact wording/vocabulary genuinely shape a sentence — adapted to correct Lithuanian grammar, never pasted as a raw query string. This is REQUIRED, not optional decoration: if you skip this and instead write generic filler ('platus asortimentas', 'verta palyginti kainas', 'akcijos atnaujinamos kiekvieną savaitę' with nothing store/category-specific), you have failed the task.
+- Do NOT just restate business_type/distinctive_angle as a sentence ('X is a [business_type]') — that belongs on X's own page. Instead let those fields silently guide which real_search_phrases and product angle you pick.
+- Also write about the specific intersection using top_discounts: its actual current product range here, a genuinely combo-specific observation — not a generic 'compare prices' tip that could apply to any store+category pair.
+- Naturally weave in 1-3 real product names from 'top_discounts' as inline links using '<a href=\"[product_url]\">[name]</a>' (strip leading '@' from URLs) where grammatically natural.
+- If the discount data is too thin to say anything genuinely specific beyond generic facts, keep it to a single short sentence rather than padding with restated store/category facts.
+
+STRICT OUTPUT FORMAT: wrap everything in a single <div class=\"space-y-3\">. Output ONLY 1-2 short paragraphs (<p class=\"leading-relaxed\">), no heading, no table, no stats grid — this intro sits ABOVE a separately-rendered top-products table, so don't repeat exact numbers or list many products (top_discounts is just for 1-3 natural inline links).
+
+OUTPUT RULES:
+- Language: Lithuanian.
+- Remove any leading '@' from URLs.
+- Never invent product names, stores, or categories not present in the JSON.
+- Never print an exact number/percent/date copied from the JSON.
+- Grammar: never use 'Pas [store_name]' — decline the store name properly instead.
+";
+    }
+
+    public function generateStoreCategoryIntro(Store $store, Category $category): ?string
+    {
+        if (!$this->isConfigured()) {
+            Log::warning('DescriptionGenerationService is not configured');
+            return null;
+        }
+
+        $data = $this->getStoreCategoryData($store, $category);
+
+        if ($data === null) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(120)
+                ->retry(3, 1000)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($this->apiUrl, [
+                    'model' => config('services.openai.model', 'gpt-5-mini'),
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => $this->getStoreCategorySystemPrompt()
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => json_encode($data, JSON_UNESCAPED_UNICODE)
+                        ]
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                return trim($response->json('choices.0.message.content'));
+            }
+
+            Log::error('OpenAI API request failed for store+category intro', [
+                'store_id' => $store->id,
+                'category_id' => $category->id,
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error calling OpenAI API for store+category intro', [
+                'store_id' => $store->id,
+                'category_id' => $category->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return null;
+    }
+
+    public function saveStoreCategoryIntro(Store $store, Category $category): bool
+    {
+        $html = $this->generateStoreCategoryIntro($store, $category);
+
+        if (!$html) {
+            return false;
+        }
+
+        StoreCategoryDescription::updateOrCreate(
+            [
+                'store_id' => $store->id,
+                'category_id' => $category->id,
+            ],
+            [
+                'intro_html' => $html,
             ]
         );
 

@@ -12,6 +12,7 @@ class StoreCategoryDescription extends Model
     protected $fillable = [
         'store_id',
         'category_id',
+        'intro_html',
         'top_products_html',
     ];
 

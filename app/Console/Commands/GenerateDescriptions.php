@@ -298,7 +298,9 @@ class GenerateDescriptions extends Command
 
             foreach ($combinations as $combination) {
                 $this->generateStoreCategoryTable($combination['store'], $combination['category']);
+                $this->generateStoreCategoryIntro($combination['store'], $combination['category']);
                 $bar->advance();
+                sleep(2);
             }
 
             $bar->finish();
@@ -321,6 +323,21 @@ class GenerateDescriptions extends Command
             }
         } catch (\Exception $e) {
             $this->error("✗ Error generating table for {$store->name} + {$category->name}: " . $e->getMessage());
+        }
+    }
+
+    private function generateStoreCategoryIntro(Store $store, Category $category): void
+    {
+        try {
+            $success = $this->descriptionService->saveStoreCategoryIntro($store, $category);
+
+            if ($success) {
+                $this->info("✓ Successfully generated intro for {$store->name} + {$category->name}");
+            } else {
+                $this->warn("✗ No intro generated for {$store->name} + {$category->name}");
+            }
+        } catch (\Exception $e) {
+            $this->error("✗ Error generating intro for {$store->name} + {$category->name}: " . $e->getMessage());
         }
     }
 }
