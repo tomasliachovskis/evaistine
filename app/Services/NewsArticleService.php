@@ -132,6 +132,16 @@ class NewsArticleService
         return $candidates;
     }
 
+    /**
+     * GPT occasionally leaves a stray trailing space inside href="..." (seen
+     * live: href="/akcijos/mesa-ir-zuvis "). Browsers are lenient about it,
+     * but trim it anyway rather than rely on that.
+     */
+    private function cleanHrefWhitespace(string $html): string
+    {
+        return preg_replace('/href="([^"]*?)\s+"/u', 'href="$1"', $html);
+    }
+
     private function extractRealUrlFromBingRedirect(string $bingLink): string
     {
         $query = parse_url($bingLink, PHP_URL_QUERY);
@@ -143,6 +153,54 @@ class NewsArticleService
         parse_str($query, $params);
 
         return $params['url'] ?? $bingLink;
+    }
+
+    /**
+     * Best-effort fetch of the real publisher page's visible text, so the
+     * writer has actual article substance (real quotes, figures, background)
+     * instead of just a 2-3 sentence RSS snippet. Deliberately generic (no
+     * per-site scraping rules to maintain) — strips obvious non-article
+     * chrome, then hands the model the remaining raw text and lets IT ignore
+     * leftover nav/boilerplate, since a capable model handles that more
+     * robustly than a brittle site-specific CSS selector ever would.
+     *
+     * Returns null on any failure or if too little text came back (bot
+     * block, paywall, JS-only rendering) — callers must fall back to the
+     * RSS snippet alone rather than treat null as an error.
+     */
+    private function fetchArticleFullText(string $url): ?string
+    {
+        try {
+            $response = Http::timeout(15)
+                ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36')
+                ->get($url);
+
+            if (!$response->successful()) {
+                return null;
+            }
+
+            $html = $response->body();
+            $html = preg_replace('/<(script|style|nav|header|footer|form|aside)\b[^>]*>.*?<\/\1>/is', ' ', $html);
+            $text = trim(preg_replace('/\s+/u', ' ', strip_tags($html)));
+
+            // A real article is at minimum a few hundred characters — a much
+            // shorter result means we hit a cookie wall, bot check, or an
+            // empty JS-rendered shell rather than real content.
+            if (mb_strlen($text) < 400) {
+                return null;
+            }
+
+            // Cap length to keep the prompt reasonable — plenty for a short
+            // news piece, and avoids paying to send an entire long-form page.
+            return mb_substr($text, 0, 8000);
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch full article text, falling back to RSS snippet', [
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     /**
@@ -245,7 +303,7 @@ class NewsArticleService
 
             return [
                 'title' => trim($parsed['title']),
-                'content' => trim($parsed['content']),
+                'content' => $this->cleanHrefWhitespace(trim($parsed['content'])),
                 'meta_title' => trim($parsed['meta_title'] ?? $parsed['title']),
                 'meta_description' => trim($parsed['meta_description'] ?? ''),
             ];
@@ -274,6 +332,11 @@ class NewsArticleService
 
             if ($this->isAlreadyCovered($story)) {
                 continue;
+            }
+
+            $fullText = $this->fetchArticleFullText($story['link']);
+            if ($fullText !== null) {
+                $story['full_page_text'] = $fullText;
             }
 
             $article = $this->generateArticle($story);
@@ -309,24 +372,25 @@ class NewsArticleService
 
     private function getSystemPrompt(): string
     {
-        return "You are a Lithuanian editorial writer for a deals-aggregator site (superakcijos.lt)'s news section ('Naujienos'). You will receive ONE real search-engine news result: a headline, a source name, a real excerpt/snippet of the actual article (2-3 sentences, genuine facts), a link, and a publish date, about Lithuanian retail/grocery pricing.
+        return "You are a Lithuanian editorial writer for a deals-aggregator site (superakcijos.lt)'s news section ('Naujienos'). You will receive ONE real search-engine news result: a headline, a source name, a short excerpt/snippet, a link, and a publish date, about Lithuanian retail/grocery pricing. Sometimes it also includes 'full_page_text' — the actual publisher page's raw visible text (best-effort fetched; may contain leftover site navigation/boilerplate mixed in with the real article, and is only present when the fetch succeeded).
 
-RELEVANCE CHECK FIRST: this site is specifically about retail pricing, discounts, and grocery/retail chains in Lithuania — NOT general human-interest, restaurant reviews, travel, or lifestyle stories that merely mention a store in passing. If the headline/snippet is not genuinely about retail chain business/pricing/market news (e.g. a chain's finances, a new store opening, a management change, an industry price trend, a market entry) — for example a human-interest piece like someone's restaurant road trip — set insufficient_information: true immediately, regardless of how much you could write about it.
+RELEVANCE CHECK FIRST: this site is specifically about retail pricing, discounts, and grocery/retail chains in Lithuania — NOT general human-interest, restaurant reviews, travel, or lifestyle stories that merely mention a store in passing. If the story is not genuinely about retail chain business/pricing/market news (e.g. a chain's finances, a new store opening, a management change, an industry price trend, a market entry) — for example a human-interest piece like someone's restaurant road trip — set insufficient_information: true immediately, regardless of how much you could write about it.
 
-CRITICAL — you only have the headline + a short excerpt, NOT the full article. This means:
-- Use every genuine fact in the snippet (names, dates, numbers, roles, figures) — the snippet is real reporting, not a summary you need to compress further. Write AROUND those real facts with your own framing/context/relevance-to-shoppers angle.
-- Do NOT invent facts, numbers, quotes, or details beyond what the headline+snippet state or strongly imply. You may add genuinely obvious, generic context (e.g. explaining what a management change at a retailer typically means for shoppers, or general industry background) — never fabricated specifics (no invented quotes, no invented figures, no invented names not in the snippet).
-- If the headline+snippet together are still too thin to support a genuine, factually-grounded article, set insufficient_information: true and leave other fields empty. Returning nothing is much better than fabricating.
+GROUNDING RULES — CRITICAL, read carefully:
+- If 'full_page_text' is present: first mentally separate the real article body from any leftover nav/menu/footer/cookie-banner/'related articles' text mixed into it (a capable reader can tell — look for the coherent narrative paragraphs). Use ONLY facts that are genuinely part of the article body — ignore boilerplate, unrelated headline lists, and navigation entirely. This real text is your primary source — use its real names, quotes, numbers, dates, roles generously; you have much more to work with than a bare snippet, so write a properly substantive piece (see length below).
+- If 'full_page_text' is absent, you only have the headline + short snippet — use every genuine fact in it, write AROUND those facts with your own framing, and keep the piece shorter and more modest in scope (do not pad with generic filler to reach a target length).
+- Regardless of source depth: NEVER invent facts, numbers, quotes, or details not present in what you were given. You may add genuinely obvious, generic context (e.g. explaining what a management change at a retailer typically means for shoppers) — never fabricated specifics.
+- If even the richest available material is too thin to support a genuine, factually-grounded article, set insufficient_information: true and leave other fields empty. Returning nothing is much better than fabricating.
 - ALWAYS attribute the story to its real source by name in the article body (e.g. 'Kaip skelbia 15min.lt...', '„Delfi\" praneša...') — never present the source's reporting as your own original finding.
-- This must be a TRANSFORMATIVE piece — your own commentary/framing/relevance-to-shoppers angle woven around the real facts — not a translation or close paraphrase of the snippet.
+- This must be a TRANSFORMATIVE piece — your own commentary/framing/relevance-to-shoppers angle woven around the real facts — never a close paraphrase or reordering of the source's own sentences. Do not reproduce any direct quote from the source verbatim for more than a short phrase; paraphrase quotes and attribute them (e.g. 'naujasis vadovas teigė, kad...') rather than reprinting them as a blockquote.
 
 INTERNAL LINKS (important — this is why we publish these at all, not just to credit an external source): the JSON includes 'internal_link_targets' with our own real store and category pages ({name, url} pairs). Whenever the article genuinely discusses/names a store or product category that appears in that list, link it inline the first time it's mentioned using '<a href=\"[url]\">[name]</a>' (relative URL, exactly as given — do not prefix a domain). Do NOT force a link where the topic doesn't naturally fit, and NEVER invent a URL for a store/category not present in internal_link_targets. If the story is about a store not in our list (e.g. a foreign chain, or a brand new entrant we don't carry yet), don't link it — just name it plainly. Aim for 1-3 genuine internal links per article, not one in every sentence.
 
 OUTPUT: a single JSON object: {\"title\": \"...\", \"content\": \"<HTML>...\", \"meta_title\": \"...\", \"meta_description\": \"...\", \"insufficient_information\": false}.
-- content: 3-5 HTML paragraphs (<p class=\"leading-relaxed\">...</p>), Lithuanian, conversational but factual tone — no bold/italic emphasis (<strong>/<b>/<em>/<i> — reads as generated filler), no invented statistics. Use the real facts in the snippet as the backbone of multiple paragraphs (e.g. one paragraph on what happened, one on the real names/numbers involved, one on what it means for shoppers/the market) rather than compressing everything into one thin paragraph.
+- content: HTML paragraphs (<p class=\"leading-relaxed\">...</p>), Lithuanian, conversational but factual tone — no bold/italic emphasis (<strong>/<b>/<em>/<i> — reads as generated filler), no invented statistics. With full_page_text available, write 4-6 substantive paragraphs genuinely earning their length from real facts (what happened, the real people/numbers/roles involved, background context, what it means for shoppers). With only a snippet, write 2-3 shorter paragraphs — do not stretch thin material.
 - title: a genuine, non-clickbait Lithuanian headline for OUR article (can echo the source headline's real content, don't just copy it verbatim).
 - meta_title/meta_description: SEO fields, evergreen-safe (don't bake in an exact date that will look stale in a week unless the story is explicitly about a dated event).
-- Keep the whole thing honest — a well-attributed, properly fleshed-out piece built on the real snippet facts, never padded with content those facts don't support.
+- Keep the whole thing honest — a well-attributed, properly fleshed-out piece built on real facts, never padded with content those facts don't support.
 ";
     }
 }
