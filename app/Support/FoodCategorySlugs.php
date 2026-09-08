@@ -13,7 +13,8 @@ class FoodCategorySlugs
         'bakaleja',
         'saldumynai-ir-uzkandziai',
         'gerimai-kava-arbata',
-        'alkoholiniai-ir-nealkoholiniai-gerimai',
+        'alkoholiniai-gerimai',
+        'nealkoholiniai-gerimai',
     ];
 
     public const NON_FOOD = [
@@ -39,7 +40,8 @@ class FoodCategorySlugs
         'vaiku-ir-kudikiu-prekes',
         'saldumynai-ir-uzkandziai',
         'gerimai-kava-arbata',
-        'alkoholiniai-ir-nealkoholiniai-gerimai',
+        'alkoholiniai-gerimai',
+        'nealkoholiniai-gerimai',
         'kosmetika-ir-higiena',
         'buitine-chemija-valymo-priemones',
         'namu-ukio-ir-laisvalaikio-prekes',

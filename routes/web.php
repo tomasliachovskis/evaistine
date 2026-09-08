@@ -43,6 +43,17 @@ Route::get('/akcijos/_deals', ListingDealsPartialController::class)->name('akcij
 Route::get('/akcijos', [AkcijosController::class, 'index']);
 Route::get('/akcijos/paieska', [AkcijosController::class, 'searchForm']);
 Route::get('/akcijos/paieska/{query}', [AkcijosController::class, 'search'])->where('query', '.*');
+
+// "Alkoholiniai ir nealkoholiniai gėrimai" category was split 2026-09-08
+// into "Alkoholiniai gėrimai" (kept the old id, products/subcategories
+// were already all alcohol types) and a new "Nealkoholiniai gėrimai" root
+// — the old combined URL redirects to the non-alcoholic side, per explicit
+// choice (not the alcoholic side, even though the old id was kept there).
+Route::redirect('/akcijos/alkoholiniai-ir-nealkoholiniai-gerimai', '/akcijos/nealkoholiniai-gerimai', 301);
+Route::get('/akcijos/{store}/alkoholiniai-ir-nealkoholiniai-gerimai', function (string $store) {
+    return redirect("/akcijos/{$store}/nealkoholiniai-gerimai", 301);
+});
+
 Route::get('/akcijos/{slug1}/{slug2?}', [AkcijosController::class, 'show']);
 
 Route::get('/parduotuves', [StoreController::class, 'index']);

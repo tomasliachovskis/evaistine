@@ -72,9 +72,9 @@ class SeedGenericProducts extends Command
         ['slug' => 'burokeliai', 'name' => 'Burokėliai', 'emoji' => '🍠', 'category' => 'vaisiai-ir-darzoves'],
         ['slug' => 'kudikiu-pieno-misinys', 'name' => 'Kūdikių pieno mišinys', 'emoji' => '🍼', 'category' => 'vaiku-ir-kudikiu-prekes', 'terms' => ['pieno mišinys', 'pieno mišiniui', 'tolesnio maitinimo mišinys', 'kūdikių pieno mišinys']],
         ['slug' => 'plauku-kondicionierius', 'name' => 'Plaukų kondicionierius', 'emoji' => '🧴', 'category' => 'kosmetika-ir-higiena'],
-        ['slug' => 'degtine', 'name' => 'Degtinė', 'emoji' => '🍸', 'category' => 'alkoholiniai-ir-nealkoholiniai-gerimai'],
-        ['slug' => 'konjakas', 'name' => 'Konjakas', 'emoji' => '🥃', 'category' => 'alkoholiniai-ir-nealkoholiniai-gerimai'],
-        ['slug' => 'viskis', 'name' => 'Viskis', 'emoji' => '🥃', 'category' => 'alkoholiniai-ir-nealkoholiniai-gerimai'],
+        ['slug' => 'degtine', 'name' => 'Degtinė', 'emoji' => '🍸', 'category' => 'alkoholiniai-gerimai'],
+        ['slug' => 'konjakas', 'name' => 'Konjakas', 'emoji' => '🥃', 'category' => 'alkoholiniai-gerimai'],
+        ['slug' => 'viskis', 'name' => 'Viskis', 'emoji' => '🥃', 'category' => 'alkoholiniai-gerimai'],
 
         // Found by diffing against nuolaidos.lt's own /produktai grouping (335 names).
         ['slug' => 'tunas', 'name' => 'Tunas', 'emoji' => '🐟', 'category' => 'mesa-ir-zuvis'],
