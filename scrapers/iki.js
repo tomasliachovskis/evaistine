@@ -11,6 +11,18 @@ puppeteer.use(StealthPlugin());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Iki prints its own real per-unit price inline in the same `info` string
+// already scraped, e.g. "500 g, 5,98 Eur/kg" or "10 vnt., skirtingų dydžių,
+// 0,18 Eur/vnt." — pull the "X Eur/unit" part out of it.
+const parseUnitPrice = (text) => {
+    if (!text) return null;
+    const match = text.replace(/\s+/g, ' ').match(/([\d.,]+)\s*Eur\s*\/\s*(kg|l|vnt)\.?/i);
+    if (!match) return null;
+    const price = parseFloat(match[1].replace(',', '.'));
+    if (!price || price <= 0) return null;
+    return { price, basis: match[2].toLowerCase() };
+};
+
 (async () => {
     const systemChromePath = '/usr/bin/google-chrome';
     const chromePath = `${process.env.HOME}/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome`;
@@ -208,21 +220,26 @@ const __dirname = path.dirname(__filename);
 
     // Save and send
     try {
-        const data = allProducts.map(product => ({
-            name: product.name,
-            brand: product.brand ?? '',
-            discounted_price: product.discounted_price,
-            original_price: product.original_price,
-            card: product.card,
-            info: (product.info),
-            discount_percent: product.discount_percent,
-            start_at: product.start_at,
-            end_at: product.end_at,
-            product_url: product.product_url,
-            image_url: product.image_url,
-            category: product.link,
-            store: 'iki'
-        }));
+        const data = allProducts.map(product => {
+            const unit = parseUnitPrice(product.info);
+            return {
+                name: product.name,
+                brand: product.brand ?? '',
+                discounted_price: product.discounted_price,
+                original_price: product.original_price,
+                card: product.card,
+                info: (product.info),
+                unit_price: unit?.price ?? null,
+                unit_price_basis: unit?.basis ?? null,
+                discount_percent: product.discount_percent,
+                start_at: product.start_at,
+                end_at: product.end_at,
+                product_url: product.product_url,
+                image_url: product.image_url,
+                category: product.link,
+                store: 'iki'
+            };
+        });
         await axios.post('http://127.0.0.1/api/scrapers', data);
     } catch (error) {
         console.error('Error posting products:', error.message);

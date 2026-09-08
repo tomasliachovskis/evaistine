@@ -5,6 +5,20 @@ import axios from "axios";
 
 puppeteer.use(StealthPlugin());
 
+// Norfa's .c-more-info__content packs the real per-kg/l/vnt price together
+// with validity dates and sometimes a second, different per-use metric (e.g.
+// "0,08 Eur/skalb." = per wash for detergent) in one string, e.g.
+// "54 Eur/l, 0,08 Eur/skalb. Galioja 09 03-09 16 d." — only kg/l/vnt is our
+// unit price; "skalb." and any other suffix is intentionally not matched.
+const parseUnitPrice = (text) => {
+    if (!text) return null;
+    const match = text.replace(/\s+/g, ' ').match(/([\d.,]+)\s*Eur\s*\/\s*(kg|l|vnt)\.?/i);
+    if (!match) return null;
+    const price = parseFloat(match[1].replace(',', '.'));
+    if (!price || price <= 0) return null;
+    return { price, basis: match[2].toLowerCase() };
+};
+
 (async () => {
     const systemChromePath = '/usr/bin/google-chrome';
     const chromePath = `${process.env.HOME}/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome`;
@@ -46,8 +60,15 @@ puppeteer.use(StealthPlugin());
     const filePath = 'https://www.norfa.lt/akciju-puslapiai/praktiski-pasiulymai';
     await page.goto(filePath, { waitUntil: 'domcontentloaded' });
 
-    await page.waitForSelector('#gdpr-cookie-accept', { timeout: 5000 });
-    await page.click('#gdpr-cookie-accept'); // Click the button
+    // The cookie consent banner no longer appears on every visit (confirmed
+    // live 2026-09-07 — norfa.lt stopped showing it, likely a site change,
+    // not something scraper-side) — don't hard-fail the whole run over it.
+    try {
+        await page.waitForSelector('#gdpr-cookie-accept', { timeout: 5000 });
+        await page.click('#gdpr-cookie-accept');
+    } catch (e) {
+        console.log('No cookie consent banner shown, continuing without it.');
+    }
 
     await page.waitForSelector('div.c-discount-item-list', { timeout: 5000 });
     await sleep(5000);
@@ -64,6 +85,7 @@ puppeteer.use(StealthPlugin());
             const discounted_price = (block.querySelector('.c-product__price')?.textContent.trim() ?? '').replace('€', '').trim();
             const original_price = (block.querySelector('.c-product__old-price')?.textContent.trim() ?? '').replace('€', '').trim();
             let valid = block.querySelector('.c-more-info__content')?.textContent.trim() ?? '';
+            const rawMoreInfo = valid;
 
             if (valid.includes("\n")) {
                 const parts = valid.split("\n");
@@ -110,8 +132,15 @@ puppeteer.use(StealthPlugin());
                 product_url,
                 image_url,
                 info,
+                rawMoreInfo,
             };
         }));
+    });
+
+    productBlocks.forEach(product => {
+        const unit = parseUnitPrice(product.rawMoreInfo);
+        product.unitPrice = unit?.price ?? null;
+        product.unitPriceBasis = unit?.basis ?? null;
     });
 
     try {
@@ -124,6 +153,8 @@ puppeteer.use(StealthPlugin());
                 ? JSON.stringify(product.info)
                 : '',
             discount_percent: product.discount_percent,
+            unit_price: product.unitPrice,
+            unit_price_basis: product.unitPriceBasis,
             start_at: product.start_at,
             end_at: product.end_at,
             product_url: product.product_url,

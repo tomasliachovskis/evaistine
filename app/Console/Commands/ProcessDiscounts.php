@@ -12,6 +12,7 @@ use App\Models\Store;
 use App\Rules\StoreRules\AibeRules;
 use App\Rules\StoreRules\CiaRules;
 use App\Rules\StoreRules\EpromoRules;
+use App\Rules\StoreRules\PromoCashCarryRules;
 use App\Rules\StoreRules\ExpressMarketRules;
 use App\Rules\StoreRules\GrusteRules;
 use App\Rules\StoreRules\GulbeleRules;
@@ -236,6 +237,14 @@ class ProcessDiscounts extends Command
         $normalizedOriginalPrice = $rules->normalizePrice($tempDiscount->original_price);
         $normalizedDiscountedPrice = $rules->normalizePrice($tempDiscount->discounted_price);
 
+        [$normalizedUnitPrice, $normalizedUnitPriceBasis, $unitPriceEstimated] = $this->resolveUnitPrice(
+            $rules->normalizePrice($tempDiscount->unit_price),
+            $tempDiscount->unit_price_basis,
+            (bool) $tempDiscount->unit_price_estimated,
+            $packSize,
+            $normalizedDiscountedPrice
+        );
+
         $discountPercent = $tempDiscount->discount_percent;
         $normalizedDiscount = $rules->normalizeDiscount($discountPercent);
 
@@ -338,6 +347,9 @@ class ProcessDiscounts extends Command
             $discountPercent,
             $normalizedCondition,
             $normalizedInfo,
+            $normalizedUnitPrice,
+            $normalizedUnitPriceBasis,
+            $unitPriceEstimated,
             $startAt,
             $endAt
         ) {
@@ -350,6 +362,9 @@ class ProcessDiscounts extends Command
                 'discount_percent' => $discountPercent,
                 'condition' => $normalizedCondition,
                 'info' => $normalizedInfo,
+                'unit_price' => $normalizedUnitPrice,
+                'unit_price_basis' => $normalizedUnitPriceBasis,
+                'unit_price_estimated' => $unitPriceEstimated,
                 'card' => $tempDiscount->card,
                 'start_at' => $startAt,
                 'end_at' => $endAt,
@@ -360,6 +375,78 @@ class ProcessDiscounts extends Command
         $this->touchedStoreIds[$store->id] = true;
 
         return true;
+    }
+
+    /**
+     * Prefers the store's own printed/scraped per-unit price. Falls back to
+     * computing it from the already-extracted pack size (price ÷ quantity)
+     * only when the source didn't provide one — e.g. Thomas Philipps (never
+     * publishes it anywhere) or Vynoteka's flyer (its live site does, but
+     * the printed flyer doesn't). See CLAUDE.md "Unit price normalization".
+     *
+     * @return array{0: ?float, 1: ?string, 2: bool} [unit_price, basis, estimated]
+     */
+    private function resolveUnitPrice(
+        ?float $scrapedUnitPrice,
+        ?string $scrapedBasis,
+        bool $scrapedEstimatedFlag,
+        ?string $packSize,
+        ?float $price
+    ): array {
+        $normalizedBasis = $this->normalizeUnitBasis($scrapedBasis);
+
+        if ($scrapedUnitPrice !== null && $scrapedUnitPrice > 0 && $normalizedBasis !== null) {
+            return [round($scrapedUnitPrice, 2), $normalizedBasis, $scrapedEstimatedFlag];
+        }
+
+        $computed = $this->computeUnitPriceFromPackSize($packSize, $price);
+        if ($computed !== null) {
+            return [$computed['price'], $computed['basis'], true];
+        }
+
+        return [null, null, false];
+    }
+
+    private function normalizeUnitBasis(?string $basis): ?string
+    {
+        if (empty($basis)) {
+            return null;
+        }
+
+        $basis = mb_strtolower(trim($basis), 'UTF-8');
+        $basis = rtrim($basis, '.');
+
+        return in_array($basis, ['kg', 'l', 'vnt'], true) ? $basis : null;
+    }
+
+    /**
+     * @return array{basis: string, price: float}|null
+     */
+    private function computeUnitPriceFromPackSize(?string $packSize, ?float $price): ?array
+    {
+        if (empty($packSize) || empty($price) || $price <= 0) {
+            return null;
+        }
+
+        if (!preg_match('/^(\d+(?:\.\d+)?)\s*(kg|g|ml|l|vnt)$/ui', trim($packSize), $matches)) {
+            return null;
+        }
+
+        $qty = (float) $matches[1];
+        $unit = mb_strtolower($matches[2]);
+
+        if ($qty <= 0) {
+            return null;
+        }
+
+        return match ($unit) {
+            'g' => ['basis' => 'kg', 'price' => round($price / ($qty / 1000), 2)],
+            'kg' => ['basis' => 'kg', 'price' => round($price / $qty, 2)],
+            'ml' => ['basis' => 'l', 'price' => round($price / ($qty / 1000), 2)],
+            'l' => ['basis' => 'l', 'price' => round($price / $qty, 2)],
+            'vnt' => ['basis' => 'vnt', 'price' => round($price / $qty, 2)],
+            default => null,
+        };
     }
 
     private function findProductById(int $productId): ?Product
@@ -599,6 +686,8 @@ class ProcessDiscounts extends Command
                 return new ThomasPhilippsRules($tempDiscount);
             case 'ePromo':
                 return new EpromoRules($tempDiscount);
+            case 'Promo Cash&Carry':
+                return new PromoCashCarryRules($tempDiscount);
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
         }

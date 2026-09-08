@@ -16,6 +16,18 @@ const MAX_CONCURRENT_REQUESTS = 25;
 const REQUEST_DELAY = 300;
 const NAVIGATION_TIMEOUT = 10000;
 
+// Rimi prints its own real per-unit price as e.g. "0,59 €/kg" or "1,00 €/vnt."
+// in the same element we already scrape into `info` — parse it out into
+// structured fields instead of leaving it as unstructured text.
+const parseUnitPrice = (text) => {
+    if (!text) return null;
+    const match = text.replace(/\s+/g, ' ').trim().match(/([\d.,]+)\s*€\s*\/\s*(kg|l|vnt)\.?/i);
+    if (!match) return null;
+    const price = parseFloat(match[1].replace(',', '.'));
+    if (!price || price <= 0) return null;
+    return { price, basis: match[2].toLowerCase() };
+};
+
 const saveProgress = (pageNumber) => {
     // fs.writeFileSync(progressFile, JSON.stringify({ currentPage: pageNumber }, null, 2));
 };
@@ -276,6 +288,8 @@ const postBatchToAPI = async (products) => {
         start_at: p.start_at,
         end_at: p.end_at,
         info: p.info,
+        unit_price: p.unitPrice,
+        unit_price_basis: p.unitPriceBasis,
         condition: p.condition,
         card: p.card,
         brand: p.brand
@@ -476,6 +490,18 @@ const runScraper = async () => {
             console.log(`No products found on page ${currentPage}`);
             break;
         }
+
+        productBlocks.forEach(product => {
+            // `.price-per-unit` (pricePerUnit) was checked live and found to
+            // diverge from `.card__price-per` (info) on some products (e.g.
+            // a 12-roll toilet paper pack: info said 0,75 €/vnt., pricePerUnit
+            // said 0,39 €/vnt.) — info is the field with the "Kaina už
+            // vienetą:" prefix, the legally-mandated real unit price, so it's
+            // the only one trusted here.
+            const unit = parseUnitPrice(product.info);
+            product.unitPrice = unit?.price ?? null;
+            product.unitPriceBasis = unit?.basis ?? null;
+        });
 
         console.log(`Processing ${productBlocks.length} products from page ${currentPage}`);
 

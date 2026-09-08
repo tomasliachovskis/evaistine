@@ -7,6 +7,23 @@ puppeteer.use(StealthPlugin());
 
 const BASE_URL = 'https://www.thomas-philipps.lt';
 const STORE = 'Thomas Philipps';
+
+// Thomas Philipps mostly never prints a real unit price (checked live site +
+// flyer, see CLAUDE.md) — BUT ~3.3% of scraped rows do carry one in `info`,
+// e.g. "17 g (1 kg = 158,82)." or "Kiekis 750 ml (1 l = 4,04)." — no currency
+// symbol shown, implied same as the product's own price. Parse it when
+// present; ProcessDiscounts' pack-size fallback covers every other row.
+// Requires a leading digit (not just punctuation) so a broken/placeholder
+// value like "(1 l = –,42)" (seen live, a literal en-dash, no real number)
+// is safely skipped rather than misread as 0.42.
+const parseUnitPrice = (text) => {
+    if (!text) return null;
+    const match = text.match(/1\s*(kg|l)\s*=\s*(\d+(?:[.,]\d+)?)/i);
+    if (!match) return null;
+    const price = parseFloat(match[2].replace(',', '.'));
+    if (!price || price <= 0) return null;
+    return { price, basis: match[1].toLowerCase() };
+};
 const CATEGORY_PATHS = [
     'svaros-prekes',
     'maisto-prekes',
@@ -249,19 +266,24 @@ const enrichCategories = async (products, fallbackCategory) => {
             console.log(`Total ${totalProducts}`);
 
             try {
-                const data = enrichedProducts.map(product => ({
-                    name: product.name,
-                    discounted_price: product.discounted_price,
-                    original_price: product.original_price,
-                    discount_percent: product.discount_percent,
-                    info: product.info,
-                    start_at,
-                    end_at,
-                    product_url: product.product_url,
-                    image_url: product.image_url,
-                    category: product.category,
-                    store: STORE,
-                }));
+                const data = enrichedProducts.map(product => {
+                    const unit = parseUnitPrice(product.info);
+                    return {
+                        name: product.name,
+                        discounted_price: product.discounted_price,
+                        original_price: product.original_price,
+                        discount_percent: product.discount_percent,
+                        info: product.info,
+                        unit_price: unit?.price ?? null,
+                        unit_price_basis: unit?.basis ?? null,
+                        start_at,
+                        end_at,
+                        product_url: product.product_url,
+                        image_url: product.image_url,
+                        category: product.category,
+                        store: STORE,
+                    };
+                });
                 await axios.post('http://127.0.0.1/api/scrapers', data);
                 console.log(`Posted ${data.length} products from ${categoryPath} page ${currentPage} to API`);
             } catch (error) {

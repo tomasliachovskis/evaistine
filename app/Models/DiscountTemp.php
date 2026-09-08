@@ -30,5 +30,8 @@ class DiscountTemp extends Model
         'processed',
         'box',
         'page_image_path',
+        'unit_price',
+        'unit_price_basis',
+        'unit_price_estimated',
     ];
 }

@@ -270,11 +270,29 @@ class PdfFlyerProcessingService
                         Log::channel('flyer')->info("Page {$pageNumber} converted with default quality (resolution method not available)");
                     }
                 } catch (\Exception $e) {
-                    Log::channel('flyer')->warning('Failed to set resolution, trying default quality', [
+                    // Spatie's Pdf::saveImage() always calls
+                    // mergeImageLayers(LAYERMETHOD_FLATTEN), even for a
+                    // single-frame page where it's a no-op — for some PDFs
+                    // (confirmed live on a real Gulbelė flyer) that call
+                    // alone throws Imagick's "cache resources exhausted"
+                    // at 300 DPI, while a plain readImage()+writeImage()
+                    // of the exact same page succeeds immediately. Retry
+                    // once via direct Imagick, skipping the merge, before
+                    // falling back to Spatie's default-quality attempt.
+                    Log::channel('flyer')->warning('Spatie PDF conversion failed, retrying with direct Imagick (no layer flatten)', [
                         'error' => $e->getMessage(),
                         'page' => $pageNumber
                     ]);
-                    $pdf->setPage($pageNumber)->saveImage($tempImagePath);
+
+                    try {
+                        $this->convertPdfPageDirectly($pdfPath, $pageNumber, $tempImagePath, 300);
+                    } catch (\Exception $directException) {
+                        Log::channel('flyer')->warning('Direct Imagick fallback also failed, trying default quality', [
+                            'error' => $directException->getMessage(),
+                            'page' => $pageNumber
+                        ]);
+                        $pdf->setPage($pageNumber)->saveImage($tempImagePath);
+                    }
                 }
 
                 if (file_exists($tempImagePath)) {
@@ -295,7 +313,14 @@ class PdfFlyerProcessingService
                     ]);
 
                     $processedImagePath = $this->preprocessImage($tempImagePath, $processId, $pageNumber);
-                    $storagePath = $storageDir . '/' . $uniqueFilename;
+                    // preprocessImage() can return a .jpg path instead of the
+                    // expected .png (see its oversized-PNG fallback) — name
+                    // the stored file to match what it actually produced,
+                    // instead of always reusing the .png $uniqueFilename.
+                    $processedFilename = pathinfo($processedImagePath, PATHINFO_EXTENSION) === pathinfo($uniqueFilename, PATHINFO_EXTENSION)
+                        ? $uniqueFilename
+                        : pathinfo($uniqueFilename, PATHINFO_FILENAME) . '.' . pathinfo($processedImagePath, PATHINFO_EXTENSION);
+                    $storagePath = $storageDir . '/' . $processedFilename;
                     Storage::disk('public')->put($storagePath, file_get_contents($processedImagePath));
 
                     $imageUrl = Storage::disk('public')->url($storagePath);
@@ -342,6 +367,29 @@ class PdfFlyerProcessingService
         }
     }
 
+    /**
+     * Fallback used when Spatie's Pdf::saveImage() throws (see call site) —
+     * converts a single PDF page to an image via Imagick directly, skipping
+     * the mergeImageLayers(LAYERMETHOD_FLATTEN) call that's unconditional in
+     * Spatie's wrapper. Safe to skip: a page that decodes to a single frame
+     * (the normal case) has nothing to flatten anyway.
+     */
+    private function convertPdfPageDirectly(string $pdfPath, int $pageNumber, string $outputPath, int $resolution): void
+    {
+        $imagick = new \Imagick();
+        $imagick->setResolution($resolution, $resolution);
+        $imagick->readImage($pdfPath . '[' . ($pageNumber - 1) . ']');
+
+        if ($imagick->getNumberImages() > 1) {
+            $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+        }
+
+        $imagick->setImageFormat('png');
+        $imagick->writeImage($outputPath);
+        $imagick->clear();
+        $imagick->destroy();
+    }
+
     private function preprocessImage(string $imagePath, string $processId, int $pageNumber): string
     {
         $outputPath = storage_path('app/temp/flyers/' . $processId . '_page_' . $pageNumber . '_processed.png');
@@ -358,6 +406,27 @@ class PdfFlyerProcessingService
             $image->sharpen(10);
 
             $image->save($outputPath);
+
+            // greyscale()+sharpen() can turn a plain-looking source (a
+            // textured/watermarked background, confirmed live on a real
+            // Gulbelė flyer) into something PNG compresses far worse than
+            // the original — one real case went 4.9MB -> 26.5MB. That
+            // oversized payload is a likely cause of the Gemini API call
+            // timing out ("HTTP 503: Deadline expired") on otherwise-valid
+            // pages. Re-encode as JPEG (much smaller for this kind of
+            // content, and perfectly fine for OCR/vision purposes) if the
+            // PNG came out unreasonably large.
+            if (filesize($outputPath) > 10 * 1024 * 1024) {
+                $jpegPath = storage_path('app/temp/flyers/' . $processId . '_page_' . $pageNumber . '_processed.jpg');
+                $image->save($jpegPath, quality: 85);
+                Log::channel('flyer')->warning('Preprocessed PNG was oversized, re-encoded as JPEG', [
+                    'png_size' => filesize($outputPath),
+                    'jpg_size' => filesize($jpegPath),
+                    'page' => $pageNumber
+                ]);
+                unlink($outputPath);
+                $outputPath = $jpegPath;
+            }
 
             Log::channel('flyer')->info("Image preprocessed successfully", [
                 'original' => $imagePath,
@@ -413,6 +482,12 @@ class PdfFlyerProcessingService
             }
 
             $imageBase64 = base64_encode($imageContent);
+            // Was hardcoded to 'image/png' regardless of the file's actual
+            // encoding — harmless while preprocessImage() only ever wrote
+            // PNGs, but broke once it started re-encoding oversized outputs
+            // as JPEG (see preprocessImage()): Gemini was sent real JPEG
+            // bytes labeled as image/png, which is a very plausible cause of
+            // the "HTTP 503: Deadline expired" failures seen on those pages.
             $mimeType = 'image/png';
 
             $estimatedPromptTokens = (int)(strlen($fullPrompt) / 4);
@@ -423,6 +498,9 @@ class PdfFlyerProcessingService
                 if ($imageInfo) {
                     $imageWidth = $imageInfo[0];
                     $imageHeight = $imageInfo[1];
+                    if (!empty($imageInfo['mime'])) {
+                        $mimeType = $imageInfo['mime'];
+                    }
                 }
             } catch (\Exception $e) {
             }
@@ -837,6 +915,8 @@ class PdfFlyerProcessingService
                     'condition' => $discount['c'] ?? null,
                     'card' => $discount['card'] ?? false,
                     'info' => $discount['info'] ?? null,
+                    'unit_price' => $discount['up'] ?? null,
+                    'unit_price_basis' => $discount['ub'] ?? null,
                     'exclusion_markers' => $discount['em'] ?? [],
                     'start_at' => $discount['sa'] ?? null,
                     'end_at' => $discount['ea'] ?? null,
@@ -868,10 +948,12 @@ Return ONLY valid JSON using SHORT field names.
 * box = bounding box [ymin, xmin, ymax, xmax] (normalized 0-1000)
 * b = brand
 * desc = short description
-* info = small descriptive text after product name (weight, fat %, packaging, type, price/kg). Separate items with commas.
+* info = small descriptive text after product name (weight, fat %, packaging, type). Separate items with commas. Do NOT put the per-unit price here — use up/ub instead.
 * op = original_price
 * dp = discounted_price
 * dpct = discount_percent
+* up = unit_price — the per-kg/per-l/per-piece reference price, printed near the main price, e.g. "1 kg = 3,41 €", "9,98 € / kg", "0,33 €/vnt.". Extract ONLY the number. Do NOT calculate this yourself from other numbers — copy it only if actually printed on the page.
+* ub = unit_price_basis — the unit that up is priced per: exactly one of "kg", "l", or "vnt" (normalize "vnt.", "vieneto" etc. to "vnt"; normalize "l."/"ltr" to "l"). null if up is null.
 * c = promotion condition
 * card = loyalty card required
 * em = exclusion markers
@@ -911,6 +993,7 @@ SAFETY MARGIN: If unsure, use a wider margin to ensure no part of any product or
 * dp (discounted_price): Large prominent price.
 * op (original_price): Price with a strikethrough.
 * dpct: Extract ONLY if "%" symbol is visible. Do NOT calculate.
+* up/ub (unit_price/unit_price_basis): Only extract if a per-kg/per-l/per-piece reference price is actually printed near the price (commonly small text like "1 kg = 3,41 €" or "9,98 € / kg"). Most products do NOT have this — leave both null rather than guessing or computing one.
 * c (promotion condition): Extract text like "1+1", "2 už", "Antras pigiau" exactly as shown.
 
 ### GENERAL RULES
@@ -937,6 +1020,8 @@ Return ONLY valid JSON. No explanations. No markdown.
      "op": null,
      "dp": null,
      "dpct": null,
+     "up": null,
+     "ub": null,
      "c": null,
      "card": false,
      "em": [],
@@ -1045,6 +1130,8 @@ Return ONLY valid JSON. No explanations. No markdown.
                     'condition' => $validated['condition'] ?? null,
                     'card' => $validated['card'] ?? false,
                     'info' => $validated['info'] ?? null,
+                    'unit_price' => $validated['unit_price'] ?? null,
+                    'unit_price_basis' => $validated['unit_price_basis'] ?? null,
                     'start_at' => $productStartAt ?: now(),
                     'end_at' => $productEndAt ?: now()->addDays(7),
                     'processed' => false,
@@ -1108,8 +1195,18 @@ Return ONLY valid JSON. No explanations. No markdown.
             'condition' => isset($data['condition']) && !empty($data['condition']) ? trim($data['condition']) : null,
             'card' => isset($data['card']) && (bool)$data['card'],
             'info' => !empty($data['info']) ? trim($data['info']) : null,
+            'unit_price' => $this->parsePrice($data['unit_price'] ?? null) ?: null,
+            'unit_price_basis' => $this->normalizeUnitPriceBasis($data['unit_price_basis'] ?? null),
             'box' => $box,
         ];
+
+        // Only trust the pair together — a basis with no price (or vice
+        // versa) is meaningless and would otherwise pass through as a
+        // half-populated, unusable row.
+        if ($validated['unit_price'] === null || $validated['unit_price_basis'] === null) {
+            $validated['unit_price'] = null;
+            $validated['unit_price_basis'] = null;
+        }
 
         $hasPrices = $validated['original_price'] > 0 || $validated['discounted_price'] > 0;
         $hasDiscountPercent = !empty($validated['discount_percent']);
@@ -1148,5 +1245,17 @@ Return ONLY valid JSON. No explanations. No markdown.
         }
 
         return 0.0;
+    }
+
+    private function normalizeUnitPriceBasis($basis): ?string
+    {
+        if (empty($basis) || !is_string($basis)) {
+            return null;
+        }
+
+        $basis = mb_strtolower(trim($basis), 'UTF-8');
+        $basis = rtrim($basis, '.');
+
+        return in_array($basis, ['kg', 'l', 'vnt'], true) ? $basis : null;
     }
 }

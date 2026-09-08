@@ -25,7 +25,10 @@ class Discount extends Model
         'start_at',
         'end_at',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'unit_price',
+        'unit_price_basis',
+        'unit_price_estimated',
     ];
 
     protected $casts = [
@@ -35,6 +38,8 @@ class Discount extends Model
         'discount_percent' => 'float',
         'end_at' => 'datetime',
         'start_at' => 'datetime',
+        'unit_price' => 'float',
+        'unit_price_estimated' => 'boolean',
     ];
 
     protected static function booted()

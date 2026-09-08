@@ -5,6 +5,20 @@ import axios from 'axios';
 
 puppeteer.use(StealthPlugin());
 
+// Lidl prints its own real per-unit price in the same footer element already
+// scraped into `info`, e.g. "400 g pakuotė / 1 kg = 9,98 €" or
+// "0,75 l / 1 l = 8,33 €" — parse the "1 <unit> = X €" part out. Loose-weight
+// items (already priced per kg) just show "1 kg" or "1 vnt." with no "=",
+// which correctly yields no match here.
+const parseUnitPrice = (text) => {
+    if (!text) return null;
+    const match = text.replace(/\s+/g, ' ').match(/1\s*(kg|l|vnt)\.?\s*=\s*([\d.,]+)\s*€/i);
+    if (!match) return null;
+    const price = parseFloat(match[2].replace(',', '.'));
+    if (!price || price <= 0) return null;
+    return { price, basis: match[1].toLowerCase() };
+};
+
 (async () => {
     const systemChromePath = '/usr/bin/google-chrome';
     const chromePath = `${process.env.HOME}/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome`;
@@ -42,15 +56,18 @@ puppeteer.use(StealthPlugin());
     const page = await browser.newPage();
     const sleep = ms => new Promise(res => setTimeout(res, ms));
 
-    // The offset query param doesn't paginate server-side (same underlying
-    // listing either way) but it DOES seed how many virtualized placeholder
-    // slots the page renders up front — starting from offset=90 pre-seeds
-    // almost the full ~95-item list's height, so scrolling down alone lazy-
-    // loads real content into nearly every slot without ever needing to click
-    // "Daugiau produktų" (which is what triggers the site's anti-bot rate
-    // limiting after a couple of quick clicks — endless skeleton placeholders).
+    // Used to carry an &offset=90 param to pre-seed virtualized placeholder
+    // slots without clicking "Daugiau produktų" (which triggers anti-bot rate
+    // limiting after a couple of quick clicks). That param now makes Lidl's
+    // search backend return "Atsiprašome, pagal jūsų užklausą nieko nerasta"
+    // (nothing found) — reproduced live 2026-09-07, site-side change, not
+    // something on our end. Confirmed live that the plain empty-query URL
+    // still reports the real total via .s-load-more__text ("48/48 produktas")
+    // and that the existing scroll-until-stable loop below (checked against
+    // that same counter) fills in every virtualized card without needing the
+    // offset trick or ever hitting the load-more button.
     const offers = [
-        'https://www.lidl.lt/q/search?q=&offset=90',
+        'https://www.lidl.lt/q/search?q=',
     ];
 
     let allProducts = new Map();
@@ -191,7 +208,15 @@ puppeteer.use(StealthPlugin());
         const mergeProducts = (productBlocks) => {
             for (const product of productBlocks) {
                 const uniqueKey = `${product.name}-${product.discounted_price}-${product.start_at}-${product.end_at}`;
-                if (!allProducts.has(uniqueKey)) {
+                const existing = allProducts.get(uniqueKey);
+                // A card's data-gridbox-impression (category) attribute can
+                // still be empty on the read that happens right as a tile
+                // mounts during scrolling — keeping only the FIRST read of
+                // each product silently locked in that empty category
+                // forever (69 real Lidl products landed with category=NULL
+                // this way, which discounts:process excludes permanently).
+                // Prefer whichever read actually has a category.
+                if (!existing || (!existing.category && product.category)) {
                     allProducts.set(uniqueKey, product);
                 }
             }
@@ -313,22 +338,27 @@ puppeteer.use(StealthPlugin());
     const uniqueProducts = Array.from(allProducts.values());
 
     try {
-        const data = uniqueProducts.map(product => ({
-            name: product.name,
-            brand: product.brand,
-            discounted_price: product.discounted_price,
-            original_price: product.original_price,
-            info: product.info,
-            discount_percent: product.discount_percent,
-            start_at: product.start_at,
-            end_at: product.end_at,
-            valid: product.valid,
-            card: product.card,
-            product_url: product.product_url,
-            image_url: product.image_url,
-            category: product.category,
-            store: 'lidl'
-        }));
+        const data = uniqueProducts.map(product => {
+            const unit = parseUnitPrice(product.info);
+            return {
+                name: product.name,
+                brand: product.brand,
+                discounted_price: product.discounted_price,
+                original_price: product.original_price,
+                info: product.info,
+                unit_price: unit?.price ?? null,
+                unit_price_basis: unit?.basis ?? null,
+                discount_percent: product.discount_percent,
+                start_at: product.start_at,
+                end_at: product.end_at,
+                valid: product.valid,
+                card: product.card,
+                product_url: product.product_url,
+                image_url: product.image_url,
+                category: product.category,
+                store: 'lidl'
+            };
+        });
         await axios.post('http://127.0.0.1/api/scrapers', data);
     } catch (error) {
         console.error('Error posting products:', error.message);

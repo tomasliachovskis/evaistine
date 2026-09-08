@@ -103,6 +103,18 @@ puppeteer.use(StealthPlugin());
                     const card = json.extra?.is_with_card || false;
                     const info = `${json.comparative_unit_price}€/${json.comparative_unit}`;
 
+                    // Barbora's own real per-unit price is already structured
+                    // data in this same JSON blob (comparative_unit is "kg",
+                    // "l", or "vnt." with a trailing dot) — no text parsing
+                    // needed, just clean the unit string.
+                    const unitPrice = typeof json.comparative_unit_price === 'number' && json.comparative_unit_price > 0
+                        ? json.comparative_unit_price
+                        : null;
+                    const rawUnitBasis = json.comparative_unit
+                        ? String(json.comparative_unit).toLowerCase().replace(/\.$/, '')
+                        : null;
+                    const unitPriceBasis = ['kg', 'l', 'vnt'].includes(rawUnitBasis) ? rawUnitBasis : null;
+
                     // --- Shadow DOM logic ---
                     let conditionText = null;
                     const host = block.querySelector('.tw-h-full.tw-w-full > div.tw-h-full');
@@ -122,6 +134,8 @@ puppeteer.use(StealthPlugin());
                         discounted_price,
                         original_price,
                         info,
+                        unitPrice,
+                        unitPriceBasis,
                         discount_percent,
                         start_at,
                         end_at,
@@ -149,6 +163,8 @@ puppeteer.use(StealthPlugin());
                 discounted_price: product.discounted_price,
                 original_price: product.original_price,
                 card: product.card,
+                unit_price: product.unitPrice,
+                unit_price_basis: product.unitPriceBasis,
                 discount_percent: product.discount_percent,
                 start_at: product.start_at,
                 end_at: product.end_at,

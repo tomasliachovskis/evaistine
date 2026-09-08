@@ -5,6 +5,18 @@ import axios from 'axios';
 
 puppeteer.use(StealthPlugin());
 
+// Gulbelė prints its own real per-unit price as a clean, isolated string in
+// `.fract_price`, e.g. "7,62 €/kg" or "41,33 €/l" — already scraped into
+// `info` as-is, just needs parsing into structured fields too.
+const parseUnitPrice = (text) => {
+    if (!text) return null;
+    const match = text.replace(/\s+/g, ' ').match(/([\d.,]+)\s*€\s*\/\s*(kg|l|vnt)\.?/i);
+    if (!match) return null;
+    const price = parseFloat(match[1].replace(',', '.'));
+    if (!price || price <= 0) return null;
+    return { price, basis: match[2].toLowerCase() };
+};
+
 const MAX_CONCURRENT_REQUESTS = 12;
 const BASE_URL = 'https://gulbele.lt';
 const LISTING_URL = `${BASE_URL}/sumazinta-kaina?resultsPerPage=40`;
@@ -242,19 +254,24 @@ const cleanPrice = (value) => {
 
         if (enrichedProducts.length > 0) {
             try {
-                const data = enrichedProducts.map(product => ({
-                    name: product.name,
-                    brand: product.brand,
-                    discounted_price: product.discounted_price,
-                    original_price: product.original_price,
-                    info: product.info,
-                    start_at: product.start_at,
-                    end_at: product.end_at,
-                    product_url: product.product_url,
-                    image_url: product.image_url,
-                    category: product.category,
-                    store: STORE,
-                }));
+                const data = enrichedProducts.map(product => {
+                    const unit = parseUnitPrice(product.info);
+                    return {
+                        name: product.name,
+                        brand: product.brand,
+                        discounted_price: product.discounted_price,
+                        original_price: product.original_price,
+                        info: product.info,
+                        unit_price: unit?.price ?? null,
+                        unit_price_basis: unit?.basis ?? null,
+                        start_at: product.start_at,
+                        end_at: product.end_at,
+                        product_url: product.product_url,
+                        image_url: product.image_url,
+                        category: product.category,
+                        store: STORE,
+                    };
+                });
                 await axios.post('http://127.0.0.1/api/scrapers', data);
                 console.log(`Posted ${data.length} products from page ${currentPage} to API`);
             } catch (error) {

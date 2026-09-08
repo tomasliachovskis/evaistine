@@ -9,6 +9,20 @@ const BASE_URL = 'https://vynoteka.lt';
 const LISTING_URL = `${BASE_URL}/maistas`;
 const STORE = 'Vynoteka';
 
+// Vynoteka's live site shows its own real per-unit price in a separate
+// `.product-price--extra-small` block, already scraped into `info` as e.g.
+// "16.50 € /  Kg" or "0.05 € /  L" — parse it into structured fields too.
+// (Its printed flyer never shows this — confirmed separately — so this only
+// ever comes from the live-site scraper, not flyer extraction.)
+const parseUnitPrice = (text) => {
+    if (!text) return null;
+    const match = text.replace(/\s+/g, ' ').match(/([\d.,]+)\s*€\s*\/\s*(kg|l|vnt)\.?/i);
+    if (!match) return null;
+    const price = parseFloat(match[1].replace(',', '.'));
+    if (!price || price <= 0) return null;
+    return { price, basis: match[2].toLowerCase() };
+};
+
 const sleep = () => new Promise(res => setTimeout(res, Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000));
 
 // Product cards below the fold are lazy-loaded on scroll, so the listing must be
@@ -216,19 +230,24 @@ const cleanPrice = (value) => {
         console.log(`Total ${totalProducts}`);
 
         try {
-            const data = cleanedProducts.map(product => ({
-                name: product.name,
-                discounted_price: product.discounted_price,
-                original_price: product.original_price,
-                discount_percent: product.discount_percent,
-                info: product.info,
-                start_at,
-                end_at,
-                product_url: product.product_url,
-                image_url: product.image_url,
-                category: product.category,
-                store: STORE,
-            }));
+            const data = cleanedProducts.map(product => {
+                const unit = parseUnitPrice(product.info);
+                return {
+                    name: product.name,
+                    discounted_price: product.discounted_price,
+                    original_price: product.original_price,
+                    discount_percent: product.discount_percent,
+                    info: product.info,
+                    unit_price: unit?.price ?? null,
+                    unit_price_basis: unit?.basis ?? null,
+                    start_at,
+                    end_at,
+                    product_url: product.product_url,
+                    image_url: product.image_url,
+                    category: product.category,
+                    store: STORE,
+                };
+            });
             await axios.post('http://127.0.0.1/api/scrapers', data);
             console.log(`Posted ${data.length} products from page ${currentPage} to API`);
         } catch (error) {
