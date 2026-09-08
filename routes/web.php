@@ -7,6 +7,7 @@ use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LeafletController;
 use App\Http\Controllers\ListingDealsPartialController;
+use App\Http\Controllers\PriceIndexController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\StoreController;
@@ -28,6 +29,8 @@ Route::redirect('/kontaktai', '/apie#kontaktai', 301);
 
 Route::get('/naujienos', [BlogController::class, 'index']);
 Route::get('/naujienos/{slug}', [BlogController::class, 'show']);
+
+Route::get('/kainu-indeksas', [PriceIndexController::class, 'index']);
 
 Route::get('/robots.txt', [SitemapController::class, 'robots']);
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap']);

@@ -53,7 +53,7 @@
 
             <div class="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
                 @if (!empty($pages))
-                    <div class="order-2 min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white lg:order-1">
+                    <div class="order-1 min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white lg:order-1">
                         @foreach ($pages as $page)
                             <img
                                 src="{{ $page['image_url'] }}"
@@ -64,18 +64,18 @@
                         @endforeach
                     </div>
                 @elseif (!empty($flyer['image_url']))
-                    <div class="order-2 min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white lg:order-1">
+                    <div class="order-1 min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white lg:order-1">
                         <img src="{{ $flyer['image_url'] }}" alt="{{ $flyer['title'] }}" class="block h-auto w-full">
                     </div>
                 @else
-                    <div class="order-2 min-w-0 rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-600 lg:order-1">
+                    <div class="order-1 min-w-0 rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-600 lg:order-1">
                         Leidinio puslapiai dar ruošiami.
                         <a href="/leidinys/{{ $storeSlug }}" class="font-semibold text-dark-green">Grįžti į {{ $storeName }} leidinius</a>
                     </div>
                 @endif
 
-                <aside class="order-1 min-w-0 lg:order-2">
-                    <div class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px)+12px)] z-30 flex flex-col gap-3 sm:top-[calc(6.25rem+env(safe-area-inset-top,0px)+12px)]">
+                <aside class="order-2 min-w-0 lg:order-2">
+                    <div class="flex flex-col gap-3 lg:sticky lg:top-[calc(6.25rem+env(safe-area-inset-top,0px)+12px)]">
                         <div class="section-card">
                             <h2 class="section-heading mb-3">Kiti {{ $storeName }} leidiniai</h2>
                             @if ($otherLeaflets->isEmpty())
