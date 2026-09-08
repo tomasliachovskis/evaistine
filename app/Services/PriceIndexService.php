@@ -37,17 +37,33 @@ class PriceIndexService
      * potato crisps, 'obuoli' matched apple juice. generic_products already
      * solves exactly this curation problem (499 products, 33k+ real Product
      * rows matched to them) — reuse it instead of re-solving it here.
+     *
+     * Expanded 2026-09-08 from 16 to 34 items, modeled on pricer.lt's own
+     * monthly "pigiausias krepšelis" (cheapest-basket) price comparison —
+     * the closest thing to a standard reference basket for the LT market;
+     * taupulis.lt has no such fixed list, it's a pure live-discount
+     * aggregator. Every added slug was verified to exist in generic_products
+     * before adding — see conversation for the pricer.lt article cross-
+     * referenced against this table. Includes alcohol (alus, degtine) since
+     * pricer.lt's own basket does; drop those two if that's not wanted here.
      */
     private const CANDIDATE_ITEM_SLUGS = [
         'pienas', 'duona', 'kiausiniai', 'bulves', 'obuoliai', 'bananai',
         'morkos', 'svogunai', 'suris', 'jogurtas', 'sviestas', 'makaronai',
         'ryziai', 'aliejus', 'cukrus', 'miltai',
+        // pricer.lt "pigiausias krepšelis" additions:
+        'kefyras', 'varskei', 'grietine', 'desra', 'kiauliena', 'kumpis',
+        'vistienai', 'silke', 'zuvis', 'sokoladas', 'dribsniai', 'kava',
+        'arbata', 'batonas', 'sultys', 'pomidorai', 'alus', 'degtine',
     ];
 
     public const TRACKED_STORE_SLUGS = ['maxima', 'lidl', 'rimi', 'norfa', 'iki'];
 
     /**
-     * Extracts a trailing quantity+unit from a product name (e.g. "Pienas
+     * Last-resort fallback (see resolveUnitPrice() above, which is what
+     * callers actually use) for the rare Discount row where even
+     * ProcessDiscounts' pack-size-derived unit_price came up null — extracts
+     * a trailing quantity+unit from the product name instead (e.g. "Pienas
      * UHT, 3,2 %, 1 l" -> 1 l; "Duona JORĖ, 580 g" -> 580 g) and normalizes
      * to a price on a standard basis, so a 220g loaf and a 1kg loaf are
      * actually comparable — otherwise "cheapest" would just mean "smallest
@@ -84,6 +100,32 @@ class PriceIndexService
     }
 
     /**
+     * Prefers the store's own real (or pack-size-estimated — see
+     * ProcessDiscounts::resolveUnitPrice()) unit_price/unit_price_basis
+     * already stored on the Discount row over regex-parsing the product
+     * name — that name-parsing stopgap (parseUnitPrice() below) is now only
+     * a last resort for the rare row where even the pack-size fallback
+     * couldn't find a parseable quantity. 'vnt' is rescaled to this
+     * service's own '10vnt' basis (10x the per-unit price) to match
+     * parseUnitPrice()'s existing convention for count-based items.
+     *
+     * @return array{basis: string, unit_price: float}|null
+     */
+    private function resolveUnitPrice(Discount $row): ?array
+    {
+        if ($row->unit_price !== null && $row->unit_price > 0 && $row->unit_price_basis !== null) {
+            return match ($row->unit_price_basis) {
+                'kg' => ['basis' => 'kg', 'unit_price' => (float) $row->unit_price],
+                'l' => ['basis' => 'l', 'unit_price' => (float) $row->unit_price],
+                'vnt' => ['basis' => '10vnt', 'unit_price' => (float) $row->unit_price * 10],
+                default => null,
+            };
+        }
+
+        return $this->parseUnitPrice($row->product->name ?? '', (float) $row->discounted_price);
+    }
+
+    /**
      * For one generic product, the cheapest currently-active match per store,
      * by normalized unit price. Different matched products can use different
      * units (e.g. cheese sold by weight vs. by count) — to keep the
@@ -105,11 +147,11 @@ class PriceIndexService
             // basket entry is worse than no entry, exclude them.
             ->where('discounted_price', '>', 0)
             ->with('product:id,name')
-            ->get(['store_id', 'product_id', 'discounted_price']);
+            ->get(['store_id', 'product_id', 'discounted_price', 'unit_price', 'unit_price_basis']);
 
         $parsed = [];
         foreach ($rows as $row) {
-            $unit = $this->parseUnitPrice($row->product->name ?? '', (float) $row->discounted_price);
+            $unit = $this->resolveUnitPrice($row);
             if ($unit === null) {
                 continue;
             }
@@ -151,11 +193,14 @@ class PriceIndexService
     /**
      * Picks the $count candidate items with the best store coverage right
      * now and returns each item's per-store cheapest match (normalized unit
-     * price — see parseUnitPrice).
+     * price — see parseUnitPrice). Zero-coverage candidates are dropped
+     * regardless of $count, so defaulting to the full candidate pool size
+     * (see command default) shows every item that actually has real data
+     * this week, not an arbitrary top-N subset.
      *
      * @return array<string, array{name: string, basis: string, matches: array<int, array{store_id:int, product_id:int, price:float}>}>
      */
-    public function selectWeeklyBasket(int $count = 5): array
+    public function selectWeeklyBasket(int $count = 34): array
     {
         $storeIds = Store::whereIn('slug', self::TRACKED_STORE_SLUGS)->pluck('id')->all();
 
@@ -185,7 +230,7 @@ class PriceIndexService
      * Persists this week's basket as a snapshot (idempotent — replaces any
      * existing snapshot for the same ISO week so re-running is safe).
      */
-    public function snapshotThisWeek(int $itemCount = 5): PriceIndexSnapshot
+    public function snapshotThisWeek(int $itemCount = 34): PriceIndexSnapshot
     {
         $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
         $basket = $this->selectWeeklyBasket($itemCount);
@@ -284,7 +329,16 @@ class PriceIndexService
                 'unit_basis' => $entries->first()->unit_basis,
                 'cheapest_store' => $cheapest->store->name,
                 'cheapest_store_slug' => $cheapest->store->slug,
+                // The normalized €/kg-€/l-€/10vnt price — this is what
+                // decides "cheapest" (comparing raw prices across different
+                // pack sizes would be meaningless).
                 'cheapest_price' => (float) $cheapest->price,
+                // The real, actually-payable price for the exact matched
+                // pack — shown alongside the normalized price so a reader
+                // can sanity-check it against the real product (e.g. catch
+                // a scraped pack-size mismatch) instead of only ever seeing
+                // an abstract per-kg number.
+                'cheapest_raw_price' => (float) $cheapest->raw_price,
                 // Lets a reader verify this exact number against the real,
                 // live discount it came from — a citable index needs this,
                 // not just a store logo.
@@ -294,10 +348,15 @@ class PriceIndexService
                     : null,
                 // Every tracked store's own price for this item, in one row —
                 // the actual comparison a reader wants, not just the winner.
+                // Comparison itself always uses `price` (normalized); `raw_price`
+                // is display-only, for verifying the real product/pack.
                 'prices_by_store' => $trackedStores->mapWithKeys(function ($store) use ($entriesByStoreId) {
                     $entry = $entriesByStoreId->get($store->id);
 
-                    return [$store->slug => $entry ? (float) $entry->price : null];
+                    return [$store->slug => $entry ? [
+                        'price' => (float) $entry->price,
+                        'raw_price' => (float) $entry->raw_price,
+                    ] : null];
                 })->all(),
             ];
         })->values()->all();

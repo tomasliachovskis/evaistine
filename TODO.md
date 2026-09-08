@@ -15,9 +15,10 @@ done; add context/rationale inline rather than just a bare title.
       anywhere (checked live site + flyer) — pack-size-derived fallback
       (`ProcessDiscounts::resolveUnitPrice()`) covers it and any other row
       missing a real value. Not yet checked: Čia, Express Market, Koops,
-      Kubas (flyer-only stores, never tested). `PriceIndexService` still
-      needs wiring to prefer these new columns over its own name-regex
-      fallback (`parseUnitPrice()`) — not done yet.
+      Kubas (flyer-only stores, never tested). `PriceIndexService` now
+      wired (`resolveUnitPrice()`) to prefer these columns, falling back
+      to its own name-regex `parseUnitPrice()` only when a row has
+      neither.
 - [ ] **Image proxy for product photos**: product hero images hotlink the
       scraped store's own CDN (`DiscountResponseFormatter::resolveProductImageUrl()`)
       — no resize/WebP/local caching. Found via Clarity: LCP 3.5–7.8s on product
@@ -41,8 +42,30 @@ done; add context/rationale inline rather than just a bare title.
 - [ ] Decide a review/publish gate before this goes live in production nav —
       currently built and tested locally only, not deployed, not linked from
       anywhere on the site.
-- [ ] Revisit basket size/candidate list once unit pricing (above) lands —
-      cleaner per-unit prices might change which items get picked each week.
+- [x] **Expand candidate basket** (done 2026-09-08): `CANDIDATE_ITEM_SLUGS`
+      grown from 16 to 34 items, modeled on pricer.lt's own monthly
+      "pigiausias krepšelis" — see conversation for the cross-check against
+      `generic_products`. Also added real per-item payable price (not just
+      the normalized €/kg/l/10vnt figure) to the page's item table, so a
+      reader can sanity-check e.g. a suspiciously cheap normalized price
+      against the real product/pack.
+- [ ] **Maxima/Lidl/Rimi flyer backlog blocks real basket coverage**: checked
+      2026-09-08 — these 3 stores have 211/213/150 flyer pages respectively
+      already downloaded and page-image-converted (`StoreFlyer`/
+      `StoreFlyerPage`, `processing_status=ready`), but only a handful were
+      ever run through `PdfFlyerProcessingService::processPdf()`'s actual
+      Gemini discount extraction (Lidl 9, Rimi 16 — from manual testing
+      this session; Maxima 0). `ProcessPdfFlyerJob` (runs every minute) only
+      picks up *newly arriving* PDFs from `flyers-incoming/` — it does not
+      retroactively process this already-downloaded backlog, so it won't
+      fix itself. Confirmed live: of Maxima's 2918 active discounts matched
+      to a generic_product, only ~20 are food — the rest are non-food
+      (notebooks, shampoo, deodorant, cat food, diapers, sunscreen — a back-
+      to-school/hygiene sale wave), which is why Maxima/Lidl/Rimi basket
+      coverage is currently only 2/34, 3/34, 4/34 vs. Iki 23/34, Norfa
+      19/34. Running the 574-page backlog through real extraction (real
+      Gemini API cost/time) should substantially fill this gap — deferred,
+      not started.
 
 ## News articles (`/naujienos`)
 

@@ -147,14 +147,18 @@
                                         @endif
                                     </td>
                                     @foreach ($data['tracked_stores'] as $trackedStore)
-                                        @php $price = $item['prices_by_store'][$trackedStore['slug']] ?? null; @endphp
+                                        @php $entry = $item['prices_by_store'][$trackedStore['slug']] ?? null; @endphp
                                         <td class="py-2.5 pl-2 pr-3 text-right tabular-nums">
-                                            @if ($price !== null)
+                                            @if ($entry !== null)
                                                 <span @class([
                                                     'font-bold',
-                                                    'text-green' => $price === $item['cheapest_price'],
-                                                    'text-gray-700' => $price !== $item['cheapest_price'],
-                                                ])>{{ number_format($price, 2, ',', ' ') }}</span>
+                                                    'text-green' => $entry['price'] === $item['cheapest_price'],
+                                                    'text-gray-700' => $entry['price'] !== $item['cheapest_price'],
+                                                ])>{{ number_format($entry['price'], 2, ',', ' ') }}</span>
+                                                {{-- Real payable price for the matched pack, not just the
+                                                     abstract per-kg/l number above — lets a reader verify it
+                                                     against the actual product instead of trusting a bare ratio. --}}
+                                                <span class="block text-xs font-normal text-gray-400" title="Reali, sumokama kaina už šią konkrečią pakuotę">{{ number_format($entry['raw_price'], 2, ',', ' ') }} € pak.</span>
                                             @else
                                                 <span class="text-gray-300">—</span>
                                             @endif
