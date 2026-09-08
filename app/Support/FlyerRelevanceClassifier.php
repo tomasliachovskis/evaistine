@@ -53,6 +53,13 @@ class FlyerRelevanceClassifier
         // PriceIndexService::CANDIDATE_ITEM_SLUGS treating alus/degtinė as
         // distinct candidates already)
         'vyno', 'vynų', 'alkoholi', 'alaus katalogas', 'degtin',
+        // Maxima's "MAXIMOS leidinys SKONIŲ DIENOS" title reads as a general
+        // "taste days" food event but was confirmed live (2026-09-08, user
+        // inspected the actual extracted content) to be pure alcohol/wine —
+        // exclude this specific title even though bare 'skonio'/'skonių'
+        // stays an include keyword below for other stores' genuinely
+        // food-themed catalogs (e.g. Lidl "SKONIO ATRADIMAI").
+        'skonių dienos', 'skoniu dienos',
         // electronics / appliances / non-food durable goods
         'kompiuter', 'telefon', 'elektronik', 'buitinė technika',
         'žaislų', 'žaislai', 'drabuži', 'avalyn', 'baldų', 'baldai',
