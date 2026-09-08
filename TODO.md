@@ -15,7 +15,12 @@ done; add context/rationale inline rather than just a bare title.
       anywhere (checked live site + flyer) — pack-size-derived fallback
       (`ProcessDiscounts::resolveUnitPrice()`) covers it and any other row
       missing a real value. Not yet checked: Čia, Express Market, Koops,
-      Kubas (flyer-only stores, never tested). `PriceIndexService` now
+      Kubas — checked 2026-09-08: Koops and Kubas print real unit price
+      (Koops 12/16, Kubas 11/11 verified against the real flyer page);
+      Čia and Express Market don't (only pack sizes) — pack-size fallback
+      covers those two. No code changes needed, existing
+      `PdfFlyerProcessingService` already handles all 4 correctly.
+      `PriceIndexService` now
       wired (`resolveUnitPrice()`) to prefer these columns, falling back
       to its own name-regex `parseUnitPrice()` only when a row has
       neither.
