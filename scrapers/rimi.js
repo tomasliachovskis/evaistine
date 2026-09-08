@@ -18,14 +18,20 @@ const NAVIGATION_TIMEOUT = 10000;
 
 // Rimi prints its own real per-unit price as e.g. "0,59 €/kg" or "1,00 €/vnt."
 // in the same element we already scrape into `info` — parse it out into
-// structured fields instead of leaving it as unstructured text.
+// structured fields instead of leaving it as unstructured text. Also seen
+// live: "2,25 €/Pora" on multi-pack socks (188 rows/3 days) — a "pora"
+// (pair) is the same idea as "vnt" (price per one countable sub-unit inside
+// a multi-pack, e.g. 3 poros/3 pairs), just Rimi's own word for it on sock
+// listings specifically. Our schema/PriceIndexService only know kg/l/vnt,
+// so normalize it straight to 'vnt' rather than inventing a new basis.
 const parseUnitPrice = (text) => {
     if (!text) return null;
-    const match = text.replace(/\s+/g, ' ').trim().match(/([\d.,]+)\s*€\s*\/\s*(kg|l|vnt)\.?/i);
+    const match = text.replace(/\s+/g, ' ').trim().match(/([\d.,]+)\s*€\s*\/\s*(kg|l|vnt|pora)\.?/i);
     if (!match) return null;
     const price = parseFloat(match[1].replace(',', '.'));
     if (!price || price <= 0) return null;
-    return { price, basis: match[2].toLowerCase() };
+    const basis = match[2].toLowerCase() === 'pora' ? 'vnt' : match[2].toLowerCase();
+    return { price, basis };
 };
 
 const saveProgress = (pageNumber) => {

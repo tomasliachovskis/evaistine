@@ -237,11 +237,20 @@ class ProcessDiscounts extends Command
         $normalizedOriginalPrice = $rules->normalizePrice($tempDiscount->original_price);
         $normalizedDiscountedPrice = $rules->normalizePrice($tempDiscount->discounted_price);
 
+        // Some stores (seen live on Norfa) put the quantity only in the raw
+        // product name (e.g. "Slyvos, 1 kg") with `info` left completely
+        // empty, rather than in `info` like most others — composeDisplayName()
+        // below already extracts from the name for display purposes and
+        // prefers it over the info-derived size, but that name-derived size
+        // was never reused here, so these rows silently got no unit price at
+        // all despite a perfectly parseable "1 kg" sitting right in the name.
+        $packSizeForUnitPrice = $packSize ?? ProductPackSizeExtractor::extract($tempDiscount->name);
+
         [$normalizedUnitPrice, $normalizedUnitPriceBasis, $unitPriceEstimated] = $this->resolveUnitPrice(
             $rules->normalizePrice($tempDiscount->unit_price),
             $tempDiscount->unit_price_basis,
             (bool) $tempDiscount->unit_price_estimated,
-            $packSize,
+            $packSizeForUnitPrice,
             $normalizedDiscountedPrice
         );
 
