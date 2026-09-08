@@ -842,8 +842,19 @@ class ProcessDiscounts extends Command
             $currentWidth = $xmax - $xmin;
             $currentHeight = $ymax - $ymin;
 
-            $paddingX = ($currentWidth < 200) ? 50 : 10;
-            $paddingY = ($currentHeight < 200) ? 50 : 10;
+            // Was a flat 50/10 (size-dependent) to compensate for Gemini's
+            // boxes regularly under-extending on dense grid flyer pages.
+            // Switching the extraction model to gemini-3.5-flash (from
+            // 2.5-flash) fixed that at the source — its boxes are accurate
+            // enough that a plain 5% margin is already clean on every
+            // tested case, including the specific products (Gloria
+            // Classique, Schofferhofer, Hlebniy Dar, Voruta on a Maxima
+            // grid page) that motivated an earlier, much more complex
+            // neighbor-aware padding scheme. That scheme is gone — it was
+            // solving a 2.5-flash box-accuracy problem that no longer
+            // exists, and a flat percentage is simpler to reason about.
+            $paddingX = $currentWidth * 0.05;
+            $paddingY = $currentHeight * 0.05;
 
             $xmin = max(0, $xmin - $paddingX);
             $xmax = min(1000, $xmax + $paddingX);

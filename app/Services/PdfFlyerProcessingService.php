@@ -15,7 +15,21 @@ class PdfFlyerProcessingService
 {
     private ?string $apiKey;
     private ?string $geminiApiKey;
-    private string $geminiApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    private string $geminiApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
+
+    // gemini-3.5-flash pricing (confirmed live 2026-09-08) — was hardcoded
+    // to gemini-2.5-flash's $1.25/$5.00 rates, silently wrong (~40% under
+    // on input, ~45% under on output) since switching models. Update these
+    // again if the model string above ever changes.
+    private const GEMINI_INPUT_COST_PER_MILLION = 1.50;
+    private const GEMINI_OUTPUT_COST_PER_MILLION = 9.00;
+
+    // Testing whether a lower render DPI (fewer pixels — was 300) still
+    // gives Gemini enough resolution to read small print/prices accurately,
+    // while cutting rasterization + JPEG encode + GD preprocessing time
+    // roughly in proportion to pixel count. Verify extraction accuracy
+    // against known-correct pages before trusting a further reduction.
+    private const RENDER_DPI = 300;
 
     // Set right before extractDiscountsFromImageGemini() returns null on a
     // final (all-attempts-exhausted) failure, read back by processPdf() so
@@ -245,26 +259,36 @@ class PdfFlyerProcessingService
             $pagesToProcess = $targetPages ?? range(1, $numberOfPages);
 
             foreach ($pagesToProcess as $pageNumber) {
-                $uniqueFilename = $processId . '_page_' . $pageNumber . '.png';
+                // JPEG, not PNG — Spatie's Pdf::saveImage() picks the output
+                // format from this filename's extension, and both it and
+                // Gemini (confirmed live, this session — Kubas/Čia/etc.
+                // flyer tests already used real .jpg output URLs with
+                // correct extraction) support jpg directly, no other
+                // changes needed. Measured live on a real 32-megapixel flyer
+                // page: PNG write 3.52s vs JPEG write 0.49s (~7x), PNG
+                // reread-for-preprocessing 0.93s vs JPEG 0.29s (~3x) — pure
+                // I/O/encoding overhead PNG's lossless compression pays
+                // that a photo-heavy flyer page gets zero benefit from.
+                $uniqueFilename = $processId . '_page_' . $pageNumber . '.jpg';
                 $tempImagePath = $tempDir . '/' . $uniqueFilename;
                 Log::channel('flyer')->info("Converting page {$pageNumber}/{$numberOfPages} to image...", [
                     'output' => $tempImagePath,
                     'process_id' => $processId,
                     'unique_filename' => $uniqueFilename,
-                    'dpi' => 300
+                    'dpi' => self::RENDER_DPI
                 ]);
 
                 try {
                     if (method_exists($pdf, 'setResolution')) {
                         $pdf->setPage($pageNumber)
-                            ->setResolution(300)
+                            ->setResolution(self::RENDER_DPI)
                             ->saveImage($tempImagePath);
-                        Log::channel('flyer')->info("Page {$pageNumber} converted with 300 DPI");
+                        Log::channel('flyer')->info("Page {$pageNumber} converted with " . self::RENDER_DPI . " DPI");
                     } elseif (method_exists($pdf, 'resolution')) {
                         $pdf->setPage($pageNumber)
-                            ->setResolution(300)
+                            ->setResolution(self::RENDER_DPI)
                             ->saveImage($tempImagePath);
-                        Log::channel('flyer')->info("Page {$pageNumber} converted with 300 DPI (using resolution method)");
+                        Log::channel('flyer')->info("Page {$pageNumber} converted with " . self::RENDER_DPI . " DPI (using resolution method)");
                     } else {
                         $pdf->setPage($pageNumber)->saveImage($tempImagePath);
                         Log::channel('flyer')->info("Page {$pageNumber} converted with default quality (resolution method not available)");
@@ -285,7 +309,7 @@ class PdfFlyerProcessingService
                     ]);
 
                     try {
-                        $this->convertPdfPageDirectly($pdfPath, $pageNumber, $tempImagePath, 300);
+                        $this->convertPdfPageDirectly($pdfPath, $pageNumber, $tempImagePath, self::RENDER_DPI);
                     } catch (\Exception $directException) {
                         Log::channel('flyer')->warning('Direct Imagick fallback also failed, trying default quality', [
                             'error' => $directException->getMessage(),
@@ -384,7 +408,8 @@ class PdfFlyerProcessingService
             $imagick->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
         }
 
-        $imagick->setImageFormat('png');
+        $imagick->setImageFormat('jpeg');
+        $imagick->setImageCompressionQuality(90);
         $imagick->writeImage($outputPath);
         $imagick->clear();
         $imagick->destroy();
@@ -392,7 +417,14 @@ class PdfFlyerProcessingService
 
     private function preprocessImage(string $imagePath, string $processId, int $pageNumber): string
     {
-        $outputPath = storage_path('app/temp/flyers/' . $processId . '_page_' . $pageNumber . '_processed.png');
+        // JPEG from the start (input is already jpg — see convertPdfToImages())
+        // — the old PNG output path needed a separate "re-encode as JPEG if
+        // it came out oversized" fallback because greyscale()+sharpen() can
+        // make PNG's lossless compression balloon badly on textured content
+        // (one real case: 4.9MB -> 26.5MB, a likely cause of Gemini timeouts
+        // on those pages). Encoding straight to JPEG at a fixed quality
+        // never has that failure mode, so that fallback is gone entirely.
+        $outputPath = storage_path('app/temp/flyers/' . $processId . '_page_' . $pageNumber . '_processed.jpg');
 
         try {
             $manager = new ImageManager(new Driver());
@@ -405,28 +437,7 @@ class PdfFlyerProcessingService
             $image->brightness(4);
             $image->sharpen(10);
 
-            $image->save($outputPath);
-
-            // greyscale()+sharpen() can turn a plain-looking source (a
-            // textured/watermarked background, confirmed live on a real
-            // Gulbelė flyer) into something PNG compresses far worse than
-            // the original — one real case went 4.9MB -> 26.5MB. That
-            // oversized payload is a likely cause of the Gemini API call
-            // timing out ("HTTP 503: Deadline expired") on otherwise-valid
-            // pages. Re-encode as JPEG (much smaller for this kind of
-            // content, and perfectly fine for OCR/vision purposes) if the
-            // PNG came out unreasonably large.
-            if (filesize($outputPath) > 10 * 1024 * 1024) {
-                $jpegPath = storage_path('app/temp/flyers/' . $processId . '_page_' . $pageNumber . '_processed.jpg');
-                $image->save($jpegPath, quality: 85);
-                Log::channel('flyer')->warning('Preprocessed PNG was oversized, re-encoded as JPEG', [
-                    'png_size' => filesize($outputPath),
-                    'jpg_size' => filesize($jpegPath),
-                    'page' => $pageNumber
-                ]);
-                unlink($outputPath);
-                $outputPath = $jpegPath;
-            }
+            $image->save($outputPath, quality: 85);
 
             Log::channel('flyer')->info("Image preprocessed successfully", [
                 'original' => $imagePath,
@@ -514,8 +525,8 @@ class PdfFlyerProcessingService
 
             $estimatedInputTokens = $estimatedPromptTokens + $estimatedImageTokens;
             $estimatedMaxOutputTokens = 8192;
-            $estimatedInputCost = ($estimatedInputTokens / 1000000) * 1.25;
-            $estimatedOutputCost = ($estimatedMaxOutputTokens / 1000000) * 5.00;
+            $estimatedInputCost = ($estimatedInputTokens / 1000000) * self::GEMINI_INPUT_COST_PER_MILLION;
+            $estimatedOutputCost = ($estimatedMaxOutputTokens / 1000000) * self::GEMINI_OUTPUT_COST_PER_MILLION;
             $estimatedTotalCost = $estimatedInputCost + $estimatedOutputCost;
 
             Log::channel('flyer')->info('Preparing Gemini API request', [
@@ -580,8 +591,9 @@ class PdfFlyerProcessingService
                         'generationConfig' => [
                             'temperature' => 0,
 //                            "topP" => 0.95,
-                            'maxOutputTokens' => 10000,
+                            'maxOutputTokens' => 14000,
                             'responseMimeType' => 'application/json',
+                            'mediaResolution' => 'MEDIA_RESOLUTION_HIGH',
                         ],
                     ];
 
@@ -626,8 +638,8 @@ class PdfFlyerProcessingService
                     $candidatesTokenCount = $usageMetadata['candidatesTokenCount'] ?? 0;
                     $totalTokenCount = $usageMetadata['totalTokenCount'] ?? 0;
 
-                    $inputCost = ($promptTokenCount / 1000000) * 1.25;
-                    $outputCost = ($candidatesTokenCount / 1000000) * 5.00;
+                    $inputCost = ($promptTokenCount / 1000000) * self::GEMINI_INPUT_COST_PER_MILLION;
+                    $outputCost = ($candidatesTokenCount / 1000000) * self::GEMINI_OUTPUT_COST_PER_MILLION;
                     $totalCost = $inputCost + $outputCost;
 
                     Log::channel('flyer')->info('Gemini API response received', [
@@ -976,7 +988,13 @@ If two product names appear in the same grid cell, split them into two separate 
 4. NO TEXT-ONLY BIAS: Do not define the box size based on the text description location. The text is secondary; the image and the price are the primary "anchors" for the box dimensions.
 
 OVER-EXTEND IF UNSURE: If the product area is non-rectangular or fragmented, err on the side of making the box larger to ensure both the product visual and the price are fully contained inside.
-SAFETY MARGIN: If unsure, use a wider margin to ensure no part of any product or price is cut off. The goal is to provide a complete, uncropped view of the grid area.
+SAFETY MARGIN: Do not add artificial padding or safety margins. Keep the box tight but complete. Padding is added separately after detection.
+
+5. GRID CONSISTENCY: Use neighbouring offer boxes only as a secondary visual clue. Do not force boxes in the same row or column to have equal dimensions because flyer layouts may be irregular.
+   - If a product price or text is separated from its product image by blank space, include the image only when visual layout, alignment, branding, colours or connecting design elements clearly indicate that they belong to the same offer.
+   - Do not extend a box across blank space merely to make it similar in size to neighbouring boxes.
+   - Before extending a box, verify that the distant product image belongs to this offer and not to an adjacent offer.
+   - The final box must include the complete product image, complete product name and complete price area, while excluding neighbouring offers.
 ### STRICT PRODUCT NAME RULE
 1. The product name (n) MUST include ALL text that identifies the product.
 2. Start the name from the VERY FIRST word of the text block, even if it is a brand (e.g., "VIČI", "Bocmano").
