@@ -15,7 +15,9 @@ class ProcessRelevantFlyerBacklog extends Command
     protected $signature = 'flyers:process-relevant-backlog
                             {--stores= : Comma-separated store names (default: Maxima,Lidl,Rimi,Norfa,Iki,Aibė,Šilas)}
                             {--min-days-left=3 : Skip flyers already expired or expiring within this many days. A flyer with no valid_to at all is kept — we cannot tell it is expired.}
-                            {--dry-run : List what would be processed without calling Gemini}';
+                            {--dry-run : List what would be processed without calling Gemini}
+                            {--max-attempts=3 : Retry attempts per flyer for pages that failed (Gemini errors, timeouts)}
+                            {--retry-backoff=20 : Seconds to wait before retrying failed pages}';
 
     protected $description = 'Process the already-downloaded flyer backlog for the given stores, skipping non-food/chemistry catalogs (FlyerRelevanceClassifier) and expired/soon-expiring ones';
 
@@ -80,17 +82,49 @@ class ProcessRelevantFlyerBacklog extends Command
             return 0;
         }
 
+        $maxAttempts = max(1, (int) $this->option('max-attempts'));
+        $backoffSeconds = max(0, (int) $this->option('retry-backoff'));
+
         $touchedStores = [];
 
         foreach ($toProcess as $item) {
             $this->info("Processing [{$item['store']->name}] {$item['flyer']->title}...");
 
-            try {
-                $result = $service->processPdf($item['pdf_path'], $item['store']);
-                $this->info('  -> extracted=' . ($result['total_extracted'] ?? 0) . ' saved=' . ($result['count'] ?? 0) . ' success=' . (($result['success'] ?? false) ? 'yes' : 'no'));
-                $touchedStores[$item['store']->name] = true;
-            } catch (\Throwable $e) {
-                $this->error('  -> FAILED: ' . $e->getMessage());
+            $targetPages = null; // null = every page, first attempt
+            $seedValidityDates = null;
+            $totalSaved = 0;
+            $totalExtracted = 0;
+
+            for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+                try {
+                    $result = $service->processPdf($item['pdf_path'], $item['store'], $targetPages, $seedValidityDates);
+                } catch (\Throwable $e) {
+                    $this->error("  -> attempt {$attempt} FAILED: " . $e->getMessage());
+                    break;
+                }
+
+                $totalSaved += $result['count'] ?? 0;
+                $totalExtracted += $result['total_extracted'] ?? 0;
+                $seedValidityDates = $result['validity_dates'] ?? $seedValidityDates;
+                $failedPages = $result['failed_pages'] ?? [];
+
+                if (empty($failedPages)) {
+                    $this->info("  -> attempt {$attempt}: all pages OK, extracted={$totalExtracted} saved={$totalSaved}");
+                    $touchedStores[$item['store']->name] = true;
+                    break;
+                }
+
+                $this->warn('  -> attempt ' . $attempt . ': ' . count($failedPages) . ' page(s) failed (' . implode(', ', array_keys($failedPages)) . '), extracted so far=' . $totalExtracted . ' saved so far=' . $totalSaved);
+                $touchedStores[$item['store']->name] = true; // partial data may already be saved
+
+                if ($attempt === $maxAttempts) {
+                    $this->error('  -> giving up after ' . $maxAttempts . ' attempts, still failing: ' . implode(', ', array_keys($failedPages)));
+                    break;
+                }
+
+                $targetPages = array_keys($failedPages);
+                $this->line("  -> retrying {$backoffSeconds}s from now...");
+                sleep($backoffSeconds);
             }
         }
 
