@@ -70,15 +70,16 @@ export async function imagesToPdf(imageBuffers) {
     return Buffer.from(await pdfDoc.save());
 }
 
-// Pushes a just-saved PDF straight to production over SSH, the same way
-// deploy.sh's rsync does (same server, same key, same relative path under
-// storage/app/public/) — so a new leaflet reaches production within seconds
-// instead of waiting for the next full deploy. deploy.sh's own rsync still
-// covers this path too, as a fallback for whenever this fails (offline VPN,
-// key not present, transient network error) — it's logged, not thrown.
-async function syncPdfToProduction(relativePath) {
-    const localPath = path.join(PROJECT_ROOT, 'storage', 'app', 'public', relativePath);
-    const remotePath = `${PROD_REMOTE_DIR}/storage/app/public/${relativePath}`;
+// Pushes a local file straight to production over SSH/rsync — same server
+// and key deploy.sh already hardcodes. Used for two independent targets
+// after a successful submitFlyer (see below): the public/flyers/pdfs copy
+// (deploy.sh's own rsync covers that path too, as a fallback for whenever
+// this fails — offline VPN, key not present, transient network error) and
+// the flyers-incoming copy (deploy.sh has no fallback for that one — it only
+// rsyncs the repo's own storage/app/flyers-incoming, which is normally
+// empty locally, so this SSH push is the only way that file reaches
+// production short of a manual copy). Logged, not thrown, either way.
+async function syncFileToProduction(localPath, remotePath) {
     const remoteDir = path.dirname(remotePath).replace(/\\/g, '/');
 
     const deployKeyPath = path.join(PROJECT_ROOT, 'deploy_key');
@@ -94,10 +95,18 @@ async function syncPdfToProduction(relativePath) {
     try {
         await execFileAsync('ssh', [...sshOpts, PROD_SERVER, `mkdir -p '${remoteDir}'`]);
         await execFileAsync('rsync', ['-avz', '-e', sshCommand, localPath, `${PROD_SERVER}:${remotePath}`]);
-        console.log(`Synced ${relativePath} to production.`);
+        console.log(`Synced ${remotePath} to production.`);
+        return true;
     } catch (error) {
-        console.error(`Failed to sync ${relativePath} to production (will fall back to next deploy.sh run):`, error.message);
+        console.error(`Failed to sync ${remotePath} to production:`, error.message);
+        return false;
     }
+}
+
+async function syncPdfToProduction(relativePath) {
+    const localPath = path.join(PROJECT_ROOT, 'storage', 'app', 'public', relativePath);
+    const remotePath = `${PROD_REMOTE_DIR}/storage/app/public/${relativePath}`;
+    return syncFileToProduction(localPath, remotePath);
 }
 
 // Rebuilds an oversized source PDF (over the backend's 60MB cap — see
@@ -272,7 +281,21 @@ export async function submitFlyer({
     console.log(`[${store}] ${title || ''} (${validFrom} - ${validTo}): HTTP ${response.status}`, data);
 
     if (response.status === 201 && data?.slug && data?.store?.slug) {
-        await syncPdfToProduction(`flyers/pdfs/${data.store.slug}-${data.slug}.pdf`);
+        const pdfFilename = `${data.store.slug}-${data.slug}.pdf`;
+
+        // Two independent production consumers need this same PDF, at two
+        // different paths: storage/app/public/flyers/pdfs/ for the
+        // /leidinys page-viewer (flyers:process-pages --pending), and
+        // storage/app/flyers-incoming/ for the discount-extraction cron
+        // (ProcessPdfFlyerJob, runs every minute). The filename must start
+        // with the store's slug followed by "-" — PdfFlyerIncomingProcessor
+        // matches it against real store slugs, so this is safe even for
+        // multi-word slugs like "thomas-philipps".
+        await syncPdfToProduction(`flyers/pdfs/${pdfFilename}`);
+
+        const localPath = path.join(PROJECT_ROOT, 'storage', 'app', 'public', 'flyers', 'pdfs', pdfFilename);
+        const incomingRemotePath = `${PROD_REMOTE_DIR}/storage/app/flyers-incoming/${pdfFilename}`;
+        await syncFileToProduction(localPath, incomingRemotePath);
     }
 
     return data;

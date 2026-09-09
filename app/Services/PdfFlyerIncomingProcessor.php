@@ -193,7 +193,22 @@ class PdfFlyerIncomingProcessor
 
     private function extractStoreSlugFromPdfFilename(string $filename): string
     {
-        $basename = pathinfo($filename, PATHINFO_FILENAME);
+        $basename = strtolower(pathinfo($filename, PATHINFO_FILENAME));
+
+        // Match against real store slugs (longest first) rather than
+        // guessing from hyphen position — needed for multi-word slugs like
+        // "thomas-philipps" or "gintarine-vaistine", where splitting on the
+        // first hyphen (or stripping a trailing "-digits" suffix) would
+        // wrongly return just "thomas"/"gintarine", or truncate a numeric
+        // slug tail as if it were a flyer suffix.
+        $slugs = Store::query()->pluck('slug')->all();
+        usort($slugs, fn ($a, $b) => strlen($b) - strlen($a));
+
+        foreach ($slugs as $slug) {
+            if ($basename === $slug || str_starts_with($basename, $slug . '-')) {
+                return $slug;
+            }
+        }
 
         if (preg_match('/^(.+)-(\d+)$/u', $basename, $m)) {
             return strtolower($m[1]);
@@ -203,7 +218,7 @@ class PdfFlyerIncomingProcessor
             return strtolower($m[1]);
         }
 
-        return strtolower($basename);
+        return $basename;
     }
 
     private function emit(?callable $output, string $level, string $message = ''): void

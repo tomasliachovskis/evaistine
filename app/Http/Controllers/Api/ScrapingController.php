@@ -200,10 +200,13 @@ class ScrapingController extends Controller
         // this machine's own APP_URL (nuolaidos.wip locally — unreachable
         // for real site visitors) and the job would run against a local
         // queue with no worker, against a file production can't see. The
-        // PDF is saved at the normal conventional path so deploy.sh can
-        // rsync it to production; once it lands there, flyers:process-pages
-        // --pending finalizes pdf_url (using production's own APP_URL) and
-        // dispatches the job from production's own queue worker.
+        // PDF is saved at the normal conventional path; the calling
+        // scraper's submitFlyer() (scrapers/flyers/_shared.js) pushes it to
+        // production over SSH/rsync right after this response — NOT
+        // deploy.sh, which excludes storage/app/public/ entirely. Once it
+        // lands there, flyers:process-pages --pending finalizes pdf_url
+        // (using production's own APP_URL) and dispatches the job from
+        // production's own queue worker.
         $path = FlyerStorage::pdfPathForFlyer($store, $flyer->slug);
         Storage::disk('public')->put($path, file_get_contents($request->file('pdf')->getRealPath()));
 
