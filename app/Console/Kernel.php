@@ -101,6 +101,20 @@ class Kernel extends ConsoleKernel
             ->dailyAt('02:00')
             ->withoutOverlapping(120)
             ->environments(['production']);
+
+        // Hotlinked store-CDN product images hurt LCP (Clarity: 3.5-7.8s on
+        // product pages) — this re-serves them from local storage instead.
+        // Already scoped to only non-flyer products (image_from_flyer=false
+        // — flyer-cropped images are already ours, nothing to cache) and
+        // rate-limited per run (--sleep between downloads, its own
+        // Cache::lock overlap guard) to avoid hammering any single store's
+        // CDN. ~47k products still hotlinking as of 2026-09-09 — at
+        // limit=100 every 5 minutes that's ~28.8k/day, clearing the backlog
+        // in roughly 2 days, then just keeping up with new products.
+        $schedule->command('products:cache-images --limit=100 --sleep=300')
+            ->everyFiveMinutes()
+            ->withoutOverlapping(5)
+            ->environments(['production']);
     }
 
     /**
