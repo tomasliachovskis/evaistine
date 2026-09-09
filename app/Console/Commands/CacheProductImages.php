@@ -68,6 +68,15 @@ class CacheProductImages extends Command
             ->whereNotNull('image_url')
             ->where('image_url', 'like', 'http%')
             ->where('image_url', 'not like', "{$appUrl}/storage/%")
+            ->where(function ($query) {
+                // A failed download (dead link, timeout, store CDN blocking
+                // us) would otherwise get re-selected — and re-fail — on
+                // every run until fixed, wasting the batch's whole --limit
+                // on the same handful of stuck products instead of making
+                // progress on the rest. Back off for a day before retrying.
+                $query->whereNull('image_cache_failed_at')
+                    ->orWhere('image_cache_failed_at', '<', now()->subDay());
+            })
             ->limit($limit)
             ->get();
 
@@ -116,12 +125,13 @@ class CacheProductImages extends Command
                 $this->line("Cached #{$product->id} {$product->slug} -> {$storagePath}");
             } catch (\Throwable $e) {
                 $failed++;
+                $product->update(['image_cache_failed_at' => now()]);
                 Log::warning('CacheProductImages: failed to cache image', [
                     'product_id' => $product->id,
                     'image_url' => $product->image_url,
                     'error' => $e->getMessage(),
                 ]);
-                $this->warn("Failed #{$product->id} {$product->slug}: {$e->getMessage()} — leaving original hotlink in place");
+                $this->warn("Failed #{$product->id} {$product->slug}: {$e->getMessage()} — leaving original hotlink in place, won't retry for 24h");
             }
 
             if ($sleepMs > 0) {
