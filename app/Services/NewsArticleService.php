@@ -195,7 +195,17 @@ class NewsArticleService
                     // Pricer.lt is a direct competitor's own price index —
                     // don't draft our news content around promoting their
                     // product, however newsworthy the story itself is.
-                    if (stripos($title, 'pricer') !== false || stripos($snippet, 'pricer') !== false) {
+                    // Čepkauskas and Vizickas: per explicit instruction,
+                    // skip any story mentioning either name.
+                    $excludedKeywords = ['pricer', 'čepkauskas', 'vizickas'];
+                    $isExcluded = false;
+                    foreach ($excludedKeywords as $keyword) {
+                        if (mb_stripos($title, $keyword) !== false || mb_stripos($snippet, $keyword) !== false) {
+                            $isExcluded = true;
+                            break;
+                        }
+                    }
+                    if ($isExcluded) {
                         continue;
                     }
 
