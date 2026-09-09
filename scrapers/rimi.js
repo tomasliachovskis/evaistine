@@ -281,15 +281,43 @@ const checkValidDiscount = async (product) => {
     }
 };
 
+// `.card__price`/`.card__old-price` (the listing-page fallback, set at
+// product-block scrape time) can hold a container's whole textContent
+// rather than just the price when a product's detail-page visit later fails
+// (404 for a since-removed product, timeout, selector mismatch after a site
+// change) and scrapeProductDetails() returns the product untouched — e.g.
+// "11,99 €\n            už vnt.\n            \n    11\n        \n        99"
+// instead of a clean "11.99". Pull out the first real N,NN/N.NN price
+// pattern rather than trusting the raw string, so a garbled fallback never
+// reaches the API as a literal multi-line value.
+const extractPrice = (raw) => {
+    if (!raw) return null;
+    const match = String(raw).match(/(\d+)[.,](\d{2})/);
+    return match ? `${match[1]}.${match[2]}` : null;
+};
+
 const postBatchToAPI = async (products) => {
-    const data = products.map(p => ({
+    const cleaned = products.map(p => ({
+        ...p,
+        // labelPrice (major.cents from .price-label__price) is already
+        // clean when present — prefer it over the raw .card__price text.
+        discounted_price: extractPrice(p.labelPrice) || extractPrice(p.price),
+        original_price: extractPrice(p.price_before),
+    }));
+
+    const skipped = cleaned.filter(p => !p.discounted_price);
+    if (skipped.length > 0) {
+        console.log(`Skipping ${skipped.length} product(s) with no parseable price:`, skipped.map(p => p.link));
+    }
+
+    const data = cleaned.filter(p => p.discounted_price).map(p => ({
         name: p.title,
         category: p.category,
         image_url: p.imageSrc,
         product_url: p.link,
         store: 'rimi',
-        original_price: p.price_before,
-        discounted_price: p.price,
+        original_price: p.original_price,
+        discounted_price: p.discounted_price,
         discount_percent: p.discount,
         start_at: p.start_at,
         end_at: p.end_at,
@@ -303,7 +331,7 @@ const postBatchToAPI = async (products) => {
 
     try {
         await axiosInstance.post('/scrapers', data);
-        console.log(`Posted ${products.length} products to API`);
+        console.log(`Posted ${data.length} products to API`);
         return true;
     } catch (err) {
         console.error('Error posting products:', err.message);
