@@ -18,6 +18,15 @@
                     {{-- $post->content is trusted admin-authored HTML, same as the
                          Next.js dangerouslySetInnerHTML it replaces. --}}
                     <div class="blog-content">{!! $post->content !!}</div>
+
+                    @if ($post->source_url)
+                        <p class="border-t pt-4 text-sm text-gray-500">
+                            Šaltinis:
+                            <a href="{{ $post->source_url }}" target="_blank" rel="noopener noreferrer nofollow" class="text-primary hover:underline">
+                                {{ $post->source_name ?: $post->source_url }}
+                            </a>
+                        </p>
+                    @endif
                 </div>
             </div>
         </div>
