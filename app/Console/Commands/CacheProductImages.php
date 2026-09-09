@@ -64,7 +64,7 @@ class CacheProductImages extends Command
 
         $appUrl = rtrim(config('app.url'), '/');
 
-        $products = Product::where('image_from_flyer', false)
+        $baseQuery = fn () => Product::where('image_from_flyer', false)
             ->whereNotNull('image_url')
             ->where('image_url', 'like', 'http%')
             ->where('image_url', 'not like', "{$appUrl}/storage/%")
@@ -76,9 +76,32 @@ class CacheProductImages extends Command
                 // progress on the rest. Back off for a day before retrying.
                 $query->whereNull('image_cache_failed_at')
                     ->orWhere('image_cache_failed_at', '<', now()->subDay());
-            })
-            ->limit($limit)
-            ->get();
+            });
+
+        // Prioritize products a shopper could actually be looking at right
+        // now (an active discount somewhere) over the much larger pile that
+        // currently has none — those matter for LCP the moment they're
+        // seen, unlike a product only sitting in the catalog with no
+        // current offer. Same "active" definition used elsewhere for a
+        // discount (end_at null or in the future).
+        $activeDiscountProductIds = fn ($query) => $query->whereHas('discounts', function ($q) {
+            $q->whereNull('end_at')->orWhere('end_at', '>=', now());
+        });
+
+        $products = $activeDiscountProductIds($baseQuery())->limit($limit)->get();
+
+        if ($products->count() < $limit) {
+            $remaining = $limit - $products->count();
+            $fillIds = $products->pluck('id');
+            $fill = $baseQuery()
+                ->whereDoesntHave('discounts', function ($q) {
+                    $q->whereNull('end_at')->orWhere('end_at', '>=', now());
+                })
+                ->whereNotIn('id', $fillIds)
+                ->limit($remaining)
+                ->get();
+            $products = $products->concat($fill);
+        }
 
         if ($products->isEmpty()) {
             $this->info('Nothing to cache — no products with an external image_url in this batch.');
