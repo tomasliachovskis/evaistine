@@ -110,11 +110,21 @@ class NewsArticleService
                         continue;
                     }
 
+                    $title = trim((string) $item->title);
+                    $snippet = trim((string) $item->description);
+
+                    // Pricer.lt is a direct competitor's own price index —
+                    // don't draft our news content around promoting their
+                    // product, however newsworthy the story itself is.
+                    if (stripos($title, 'pricer') !== false || stripos($snippet, 'pricer') !== false) {
+                        continue;
+                    }
+
                     $candidates[] = [
-                        'title' => trim((string) $item->title),
+                        'title' => $title,
                         'link' => $link,
                         'source' => $source,
-                        'snippet' => trim((string) $item->description),
+                        'snippet' => $snippet,
                         'published_at' => $publishedAt,
                         'search_query' => $query,
                     ];
