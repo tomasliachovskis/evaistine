@@ -18,10 +18,12 @@ class Store extends Model
         'meta_description',
         'faq',
         'flyer_source_url',
+        'extract_discounts_from_flyer',
     ];
 
     protected $casts = [
         'faq' => 'array',
+        'extract_discounts_from_flyer' => 'boolean',
     ];
 
     public function products()

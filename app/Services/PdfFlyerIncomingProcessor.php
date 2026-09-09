@@ -55,6 +55,12 @@ class PdfFlyerIncomingProcessor
                 continue;
             }
 
+            if (!$store->extract_discounts_from_flyer) {
+                $this->emit($output, 'line', "Skipping {$filename} — {$store->name} already has a direct e-shop scraper, not extracting discounts from its flyer.");
+                @unlink($pdfPath);
+                continue;
+            }
+
             // A sidecar file (not the PDF itself — nothing else expects it to
             // exist) carrying state from a previous partial attempt: which
             // pages still need (re)processing and the validity dates already

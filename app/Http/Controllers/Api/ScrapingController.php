@@ -205,8 +205,11 @@ class ScrapingController extends Controller
         // production over SSH/rsync right after this response — NOT
         // deploy.sh, which excludes storage/app/public/ entirely. Once it
         // lands there, flyers:process-pages --pending finalizes pdf_url
-        // (using production's own APP_URL) and dispatches the job from
-        // production's own queue worker.
+        // (using production's own APP_URL) and dispatches the page-split
+        // job from production's own queue worker; flyers:process-discounts
+        // --pending independently reads the same file straight from this
+        // row's pdf_url to run Gemini discount extraction — no separate
+        // storage/app/flyers-incoming/ upload needed for either.
         $path = FlyerStorage::pdfPathForFlyer($store, $flyer->slug);
         Storage::disk('public')->put($path, file_get_contents($request->file('pdf')->getRealPath()));
 

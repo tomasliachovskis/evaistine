@@ -281,21 +281,13 @@ export async function submitFlyer({
     console.log(`[${store}] ${title || ''} (${validFrom} - ${validTo}): HTTP ${response.status}`, data);
 
     if (response.status === 201 && data?.slug && data?.store?.slug) {
-        const pdfFilename = `${data.store.slug}-${data.slug}.pdf`;
-
-        // Two independent production consumers need this same PDF, at two
-        // different paths: storage/app/public/flyers/pdfs/ for the
-        // /leidinys page-viewer (flyers:process-pages --pending), and
-        // storage/app/flyers-incoming/ for the discount-extraction cron
-        // (ProcessPdfFlyerJob, runs every minute). The filename must start
-        // with the store's slug followed by "-" — PdfFlyerIncomingProcessor
-        // matches it against real store slugs, so this is safe even for
-        // multi-word slugs like "thomas-philipps".
-        await syncPdfToProduction(`flyers/pdfs/${pdfFilename}`);
-
-        const localPath = path.join(PROJECT_ROOT, 'storage', 'app', 'public', 'flyers', 'pdfs', pdfFilename);
-        const incomingRemotePath = `${PROD_REMOTE_DIR}/storage/app/flyers-incoming/${pdfFilename}`;
-        await syncFileToProduction(localPath, incomingRemotePath);
+        // storage/app/public/flyers/pdfs/ is the only copy production needs
+        // now — flyers:process-discounts (Kernel.php, every 5 min) reads
+        // discounts straight from the StoreFlyer's own pdf_url, and
+        // flyers:process-pages reads the same file for the /leidinys
+        // page-viewer. No second copy in storage/app/flyers-incoming/
+        // needed anymore.
+        await syncPdfToProduction(`flyers/pdfs/${data.store.slug}-${data.slug}.pdf`);
     }
 
     return data;

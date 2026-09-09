@@ -37,6 +37,8 @@ class StoreFlyer extends Model
         'source',
         'processing_status',
         'processing_error',
+        'discounts_processed_at',
+        'discounts_retry_state',
     ];
 
     protected $casts = [
@@ -44,6 +46,8 @@ class StoreFlyer extends Model
         'valid_to' => 'date',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
+        'discounts_processed_at' => 'datetime',
+        'discounts_retry_state' => 'array',
     ];
 
     protected static function booted(): void

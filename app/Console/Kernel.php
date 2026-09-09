@@ -68,6 +68,15 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(5)
             ->environments(['production']);
 
+        // Extracts discounts (Gemini) directly from a StoreFlyer's own
+        // pdf_url — no longer needs the PDF separately dropped into
+        // storage/app/flyers-incoming/ the way ProcessPdfFlyerJob does.
+        // Same "quick, only queues" reasoning as flyers:process-pages above.
+        $schedule->command('flyers:process-discounts --pending')
+            ->everyFiveMinutes()
+            ->withoutOverlapping(5)
+            ->environments(['production']);
+
         // Only queries + dispatches to the queue, no heavy inline work.
         $schedule->command('discounts:dispatch-store-processing')
             ->everyFiveMinutes()
