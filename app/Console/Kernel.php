@@ -67,6 +67,12 @@ class Kernel extends ConsoleKernel
         // the command/service classes are parked in
         // App\Console\CommandsQuarantine for reference, not deleted.)
         // Same "quick, only queues" reasoning as flyers:process-pages above.
+        // --pending only picks up the last 3 days by default (no
+        // --include-backlog here) — deliberately, so flipping a store's
+        // extract_discounts_from_flyer to true never triggers processing
+        // its entire flyer history as a side effect. That's a separate,
+        // explicit `flyers:process-discounts --pending --include-backlog`
+        // run when actually wanted.
         $schedule->command('flyers:process-discounts --pending')
             ->everyFiveMinutes()
             ->withoutOverlapping(5)
