@@ -115,6 +115,25 @@ class Kernel extends ConsoleKernel
             ->everyFiveMinutes()
             ->withoutOverlapping(5)
             ->environments(['production']);
+
+        // 09:00 and 17:00 (both Europe/Vilnius — config('app.timezone'),
+        // which the scheduler honors regardless of the server OS clock,
+        // confirmed on prod: its system TZ is Europe/Berlin, 1h behind
+        // Vilnius, but `php artisan schedule:list`'s "Next Due" for the
+        // existing 02:00/04:30 entries already matches Vilnius time, not
+        // Berlin time). Morning catches a subscriber before the commute/
+        // lunch break with the whole day ahead to act; evening catches
+        // whatever changed since then before it's time to plan tomorrow's
+        // shopping — rather than one digest a day risking a half-expired
+        // discount by the time someone's next near a store. Its own rate
+        // limiting (hard daily cap + 48h "nothing new" cooldown, see
+        // NotifyPriceWatchers) still caps it at one real email per user per
+        // day even with two scheduled runs — the second run is only useful
+        // when the 09:00 run found nothing to send.
+        $schedule->command('price-watch:notify')
+            ->twiceDaily(9, 17)
+            ->withoutOverlapping(30)
+            ->environments(['production']);
     }
 
     /**
