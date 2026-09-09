@@ -2,7 +2,6 @@
 
 namespace App\Console;
 
-use App\Jobs\ProcessPdfFlyerJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -16,13 +15,6 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // ProcessPdfFlyerJob is a queued job (ShouldQueue), so this only ever
-        // dispatches — it never runs the actual work inline in the scheduler
-        // process, no runInBackground() needed.
-        $schedule->job(new ProcessPdfFlyerJob)
-            ->everyMinute()
-            ->withoutOverlapping();
-
         // Scrapers only ever run on the local dev machine (node/puppeteer
         // aren't installed on the production server, and scraping should
         // happen from the local IP, not prod's) — this codebase deploys to
@@ -69,8 +61,11 @@ class Kernel extends ConsoleKernel
             ->environments(['production']);
 
         // Extracts discounts (Gemini) directly from a StoreFlyer's own
-        // pdf_url — no longer needs the PDF separately dropped into
-        // storage/app/flyers-incoming/ the way ProcessPdfFlyerJob does.
+        // pdf_url — no separate storage/app/flyers-incoming/ upload needed.
+        // (That older path — ProcessPdfFlyerJob/PdfFlyerIncomingProcessor —
+        // is retired now that nothing writes into that directory anymore;
+        // the command/service classes are parked in
+        // App\Console\CommandsQuarantine for reference, not deleted.)
         // Same "quick, only queues" reasoning as flyers:process-pages above.
         $schedule->command('flyers:process-discounts --pending')
             ->everyFiveMinutes()

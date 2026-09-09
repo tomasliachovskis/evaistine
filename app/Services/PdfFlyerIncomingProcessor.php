@@ -6,6 +6,12 @@ use App\Models\Store;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
+// Manual-only as of 2026-09-09: this used to be driven every minute by
+// ProcessPdfFlyerJob (removed — nothing writes into flyers-incoming/
+// anymore, scrapers now sync straight into a StoreFlyer's own pdf_url,
+// see flyers:process-discounts / StoreFlyerDiscountProcessingService).
+// Kept only for the quarantined App\Console\CommandsQuarantine\ProcessPdfFlyer
+// --sync fallback, in case a PDF is ever dropped into that directory by hand.
 class PdfFlyerIncomingProcessor
 {
     private const MAX_RETRY_ATTEMPTS = 5;
@@ -67,20 +73,19 @@ class PdfFlyerIncomingProcessor
             // found on an earlier (now-skipped) page. Its presence is what
             // lets a retry resume instead of re-extracting the whole PDF
             // (and re-paying for/duplicating already-succeeded pages) from
-            // page 1 every time ProcessPdfFlyerJob's every-minute schedule
-            // picks this file back up.
+            // page 1 on the next manual run (flyers:process-pdf --sync —
+            // this whole flyers-incoming/ path is quarantined/manual-only
+            // now, see App\Console\CommandsQuarantine\ProcessPdfFlyer).
             $statePath = $pdfPath . '.retry.json';
             $retryState = $this->readRetryState($statePath);
             $targetPages = $retryState['failed_pages'] ?? null;
             $seedValidityDates = $retryState['validity_dates'] ?? null;
             $attempt = ($retryState['attempts'] ?? 0) + 1;
 
-            // ProcessPdfFlyerJob runs every minute (Kernel.php) — without this,
-            // a stuck leaflet gets hammered once a minute for the whole
-            // MAX_RETRY_ATTEMPTS attempts, which is pointless against
-            // anything but the shortest outages and burns a Gemini call per
-            // page every time. Backs off 2 min after the 1st failure,
-            // growing 2 min per attempt, capped at 15 min between attempts.
+            // Backs off 2 min after the 1st failure, growing 2 min per
+            // attempt, capped at 15 min between attempts — kept even though
+            // this path is manual-only now (see class-level note above),
+            // so a re-run right after a failure doesn't immediately retry.
             $lastAttemptedAt = $retryState['last_attempted_at'] ?? null;
             if ($lastAttemptedAt !== null) {
                 $delayMinutes = min(2 * ($attempt - 1), 15);
@@ -199,6 +204,14 @@ class PdfFlyerIncomingProcessor
 
     private function extractStoreSlugFromPdfFilename(string $filename): string
     {
+        return self::matchStoreSlugFromFilename($filename, Store::query()->pluck('slug')->all());
+    }
+
+    // Pure matching logic split out from extractStoreSlugFromPdfFilename()
+    // so it's unit-testable with a fixture slug list — no DB connection
+    // needed (see tests/Unit/PdfFlyerIncomingProcessorTest).
+    public static function matchStoreSlugFromFilename(string $filename, array $slugs): string
+    {
         $basename = strtolower(pathinfo($filename, PATHINFO_FILENAME));
 
         // Match against real store slugs (longest first) rather than
@@ -207,7 +220,6 @@ class PdfFlyerIncomingProcessor
         // first hyphen (or stripping a trailing "-digits" suffix) would
         // wrongly return just "thomas"/"gintarine", or truncate a numeric
         // slug tail as if it were a flyer suffix.
-        $slugs = Store::query()->pluck('slug')->all();
         usort($slugs, fn ($a, $b) => strlen($b) - strlen($a));
 
         foreach ($slugs as $slug) {

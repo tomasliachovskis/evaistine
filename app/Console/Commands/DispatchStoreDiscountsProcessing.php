@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\ProcessStoreDiscountsJob;
+use App\Jobs\FinalizeScrapedStoresJob;
 use App\Models\DiscountTemp;
 use Illuminate\Console\Command;
 
@@ -56,9 +56,9 @@ class DispatchStoreDiscountsProcessing extends Command
         }
 
         // One job for every ready store instead of one job per store — see
-        // ProcessStoreDiscountsJob's docblock for why (cache:clear-discounts/
+        // FinalizeScrapedStoresJob's docblock for why (cache:clear-discounts/
         // cache:warm are global, so batching them cuts redundant full warms).
-        ProcessStoreDiscountsJob::dispatch($readyStores);
+        FinalizeScrapedStoresJob::dispatch($readyStores);
         $this->info('Queued processing for: ' . implode(', ', $readyStores));
 
         return 0;

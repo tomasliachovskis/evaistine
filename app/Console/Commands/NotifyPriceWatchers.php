@@ -54,7 +54,7 @@ class NotifyPriceWatchers extends Command
         // discount's product and hasn't been notified about this exact
         // discount yet. discounts:archive-expired only runs as part of
         // whichever store's own processing job just touched it (see
-        // ProcessStoreDiscountsJob) — not a standalone sweep — so an
+        // FinalizeScrapedStoresJob) — not a standalone sweep — so an
         // already-expired Discount row can sit in the table for a while
         // before archiving deletes it (confirmed: 23 rows with a past
         // end_at existed at once when this was checked). Re-verify validity

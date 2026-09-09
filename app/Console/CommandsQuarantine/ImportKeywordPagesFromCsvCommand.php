@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\CommandsQuarantine;
 
 use App\Services\KeywordImport\KeywordCsvGrouper;
 use App\Services\KeywordImport\KeywordCsvImporter;

@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class ProcessStoreDiscountsJob implements ShouldBeUnique, ShouldQueue
+class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -42,10 +42,11 @@ class ProcessStoreDiscountsJob implements ShouldBeUnique, ShouldQueue
         // deploy/supervisor-nuolaidos-discounts.conf), not 'flyers' — this
         // job finalizes scraped data into live discounts and needs to run on
         // schedule (every 5 min via discounts:dispatch-store-processing);
-        // sharing a single worker with ProcessPdfFlyerJob/
-        // ProcessStoreFlyerPagesJob meant a slow/retrying leaflet (Gemini
-        // vision calls, minutes per page) could delay it indefinitely since
-        // Laravel can't preempt an in-flight job on the same worker.
+        // sharing a single worker with the 'flyers' queue's jobs
+        // (ProcessStoreFlyerDiscountsJob/ProcessStoreFlyerPagesJob) meant a
+        // slow/retrying leaflet (Gemini vision calls, minutes per page)
+        // could delay it indefinitely since Laravel can't preempt an
+        // in-flight job on the same worker.
         $this->onQueue('discounts');
     }
 
@@ -111,7 +112,7 @@ class ProcessStoreDiscountsJob implements ShouldBeUnique, ShouldQueue
 
         $step = function (string $step) use ($run, $store) {
             $run->update(['step' => $step]);
-            Log::info("ProcessStoreDiscountsJob[{$store}]: {$step}");
+            Log::info("FinalizeScrapedStoresJob[{$store}]: {$step}");
         };
 
         try {
@@ -157,7 +158,7 @@ class ProcessStoreDiscountsJob implements ShouldBeUnique, ShouldQueue
             ]);
         } catch (\Throwable $e) {
             $trace = $e->getMessage()."\n".$e->getTraceAsString();
-            Log::error("ProcessStoreDiscountsJob[{$store}] failed: {$trace}");
+            Log::error("FinalizeScrapedStoresJob[{$store}] failed: {$trace}");
 
             $run->update([
                 'status' => ScraperRun::STATUS_FAILED,
@@ -178,7 +179,7 @@ class ProcessStoreDiscountsJob implements ShouldBeUnique, ShouldQueue
         $secret = config('services.frontend.revalidate_secret');
 
         if (! $secret) {
-            Log::info('ProcessStoreDiscountsJob: REVALIDATE_SECRET not configured, skipping frontend revalidation.');
+            Log::info('FinalizeScrapedStoresJob: REVALIDATE_SECRET not configured, skipping frontend revalidation.');
 
             return;
         }
@@ -189,10 +190,10 @@ class ProcessStoreDiscountsJob implements ShouldBeUnique, ShouldQueue
                 ->post(config('services.frontend.revalidate_url'));
 
             if (! $response->successful()) {
-                Log::warning("ProcessStoreDiscountsJob: frontend revalidation returned {$response->status()}.");
+                Log::warning("FinalizeScrapedStoresJob: frontend revalidation returned {$response->status()}.");
             }
         } catch (\Throwable $e) {
-            Log::warning("ProcessStoreDiscountsJob: frontend revalidation request failed: {$e->getMessage()}");
+            Log::warning("FinalizeScrapedStoresJob: frontend revalidation request failed: {$e->getMessage()}");
         }
     }
 }

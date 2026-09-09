@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\CommandsQuarantine;
 
 use App\Services\KeywordImport\KeywordCandidateSelector;
 use Illuminate\Console\Command;

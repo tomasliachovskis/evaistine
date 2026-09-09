@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\CommandsQuarantine;
 
 use App\Models\DiscountTemp;
 use Illuminate\Console\Command;
