@@ -91,6 +91,8 @@ class ProcessDiscounts extends Command
             $this->info('Starting bulk category mapping...');
             $this->call('categories:bulk-map');
             $this->info('Bulk category mapping completed.');
+
+            $this->mapRootCategoryFallbacks();
         }
 
         $skip = $this->skipStoreNames();
@@ -545,6 +547,70 @@ class ProcessDiscounts extends Command
         }
 
         DiscountTemp::whereIn('id', $ids)->update(['processed' => true]);
+    }
+
+    /**
+     * categories:bulk-map (the older, GPT-based mechanism triggered by
+     * --map-categories) writes classified text straight into
+     * discount_temp.category — and for a flyer-sourced row, that text is
+     * regularly just a root category's own name verbatim (e.g. "Bakalėja",
+     * "Pieno produktai ir kiaušiniai"). resolveCategoryId() still requires
+     * a category_mappers row for the *exact* string per store, so unless
+     * one already happens to exist, these rows silently get no category_id
+     * and never become a real Discount — found live 2026-09-09 across 15
+     * stores, ~1800 affected rows in just 2 days. Since the string in this
+     * case already IS the answer (it's literally the root category's own
+     * name), auto-create the obvious self-referential mapper instead of
+     * waiting for a human to notice the gap store by store.
+     */
+    private function mapRootCategoryFallbacks(): void
+    {
+        $rootCategoriesByName = Category::whereNull('parent_id')->get(['id', 'name'])
+            ->mapWithKeys(fn (Category $c) => [trim($c->name) => $c->id]);
+
+        if ($rootCategoriesByName->isEmpty()) {
+            return;
+        }
+
+        $pending = DiscountTemp::where('processed', false)
+            ->where('category', '!=', '')
+            ->get(['store', 'category'])
+            ->unique(fn ($row) => $row->store . '|' . $row->category);
+
+        $created = 0;
+        $updated = 0;
+
+        foreach ($pending as $row) {
+            $rootId = $rootCategoriesByName->get(trim($row->category));
+            if (!$rootId) {
+                continue;
+            }
+
+            $store = Store::whereRaw('LOWER(name) = ?', [mb_strtolower(trim($row->store))])->first();
+            if (!$store) {
+                continue;
+            }
+
+            $mapper = CategoryMapper::where('store', $store->id)
+                ->where('store_category', $row->category)
+                ->first();
+
+            if (!$mapper) {
+                CategoryMapper::create([
+                    'store' => $store->id,
+                    'store_category' => $row->category,
+                    'category_id' => $rootId,
+                ]);
+                $created++;
+            } elseif (!$mapper->category_id) {
+                $mapper->update(['category_id' => $rootId]);
+                $updated++;
+            }
+        }
+
+        if ($created > 0 || $updated > 0) {
+            $this->info("Root category fallback mapping: {$created} mapper(s) created, {$updated} updated.");
+        }
     }
 
     private function resolveCategoryId(DiscountTemp $tempDiscount, Store $store): int|false|null
