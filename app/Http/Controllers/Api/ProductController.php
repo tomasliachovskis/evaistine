@@ -18,6 +18,7 @@ use App\Services\MeilisearchService;
 use App\Services\PageFreshnessService;
 use App\Services\StoresPageMetaService;
 use App\Support\CacheVersion;
+use App\Support\LithuanianDate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -1114,7 +1115,7 @@ class ProductController extends Controller
         switch ($type) {
             case 'category':
                 $count = $this->getDiscountCountForCategory($entity);
-                $maxDiscount = $this->getMaxDiscountForCategory($entity);
+                $maxDiscount = $this->roundDownDiscountPercent($this->getMaxDiscountForCategory($entity));
                 $storeNames = $this->getStoreNamesForCategory($entity);
                 $countLabel = $this->formatCount($count);
                 $lowerName = mb_strtolower($entity->name);
@@ -1137,7 +1138,6 @@ class ProductController extends Controller
                 $validity = $this->resolveStoreValidity($entity);
                 $validityLabel = $this->formatValidityRangeLabel($validity['valid_from'], $validity['valid_to']);
                 $words = $this->getStoreLeafletWords($entity->slug);
-                $storeUpper = mb_strtoupper($entity->name);
                 $validityLong = $this->pageFreshnessService->formatLtDate($validity['valid_from'], true)
                     .' – '
                     .$this->pageFreshnessService->formatLtDate($validity['valid_to'], true);
@@ -1145,14 +1145,13 @@ class ProductController extends Controller
                 return [
                     'seo_title' => $entity->name.' '.$words['nominative'],
                     'seo_description' => $entity->description,
-                    'meta_title' => "{$storeUpper} {$words['nominative']} – naujas savaitės leidinys, galioja {$validityLabel}",
+                    'meta_title' => "{$entity->name} {$words['nominative']} – naujas savaitės leidinys, galioja {$validityLabel}",
                     'meta_description' => "Naujausias {$entity->name} akcijų {$words['nominative']} ir katalogas. {$countLabel}+ akcijų, PDF, savaitgalio pasiūlymai. Galioja {$validityLong}.",
                 ];
             case 'store':
                 $count = $this->getDiscountCountForStore($entity);
                 $countLabel = $this->formatCount($count);
-                $maxDiscount = (int) round(Discount::where('store_id', $entity->id)->max('discount_percent') ?? 0);
-                $storeUpper = mb_strtoupper($entity->name);
+                $maxDiscount = $this->roundDownDiscountPercent(Discount::where('store_id', $entity->id)->max('discount_percent') ?? 0);
                 $words = $this->getStoreLeafletWords($entity->slug);
                 // SXO audit finding: SERP competitors for "{store} akcijos šią
                 // savaitę" all bake a date range into their title, this page's
@@ -1161,16 +1160,24 @@ class ProductController extends Controller
                 // uses so both page types read consistently.
                 $validity = $this->resolveStoreValidity($entity);
                 $validityLabel = $this->formatValidityRangeLabel($validity['valid_from'], $validity['valid_to']);
+                // Month name (accusative, "akcija rugsėjį") instead of the
+                // exact date range in the title itself — reads as a normal
+                // sentence instead of a stitched-together string of clauses,
+                // and doesn't look stale mid-month the way a fixed date
+                // range does. The exact range still lives in meta_description.
+                $monthLabel = LithuanianDate::monthAccusative(now());
 
                 return [
                     'seo_title' => $entity->name.' akcijos',
                     'seo_description' => $entity->description,
-                    'meta_title' => "{$storeUpper} akcijos {$validityLabel} – {$countLabel}+ pasiūlymų".($maxDiscount > 0 ? ", iki -{$maxDiscount}%" : ''),
+                    'meta_title' => $maxDiscount > 0
+                        ? "{$entity->name} -{$maxDiscount}% akcija {$monthLabel} – {$countLabel}+ pasiūlymų"
+                        : "{$entity->name} akcijos {$monthLabel} – {$countLabel}+ pasiūlymų",
                     'meta_description' => "Visos {$entity->name} akcijos ir nuolaidos (galioja {$validityLabel}). Filtruokite, rūšiuokite ir palyginkite kainas. Naujas {$words['nominative']}: /leidinys/{$entity->slug}",
                 ];
             case 'store_category':
                 $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);
-                $maxDiscount = $this->getMaxDiscountForStoreCategory($entity, $secondaryEntity);
+                $maxDiscount = $this->roundDownDiscountPercent($this->getMaxDiscountForStoreCategory($entity, $secondaryEntity));
                 $countLabel = $this->formatCount($count);
                 $categoryLower = mb_strtolower($secondaryEntity->name);
 
@@ -1188,7 +1195,7 @@ class ProductController extends Controller
                     $seoData = [
                         'seo_title' => $entity->name.' '.$categoryLower,
                         'seo_description' => '',
-                        'meta_title' => mb_strtoupper($entity->name).' '.$categoryLower.' – palyginkite kainas kitose parduotuvėse',
+                        'meta_title' => $entity->name.' '.$categoryLower.' – palyginkite kainas kitose parduotuvėse',
                         'meta_description' => "Šiuo metu {$entity->name} neturi aktyvių {$categoryLower} akcijų. Peržiūrėkite {$categoryLower} pasiūlymus kitose parduotuvėse.",
                     ];
 
@@ -1202,7 +1209,7 @@ class ProductController extends Controller
                 $seoData = [
                     'seo_title' => $entity->name.' akcija '.$categoryLower,
                     'seo_description' => '',
-                    'meta_title' => mb_strtoupper($entity->name).' akcija '.$categoryLower.($maxDiscount > 0 ? ' – iki '.$maxDiscount.'% nuolaidos' : ''),
+                    'meta_title' => $entity->name.' akcija '.$categoryLower.($maxDiscount > 0 ? ' – iki '.$maxDiscount.'% nuolaidos' : ''),
                     'meta_description' => "Naujausios {$entity->name} {$categoryLower} akcijos".($maxDiscount > 0 ? " – iki {$maxDiscount}% nuolaidos" : '').", {$countLabel}+ prekių. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
                 ];
 
@@ -1841,6 +1848,15 @@ class ProductController extends Controller
         } else {
             return $count;
         }
+    }
+
+    // Round DOWN to the nearest 5 — "iki 51%" is an oddly specific number
+    // for a meta title/description to advertise, and rounding up (e.g. to
+    // 55%) would overstate a real discount, which "iki X%" ("up to X%")
+    // must never do.
+    private function roundDownDiscountPercent($percent)
+    {
+        return (int) (floor($percent / 5) * 5);
     }
 
     private function getMaxEndAtForStore($store)
