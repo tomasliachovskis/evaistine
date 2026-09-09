@@ -139,7 +139,7 @@
                 <div class="grid grid-cols-2 gap-2">
                     @forelse ($stores as $store)
                         <a href="/akcijos/{{ $store['slug'] }}" class="flex flex-col items-center justify-center gap-2 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
-                            <img src="/assets/stores/{{ $store['slug'] }}.svg" alt="{{ $store['name'] }}" class="h-12 w-full max-w-[100px] object-contain">
+                            <x-store-logo :slug="$store['slug']" :name="$store['name']" size="lg" />
                             <span class="text-sm font-bold tabular-nums text-gray-700">{{ number_format($store['discounts_count'] ?? 0, 0, ',', ' ') }}</span>
                         </a>
                     @empty
