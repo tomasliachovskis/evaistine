@@ -21,6 +21,7 @@ class BlogPost extends Model
         'meta_description',
         'status',
         'review_image',
+        'cover_image',
     ];
 
     protected $casts = [
@@ -35,10 +36,18 @@ class BlogPost extends Model
             ->where('published_at', '<=', now());
     }
 
+    // AI-generated cover (App\Services\NewsArticleService::generateCoverImage())
+    // takes priority — it's a real editorial illustration matching this
+    // specific article, unlike the fallback below which was only ever a
+    // side effect of an <img> tag happening to exist in the body content.
     // Ported from discount/src/lib/blog-utils.ts getBlogPostImageUrl — first
     // <img> src found in the post's rich-text content, used as the card thumbnail.
     public function imageUrl(): ?string
     {
+        if (!empty($this->cover_image)) {
+            return $this->cover_image;
+        }
+
         if (preg_match('/<img[^>]+src="([^"]+)"/i', (string) $this->content, $matches)) {
             return $matches[1];
         }

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Store;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -19,6 +20,9 @@ class NewsArticleService
 {
     private ?string $apiKey;
     private string $apiUrl = 'https://api.openai.com/v1/chat/completions';
+
+    private ?string $geminiApiKey;
+    private string $geminiImageApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent';
 
     /**
      * Curated, Lithuania-relevant retail/pricing search terms — deliberately
@@ -40,6 +44,81 @@ class NewsArticleService
 
         if (empty($this->apiKey)) {
             Log::warning('OpenAI API key not configured in NewsArticleService');
+        }
+
+        $this->geminiApiKey = config('services.gemini.api_key');
+    }
+
+    /**
+     * Generates a brand-safe editorial cover illustration for one article
+     * via Gemini's image model, grounded in that article's own title/
+     * excerpt (not a generic stock image) — verified live 2026-09-09 on
+     * real drafts (inflation, a new discount chain opening, an energy
+     * stock's exchange impact) to consistently produce a flat, green/white,
+     * text-and-logo-free illustration matching this site's brand, distinct
+     * per topic. Saves under storage/app/public/news-covers/ (same disk
+     * convention as product/flyer images) and returns the public URL, or
+     * null on failure (caller decides whether to leave cover_image unset
+     * and retry later, same "don't hammer a doomed request" posture as
+     * CacheProductImages' image_cache_failed_at backoff).
+     */
+    public function generateCoverImage(BlogPost $post): ?string
+    {
+        if (empty($this->geminiApiKey)) {
+            Log::warning('Gemini API key not configured — skipping cover image', ['post_id' => $post->id]);
+
+            return null;
+        }
+
+        $subject = trim($post->meta_description !== '' ? $post->meta_description : $post->title);
+
+        $prompt = 'A clean, professional editorial illustration for a Lithuanian news article. '
+            . "The article is about: {$post->title}. Context: {$subject}. "
+            . 'Depict the real subject matter with simple, literal visual metaphors (e.g. a shopping basket for '
+            . 'grocery prices, a storefront for a new store opening, a stock chart for market/exchange news, '
+            . 'a utility pylon for energy prices) — not an abstract generic scene. '
+            . 'Flat-design editorial illustration style, green and white color palette, minimalist. '
+            . 'Absolutely no text, no logos, no real brand names or company names anywhere in the image. '
+            . 'Wide banner aspect ratio suitable for a news article cover image.';
+
+        try {
+            $response = Http::timeout(60)->post($this->geminiImageApiUrl . '?key=' . $this->geminiApiKey, [
+                'contents' => [['parts' => [['text' => $prompt]]]],
+            ]);
+
+            if (!$response->successful()) {
+                Log::error('Gemini image generation failed', [
+                    'post_id' => $post->id,
+                    'status' => $response->status(),
+                    'body' => substr($response->body(), 0, 500),
+                ]);
+
+                return null;
+            }
+
+            $parts = $response->json('candidates.0.content.parts', []);
+            $imageData = null;
+            foreach ($parts as $part) {
+                if (isset($part['inlineData']['data'])) {
+                    $imageData = base64_decode($part['inlineData']['data']);
+                    break;
+                }
+            }
+
+            if (empty($imageData)) {
+                Log::error('Gemini image response had no inline image data', ['post_id' => $post->id]);
+
+                return null;
+            }
+
+            $filename = 'news-covers/' . $post->slug . '-' . time() . '.png';
+            Storage::disk('public')->put($filename, $imageData);
+
+            return Storage::disk('public')->url($filename);
+        } catch (\Throwable $e) {
+            Log::error('Error generating news cover image', ['post_id' => $post->id, 'error' => $e->getMessage()]);
+
+            return null;
         }
     }
 
