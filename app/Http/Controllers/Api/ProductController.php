@@ -1133,20 +1133,25 @@ class ProductController extends Controller
                     'meta_description' => "Palyginkite {$lowerName} akcijas prekybos centruose – {$countLabel}+ pasiūlymų iš {$storeNames}.".($maxDiscount > 0 ? " Iki {$maxDiscount}% nuolaidos šią savaitę!" : ''),
                 ];
             case 'store_leaflet':
-                $count = $this->getDiscountCountForStore($entity);
-                $countLabel = $this->formatCount($count);
                 $validity = $this->resolveStoreValidity($entity);
-                $validityLabel = $this->formatValidityRangeLabel($validity['valid_from'], $validity['valid_to']);
                 $words = $this->getStoreLeafletWords($entity->slug);
-                $validityLong = $this->pageFreshnessService->formatLtDate($validity['valid_from'], true)
-                    .' – '
-                    .$this->pageFreshnessService->formatLtDate($validity['valid_to'], true);
+                $validFromDot = Carbon::parse($validity['valid_from'])->format('Y.m.d');
+                $validToDot = Carbon::parse($validity['valid_to'])->format('Y.m.d');
+                // "{store} leidinys – naujas savaitės leidinys" used to say
+                // "leidinys" twice — drop the redundant first one, and
+                // trade the "galioja {range}" clause for the flyer's own
+                // issue number where we have one (a store's shoppers
+                // recognize "Nr.37" from the print/PDF leaflet itself; not
+                // every store numbers its flyers, so this only applies when
+                // issue_number is actually set).
+                $flyer = $entity->latestActiveFlyer();
+                $issueLabel = $flyer && $flyer->issue_number ? ", Nr.{$flyer->issue_number}" : '';
 
                 return [
                     'seo_title' => $entity->name.' '.$words['nominative'],
                     'seo_description' => $entity->description,
-                    'meta_title' => "{$entity->name} {$words['nominative']} – naujas savaitės leidinys, galioja {$validityLabel}",
-                    'meta_description' => "Naujausias {$entity->name} akcijų {$words['nominative']} ir katalogas. {$countLabel}+ akcijų, PDF, savaitgalio pasiūlymai. Galioja {$validityLong}.",
+                    'meta_title' => "{$entity->name} naujas savaitės {$words['nominative']}{$issueLabel} {$validFromDot}",
+                    'meta_description' => "Naujas {$entity->name} {$words['nominative']} galioja nuo {$validFromDot} iki {$validToDot}.",
                 ];
             case 'store':
                 $count = $this->getDiscountCountForStore($entity);

@@ -51,14 +51,19 @@ class Store extends Model
         return $this->hasMany(CuratedDeal::class);
     }
 
-    public function latestFlyerValidity(): ?array
+    public function latestActiveFlyer(): ?\App\Models\StoreFlyer
     {
-        $flyer = $this->flyers()
+        return $this->flyers()
             ->where('is_active', true)
             ->whereNotNull('valid_from')
             ->whereNotNull('valid_to')
             ->orderByDesc('valid_from')
             ->first();
+    }
+
+    public function latestFlyerValidity(): ?array
+    {
+        $flyer = $this->latestActiveFlyer();
 
         if (!$flyer) {
             return null;
