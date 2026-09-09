@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // silas.lt/akcijos/ is plain server-rendered HTML — no flipbook platform at
 // all, just a self-hosted WordPress image gallery of the leaflet's own
@@ -40,7 +40,7 @@ function parseDateRange(text) {
     const heading = headingMatch[1];
     const issueMatch = heading.match(/Nr\.\s*(\d+)/i);
     const issueNumber = issueMatch ? issueMatch[1] : null;
-    const { validFrom, validTo } = parseDateRange(heading);
+    let { validFrom, validTo } = parseDateRange(heading);
 
     if (!validFrom) {
         console.log('No date range parsed from heading:', heading);
@@ -60,6 +60,21 @@ function parseDateRange(text) {
     const buffers = [];
     for (const url of imageUrls) {
         buffers.push(await fetchBuffer(url));
+    }
+
+    // Dates matter more than anything else here (a leaflet with no validity
+    // window can't be shown as "current" or archived correctly) — when the
+    // heading text doesn't parse (seen live: Nr.18's heading didn't match
+    // parseDateRange's regex), fall back to the same Gemini cover-page OCR
+    // aibe.js already uses instead of just submitting with null dates.
+    if (!validFrom) {
+        const coverInfo = await extractCoverInfo({ store: 'Šilas', imageBuffer: buffers[0], filename: 'silas-cover.jpg' });
+        if (coverInfo?.validFrom) {
+            validFrom = coverInfo.validFrom;
+            validTo = coverInfo.validTo;
+        } else {
+            console.log('No reliable dates from cover OCR either — submitting without dates');
+        }
     }
 
     try {
