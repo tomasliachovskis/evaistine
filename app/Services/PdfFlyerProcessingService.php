@@ -909,8 +909,8 @@ class PdfFlyerProcessingService
 
         if (isset($data['vd'])) {
             $mapped['validity_dates'] = [
-                'start_at' => $data['vd']['sa'] ?? null,
-                'end_at' => $data['vd']['ea'] ?? null,
+                'start_at' => $this->correctImplausibleYear($data['vd']['sa'] ?? null),
+                'end_at' => $this->correctImplausibleYear($data['vd']['ea'] ?? null),
             ];
         }
 
@@ -930,8 +930,8 @@ class PdfFlyerProcessingService
                     'unit_price' => $discount['up'] ?? null,
                     'unit_price_basis' => $discount['ub'] ?? null,
                     'exclusion_markers' => $discount['em'] ?? [],
-                    'start_at' => $discount['sa'] ?? null,
-                    'end_at' => $discount['ea'] ?? null,
+                    'start_at' => $this->correctImplausibleYear($discount['sa'] ?? null),
+                    'end_at' => $this->correctImplausibleYear($discount['ea'] ?? null),
                     'box' => $discount['box'] ?? null,
                 ];
                 $mapped['discounts'][] = $mappedDiscount;
@@ -939,6 +939,38 @@ class PdfFlyerProcessingService
         }
 
         return $mapped;
+    }
+
+    /**
+     * Gemini occasionally misreads a validity date's year (found live:
+     * Norfa's Nr.18 flyer — genuinely 2026-09-03..2026-09-16 — extracted as
+     * 2023-09-03..2023-09-16 on one page). Because a page missing its own
+     * dates falls back to the first successfully-extracted validity_dates
+     * for the whole PDF (see processPdf()'s $validityDates seeding), one
+     * bad read silently propagated to 279 of that flyer's 313 rows, all of
+     * which then looked already-expired and got dropped by
+     * ProcessDiscounts' end_at cutoff without any error. Flyers are always
+     * for the current or immediate-next year, never further off — so a
+     * year outside [this year, next year] is almost certainly a misread
+     * digit, not a real date. Keep the month/day (those aren't the part
+     * that's wrong) and swap in the current year instead of trusting a
+     * date that would otherwise make real, current data look like expired
+     * garbage.
+     */
+    private function correctImplausibleYear(?string $date): ?string
+    {
+        if (empty($date) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $date, $matches)) {
+            return $date;
+        }
+
+        $year = (int) $matches[1];
+        $currentYear = (int) now()->format('Y');
+
+        if ($year < $currentYear || $year > $currentYear + 1) {
+            return $currentYear . '-' . $matches[2] . '-' . $matches[3];
+        }
+
+        return $date;
     }
 
     private function getExtractionPromptStatic(): string
