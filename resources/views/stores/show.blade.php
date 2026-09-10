@@ -55,7 +55,11 @@
                                                 x-show="!query.trim() || '{{ Str::lower($city.' '.$location['address']) }}'.includes(query.trim().toLowerCase())"
                                                 class="rounded-xl border border-gray-200 bg-white p-4"
                                             >
-                                                <p class="font-semibold text-gray-900">{{ $location['address'] }}</p>
+                                                @if (!empty($location['slug']))
+                                                    <a href="/parduotuves/{{ $store->slug }}/{{ Str::slug($city) }}/{{ $location['slug'] }}" class="font-semibold text-gray-900 hover:text-green">{{ $location['address'] }}</a>
+                                                @else
+                                                    <p class="font-semibold text-gray-900">{{ $location['address'] }}</p>
+                                                @endif
                                                 @if (!empty($location['phone']))
                                                     <p class="mt-1 text-sm text-gray-600">{{ $location['phone'] }}</p>
                                                 @endif

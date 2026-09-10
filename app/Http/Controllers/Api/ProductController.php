@@ -553,7 +553,7 @@ class ProductController extends Controller
                 ->active()
                 ->orderBy('city')
                 ->orderBy('address')
-                ->get(['city', 'address', 'lat', 'lng', 'phone', 'hours']);
+                ->get(['city', 'address', 'slug', 'lat', 'lng', 'phone', 'hours']);
 
             return [
                 'store' => ['name' => $store->name, 'slug' => $store->slug],
