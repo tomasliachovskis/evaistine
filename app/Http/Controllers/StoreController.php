@@ -9,6 +9,7 @@ use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
 use App\Support\FaqSchema;
 use App\Support\ItemListSchema;
+use App\Support\StoreLocationSchema;
 
 // Ported from discount/src/app/parduotuves/{page,[slug]/page,[slug]/[city]/page}.tsx.
 class StoreController extends Controller
@@ -139,6 +140,7 @@ class StoreController extends Controller
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
+            'localBusinessSchema' => StoreLocationSchema::build($store, $location, $path),
         ]);
     }
 
