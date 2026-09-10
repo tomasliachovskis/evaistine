@@ -4,16 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Api\ProductController;
 use App\Models\Store;
-use App\Models\StoreLocation;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
 use App\Support\FaqSchema;
 use App\Support\ItemListSchema;
-use App\Support\StoreLocationSchema;
+use Illuminate\Support\Str;
 
 // Ported from discount/src/app/parduotuves/{page,[slug]/page,[slug]/[city]/page}.tsx.
 class StoreController extends Controller
 {
+    private const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+    private const DAY_LABELS = [
+        'monday' => 'Pirmadienis', 'tuesday' => 'Antradienis', 'wednesday' => 'Trečiadienis',
+        'thursday' => 'Ketvirtadienis', 'friday' => 'Penktadienis', 'saturday' => 'Šeštadienis', 'sunday' => 'Sekmadienis',
+    ];
+
     public function index(ProductController $api)
     {
         $payload = json_decode($api->getStores()->getContent(), true);
@@ -40,16 +46,6 @@ class StoreController extends Controller
 
     public function show(ProductController $api, string $slug, ?string $city = null)
     {
-        // Per-city subpages were a doorway-page pattern flagged by an SEO
-        // audit (1,399 near-identical /parduotuves/{store}/{city} pages,
-        // same title/H1, differing only by one address block) — the
-        // no-city page below already groups and renders every city's
-        // locations in one place, so a bookmarked/indexed city URL just
-        // redirects to the store page instead of 404ing.
-        if ($city !== null) {
-            return redirect("/parduotuves/{$slug}", 301);
-        }
-
         $store = Store::where('slug', $slug)->firstOrFail();
         $response = $api->getStoreLocations($slug);
 
@@ -59,6 +55,11 @@ class StoreController extends Controller
 
         $payload = json_decode($response->getContent(), true);
         $locations = collect($payload['locations']);
+        $locationsByCity = $locations->groupBy('city');
+
+        if ($city !== null) {
+            return $this->showCity($store, $locationsByCity, $city);
+        }
 
         $path = "/parduotuves/{$slug}";
         $breadcrumbs = [
@@ -67,9 +68,22 @@ class StoreController extends Controller
             ['name' => $store->name, 'href' => $path],
         ];
 
+        // Cities, not individual addresses, are what the hub links out to —
+        // each city gets its own real page (see showCity()) with the full
+        // address/phone/hours detail; this index just needs enough per-city
+        // real data (count, one sample address) to not be a bare link list.
+        $cities = $locationsByCity->map(fn ($cityLocations, $cityName) => [
+            'name' => $cityName,
+            'slug' => Str::slug($cityName),
+            'count' => $cityLocations->count(),
+            'sampleAddress' => $cityLocations->first()['address'] ?? null,
+        ])->values()->sortBy('name');
+
         return view('stores.show', [
             'store' => $store,
+            'cities' => $cities,
             'locations' => $locations,
+            'totalCount' => $locations->count(),
             'canonical' => CanonicalUrl::build($path),
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
@@ -77,75 +91,61 @@ class StoreController extends Controller
         ]);
     }
 
-    // Individual /parduotuves/{store}/{city}/{locationSlug} page, brought
-    // back after the old blanket per-city pages (see show() above) were
-    // flagged as doorways — this is deliberately NOT the same pattern:
-    // each page here is keyed by one real, specific address (its own
-    // phone/hours/coordinates), not a city-wide aggregation duplicated
-    // across every city with only the city name swapped.
-    private const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-    private const DAY_LABELS = [
-        'monday' => 'Pirmadienis', 'tuesday' => 'Antradienis', 'wednesday' => 'Trečiadienis',
-        'thursday' => 'Ketvirtadienis', 'friday' => 'Penktadienis', 'saturday' => 'Šeštadienis', 'sunday' => 'Sekmadienis',
-    ];
-
-    public function location(string $slug, string $city, string $locationSlug)
+    // Real per-city page — NOT the old doorway pattern (1,399 near-identical
+    // pages flagged by an SEO audit: same title/H1, differing only by one
+    // address block). This one's title/description are built from real,
+    // per-city data (actual address count + first two real addresses with
+    // their own hours), so two different cities never render the same
+    // sentence — a small city genuinely reads differently from a big one,
+    // not just a swapped city name in fixed boilerplate.
+    private function showCity(Store $store, $locationsByCity, string $citySlug)
     {
-        $store = Store::where('slug', $slug)->firstOrFail();
+        $cityName = $locationsByCity->keys()->first(fn ($name) => Str::slug($name) === Str::slug($citySlug));
 
-        // $city is a slug (matches the link built in stores/show.blade.php,
-        // e.g. Str::slug('Šiauliai') === 'siauliai') — compare against a
-        // slugified city, not a raw lowercase one, or a diacritic city name
-        // would never match its own generated link.
-        $location = StoreLocation::where('store_id', $store->id)
-            ->where('slug', $locationSlug)
-            ->active()
-            ->get()
-            ->first(fn ($l) => \Illuminate\Support\Str::slug($l->city) === \Illuminate\Support\Str::slug($city));
-
-        if (!$location) {
+        if (!$cityName) {
             abort(404);
         }
 
-        $path = "/parduotuves/{$slug}/{$city}/{$locationSlug}";
+        $cityLocations = $locationsByCity->get($cityName)->sortBy('address')->values();
+        $count = $cityLocations->count();
+
+        $path = "/parduotuves/{$store->slug}/{$citySlug}";
         $breadcrumbs = [
             ['name' => 'Akcijos', 'href' => '/akcijos'],
             ['name' => 'Parduotuvės', 'href' => '/parduotuves'],
-            ['name' => $store->name, 'href' => "/parduotuves/{$slug}"],
-            ['name' => $location->address, 'href' => $path],
+            ['name' => $store->name, 'href' => "/parduotuves/{$store->slug}"],
+            ['name' => $cityName, 'href' => $path],
         ];
 
         $todayKey = self::DAY_KEYS[now()->dayOfWeekIso - 1];
-        $todayHours = $location->hours[$todayKey] ?? null;
+        $todayLabel = self::DAY_LABELS[$todayKey];
 
-        $title = "„{$store->name}“ {$location->address}, {$location->city} – darbo laikas ir kontaktai";
+        $storeLabel = $count === 1 ? 'parduotuvė' : ($count % 10 >= 2 && $count % 10 <= 9 && !($count % 100 >= 11 && $count % 100 <= 19) ? 'parduotuvės' : 'parduotuvių');
+        $title = "„{$store->name}“ {$cityName} – {$count} {$storeLabel}, adresai ir darbo laikas";
 
-        $descriptionParts = ["„{$store->name}“ parduotuvė adresu {$location->address}, {$location->city}."];
-        $descriptionParts[] = $todayHours
-            ? "Šiandien ({$this->todayLabel()}) dirba {$todayHours}."
-            : "Šiandien ({$this->todayLabel()}) nedirba.";
-        if (!empty($location->phone)) {
-            $descriptionParts[] = "Tel. {$location->phone}.";
-        }
+        // Real addresses + their real today's-hours, not a generic sentence
+        // — this is the part that keeps every city page genuinely distinct.
+        $sample = $cityLocations->take(2)->map(function ($location) use ($todayKey) {
+            $hours = $location['hours'][$todayKey] ?? null;
+            return $hours ? "{$location['address']} (šiandien {$hours})" : $location['address'];
+        })->implode(', ');
 
-        return view('stores.location', [
+        $description = "„{$store->name}“ {$cityName} mieste turi {$count} {$storeLabel}: {$sample}"
+            .($count > 2 ? ' ir kt.' : '.')
+            ." Žemiau visi adresai, darbo laikas ({$todayLabel}) ir kontaktai.";
+
+        return view('stores.city', [
             'store' => $store,
-            'location' => $location,
+            'cityName' => $cityName,
+            'locations' => $cityLocations,
             'dayLabels' => self::DAY_LABELS,
             'todayKey' => $todayKey,
             'title' => $title,
-            'description' => implode(' ', $descriptionParts),
+            'description' => $description,
             'canonical' => CanonicalUrl::build($path),
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
-            'localBusinessSchema' => StoreLocationSchema::build($store, $location, $path),
         ]);
-    }
-
-    private function todayLabel(): string
-    {
-        return self::DAY_LABELS[self::DAY_KEYS[now()->dayOfWeekIso - 1]];
     }
 }

@@ -1,12 +1,9 @@
 @php
-    $locationsByCity = $locations->groupBy('city');
     $cityLabel = fn ($count) => match (true) {
         $count === 1 => 'parduotuvė',
         $count % 10 >= 2 && $count % 10 <= 9 && !($count % 100 >= 11 && $count % 100 <= 19) => 'parduotuvės',
         default => 'parduotuvių',
     };
-    $dayLabels = ['monday' => 'Pirmadienis', 'tuesday' => 'Antradienis', 'wednesday' => 'Trečiadienis',
-        'thursday' => 'Ketvirtadienis', 'friday' => 'Penktadienis', 'saturday' => 'Šeštadienis', 'sunday' => 'Sekmadienis'];
 @endphp
 
 <x-layouts.app
@@ -24,12 +21,12 @@
         <div>
             <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">{{ $store->name }} parduotuvės ir darbo laikas</h1>
             <p class="mt-1 text-sm text-gray-600">
-                Iš viso {{ $locations->count() }} {{ $cityLabel($locations->count()) }} Lietuvoje.
-                Suraskite artimiausią {{ $store->name }} parduotuvę pagal miestą arba adresą.
+                Iš viso {{ $totalCount }} {{ $cityLabel($totalCount) }} Lietuvoje.
+                Pasirinkite miestą, kad pamatytumėte visus adresus ir darbo laiką.
             </p>
         </div>
 
-        @if ($locations->isEmpty())
+        @if ($cities->isEmpty())
             <div class="flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-6 text-center">
                 <p class="text-sm text-gray-600">Šiuo metu parduotuvių sąrašo nėra.</p>
             </div>
@@ -38,49 +35,25 @@
                 <input
                     type="text"
                     x-model="query"
-                    placeholder="Įveskite miestą arba adresą..."
-                    aria-label="Ieškoti parduotuvės pagal miestą arba adresą"
+                    placeholder="Įveskite miestą..."
+                    aria-label="Ieškoti pagal miestą"
                     class="w-full max-w-md rounded-lg border border-gray-300 px-3.5 py-2 text-sm focus:border-green focus:outline-none focus:ring-1 focus:ring-green"
                 >
 
                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <div class="order-2 flex max-h-[600px] flex-col gap-3 overflow-y-auto pr-1 lg:order-1">
-                        @foreach ($locationsByCity as $city => $cityLocations)
-                            <template x-if="!query.trim() || '{{ Str::lower($city) }}'.includes(query.trim().toLowerCase())">
-                                <div>
-                                    <h2 class="mb-2 font-semibold text-gray-900">{{ $city }}</h2>
-                                    <div class="flex flex-col gap-3">
-                                        @foreach ($cityLocations as $location)
-                                            <div
-                                                x-show="!query.trim() || '{{ Str::lower($city.' '.$location['address']) }}'.includes(query.trim().toLowerCase())"
-                                                class="rounded-xl border border-gray-200 bg-white p-4"
-                                            >
-                                                @if (!empty($location['slug']))
-                                                    <a href="/parduotuves/{{ $store->slug }}/{{ Str::slug($city) }}/{{ $location['slug'] }}" class="font-semibold text-gray-900 hover:text-green">{{ $location['address'] }}</a>
-                                                @else
-                                                    <p class="font-semibold text-gray-900">{{ $location['address'] }}</p>
-                                                @endif
-                                                @if (!empty($location['phone']))
-                                                    <p class="mt-1 text-sm text-gray-600">{{ $location['phone'] }}</p>
-                                                @endif
-                                                @if (!empty($location['hours']))
-                                                    <details class="mt-2 text-sm">
-                                                        <summary class="cursor-pointer font-medium text-gray-500 hover:text-gray-700">Visa savaitė</summary>
-                                                        <dl class="mt-2 flex flex-col gap-0.5">
-                                                            @foreach ($dayLabels as $day => $label)
-                                                                <div class="flex justify-between gap-2">
-                                                                    <dt class="text-gray-500">{{ $label }}</dt>
-                                                                    <dd class="font-medium text-gray-900">{{ $location['hours'][$day] ?? 'Nedirba' }}</dd>
-                                                                </div>
-                                                            @endforeach
-                                                        </dl>
-                                                    </details>
-                                                @endif
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </template>
+                    <div class="order-2 grid max-h-[600px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:order-1">
+                        @foreach ($cities as $city)
+                            <a
+                                href="/parduotuves/{{ $store->slug }}/{{ $city['slug'] }}"
+                                x-show="!query.trim() || '{{ Str::lower($city['name']) }}'.includes(query.trim().toLowerCase())"
+                                class="rounded-xl border border-gray-200 bg-white p-4 hover:border-green"
+                            >
+                                <p class="font-semibold text-gray-900">{{ $city['name'] }}</p>
+                                <p class="mt-1 text-sm text-gray-600">{{ $city['count'] }} {{ $cityLabel($city['count']) }}</p>
+                                @if ($city['sampleAddress'])
+                                    <p class="mt-1 truncate text-xs text-gray-400">{{ $city['sampleAddress'] }}{{ $city['count'] > 1 ? ' ir kt.' : '' }}</p>
+                                @endif
+                            </a>
                         @endforeach
                     </div>
 

@@ -57,7 +57,6 @@ Route::get('/akcijos/{store}/alkoholiniai-ir-nealkoholiniai-gerimai', function (
 Route::get('/akcijos/{slug1}/{slug2?}', [AkcijosController::class, 'show']);
 
 Route::get('/parduotuves', [StoreController::class, 'index']);
-Route::get('/parduotuves/{slug}/{city}/{locationSlug}', [StoreController::class, 'location']);
 Route::get('/parduotuves/{slug}/{city?}', [StoreController::class, 'show']);
 
 Route::get('/leidiniai', [LeafletController::class, 'index']);
