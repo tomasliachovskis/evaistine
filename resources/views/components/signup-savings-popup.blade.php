@@ -1,9 +1,9 @@
 {{-- Ported from discount/src/components/common/signup-savings-popup.tsx —
      guest-only "don't miss the best deals" register nudge, shown once the
-     page has been open 5s, dismissible for a day via a plain cookie (same
+     page has been open 10s, dismissible for a day via a plain cookie (same
      vanilla document.cookie approach as <x-cookie-consent>, no js-cookie
      dependency needed). Opens the shared auth-modal on its CTA click, and
-     stays hidden (even after its own 5s timer elapses) while auth-modal or
+     stays hidden (even after its own 10s timer elapses) while auth-modal or
      price-watch-modal is already open — both are z-[60], this is z-[110],
      so without this check it would silently render on top of whichever one
      the guest is already looking at.
@@ -25,7 +25,7 @@
                     this.dismissed = true;
                     return;
                 }
-                setTimeout(() => { this.elapsed = true; }, 5000);
+                setTimeout(() => { this.elapsed = true; }, 10000);
             },
             dismiss() {
                 const expires = new Date(Date.now() + 86400000).toUTCString();
