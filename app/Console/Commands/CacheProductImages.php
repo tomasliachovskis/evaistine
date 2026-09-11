@@ -73,9 +73,13 @@ class CacheProductImages extends Command
                 // us) would otherwise get re-selected — and re-fail — on
                 // every run until fixed, wasting the batch's whole --limit
                 // on the same handful of stuck products instead of making
-                // progress on the rest. Back off for a day before retrying.
+                // progress on the rest. Back off for 3 days before retrying
+                // (bumped from 1 day: cdn.barbora.lt fingerprint-blocks our
+                // client on every request — see CLAUDE.md — so its ~17.5k
+                // products would otherwise burn most of every day's --limit
+                // capacity forever on retries that can never succeed).
                 $query->whereNull('image_cache_failed_at')
-                    ->orWhere('image_cache_failed_at', '<', now()->subDay());
+                    ->orWhere('image_cache_failed_at', '<', now()->subDays(3));
             });
 
         // Prioritize products a shopper could actually be looking at right
