@@ -11,6 +11,25 @@ use Illuminate\Support\Facades\DB;
 
 class ProductDuplicateMergeService
 {
+    // Known 2-char catalog abbreviation stems, safe to trust as genuine
+    // truncations regardless of length — an explicit whitelist, not a
+    // length threshold, precisely because length alone can't tell a real
+    // abbreviation ("sk." for "skonio") from an unrelated short code that
+    // just happens to prefix a longer one ("AA" is not short for "AAA").
+    // Sourced from real catalog data (2026-09-11): counted every `\w{2}\.`
+    // token across all product names, then sampled real occurrences of
+    // each frequent one to check it always expands to the same word.
+    // "sk" (skonio, "flavor", 1213x), "įd" (įdaras, "filling", 191x),
+    // "ob" (obuolių, "apple(s)"), "dž" (džiovintas/-a/-i/-ų, "dried") and
+    // "įv" (įvairių, "assorted" — always paired with "rūšių") each checked
+    // out unambiguous across 8+ sampled real names. Other frequent 2-char
+    // stems from the same pass ("pl", "gr", "gl", "kl", "kv", "av", ...)
+    // were left out because sampling showed them genuinely ambiguous
+    // (e.g. "pl." is "plaukų" in one product, "plautų" in another; "gl."
+    // is "glaistytas" in one, "glitimo" in another) — adding them risks
+    // the same kind of false merge this whitelist exists to prevent.
+    private const KNOWN_SHORT_ABBREVIATIONS = ['sk', 'įd', 'ob', 'dž', 'įv'];
+
     public function analyzePairs(Collection $pairs): Collection
     {
         if ($pairs->isEmpty()) {
@@ -276,12 +295,18 @@ class ProductDuplicateMergeService
         // the two cases. Missing a genuine 2-char abbreviation is a much
         // smaller cost than silently merging two different SKUs.
         $minLen = min($len1, $len2);
+        $shorter = $len1 <= $len2 ? $word1 : $word2;
+        $longer = $len1 <= $len2 ? $word2 : $word1;
+
+        // Whitelisted 2-char abbreviation, checked before the general
+        // 3-char floor below — see KNOWN_SHORT_ABBREVIATIONS.
+        if ($minLen === 2 && in_array($shorter, self::KNOWN_SHORT_ABBREVIATIONS, true)) {
+            return mb_substr($longer, 0, $minLen) === $shorter;
+        }
+
         if ($minLen < 3) {
             return false;
         }
-
-        $shorter = $len1 <= $len2 ? $word1 : $word2;
-        $longer = $len1 <= $len2 ? $word2 : $word1;
 
         return mb_substr($longer, 0, $minLen) === $shorter;
     }

@@ -186,6 +186,8 @@ JOIN s b
               = LEFT(b.s1, LEAST(CHAR_LENGTH(a.s1), CHAR_LENGTH(b.s1)) - 1))
         OR (CHAR_LENGTH(a.s1) >= 3 AND CHAR_LENGTH(b.s1) >= 3
             AND (a.s1 LIKE CONCAT(b.s1, '%') OR b.s1 LIKE CONCAT(a.s1, '%')))
+        OR ((a.s1 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s1 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
+            AND (a.s1 LIKE CONCAT(b.s1, '%') OR b.s1 LIKE CONCAT(a.s1, '%')))
     ))
     AND ((a.wc < 2) OR (
         (CHAR_LENGTH(a.s2) <= 3 AND a.s2 = b.s2)
@@ -193,6 +195,8 @@ JOIN s b
             AND LEFT(a.s2, LEAST(CHAR_LENGTH(a.s2), CHAR_LENGTH(b.s2)) - 1)
               = LEFT(b.s2, LEAST(CHAR_LENGTH(a.s2), CHAR_LENGTH(b.s2)) - 1))
         OR (CHAR_LENGTH(a.s2) >= 3 AND CHAR_LENGTH(b.s2) >= 3
+            AND (a.s2 LIKE CONCAT(b.s2, '%') OR b.s2 LIKE CONCAT(a.s2, '%')))
+        OR ((a.s2 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s2 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
             AND (a.s2 LIKE CONCAT(b.s2, '%') OR b.s2 LIKE CONCAT(a.s2, '%')))
     ))
     AND ((a.wc < 3) OR (
@@ -202,6 +206,8 @@ JOIN s b
               = LEFT(b.s3, LEAST(CHAR_LENGTH(a.s3), CHAR_LENGTH(b.s3)) - 1))
         OR (CHAR_LENGTH(a.s3) >= 3 AND CHAR_LENGTH(b.s3) >= 3
             AND (a.s3 LIKE CONCAT(b.s3, '%') OR b.s3 LIKE CONCAT(a.s3, '%')))
+        OR ((a.s3 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s3 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
+            AND (a.s3 LIKE CONCAT(b.s3, '%') OR b.s3 LIKE CONCAT(a.s3, '%')))
     ))
     AND ((a.wc < 4) OR (
         (CHAR_LENGTH(a.s4) <= 3 AND a.s4 = b.s4)
@@ -209,6 +215,8 @@ JOIN s b
             AND LEFT(a.s4, LEAST(CHAR_LENGTH(a.s4), CHAR_LENGTH(b.s4)) - 1)
               = LEFT(b.s4, LEAST(CHAR_LENGTH(a.s4), CHAR_LENGTH(b.s4)) - 1))
         OR (CHAR_LENGTH(a.s4) >= 3 AND CHAR_LENGTH(b.s4) >= 3
+            AND (a.s4 LIKE CONCAT(b.s4, '%') OR b.s4 LIKE CONCAT(a.s4, '%')))
+        OR ((a.s4 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s4 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
             AND (a.s4 LIKE CONCAT(b.s4, '%') OR b.s4 LIKE CONCAT(a.s4, '%')))
     ))
     AND ((a.wc < 5) OR (
@@ -218,6 +226,8 @@ JOIN s b
               = LEFT(b.s5, LEAST(CHAR_LENGTH(a.s5), CHAR_LENGTH(b.s5)) - 1))
         OR (CHAR_LENGTH(a.s5) >= 3 AND CHAR_LENGTH(b.s5) >= 3
             AND (a.s5 LIKE CONCAT(b.s5, '%') OR b.s5 LIKE CONCAT(a.s5, '%')))
+        OR ((a.s5 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s5 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
+            AND (a.s5 LIKE CONCAT(b.s5, '%') OR b.s5 LIKE CONCAT(a.s5, '%')))
     ))
     AND ((a.wc < 6) OR (
         (CHAR_LENGTH(a.s6) <= 3 AND a.s6 = b.s6)
@@ -225,6 +235,8 @@ JOIN s b
             AND LEFT(a.s6, LEAST(CHAR_LENGTH(a.s6), CHAR_LENGTH(b.s6)) - 1)
               = LEFT(b.s6, LEAST(CHAR_LENGTH(a.s6), CHAR_LENGTH(b.s6)) - 1))
         OR (CHAR_LENGTH(a.s6) >= 3 AND CHAR_LENGTH(b.s6) >= 3
+            AND (a.s6 LIKE CONCAT(b.s6, '%') OR b.s6 LIKE CONCAT(a.s6, '%')))
+        OR ((a.s6 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s6 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
             AND (a.s6 LIKE CONCAT(b.s6, '%') OR b.s6 LIKE CONCAT(a.s6, '%')))
     ))
     AND ((a.wc < 7) OR (
@@ -234,6 +246,8 @@ JOIN s b
               = LEFT(b.s7, LEAST(CHAR_LENGTH(a.s7), CHAR_LENGTH(b.s7)) - 1))
         OR (CHAR_LENGTH(a.s7) >= 3 AND CHAR_LENGTH(b.s7) >= 3
             AND (a.s7 LIKE CONCAT(b.s7, '%') OR b.s7 LIKE CONCAT(a.s7, '%')))
+        OR ((a.s7 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s7 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
+            AND (a.s7 LIKE CONCAT(b.s7, '%') OR b.s7 LIKE CONCAT(a.s7, '%')))
     ))
     AND ((a.wc < 8) OR (
         (CHAR_LENGTH(a.s8) <= 3 AND a.s8 = b.s8)
@@ -241,6 +255,8 @@ JOIN s b
             AND LEFT(a.s8, LEAST(CHAR_LENGTH(a.s8), CHAR_LENGTH(b.s8)) - 1)
               = LEFT(b.s8, LEAST(CHAR_LENGTH(a.s8), CHAR_LENGTH(b.s8)) - 1))
         OR (CHAR_LENGTH(a.s8) >= 3 AND CHAR_LENGTH(b.s8) >= 3
+            AND (a.s8 LIKE CONCAT(b.s8, '%') OR b.s8 LIKE CONCAT(a.s8, '%')))
+        OR ((a.s8 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s8 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
             AND (a.s8 LIKE CONCAT(b.s8, '%') OR b.s8 LIKE CONCAT(a.s8, '%')))
     ))
     AND ((a.wc < 9) OR (
@@ -250,6 +266,8 @@ JOIN s b
               = LEFT(b.s9, LEAST(CHAR_LENGTH(a.s9), CHAR_LENGTH(b.s9)) - 1))
         OR (CHAR_LENGTH(a.s9) >= 3 AND CHAR_LENGTH(b.s9) >= 3
             AND (a.s9 LIKE CONCAT(b.s9, '%') OR b.s9 LIKE CONCAT(a.s9, '%')))
+        OR ((a.s9 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s9 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
+            AND (a.s9 LIKE CONCAT(b.s9, '%') OR b.s9 LIKE CONCAT(a.s9, '%')))
     ))
     AND ((a.wc < 10) OR (
         (CHAR_LENGTH(a.s10) <= 3 AND a.s10 = b.s10)
@@ -257,6 +275,8 @@ JOIN s b
             AND LEFT(a.s10, LEAST(CHAR_LENGTH(a.s10), CHAR_LENGTH(b.s10)) - 1)
               = LEFT(b.s10, LEAST(CHAR_LENGTH(a.s10), CHAR_LENGTH(b.s10)) - 1))
         OR (CHAR_LENGTH(a.s10) >= 3 AND CHAR_LENGTH(b.s10) >= 3
+            AND (a.s10 LIKE CONCAT(b.s10, '%') OR b.s10 LIKE CONCAT(a.s10, '%')))
+        OR ((a.s10 IN ('sk', 'įd', 'ob', 'dž', 'įv') OR b.s10 IN ('sk', 'įd', 'ob', 'dž', 'įv'))
             AND (a.s10 LIKE CONCAT(b.s10, '%') OR b.s10 LIKE CONCAT(a.s10, '%')))
     ))
 ),
