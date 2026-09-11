@@ -103,6 +103,35 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
     {
         $startedAt = now();
 
+        // discounts:dispatch-store-processing snapshots which stores are
+        // "ready" (quiet for 10min) and dispatches this job for the whole
+        // batch — by the time THIS store's turn comes up in that batch, its
+        // own pending rows can already be gone (a concurrent run elsewhere
+        // beat it to them, or nothing ever really arrived). Without this
+        // check, a 0-item store still pays for the full pipeline below
+        // (categories:bulk-map, merge-duplicates, archive-expired,
+        // Meilisearch reindex — several of which aren't even scoped to one
+        // store) — seen live: 2m11s spent processing Thomas Philipps with
+        // discount_temp genuinely empty for it at run time.
+        $pendingCount = DiscountTemp::whereRaw('LOWER(store) = ?', [mb_strtolower($store)])
+            ->where('processed', false)
+            ->count();
+
+        if ($pendingCount === 0) {
+            ScraperRun::create([
+                'type' => ScraperRun::TYPE_PROCESS,
+                'store' => $store,
+                'status' => ScraperRun::STATUS_SUCCESS,
+                'step' => 'skipped — no pending discount_temp rows at run time',
+                'started_at' => $startedAt,
+                'finished_at' => now(),
+                'items_count' => 0,
+            ]);
+            Log::info("FinalizeScrapedStoresJob[{$store}]: skipped, no pending rows at run time");
+
+            return;
+        }
+
         $run = ScraperRun::create([
             'type' => ScraperRun::TYPE_PROCESS,
             'store' => $store,
