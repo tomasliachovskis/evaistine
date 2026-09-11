@@ -19,6 +19,7 @@ class Product extends Model
         'generic_product_id',
         'image_url',
         'image_from_flyer',
+        'image_cache_failed_at',
         'seo_title',
         'meta_title',
         'meta_description',
