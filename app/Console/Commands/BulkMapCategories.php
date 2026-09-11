@@ -2,13 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Models\DiscountTemp;
 use App\Services\CategoryMappingService;
 use Illuminate\Console\Command;
 
 class BulkMapCategories extends Command
 {
     protected $signature = 'categories:bulk-map {store?}';
-    protected $description = 'Bulk map product categories using ChatGPT API for Norfa and Lidl';
+    protected $description = 'Bulk map product categories (name-match first, ChatGPT fallback) for every store with pending blank-category discount_temp rows';
 
     private CategoryMappingService $mappingService;
 
@@ -24,20 +25,35 @@ class BulkMapCategories extends Command
 
         if ($store) {
             $this->mapStore($store);
-        } else {
-            $this->mapStore('Norfa');
-            $this->mapStore('Lidl');
-            $this->mapStore('Rimi');
-            $this->mapStore('Maxima');
-            $this->mapStore('Iki');
-            $this->mapStore('Šilas');
-            $this->mapStore('Aibė');
-            $this->mapStore('Grustė');
-            $this->mapStore('Čia');
-            $this->mapStore('Express Market');
-            $this->mapStore('Kubas');
-            $this->mapStore('Koops');
-            $this->mapStore('ePromo');
+
+            return;
+        }
+
+        // Used to be a hardcoded 13-store list — silently missed any store
+        // not on it (confirmed live: Promo Cash&Carry and Thomas Philipps
+        // were never in it, so their blank-category discount_temp rows
+        // could never resolve no matter what, independent of the OpenAI
+        // 429s that were separately blocking the listed stores). Querying
+        // for whoever actually has pending blank-category rows means a
+        // future new store is covered automatically too.
+        $stores = DiscountTemp::query()
+            ->where('processed', false)
+            ->where(function ($query) {
+                $query->whereNull('category')->orWhere('category', '');
+            })
+            ->distinct()
+            ->pluck('store')
+            ->filter()
+            ->values();
+
+        if ($stores->isEmpty()) {
+            $this->info('No stores with pending blank-category rows.');
+
+            return;
+        }
+
+        foreach ($stores as $storeName) {
+            $this->mapStore($storeName);
         }
     }
 
