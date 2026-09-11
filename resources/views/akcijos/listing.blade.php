@@ -245,7 +245,7 @@
                 <h2 class="mb-3 text-base font-bold leading-tight text-gray-900 sm:text-lg">Dažniausiai ieškoma</h2>
                 <ul class="flex flex-col gap-1.5 text-sm">
                     @foreach ($searchExamples as $term)
-                        <li><a href="/akcijos/paieska/{{ rawurlencode($term) }}" class="text-gray-700 transition-colors hover:text-green">{{ $term }}</a></li>
+                        <li><a href="/akcijos/paieska/{{ rawurlencode($term) }}" rel="nofollow" class="text-gray-700 transition-colors hover:text-green">{{ $term }}</a></li>
                     @endforeach
                     @foreach ($keywordCategories as $category)
                         <li><a href="{{ $category['href'] }}" class="text-gray-700 transition-colors hover:text-green">{{ $category['name'] }}</a></li>
