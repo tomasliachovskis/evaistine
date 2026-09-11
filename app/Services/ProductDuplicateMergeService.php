@@ -340,6 +340,21 @@ class ProductDuplicateMergeService
                     $fullerName = $this->pickFullerName($base->name, $duplicate->name);
                     if ($fullerName !== $base->name) {
                         if (!$dryRun) {
+                            // Record the name we're about to overwrite, not
+                            // just the duplicate's — otherwise this exact
+                            // string only still resolves to $base because
+                            // its slug happens to have been derived from it
+                            // and slug is left untouched here. That's an
+                            // implicit, easy-to-break coincidence; an
+                            // explicit mapping row is the real guarantee,
+                            // and it also makes product_mapping a complete
+                            // record of every raw name this product has
+                            // ever carried instead of missing the very one
+                            // it started with.
+                            ProductMapping::firstOrCreate(
+                                ['name' => $base->name],
+                                ['product_id' => $base->id]
+                            );
                             $base->update(['name' => $fullerName]);
                         } else {
                             $base->name = $fullerName;
