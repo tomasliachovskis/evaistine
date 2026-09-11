@@ -73,6 +73,16 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
             }
         }
 
+        // Everything below (global cleanup/reindex, cache bump+rewarm,
+        // frontend revalidate) is pure waste if every store in this batch
+        // got skipped (processStore() returns false — its pending rows
+        // vanished before its turn came up) — nothing actually changed in
+        // the DB, so there's nothing for any of this to pick up. Guard the
+        // whole rest of the batch on it, not just the 4 commands below.
+        if (!$anyStoreProcessed) {
+            return;
+        }
+
         // products:merge-duplicates/discounts:remove-duplicate-active/
         // discounts:archive-expired/discounts:index-meilisearch are just as
         // global as cache:clear-discounts below (none of them take a store
@@ -81,16 +91,11 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         // used to run once PER STORE inside processStore()'s loop — a
         // 5-store batch redundantly re-scanned the whole product table 5
         // times. Moved out here, same "once per batch" reasoning as the
-        // cache warms below. Only worth running at all if some store in
-        // this batch actually had real work (all-skipped batches are just
-        // stores whose pending rows vanished before their turn, see
-        // processStore()).
-        if ($anyStoreProcessed) {
-            Artisan::call('products:merge-duplicates');
-            Artisan::call('discounts:remove-duplicate-active');
-            Artisan::call('discounts:archive-expired');
-            Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
-        }
+        // cache warms below.
+        Artisan::call('products:merge-duplicates');
+        Artisan::call('discounts:remove-duplicate-active');
+        Artisan::call('discounts:archive-expired');
+        Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
 
         // Once for the whole batch, not once per store — see class docblock.
         Artisan::call('cache:clear-discounts');
