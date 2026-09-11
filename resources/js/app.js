@@ -190,6 +190,65 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    // "Rasti parduotuvę netoliese manęs" — real browser geolocation +
+    // client-side haversine against every location's own lat/lng (no API
+    // call, no server round-trip). `locations` is
+    // [{lat, lng, address, city, citySlug}].
+    Alpine.data('nearestStoreFinder', (locations) => ({
+        loading: false,
+        error: null,
+        result: null,
+        find() {
+            if (!navigator.geolocation) {
+                this.error = 'Jūsų naršyklė nepalaiko geolokacijos.';
+                return;
+            }
+
+            this.loading = true;
+            this.error = null;
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    this.loading = false;
+                    const { latitude, longitude } = position.coords;
+                    const withCoords = locations.filter((l) => l.lat && l.lng);
+
+                    if (!withCoords.length) {
+                        this.error = 'Adresų su koordinatėmis nerasta.';
+                        return;
+                    }
+
+                    let nearest = null;
+                    let nearestDistance = Infinity;
+                    for (const location of withCoords) {
+                        const distance = haversineKm(latitude, longitude, location.lat, location.lng);
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            nearest = location;
+                        }
+                    }
+
+                    this.result = { ...nearest, distanceKm: nearestDistance.toFixed(1) };
+                },
+                () => {
+                    this.loading = false;
+                    this.error = 'Nepavyko nustatyti jūsų vietos — patikrinkite naršyklės leidimus.';
+                },
+                { timeout: 10000 }
+            );
+        },
+    }));
+
+    function haversineKm(lat1, lng1, lat2, lng2) {
+        const toRad = (deg) => (deg * Math.PI) / 180;
+        const R = 6371;
+        const dLat = toRad(lat2 - lat1);
+        const dLng = toRad(lng2 - lng1);
+        const a = Math.sin(dLat / 2) ** 2
+            + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
     // `points` is [{store_slug, store_name, price, date}], server-sorted
     // ascending by date — the SVG/stat/summary numbers here are purely a
     // client-side progressive enhancement over price-history-chart.blade.php's

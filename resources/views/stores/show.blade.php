@@ -8,6 +8,7 @@
 
 <x-layouts.app
     :title="$store->name . ' parduotuvių tinklas – adresai ir darbo laikas'"
+    :description="'Raskite artimiausią ' . $store->name . ' parduotuvę — visi ' . $totalCount . ' adresai, darbo laikas ir kontaktai vienoje vietoje.'"
     :canonical="$canonical"
     :robots="$robots"
 >
@@ -25,6 +26,37 @@
                 Pasirinkite miestą, kad pamatytumėte visus adresus ir darbo laiką.
             </p>
         </div>
+
+        @if (!$cities->isEmpty())
+            {{-- "Netoliese manęs" / nearest-store finder — real geolocation +
+                 distance against every location's own lat/lng (already
+                 loaded for the map below), not just a "near me" label with
+                 nothing behind it. Haversine done client-side, no API call. --}}
+            <div
+                x-data="nearestStoreFinder({{ $locations->map(fn ($l) => ['lat' => $l['lat'], 'lng' => $l['lng'], 'address' => $l['address'], 'city' => $l['city'], 'citySlug' => \Illuminate\Support\Str::slug($l['city'])])->values()->toJson() }})"
+                class="rounded-xl border border-gray-200 bg-white p-4"
+            >
+                <template x-if="!result && !loading && !error">
+                    <button
+                        type="button"
+                        @click="find()"
+                        class="inline-flex items-center gap-2 text-sm font-medium text-dark-green hover:underline"
+                    >
+                        <x-app-icon name="map-pin" class="size-4" />
+                        Rasti artimiausią {{ mb_strtolower($store->name) }} parduotuvę
+                    </button>
+                </template>
+                <p x-show="loading" class="text-sm text-gray-600">Nustatoma jūsų vieta...</p>
+                <p x-show="error" x-text="error" class="text-sm text-gray-600"></p>
+                <template x-if="result">
+                    <p class="text-sm text-gray-900">
+                        Artimiausia parduotuvė:
+                        <a :href="'/parduotuves/{{ $store->slug }}/' + result.citySlug" class="font-semibold text-dark-green hover:underline" x-text="result.address + ', ' + result.city"></a>
+                        <span class="text-gray-600" x-text="'(~' + result.distanceKm + ' km)'"></span>
+                    </p>
+                </template>
+            </div>
+        @endif
 
         @if ($cities->isEmpty())
             <div class="flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-6 text-center">
