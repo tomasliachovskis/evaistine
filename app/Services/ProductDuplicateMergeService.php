@@ -249,11 +249,11 @@ class ProductDuplicateMergeService
         $len1 = mb_strlen($word1);
         $len2 = mb_strlen($word2);
 
-        if ($len1 <= 3 || $len2 <= 3) {
-            return false;
-        }
-
-        if (abs($len1 - $len2) <= 3) {
+        // Near-equal-length, differs-near-the-end (typo-style) match. Kept
+        // to words longer than 3 chars only — below that, "shares all but
+        // the last character" stops being a meaningful signal ("su" vs
+        // "sū" would otherwise wrongly match).
+        if ($len1 > 3 && $len2 > 3 && abs($len1 - $len2) <= 3) {
             $prefixLength = min($len1, $len2) - 1;
 
             if ($prefixLength >= 1 && mb_substr($word1, 0, $prefixLength) === mb_substr($word2, 0, $prefixLength)) {
@@ -263,8 +263,18 @@ class ProductDuplicateMergeService
 
         // Abbreviation vs full word (e.g. catalog copy "Šalt." vs a flyer's
         // "Šaltasis"): one word is a genuine, literal prefix of the other,
-        // regardless of how much shorter the abbreviation is — the ±3 rule
-        // above only catches near-equal-length typo-style differences.
+        // regardless of how much shorter the abbreviation is.
+        //
+        // Floor is 3 chars, not 2 — tried 2 (to also catch "įd." -> "įdaru")
+        // and found real false positives on real catalog data: "VS" is a
+        // genuine prefix of "VSOP" but they're different cognac grades
+        // (ALBERT JARRAUD VS vs VSOP), and "AA"/"AAA" battery sizes matched
+        // each other the same way across 7 separate pairs. A 2-char code is
+        // just as often a distinct specifier as it is a truncation, and
+        // nothing in the string itself (no trailing period survives this
+        // far — periods are stripped before word-splitting) distinguishes
+        // the two cases. Missing a genuine 2-char abbreviation is a much
+        // smaller cost than silently merging two different SKUs.
         $minLen = min($len1, $len2);
         if ($minLen < 3) {
             return false;
