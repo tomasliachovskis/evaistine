@@ -156,12 +156,24 @@ class ProductDuplicateMergeService
 
     public function pickBaseProduct(array $productIds): Product
     {
+        // The surviving row keeps its own id/slug/URL, its discount history,
+        // and everyone's favorites — the oldest product has accumulated the
+        // most of that, so it survives regardless of which source (scraper
+        // vs. flyer) happened to create it. `id` is a stable tiebreaker for
+        // rows created in the same batch with an identical `created_at`.
+        //
+        // sortBy()'s array-of-criteria form calls a callable criterion as a
+        // 2-arg comparator ($a, $b) => <spaceship result>, NOT as a 1-arg
+        // value extractor — passing a 1-arg extractor still "works" (PHP
+        // silently drops the extra $b) but returns $a's raw field value as
+        // if it were the comparison result, which sorts on that value's
+        // magnitude instead of comparing $a to $b at all.
         return Product::query()
             ->whereIn('id', $productIds)
             ->get()
             ->sortBy([
-                fn (Product $product) => $product->image_from_flyer ? 1 : 0,
-                fn (Product $product) => $product->id,
+                fn (Product $a, Product $b) => ($a->created_at?->getTimestamp() ?? 0) <=> ($b->created_at?->getTimestamp() ?? 0),
+                fn (Product $a, Product $b) => $a->id <=> $b->id,
             ])
             ->firstOrFail();
     }
@@ -230,24 +242,65 @@ class ProductDuplicateMergeService
 
     private function wordsFuzzyMatch(string $word1, string $word2): bool
     {
+        if ($word1 === $word2) {
+            return true;
+        }
+
         $len1 = mb_strlen($word1);
         $len2 = mb_strlen($word2);
 
         if ($len1 <= 3 || $len2 <= 3) {
-            return $word1 === $word2;
-        }
-
-        if (abs($len1 - $len2) > 3) {
             return false;
         }
 
-        $prefixLength = min($len1, $len2) - 1;
+        if (abs($len1 - $len2) <= 3) {
+            $prefixLength = min($len1, $len2) - 1;
 
-        if ($prefixLength < 1) {
-            return $word1 === $word2;
+            if ($prefixLength >= 1 && mb_substr($word1, 0, $prefixLength) === mb_substr($word2, 0, $prefixLength)) {
+                return true;
+            }
         }
 
-        return mb_substr($word1, 0, $prefixLength) === mb_substr($word2, 0, $prefixLength);
+        // Abbreviation vs full word (e.g. catalog copy "Šalt." vs a flyer's
+        // "Šaltasis"): one word is a genuine, literal prefix of the other,
+        // regardless of how much shorter the abbreviation is — the ±3 rule
+        // above only catches near-equal-length typo-style differences.
+        $minLen = min($len1, $len2);
+        if ($minLen < 3) {
+            return false;
+        }
+
+        $shorter = $len1 <= $len2 ? $word1 : $word2;
+        $longer = $len1 <= $len2 ? $word2 : $word1;
+
+        return mb_substr($longer, 0, $minLen) === $shorter;
+    }
+
+    public function pickFullerName(string $name1, string $name2): string
+    {
+        $abbrev1 = $this->countAbbreviations($name1);
+        $abbrev2 = $this->countAbbreviations($name2);
+
+        if ($abbrev1 !== $abbrev2) {
+            return $abbrev2 < $abbrev1 ? $name2 : $name1;
+        }
+
+        // Tie on abbreviation count (e.g. neither name has any, or both
+        // abbreviate the same number of words) — fall back to the longer
+        // string, which for same-word-count duplicates reliably means more
+        // complete wording.
+        return mb_strlen($name2) > mb_strlen($name1) ? $name2 : $name1;
+    }
+
+    // Catalog convention (same one MeilisearchService::buildNameStem() relies
+    // on): a truncated word is written with a trailing period ("Šalt.",
+    // "kav.", "gėr."). Counts those, not every period in the string — a
+    // decimal like "0.25" or a unit like "l." shouldn't inflate the count.
+    private function countAbbreviations(string $name): int
+    {
+        preg_match_all('/(?<![0-9])[A-Za-zĄČĘĖĮŠŲŪŽąčęėįšųūž]+\./u', $name, $matches);
+
+        return count($matches[0]);
     }
 
     public function mergeAllClusters(array $clusters, bool $dryRun): array
@@ -272,6 +325,25 @@ class ProductDuplicateMergeService
 
                     if ($this->pairHasConflictingSuffixSize($base->name, $duplicate->name)) {
                         continue;
+                    }
+
+                    // Which row survives (base->id, its slug/URL) is picked by
+                    // pickBaseProduct() above for other reasons (image
+                    // quality, id), but its raw catalog `name` is often the
+                    // abbreviated store-card copy ("Šalt. kavos gėr. ...")
+                    // while a duplicate carries the fuller flyer-print
+                    // wording ("Šaltasis kavos gėrimas ..."). Since the fuzzy
+                    // matcher already established these name strings refer
+                    // to the same product with the same word count, the
+                    // longer string is reliably the less-abbreviated one —
+                    // keep that as the surviving product's display name.
+                    $fullerName = $this->pickFullerName($base->name, $duplicate->name);
+                    if ($fullerName !== $base->name) {
+                        if (!$dryRun) {
+                            $base->update(['name' => $fullerName]);
+                        } else {
+                            $base->name = $fullerName;
+                        }
                     }
 
                     $merged = array_merge(
