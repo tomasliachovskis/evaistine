@@ -66,8 +66,30 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
     {
         $batchStartedAt = now();
 
+        $anyStoreProcessed = false;
         foreach ($this->stores as $store) {
-            $this->processStore($store);
+            if ($this->processStore($store)) {
+                $anyStoreProcessed = true;
+            }
+        }
+
+        // products:merge-duplicates/discounts:remove-duplicate-active/
+        // discounts:archive-expired/discounts:index-meilisearch are just as
+        // global as cache:clear-discounts below (none of them take a store
+        // filter — checked: they all scan/operate across every
+        // product/discount regardless of which store triggered them) but
+        // used to run once PER STORE inside processStore()'s loop — a
+        // 5-store batch redundantly re-scanned the whole product table 5
+        // times. Moved out here, same "once per batch" reasoning as the
+        // cache warms below. Only worth running at all if some store in
+        // this batch actually had real work (all-skipped batches are just
+        // stores whose pending rows vanished before their turn, see
+        // processStore()).
+        if ($anyStoreProcessed) {
+            Artisan::call('products:merge-duplicates');
+            Artisan::call('discounts:remove-duplicate-active');
+            Artisan::call('discounts:archive-expired');
+            Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
         }
 
         // Once for the whole batch, not once per store — see class docblock.
@@ -99,7 +121,10 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         $this->revalidateFrontend();
     }
 
-    private function processStore(string $store): void
+    // Returns whether this store actually had pending work processed
+    // (false for a skip) — handle() uses this to decide whether the
+    // batch-wide cleanup/reindex steps are worth running at all.
+    private function processStore(string $store): bool
     {
         $startedAt = now();
 
@@ -129,7 +154,7 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
             ]);
             Log::info("FinalizeScrapedStoresJob[{$store}]: skipped, no pending rows at run time");
 
-            return;
+            return false;
         }
 
         $run = ScraperRun::create([
@@ -147,10 +172,10 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         try {
             // --map-categories stays on: without it, any new/unmapped category
             // string for this store never gets a category_mappers row and its
-            // discount_temp rows would never process. Meilisearch reindexing
-            // below stays commented out — it needs an SSH tunnel unreachable
-            // from local dev (see CLAUDE.md) and isn't needed to verify the
-            // rest of the pipeline.
+            // discount_temp rows would never process. The global cleanup/
+            // reindex steps (merge-duplicates, remove-duplicate-active,
+            // archive-expired, Meilisearch) now run once per BATCH in
+            // handle(), not here per store — see its comment.
             $step('discounts:process --map-categories');
             $exitCode = Artisan::call('discounts:process', [
                 '--only-store' => $store,
@@ -160,18 +185,6 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
             if ($exitCode !== 0) {
                 throw new \RuntimeException('discounts:process exited with code '.$exitCode);
             }
-
-            $step('products:merge-duplicates');
-            Artisan::call('products:merge-duplicates');
-
-            $step('discounts:remove-duplicate-active');
-            Artisan::call('discounts:remove-duplicate-active');
-
-            $step('discounts:archive-expired');
-            Artisan::call('discounts:archive-expired');
-
-            $step('discounts:index-meilisearch');
-            Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
 
             $step('done');
 
@@ -185,6 +198,8 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
                 'finished_at' => now(),
                 'items_count' => $itemsCount,
             ]);
+
+            return true;
         } catch (\Throwable $e) {
             $trace = $e->getMessage()."\n".$e->getTraceAsString();
             Log::error("FinalizeScrapedStoresJob[{$store}] failed: {$trace}");
@@ -194,6 +209,10 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
                 'finished_at' => now(),
                 'error' => substr($trace, 0, 4000),
             ]);
+
+            // A failure still means the store had real, attempted work —
+            // the batch-wide cleanup below is still worth running.
+            return true;
         }
     }
 
