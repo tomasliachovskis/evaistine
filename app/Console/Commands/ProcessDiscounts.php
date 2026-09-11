@@ -106,7 +106,15 @@ class ProcessDiscounts extends Command
         $processedIds = [];
         $query = DiscountTemp::query()
             ->where('processed', false)
-            ->where('category', '!=', '');
+            ->where('category', '!=', '')
+            // Rows older than a few days are stale enough that we don't
+            // care about them anymore (their leaflet's validity window has
+            // usually already passed) — without this, a row that can never
+            // resolve (e.g. blank category from flyer extraction, which the
+            // filter above already excludes forever) sits unprocessed
+            // indefinitely and keeps discounts:dispatch-store-processing
+            // re-flagging that store as "ready" every cycle for nothing.
+            ->where('created_at', '>=', now()->subDays(3));
         $this->applySkipStoresFilter($query);
         $this->applyOnlyStoreFilter($query);
 
