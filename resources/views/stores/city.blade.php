@@ -54,7 +54,11 @@
                 </a>
             </div>
 
-            <div class="h-[400px] lg:h-auto">
+            {{-- isolate: Leaflet's own panes/controls/popups use z-index up
+                 to 1000 internally, which bleeds through the site's fixed
+                 header (z-50) once scrolled without a new stacking context
+                 here. --}}
+            <div class="isolate h-[400px] lg:h-auto">
                 <div
                     x-data="storeLocatorMap({{ $locations->map(fn ($l) => ['lat' => $l['lat'], 'lng' => $l['lng'], 'address' => $l['address'], 'city' => $l['city']])->values()->toJson() }})"
                     class="h-full min-h-[400px] w-full rounded-xl border border-gray-200"

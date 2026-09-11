@@ -89,7 +89,13 @@
                         @endforeach
                     </div>
 
-                    <div class="order-1 h-[400px] lg:order-2 lg:h-auto">
+                    {{-- isolate: Leaflet's own panes/controls/popups use
+                         z-index up to 1000 internally, which without a new
+                         stacking context here bleeds straight through the
+                         site's fixed header (z-50) once scrolled — this
+                         caps everything inside to this box, however high
+                         Leaflet sets it. --}}
+                    <div class="order-1 isolate h-[400px] lg:order-2 lg:h-auto">
                         <div
                             x-data="storeLocatorMap({{ $locations->map(fn ($l) => ['lat' => $l['lat'], 'lng' => $l['lng'], 'address' => $l['address'], 'city' => $l['city']])->values()->toJson() }})"
                             class="h-full min-h-[400px] w-full rounded-xl border border-gray-200"
