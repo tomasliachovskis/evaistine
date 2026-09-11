@@ -124,8 +124,26 @@ class ProcessDiscounts extends Command
         $query->orderBy('id')
             ->chunkById(self::CHUNK_SIZE, function ($tempDiscounts) use (&$processedIds) {
                 foreach ($tempDiscounts as $tempDiscount) {
-                    if ($this->processTempDiscount($tempDiscount)) {
-                        $processedIds[] = $tempDiscount->id;
+                    // One bad row (e.g. a DB-level constraint violation —
+                    // seen live: "info" too long for the old varchar(255)
+                    // discounts.info column, since fixed, but this guards
+                    // against any future case too) must not abort the
+                    // entire run — without this, an uncaught exception here
+                    // propagates all the way out of discounts:process,
+                    // leaving every other row in this and later chunks
+                    // untouched for that store.
+                    try {
+                        if ($this->processTempDiscount($tempDiscount)) {
+                            $processedIds[] = $tempDiscount->id;
+                        }
+                    } catch (\Throwable $e) {
+                        $this->error("Row #{$tempDiscount->id} ({$tempDiscount->store}: {$tempDiscount->name}) failed: {$e->getMessage()}");
+                        Log::error('discounts:process: row failed, skipping', [
+                            'id' => $tempDiscount->id,
+                            'store' => $tempDiscount->store,
+                            'name' => $tempDiscount->name,
+                            'exception' => $e->getMessage(),
+                        ]);
                     }
                 }
 
