@@ -24,29 +24,26 @@
 
     <main class="base-container py-6 sm:py-8">
         <div class="space-y-6">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <div class="flex items-center gap-2.5">
-                        <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-100 bg-white p-1 shadow-sm">
-                            <img src="/assets/stores/{{ $storeSlug }}.svg" alt="" class="h-full w-full object-contain">
-                        </span>
-                        <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">{{ $flyer['title'] }}</h1>
-                    </div>
-                    @if ($dateRange)
-                        <p class="mt-1.5 text-sm text-gray-600">{{ $dateRange }}</p>
-                    @endif
-                </div>
-                {{-- The raw PDF is scrape/OCR source material, never a user-facing
-                     download — production shows a "Sekti akcijas" follow CTA here
-                     instead, never exposing the PDF URL at all. --}}
-                <x-store-subscribe-button />
-            </div>
+            <x-type-hero
+                eyebrow="Parduotuvė"
+                :icon-src="'/assets/stores/' . $storeSlug . '.svg'"
+                :title="$flyer['title']"
+                :subtitle="$dateRange"
+            >
+                <x-slot:cta>
+                    {{-- The raw PDF is scrape/OCR source material, never a user-facing
+                         download — production shows a "Sekti akcijas" follow CTA here
+                         instead, never exposing the PDF URL at all. --}}
+                    <x-store-subscribe-button />
+                </x-slot:cta>
+            </x-type-hero>
 
             <x-store-nav-tabs
                 :store-slug="$storeSlug"
                 :leaflets-count="$listingMeta['leaflets_count'] ?? 0"
                 :total-offers="$totalOffers"
-                :categories="$listingMeta['top_categories'] ?? []"
+                :categories="$listingMeta['available_categories'] ?? $listingMeta['top_categories'] ?? []"
+                :all-categories-count="count($listingMeta['available_categories'] ?? $listingMeta['top_categories'] ?? [])"
                 :aria-label="$storeName . ' skiltys'"
                 active="leidiniai"
             />

@@ -18,7 +18,7 @@
                     <p class="text-gray-600">Nerasta straipsnių</p>
                 </div>
             @else
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     @foreach ($posts as $post)
                         <x-blog-post-card :post="$post" />
                     @endforeach

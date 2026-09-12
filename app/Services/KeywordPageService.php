@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Discount;
 use App\Models\KeywordPage;
 use App\Models\Store;
+use App\Support\LithuanianDate;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -491,6 +492,14 @@ class KeywordPageService
         $storeComparison = $this->buildStoreComparisonForPage($page, $matchingTotal);
         $relatedPages = $this->buildRelatedPages($page);
         $leaflets = $this->buildLeafletsForDiscounts($displayedDiscounts);
+        $description = strip_tags($page->intro_html ?? '');
+
+        // Newest created_at among the discounts actually fetched for this
+        // page — an approximation (the very newest matching discount site-
+        // wide could in theory sit outside this fetch), but real data from
+        // what's already loaded, not a new query bolted onto the
+        // Meilisearch/fallback dual-path search this service already does.
+        $newestDiscount = $displayedDiscounts->max('created_at');
 
         return [
             'type' => 'keyword',
@@ -512,11 +521,17 @@ class KeywordPageService
                 'dative' => $page->grammar_dative ?: mb_strtolower($page->title),
             ],
             'intro' => [
-                'description' => strip_tags($page->intro_html ?? ''),
+                'description' => $description,
+                // First sentence only, for the hero — the full text (same
+                // string) still renders in full further down as "Apie šias
+                // akcijas" (seo_about); showing all of it twice, once as a
+                // multi-paragraph hero subtitle, blew up the hero's height.
+                'short_description' => $this->firstSentence($description),
                 'seo_about' => $page->intro_html,
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
                 'updated_at' => $freshness['updated_at'],
+                'freshness_label' => $newestDiscount ? LithuanianDate::relative(Carbon::parse($newestDiscount)) : null,
                 'quick_stats' => $stats,
             ],
             'tips' => $page->tips ?? [],
@@ -536,6 +551,17 @@ class KeywordPageService
                 'faq' => $page->faq ?? [],
             ],
         ];
+    }
+
+    private function firstSentence(string $text): string
+    {
+        $text = trim($text);
+
+        if ($text === '') {
+            return '';
+        }
+
+        return preg_split('/(?<=[.!?])\s+/u', $text, 2)[0];
     }
 
     private function buildQuickStats(Collection $discounts, int $matchingTotal): array
@@ -629,9 +655,10 @@ class KeywordPageService
             ->map(function (Collection $storeDiscounts) {
                 $store = $storeDiscounts->first()->store;
                 $priced = $storeDiscounts->filter(fn (Discount $discount) => (float) $discount->discounted_price > 0);
-                $minPrice = $priced->isNotEmpty()
-                    ? (float) $priced->min('discounted_price')
+                $cheapest = $priced->isNotEmpty()
+                    ? $priced->sortBy('discounted_price')->first()
                     : null;
+                $minPrice = $cheapest ? (float) $cheapest->discounted_price : null;
 
                 return [
                     'store' => $store->name,
@@ -641,6 +668,16 @@ class KeywordPageService
                     'max_discount_percent' => (int) round($storeDiscounts->max('discount_percent') ?? 0),
                     'avg_discount_percent' => (int) round($storeDiscounts->avg('discount_percent') ?? 0),
                     'min_price' => $minPrice,
+                    // The mockup's compare-card shows the actual cheapest
+                    // matching product (photo + name + price) per store, not
+                    // just an aggregate — real data already loaded above,
+                    // just keeping the product identity instead of only its
+                    // price.
+                    'cheapest_product_name' => $cheapest?->product?->name,
+                    'cheapest_product_image' => $cheapest?->product?->image_url,
+                    'cheapest_product_href' => $cheapest && $cheapest->product?->category?->slug
+                        ? "/akcijos/{$cheapest->product->category->slug}/{$cheapest->product->slug}"
+                        : null,
                 ];
             })
             ->sortBy(fn (array $row) => [

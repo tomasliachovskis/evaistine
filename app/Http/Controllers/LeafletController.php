@@ -16,6 +16,8 @@ class LeafletController extends Controller
         $path = '/leidiniai';
         $breadcrumbs = $this->mapBreadcrumbs($payload['breadcrumbs']);
 
+        $freshnessDate = \App\Support\ContentFreshness::forAll();
+
         return view('leaflets.index', [
             'leaflets' => $payload['leaflets'],
             'seo' => $payload['seo'],
@@ -23,6 +25,7 @@ class LeafletController extends Controller
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
+            'freshnessLabel' => $freshnessDate ? \App\Support\LithuanianDate::relative($freshnessDate) : null,
         ]);
     }
 

@@ -97,7 +97,7 @@
                         ],
                     ]))"
                 >
-                    <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-4" x-ref="grid">
+                    <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5" x-ref="grid">
                         @foreach ($deals as $deal)
                             <x-deal-card :deal="$deal" class="h-full" />
                         @endforeach

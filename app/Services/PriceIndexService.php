@@ -4,27 +4,21 @@ namespace App\Services;
 
 use App\Models\Discount;
 use App\Models\GenericProduct;
-use App\Models\PriceIndexEntry;
-use App\Models\PriceIndexSnapshot;
+use App\Models\Product;
 use App\Models\Store;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 /**
- * "Savaitės krepšelio indeksas" — a weekly, dynamically-chosen basket of a
- * few everyday grocery items, priced at each main store's currently cheapest
- * active discount.
- *
- * Why dynamic, not a fixed basket: this system only ever has a price for a
- * product via an active Discount row (no standalone catalog price) — see
- * DescriptionGenerationService's design notes. Checked live (2026-09): Iki
- * had zero active discounts at all, and Maxima/Rimi's active discounts were
- * >95% household chemicals/cosmetics with almost nothing in food categories
- * that week. A fixed 5-item basket would show missing data for most stores
- * most weeks. Instead, each week we score a candidate pool of ~15 common
- * grocery items by how many of the tracked stores currently have a match,
- * and take the best-covered ones — the basket composition can vary week to
- * week, but it's always real and complete for whichever stores it reports.
+ * Builds /pigiausios-prekes: for a fixed pool of everyday grocery items, the
+ * top few currently-active matches per store, computed live from `Discount`
+ * rows on every request — no weekly snapshot, no persisted "index". This
+ * used to snapshot a single cheapest-per-store pick into `price_index_*`
+ * tables (see git history), but that only ever supported one product per
+ * store per item; showing several real options per store (see
+ * TOP_MATCHES_PER_STORE) needed more than one row per (item, store), which
+ * the old unique-per-store schema couldn't hold. Dropped the tables rather
+ * than migrate them — live queries here are cheap enough (34 candidate
+ * items × 5 stores) that persistence was never buying anything but a stale
+ * page between snapshots.
  */
 class PriceIndexService
 {
@@ -58,6 +52,9 @@ class PriceIndexService
     ];
 
     public const TRACKED_STORE_SLUGS = ['maxima', 'lidl', 'rimi', 'norfa', 'iki'];
+
+    /** How many of a store's own matches to show per item, cheapest first. */
+    private const TOP_MATCHES_PER_STORE = 5;
 
     /**
      * Last-resort fallback (see resolveUnitPrice() above, which is what
@@ -126,16 +123,16 @@ class PriceIndexService
     }
 
     /**
-     * For one generic product, the cheapest currently-active match per store,
-     * by normalized unit price. Different matched products can use different
-     * units (e.g. cheese sold by weight vs. by count) — to keep the
-     * comparison apples-to-apples, only the majority unit basis found this
-     * run is used; matches on any other basis are dropped rather than mixed
-     * in.
+     * For one generic product, up to TOP_MATCHES_PER_STORE currently-active
+     * matches per store, cheapest first by normalized unit price. Different
+     * matched products can use different units (e.g. cheese sold by weight
+     * vs. by count) — to keep the comparison apples-to-apples, only the
+     * majority unit basis found this run is used; matches on any other
+     * basis are dropped rather than mixed in.
      *
-     * @return array{basis: ?string, matches: array<int, array{store_id:int, product_id:int, price:float}>}
+     * @return array{basis: ?string, by_store: array<int, array<int, array{store_id:int, product_id:int, price:float, raw_price:float}>>}
      */
-    private function cheapestPerStoreForGenericProduct(int $genericProductId, array $storeIds): array
+    private function topMatchesPerStoreForGenericProduct(int $genericProductId, array $storeIds): array
     {
         $rows = Discount::whereIn('store_id', $storeIds)
             ->whereHas('product', fn ($q) => $q->where('generic_product_id', $genericProductId))
@@ -159,109 +156,44 @@ class PriceIndexService
                 'store_id' => $row->store_id,
                 'product_id' => $row->product_id,
                 'basis' => $unit['basis'],
-                'unit_price' => $unit['unit_price'],
+                'price' => $unit['unit_price'],
                 'raw_price' => (float) $row->discounted_price,
             ];
         }
 
         if (empty($parsed)) {
-            return ['basis' => null, 'matches' => []];
+            return ['basis' => null, 'by_store' => []];
         }
 
         $basisCounts = array_count_values(array_column($parsed, 'basis'));
         arsort($basisCounts);
         $dominantBasis = array_key_first($basisCounts);
 
-        $cheapestPerStore = [];
+        $byStore = [];
         foreach ($parsed as $row) {
             if ($row['basis'] !== $dominantBasis) {
                 continue;
             }
-            if (!isset($cheapestPerStore[$row['store_id']]) || $row['unit_price'] < $cheapestPerStore[$row['store_id']]['price']) {
-                $cheapestPerStore[$row['store_id']] = [
-                    'store_id' => $row['store_id'],
-                    'product_id' => $row['product_id'],
-                    'price' => round($row['unit_price'], 2),
-                    'raw_price' => round($row['raw_price'], 2),
-                ];
-            }
-        }
-
-        return ['basis' => $dominantBasis, 'matches' => $cheapestPerStore];
-    }
-
-    /**
-     * Picks the $count candidate items with the best store coverage right
-     * now and returns each item's per-store cheapest match (normalized unit
-     * price — see parseUnitPrice). Zero-coverage candidates are dropped
-     * regardless of $count, so defaulting to the full candidate pool size
-     * (see command default) shows every item that actually has real data
-     * this week, not an arbitrary top-N subset.
-     *
-     * @return array<string, array{name: string, basis: string, matches: array<int, array{store_id:int, product_id:int, price:float}>}>
-     */
-    public function selectWeeklyBasket(int $count = 34): array
-    {
-        $storeIds = Store::whereIn('slug', self::TRACKED_STORE_SLUGS)->pluck('id')->all();
-
-        $genericProducts = GenericProduct::whereIn('slug', self::CANDIDATE_ITEM_SLUGS)->get(['id', 'slug', 'name']);
-
-        $scored = [];
-        foreach ($genericProducts as $gp) {
-            $result = $this->cheapestPerStoreForGenericProduct($gp->id, $storeIds);
-            $scored[$gp->slug] = [
-                'name' => $gp->name,
-                'basis' => $result['basis'],
-                'matches' => $result['matches'],
-                'coverage' => count($result['matches']),
+            $byStore[$row['store_id']][] = [
+                'store_id' => $row['store_id'],
+                'product_id' => $row['product_id'],
+                'price' => round($row['price'], 2),
+                'raw_price' => round($row['raw_price'], 2),
             ];
         }
 
-        uasort($scored, fn ($a, $b) => $b['coverage'] <=> $a['coverage']);
+        foreach ($byStore as &$matches) {
+            usort($matches, fn ($a, $b) => $a['price'] <=> $b['price']);
+            $matches = array_slice($matches, 0, self::TOP_MATCHES_PER_STORE);
+        }
+        unset($matches);
 
-        $chosen = array_slice($scored, 0, $count, true);
-
-        // Drop items with zero coverage entirely rather than padding the
-        // basket with something nobody currently sells at a discount.
-        return array_filter($chosen, fn ($item) => $item['coverage'] > 0);
+        return ['basis' => $dominantBasis, 'by_store' => $byStore];
     }
 
     /**
-     * Persists this week's basket as a snapshot (idempotent — replaces any
-     * existing snapshot for the same ISO week so re-running is safe).
-     */
-    public function snapshotThisWeek(int $itemCount = 34): PriceIndexSnapshot
-    {
-        $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY)->toDateString();
-        $basket = $this->selectWeeklyBasket($itemCount);
-
-        return DB::transaction(function () use ($weekStart, $basket) {
-            PriceIndexSnapshot::where('week_start', $weekStart)->delete();
-
-            $snapshot = PriceIndexSnapshot::create(['week_start' => $weekStart]);
-
-            foreach ($basket as $key => $item) {
-                foreach ($item['matches'] as $match) {
-                    PriceIndexEntry::create([
-                        'price_index_snapshot_id' => $snapshot->id,
-                        'item_key' => $key,
-                        'item_name' => $item['name'],
-                        'store_id' => $match['store_id'],
-                        'product_id' => $match['product_id'],
-                        'price' => $match['price'],
-                        'raw_price' => $match['raw_price'],
-                        'unit_basis' => $item['basis'],
-                    ]);
-                }
-            }
-
-            return $snapshot->load('entries');
-        });
-    }
-
-    /**
-     * Sitewide "today" stats — computed live, not snapshotted, since these
-     * are cheap queries and change throughout the day.
+     * Sitewide "today" stats — active discount count/average, and the
+     * week's single biggest discount percentage.
      *
      * @return array{active_discounts: int, avg_discount_percent: float, record: ?array{store: string, product: string, original_price: float, discounted_price: float, discount_percent: float}}
      */
@@ -291,112 +223,133 @@ class PriceIndexService
     }
 
     /**
-     * Builds everything the /kainu-indeksas page needs from the latest
-     * snapshot: the per-item breakdown (normalized €/kg-€/l-€/10vnt prices,
-     * fair for comparing one item across stores) and every tracked store's
-     * real basket total (raw, actually-payable prices summed — see 'stores'
-     * below).
+     * Builds everything the /pigiausios-prekes page needs, live: for each
+     * candidate item that has at least one match right now, every tracked
+     * store's own top matches (normalized €/kg-€/l-€/10vnt price decides
+     * ranking; the real, payable raw_price is what's shown).
      */
     public function getPageData(): array
     {
-        $latest = PriceIndexSnapshot::with(['entries.store', 'entries.product.category'])->latest('week_start')->first();
+        $trackedStores = Store::whereIn('slug', self::TRACKED_STORE_SLUGS)->get(['id', 'name', 'slug']);
+        $storeIds = $trackedStores->pluck('id')->all();
 
-        if ($latest === null) {
+        $genericProducts = GenericProduct::whereIn('slug', self::CANDIDATE_ITEM_SLUGS)
+            ->with('category')
+            ->get(['id', 'slug', 'name', 'category_id']);
+
+        $rawItems = [];
+        foreach ($genericProducts as $gp) {
+            $result = $this->topMatchesPerStoreForGenericProduct($gp->id, $storeIds);
+            $coverageCount = count($result['by_store']);
+
+            // Drop items with zero coverage entirely rather than padding the
+            // list with something nobody currently sells at a discount.
+            if ($coverageCount === 0) {
+                continue;
+            }
+
+            $rawItems[$gp->slug] = [
+                'name' => $gp->name,
+                'category' => trim($gp->category?->name ?? '') ?: 'Kita',
+                'basis' => $result['basis'],
+                'by_store' => $result['by_store'],
+                'coverage' => $coverageCount,
+            ];
+        }
+
+        if (empty($rawItems)) {
             return [
-                'snapshot' => null,
                 'items' => [],
-                'stores' => [],
-                'tracked_stores' => [],
+                'best_deal' => null,
+                'tracked_stores' => $trackedStores->map(fn ($s) => ['name' => $s->name, 'slug' => $s->slug])->values()->all(),
                 'stats' => $this->getCurrentStats(),
             ];
         }
 
-        $itemKeys = $latest->entries->pluck('item_key')->unique()->values();
-        $entriesByItem = $latest->entries->groupBy('item_key');
+        // Best-covered items first — not that it changes what's shown (every
+        // item with any coverage is shown), just the order they appear in
+        // within their category.
+        uasort($rawItems, fn ($a, $b) => $b['coverage'] <=> $a['coverage']);
 
-        $trackedStores = Store::whereIn('slug', self::TRACKED_STORE_SLUGS)->get(['id', 'name', 'slug']);
+        $allProductIds = collect($rawItems)
+            ->flatMap(fn ($item) => collect($item['by_store'])->flatten(1)->pluck('product_id'))
+            ->unique()
+            ->filter()
+            ->values();
 
-        $items = $itemKeys->map(function ($key) use ($entriesByItem, $trackedStores) {
-            $entries = $entriesByItem[$key]->sortBy('price')->values();
-            $cheapest = $entries->first();
-            $entriesByStoreId = $entries->keyBy('store_id');
+        $productsById = Product::whereIn('id', $allProductIds)->with('category')->get()->keyBy('id');
 
-            $product = $cheapest->product;
+        $formatMatch = function (array $match) use ($productsById) {
+            $product = $productsById->get($match['product_id']);
 
             return [
-                'key' => $key,
-                'name' => $entries->first()->item_name,
-                'unit_basis' => $entries->first()->unit_basis,
-                'cheapest_store' => $cheapest->store->name,
-                'cheapest_store_slug' => $cheapest->store->slug,
-                // The normalized €/kg-€/l-€/10vnt price — this is what
-                // decides "cheapest" (comparing raw prices across different
-                // pack sizes would be meaningless).
-                'cheapest_price' => (float) $cheapest->price,
-                // The real, actually-payable price for the exact matched
-                // pack — shown alongside the normalized price so a reader
-                // can sanity-check it against the real product (e.g. catch
-                // a scraped pack-size mismatch) instead of only ever seeing
-                // an abstract per-kg number.
-                'cheapest_raw_price' => (float) $cheapest->raw_price,
+                'store_id' => $match['store_id'],
+                'price' => (float) $match['price'],
+                'raw_price' => (float) $match['raw_price'],
                 // Lets a reader verify this exact number against the real,
-                // live discount it came from — a citable index needs this,
-                // not just a store logo.
-                'cheapest_product_name' => $product?->name,
-                'cheapest_product_url' => ($product && $product->category)
+                // live discount it came from, not just a bare price.
+                'product_name' => $product?->name,
+                'product_image_url' => $product?->image_url,
+                'product_url' => ($product && $product->category)
                     ? "/akcijos/{$product->category->slug}/{$product->slug}"
                     : null,
-                // Every tracked store's own price for this item, in one row —
-                // the actual comparison a reader wants, not just the winner.
-                // Comparison itself always uses `price` (normalized); `raw_price`
-                // is display-only, for verifying the real product/pack.
-                'prices_by_store' => $trackedStores->mapWithKeys(function ($store) use ($entriesByStoreId) {
-                    $entry = $entriesByStoreId->get($store->id);
-
-                    return [$store->slug => $entry ? [
-                        'price' => (float) $entry->price,
-                        'raw_price' => (float) $entry->raw_price,
-                    ] : null];
-                })->all(),
             ];
-        })->values()->all();
+        };
 
-        // Every tracked store's real basket total — sum of the actual
-        // payable price (raw_price) for whichever chosen items that store
-        // currently has, NOT the normalized per-kg/per-l comparison price
-        // (summing €/kg + €/l values together produced a meaningless number
-        // — a real "basket total" must be real, summable euros). A store
-        // missing some items still gets a row, clearly marked with how many
-        // of the basket's items it actually covers, rather than being
-        // silently dropped — a store simply absent from the list reads as
-        // an oversight or cherry-picking.
-        $entriesByStore = $latest->entries->groupBy('store_id');
-        $totalItems = $itemKeys->count();
-        $stores = Store::whereIn('slug', self::TRACKED_STORE_SLUGS)
-            ->get(['id', 'name', 'slug'])
-            ->map(function ($store) use ($entriesByStore, $totalItems) {
-                $storeEntries = $entriesByStore->get($store->id, collect());
-                $matchedCount = $storeEntries->pluck('item_key')->unique()->count();
+        $items = [];
+        foreach ($rawItems as $key => $raw) {
+            $byStoreFormatted = [];
+            foreach ($trackedStores as $store) {
+                $matches = $raw['by_store'][$store->id] ?? [];
+                $byStoreFormatted[$store->slug] = array_map($formatMatch, $matches);
+            }
 
-                return [
-                    'store' => $store->name,
-                    'store_slug' => $store->slug,
-                    'total' => $matchedCount > 0 ? (float) $storeEntries->sum('raw_price') : null,
-                    'matched_items' => $matchedCount,
-                    'total_items' => $totalItems,
-                    'full_coverage' => $matchedCount === $totalItems,
-                ];
-            })
-            // Stores with data first (cheapest total leading), then stores
-            // with zero matches at the bottom — never silently hidden.
-            ->sortBy(fn ($s) => $s['total'] ?? PHP_FLOAT_MAX)
-            ->values()
-            ->all();
+            $allMatches = collect($raw['by_store'])->flatten(1)->sortBy('price')->values();
+            $cheapest = $allMatches->first();
+            $cheapestStore = $trackedStores->firstWhere('id', $cheapest['store_id']);
+
+            $items[$key] = [
+                'key' => $key,
+                'name' => $raw['name'],
+                'category' => $raw['category'],
+                'unit_basis' => $raw['basis'],
+                // Decides which single card gets the "Pigiausia" tag — the
+                // normalized €/kg-€/l-€/10vnt price, comparable across pack
+                // sizes (comparing raw prices across different pack sizes
+                // would be meaningless).
+                'cheapest_price' => (float) $cheapest['price'],
+                'cheapest_store' => $cheapestStore?->name,
+                'cheapest_raw_price' => (float) $cheapest['raw_price'],
+                'by_store' => $byStoreFormatted,
+                'coverage_count' => $raw['coverage'],
+                'coverage_total' => $trackedStores->count(),
+                // Real, payable-price spread across every match this item
+                // has (not the normalized per-kg price) — this is the
+                // number a shopper actually saves, used to pick the
+                // headline "best deal today" below.
+                'raw_spread' => $allMatches->count() > 1
+                    ? round($allMatches->max('raw_price') - $allMatches->min('raw_price'), 2)
+                    : 0.0,
+            ];
+        }
+
+        $items = array_values($items);
+
+        // The single biggest real-euro gap between cheapest and priciest
+        // match for any one item right now — the headline "check this one"
+        // moment, not just another row in the list.
+        $bestDealItem = collect($items)->sortByDesc('raw_spread')->first();
+        $bestDeal = ($bestDealItem && $bestDealItem['raw_spread'] > 0) ? [
+            'name' => $bestDealItem['name'],
+            'unit_basis' => $bestDealItem['unit_basis'],
+            'store' => $bestDealItem['cheapest_store'],
+            'price' => $bestDealItem['cheapest_raw_price'],
+            'spread' => $bestDealItem['raw_spread'],
+        ] : null;
 
         return [
-            'snapshot' => ['week_start' => $latest->week_start->toDateString()],
             'items' => $items,
-            'stores' => $stores,
+            'best_deal' => $bestDeal,
             'tracked_stores' => $trackedStores->map(fn ($s) => ['name' => $s->name, 'slug' => $s->slug])->values()->all(),
             'stats' => $this->getCurrentStats(),
         ];

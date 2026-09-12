@@ -31,6 +31,13 @@ class PageHtmlCache
 
     public static function isEligible(Request $request): bool
     {
+        // Only ever cache in production — every non-prod environment (dev,
+        // staging, local) is a single developer iterating on templates, where
+        // a 24h-stale page is pure confusion, not a real perf win.
+        if (! app()->environment('production')) {
+            return false;
+        }
+
         if (auth()->check()) {
             return false;
         }

@@ -13,6 +13,8 @@
 :root {
     --green: #09a952;
     --dark-green: #044923;
+    --green-soft: #e7f6ed;
+    --green-soft-border: #c3e9d2;
     --font-color: #262626;
     --white: #fff;
     --container: 1168px;
@@ -46,6 +48,8 @@
     --color-foreground: var(--foreground);
     --color-green: var(--green);
     --color-dark-green: var(--dark-green);
+    --color-green-soft: var(--green-soft);
+    --color-green-soft-border: var(--green-soft-border);
     --color-font: var(--font-color);
     --color-white: var(--white);
     --color-primary-blue: var(--primary-blue);

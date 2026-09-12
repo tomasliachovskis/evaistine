@@ -6,19 +6,19 @@ use App\Services\PriceIndexService;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
 
-class PriceIndexController extends Controller
+class CheapestProductsController extends Controller
 {
     public function index(PriceIndexService $service)
     {
-        $path = '/kainu-indeksas';
+        $path = '/pigiausios-prekes';
 
         $breadcrumbs = [
             ['name' => 'Akcijos', 'href' => '/'],
-            ['name' => 'Kainų indeksas', 'href' => $path],
+            ['name' => 'Pigiausios prekės', 'href' => $path],
         ];
 
-        return view('price-index.show', [
-            'title' => 'Savaitės krepšelio kainų indeksas – SuperAkcijos.lt',
+        return view('pigiausios-prekes.show', [
+            'title' => 'Pigiausios prekės parduotuvėse – SuperAkcijos.lt',
             'description' => 'Kiekvieną savaitę sekame kasdienių prekių kainas didžiausiuose prekybos tinkluose ir parodome, kur šiuo metu pigiausia apsipirkti.',
             'canonical' => CanonicalUrl::build($path),
             // Deliberately not in the sitemap yet and not linked from

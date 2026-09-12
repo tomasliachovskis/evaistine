@@ -126,6 +126,15 @@ class DiscountFilters extends Component
         $this->refreshResults();
     }
 
+    public function clearFilters(): void
+    {
+        $this->storeFilter = '';
+        $this->categoryFilter = '';
+        $this->page = 1;
+        $this->showCarousels = false;
+        $this->refreshResults();
+    }
+
     public function setOrder(string $order): void
     {
         // Deliberately doesn't clear $showCarousels — verified against production

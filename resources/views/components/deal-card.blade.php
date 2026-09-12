@@ -20,7 +20,7 @@
         && $stores->count() === 1
         && ($stores[0]['slug'] ?? null) === $contextStoreSlug;
 
-    $shellClass = 'group relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl bg-white p-2.5 transition-opacity hover:opacity-95 sm:p-3';
+    $shellClass = 'group relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-2.5 transition-colors hover:border-gray-300 sm:p-3';
 
     if ($inCarousel) {
         // discountCarouselWidthClass in discount-card.tsx — merged onto the card
@@ -45,7 +45,7 @@
         data-ga-source="{{ $source }}"
     >
         <div class="relative shrink-0">
-            <div class="relative aspect-square w-full overflow-hidden rounded-xl bg-white">
+            <div class="relative aspect-square w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
                 @if ($product['image_url'])
                     <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" loading="lazy" class="h-full w-full object-contain p-3 sm:p-3.5">
                 @endif
@@ -109,6 +109,16 @@
     </a>
 
     <div class="absolute right-2 top-2 z-20">
-        <x-favorite-button :product-id="$product['id']" :product-name="$product['name']" :product-image="$product['image_url'] ?? null" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
+        {{-- Decorative badge behind the real button — matches the mockup's
+             white circle-with-border look without shrinking the button's
+             own 44px tap target (a past mobile-audit fix, kept as-is).
+             Explicit inset (not relying on a flex parent) — an absolutely
+             positioned child ignores a flex parent's centering and falls
+             back to its static position (roughly the box's top-left
+             corner), which put the circle out from under the icon. --}}
+        <span class="pointer-events-none absolute left-1/2 top-1/2 z-0 size-7 -translate-x-1/2 -translate-y-1/2 rounded-full border border-gray-200 bg-white shadow-sm"></span>
+        <span class="relative z-10">
+            <x-favorite-button :product-id="$product['id']" :product-name="$product['name']" :product-image="$product['image_url'] ?? null" :favorited="\App\Support\FavoritedProducts::has($product['id'])" />
+        </span>
     </div>
 </div>

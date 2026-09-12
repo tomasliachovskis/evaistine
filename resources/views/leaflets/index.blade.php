@@ -34,6 +34,9 @@
                 Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje –
                 {{ count($leaflets) }} savaitės katalogai. Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.
             </p>
+            @if ($freshnessLabel)
+                <x-content-freshness :label="$freshnessLabel" />
+            @endif
         </div>
 
         <x-keyword-chips-row :pages="$storeChips" aria-label="Parduotuvės" />

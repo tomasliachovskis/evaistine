@@ -5,7 +5,7 @@
         <button
             type="button"
             wire:click="$set('open', true)"
-            class="relative flex h-10 w-full max-w-none min-w-0 items-center rounded-full bg-white pr-4 pl-10 text-left text-sm shadow-sm transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            class="relative flex h-10 w-full max-w-none min-w-0 items-center rounded-full border border-gray-200 bg-gray-50 pr-4 pl-10 text-left text-sm transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40"
         >
             <x-app-icon name="search" class="pointer-events-none absolute left-3.5 size-4 text-gray-400" />
             <span class="truncate text-gray-400">Ieškoti parduotuvių, leidinių, prekių...</span>
@@ -48,8 +48,8 @@
     {{-- Mobile: icon-only trigger opening a bottom sheet (mobileProductToolbar
          variant, search-input.tsx lines 270-323). --}}
     <div x-data="{}">
-        <button type="button" wire:click="$set('open', true)" class="relative flex h-10 w-10 items-center justify-center rounded-lg text-white hover:bg-white/10" aria-label="Ieškoti">
-            <x-app-icon name="search" class="size-6" />
+        <button type="button" wire:click="$set('open', true)" class="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-600 transition-colors hover:bg-gray-200" aria-label="Ieškoti">
+            <x-app-icon name="search" class="size-5" />
         </button>
 
         <div x-show="$wire.open" x-cloak class="fixed inset-0 z-[9999] sm:hidden">

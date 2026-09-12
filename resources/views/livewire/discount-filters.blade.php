@@ -50,21 +50,15 @@
      wrongly hidden here before. --}}
 @php $showActionBar = true; @endphp
 
-<div class="flex flex-row gap-8">
-    {{-- Desktop sidebar — persistent category (or store) nav, discounts-layout.tsx's
-         sticky Card wrapper. Always the SAME list regardless of mode; only the
-         active row changes. --}}
-    <div class="hidden w-full max-w-[300px] shrink-0 gap-3 sm:sticky sm:top-25 sm:flex sm:h-[calc(100vh-120px)]">
-        <div class="h-full w-full overflow-y-auto pr-2">
-            @include('components.partials.discount-filter-sections')
-        </div>
-    </div>
-
-    <div class="flex w-full min-w-0 flex-1 flex-col max-sm:gap-1">
+{{-- mt-6: this component sits directly under varying content on every page
+     type (hero, discovery chips, switch-row, "Visos X akcijos" heading) —
+     giving the gap here once, on the shared root, keeps every call site from
+     needing its own matching bottom margin. --}}
+<div class="mt-6 flex w-full flex-col max-sm:gap-1">
         @if ($showActionBar)
             <div class="mb-4 flex w-full items-center justify-between gap-2 rounded-2xl bg-[#e8e8e8] px-4 min-h-[40px] sm:mb-[17px]" x-data="{ sortOpen: false }" @click.outside="sortOpen = false">
                 <div class="flex min-w-0 flex-1 items-center gap-2">
-                    <button type="button" wire:click="$toggle('panelOpen')" class="inline-flex h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede] sm:hidden">
+                    <button type="button" wire:click="$toggle('panelOpen')" class="inline-flex h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede]">
                         <x-app-icon name="filter" class="size-4 shrink-0" />
                         Filtrai{{ $activeCount > 0 ? " ({$activeCount})" : '' }}
                     </button>
@@ -87,6 +81,12 @@
                                 <x-app-icon name="x" class="size-4" />
                             </button>
                         @endforeach
+                        @if ($activeCount > 0)
+                            <button type="button" wire:click="clearFilters" class="inline-flex cursor-pointer items-center gap-1.5 px-2 py-2 text-sm font-bold text-[#c0392b] hover:opacity-80">
+                                <x-app-icon name="x" class="size-4" />
+                                Išvalyti viską
+                            </button>
+                        @endif
                     </div>
                 </div>
                 <div class="relative shrink-0">
@@ -106,8 +106,8 @@
                 </div>
             </div>
 
-            <div x-show="$wire.panelOpen" x-cloak class="fixed inset-0 z-50 bg-black/40 sm:hidden" @click.self="$wire.panelOpen = false">
-                <div class="absolute inset-x-0 bottom-0 max-h-[82vh] overflow-y-auto rounded-t-2xl bg-white p-4">
+            <div x-show="$wire.panelOpen" x-cloak class="fixed inset-0 z-50 bg-black/40" @click.self="$wire.panelOpen = false">
+                <div class="absolute inset-x-0 bottom-0 max-h-[82vh] overflow-y-auto rounded-t-2xl bg-white p-4 sm:inset-y-0 sm:left-auto sm:right-0 sm:max-h-none sm:w-full sm:max-w-[340px] sm:rounded-t-none sm:rounded-l-2xl">
                     @include('components.partials.discount-filter-sections')
                 </div>
             </div>
@@ -131,6 +131,12 @@
                         <x-app-icon name="x" class="size-4" />
                     </button>
                 @endforeach
+                @if ($activeCount > 0)
+                    <button type="button" wire:click="clearFilters" class="inline-flex cursor-pointer items-center gap-1.5 px-2 py-2 text-sm font-bold text-[#c0392b] hover:opacity-80">
+                        <x-app-icon name="x" class="size-4" />
+                        Išvalyti viską
+                    </button>
+                @endif
             </div>
         @endif
 
@@ -166,7 +172,7 @@
                         ],
                     ]))"
                 >
-                    <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 2xl:grid-cols-4" x-ref="grid">
+                    <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5" x-ref="grid">
                         @foreach ($deals as $deal)
                             <x-deal-card :deal="$deal" class="h-full" :context-store-slug="$contextStoreSlug" />
                         @endforeach
@@ -198,4 +204,3 @@
             @endif
         </div>
     </div>
-</div>

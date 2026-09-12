@@ -1,53 +1,59 @@
-@props(['storeSlug', 'leafletsCount', 'totalOffers', 'categories' => [], 'featuredCategory' => null, 'allCategoriesCount' => null, 'ariaLabel', 'active' => 'leidiniai'])
+@props(['storeSlug', 'leafletsCount', 'totalOffers', 'categories' => [], 'featuredCategory' => null, 'allCategoriesCount' => null, 'ariaLabel', 'active' => 'leidiniai', 'currentCategory' => null])
 
 @php
-    $filledClass = 'inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white';
-    $outlineClass = 'inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green px-4 py-2 text-base font-bold text-green transition-colors hover:bg-green/5';
-    $shownCategoriesCount = count(array_slice($categories, 0, 5)) + ($featuredCategory ? 1 : 0);
-    $hasMoreCategories = $allCategoriesCount !== null && $allCategoriesCount > $shownCategoriesCount;
+    // Matches the mockup's .nav-tabs-row exactly: always exactly 3 items —
+    // Leidiniai / Akcijos (real page-switch buttons) then a divider and one
+    // "Kategorijos ▾" popup — instead of one chip per popular category plus
+    // a separate "Visos kategorijos" pill. A per-category chip row grows
+    // with however many categories a store happens to have; this row never
+    // does, regardless of store size.
+    $activeClass = 'inline-flex shrink-0 items-center gap-2 rounded-[10px] border-2 border-green bg-green px-4 py-2.5 text-[0.95rem] font-bold text-white';
+    $mutedClass = 'inline-flex shrink-0 items-center gap-2 rounded-[10px] border-2 border-gray-200 px-4 py-2.5 text-[0.95rem] font-bold text-gray-500 transition-colors hover:border-gray-300';
+    $pillClass = fn (bool $onActive) => 'rounded-full px-2 py-0.5 text-xs font-extrabold ' . ($onActive ? 'bg-white/25' : 'bg-gray-100 text-gray-500');
+    $totalCategoriesCount = $allCategoriesCount ?? count($categories);
 @endphp
 
-{{-- Ported from store-listing-header.tsx's nav row — plain links to the store's
-     leaflet hub / full discount listing / top categories, not tabs that swap
-     content in place. Always a single scrollable row (never wraps), on mobile
-     and desktop alike. The current page's own tab renders filled; the other
-     renders as an outline link, so it reads as an actual tab switcher on
-     whichever of the two pages it's placed on. --}}
-<div class="relative">
-    <nav aria-label="{{ $ariaLabel }}" class="scroll-cards-x flex flex-nowrap items-center gap-2.5">
-        <a href="/leidinys/{{ $storeSlug }}" class="{{ $active === 'leidiniai' ? $filledClass : $outlineClass }}">
+<div class="relative" x-data="{ categoriesOpen: false }" @click.outside="categoriesOpen = false">
+    <nav aria-label="{{ $ariaLabel }}" class="flex flex-wrap items-center gap-2.5">
+        <a href="/leidinys/{{ $storeSlug }}" class="{{ $active === 'leidiniai' ? $activeClass : $mutedClass }}">
             Leidiniai
-            <x-count-pill :count="$leafletsCount" :color="$active === 'leidiniai' ? 'white' : 'green'" />
+            <span class="{{ $pillClass($active === 'leidiniai') }}">{{ number_format($leafletsCount, 0, ',', ' ') }}</span>
         </a>
-        <a href="/akcijos/{{ $storeSlug }}" class="{{ $active === 'akcijos' ? $filledClass : $outlineClass }}">
+        <a href="/akcijos/{{ $storeSlug }}" class="{{ $active === 'akcijos' ? $activeClass : $mutedClass }}">
             Akcijos
-            <x-count-pill :count="$totalOffers" :color="$active === 'akcijos' ? 'white' : 'green'" />
+            <span class="{{ $pillClass($active === 'akcijos') }}">{{ number_format($totalOffers, 0, ',', ' ') }}</span>
         </a>
-        @if ($featuredCategory)
-            {{-- Food discounts live under several small root categories (pieno
-                 produktai, bakalėja, mėsa ir žuvis, ...) that individually never
-                 crack the top-5 below, so getFeaturedFoodCategoryForStore()'s
-                 combined total is surfaced here instead of not at all. --}}
-            <a href="{{ $featuredCategory['href'] }}" class="{{ $outlineClass }}">
-                {{ $featuredCategory['name'] }}
-                <x-count-pill :count="$featuredCategory['offers_count'] ?? 0" color="green" />
-            </a>
-        @endif
-        @if (!empty($categories))
-            <span class="mx-0.5 h-6 w-px shrink-0 bg-gray-300" aria-hidden="true"></span>
-            @foreach (array_slice($categories, 0, 5) as $category)
-                <a href="{{ $category['href'] }}" class="inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-gray-300 px-4 py-2 text-base font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green">
-                    {{ $category['name'] }}
-                    <x-count-pill :count="$category['offers_count'] ?? 0" color="gray" />
-                </a>
-            @endforeach
-        @endif
-        @if ($hasMoreCategories)
-            <a href="/akcijos/{{ $storeSlug }}" class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-dashed border-gray-400 px-4 py-2 text-base font-semibold text-gray-500 transition-colors hover:border-green hover:text-dark-green">
-                Visos kategorijos ({{ $allCategoriesCount }})
-                <x-app-icon name="chevron-right" class="size-3.5 shrink-0" />
-            </a>
+
+        @if ($totalCategoriesCount > 0)
+            <span class="mx-0.5 h-6 w-px shrink-0 bg-gray-200" aria-hidden="true"></span>
+
+            <button type="button" @click="categoriesOpen = !categoriesOpen" class="inline-flex shrink-0 items-center gap-2 rounded-[10px] border-2 border-gray-200 bg-white px-4 py-2.5 text-[0.95rem] font-bold text-gray-900">
+                @if ($currentCategory)
+                    Kategorija: {{ $currentCategory['name'] }}
+                    <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-extrabold text-gray-500">{{ number_format($currentCategory['offers_count'] ?? $totalOffers, 0, ',', ' ') }}</span>
+                @else
+                    Kategorijos
+                    <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-extrabold text-gray-500">{{ $totalCategoriesCount }}</span>
+                @endif
+                <span :class="categoriesOpen && 'rotate-180'" class="transition-transform">
+                    <x-app-icon name="chevron-down" class="size-3.5" />
+                </span>
+            </button>
+
+            <div x-show="categoriesOpen" x-cloak class="absolute left-0 top-full z-30 mt-2 max-h-[70vh] w-[300px] overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+                @if ($featuredCategory)
+                    <a href="{{ $featuredCategory['href'] }}" class="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50">
+                        {{ $featuredCategory['name'] }}
+                        <span class="text-xs text-gray-400">{{ number_format($featuredCategory['offers_count'] ?? 0, 0, ',', ' ') }}</span>
+                    </a>
+                @endif
+                @foreach ($categories as $category)
+                    <a href="{{ $category['href'] ?? '/akcijos/' . $storeSlug . '/' . $category['slug'] }}" class="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50">
+                        {{ $category['name'] }}
+                        <span class="text-xs text-gray-400">{{ number_format($category['offers_count'] ?? 0, 0, ',', ' ') }}</span>
+                    </a>
+                @endforeach
+            </div>
         @endif
     </nav>
-    <span class="pointer-events-none absolute inset-y-0 right-0 w-14 bg-gradient-to-r from-transparent to-background" aria-hidden="true"></span>
 </div>

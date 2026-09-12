@@ -6,8 +6,10 @@ use App\Models\Category;
 use App\Models\Discount;
 use App\Models\Store;
 use App\Models\StoreFlyer;
+use App\Support\ContentFreshness;
 use App\Support\FoodCategorySlugs;
 use App\Support\FlyerStorage;
+use App\Support\LithuanianDate;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -102,6 +104,8 @@ class ListingPageMetaService
     public function buildForStoreListing(Store $store): array
     {
         $leafletsCount = $store->flyers()->ready()->count();
+        $intro = $this->buildStoreIntro($store->name, $store->slug, $this->resolveStoreValidity($store), $leafletsCount);
+        $intro['freshness_label'] = $this->freshnessLabel(ContentFreshness::forStore($store->id));
 
         return [
             'type' => 'store',
@@ -110,7 +114,7 @@ class ListingPageMetaService
             'total_offers' => Discount::where('store_id', $store->id)->count(),
             'leaflets_count' => $leafletsCount,
             'locations_count' => $store->locations()->active()->count(),
-            'intro' => $this->buildStoreIntro($store->name, $store->slug, $this->resolveStoreValidity($store), $leafletsCount),
+            'intro' => $intro,
             'popular_carousel_title' => 'TOP pasiūlymai pagal kategorijas',
             'sections' => [
                 'top_categories' => $this->getTopCategoriesForStore($store),
@@ -149,23 +153,20 @@ class ListingPageMetaService
                     ['label' => 'Didžiausia nuolaida', 'value' => '-' . (int) $maxDiscount . '%'],
                     ['label' => 'Parduotuvių', 'value' => (string) count($storeComparison)],
                 ],
+                // The other two chips this used to include ("Vasaros derlius",
+                // "Ekologiški produktai") pointed at the category's own URL
+                // with no filter attached — dead links that did nothing when
+                // clicked — dropped rather than shipping a chip that lies
+                // about being clickable.
                 'discovery_chips' => [
                     ['label' => 'Žemiausios kainos šiandien', 'href' => "/akcijos/{$categorySlug}?order=price"],
                     ['label' => 'Didžiausios nuolaidos', 'href' => "/akcijos/{$categorySlug}?order=discount"],
-                    ['label' => 'Vasaros derlius', 'href' => "/akcijos/{$categorySlug}"],
-                    ['label' => 'Ekologiški produktai', 'href' => "/akcijos/{$categorySlug}"],
                 ],
+                'freshness_label' => $this->freshnessLabel(ContentFreshness::forCategory($category->id)),
             ],
-            'popular_carousel_title' => 'Kur šiuo metu daugiausia akcijų',
-            'popular_this_week' => array_map(function ($row) use ($categorySlug) {
-                return [
-                    'label' => $row['store'],
-                    'href' => $row['href'],
-                    'discounts_count' => $row['offers_count'],
-                    'subtitle' => 'nuo -' . $row['max_discount_percent'] . '%',
-                    'image_slug' => $categorySlug,
-                ];
-            }, $storeComparison),
+            'switch_row_title' => 'Parduotuvės šioje kategorijoje',
+            'switch_row_helper' => 'Nori matyti tik vienos parduotuvės ' . mb_strtolower($categoryName) . ' akcijas? Pasirink parduotuvę.',
+            'switch_row_items' => $this->mapStoreComparisonToPopular($storeComparison),
             'sections' => [
                 'category_stats' => $stats,
                 'top_brands' => $this->getTopBrandsForCategory($category),
@@ -200,9 +201,14 @@ class ListingPageMetaService
                 ]),
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
+                'freshness_label' => $this->freshnessLabel(ContentFreshness::forStoreAndCategory($store->id, $category->id)),
             ],
-            'popular_this_week' => [],
-            'popular_carousel_title' => 'Populiaru šią savaitę',
+            'switch_row_title' => 'Kitos parduotuvės šioje kategorijoje',
+            'switch_row_helper' => 'Paspaudus kitą parduotuvę, iškart persijungi į jos akcijas šioje pačioje kategorijoje.',
+            'switch_row_items' => $this->mapStoreComparisonToPopular(
+                $this->getStoreComparisonForCategory($category),
+                $store->slug
+            ),
             'sections' => [
                 'top_categories' => $this->getTopCategoriesForStore($store),
                 'featured_category' => $this->getFeaturedFoodCategoryForStore($store),
@@ -545,12 +551,36 @@ class ListingPageMetaService
         return $rows->map(function ($row) use ($category) {
             return [
                 'store' => $row->store,
+                'store_slug' => $row->store_slug,
                 'href' => "/akcijos/{$row->store_slug}/{$category->slug}",
                 'offers_count' => (int) $row->offers_count,
                 'max_discount_percent' => (int) round($row->max_discount_percent ?? 0),
                 'avg_discount_percent' => (int) round($row->avg_discount_percent ?? 0),
             ];
         })->values()->all();
+    }
+
+    /** @return array<int, array{label: string, href: string, discounts_count: int, subtitle: string, image_slug: string}> */
+    /** @return array<int, array{label: string, href: string, discounts_count: int, subtitle: string, image_slug: string, is_current: bool}> */
+    private function mapStoreComparisonToPopular(array $storeComparison, ?string $currentStoreSlug = null): array
+    {
+        $items = array_map(
+            fn (array $row) => [
+                'label' => $row['store'],
+                'href' => $row['href'],
+                'discounts_count' => $row['offers_count'],
+                'subtitle' => 'nuo -' . $row['max_discount_percent'] . '%',
+                'image_slug' => $row['store_slug'],
+                'is_current' => $currentStoreSlug !== null && $row['store_slug'] === $currentStoreSlug,
+            ],
+            $storeComparison
+        );
+
+        // Current store leads the row regardless of its rank by offer count —
+        // matches the mockup's own example (the "Esi čia" chip shown first).
+        usort($items, fn (array $a, array $b) => ($b['is_current'] <=> $a['is_current']));
+
+        return $items;
     }
 
     private function buildCategoryStats(Category $category, string $categoryName, array $storeComparison): array
@@ -901,6 +931,11 @@ class ListingPageMetaService
         $detail = "Kas savaitę atnaujiname akcijų sąrašą pagal galiojantį leidinį, todėl čia matote, kas šiuo metu galioja parduotuvėse. Jei domina naujas leidinys, šios savaitės akcijos ar norite greitai palyginti nuolaidas – viršuje peržiūrėkite leidinių viršelius, o žemiau – atrinktas didžiausias nuolaidas su kainomis.";
 
         return "{$intro}\n\n{$detail}";
+    }
+
+    private function freshnessLabel(?Carbon $date): ?string
+    {
+        return $date ? LithuanianDate::relative($date) : null;
     }
 
     private function buildStoreLeafletHubFaq(Store $store, array $topCategories): array
