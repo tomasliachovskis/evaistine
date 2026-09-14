@@ -125,7 +125,11 @@ class DiscountFilters extends Component
         //   to scope by).
         // - Stores: scoped to the category on both a category-only page and
         //   a store+category combo page ($activeCategorySlug is the current
-        //   category in both cases); unscoped on a keyword page.
+        //   category in both cases); on a keyword page, scoped to that
+        //   page's own mapped products instead (a store list for "duona"
+        //   used to include pharmacies/cosmetics chains that obviously don't
+        //   sell bread — every store site-wide, not just the ones actually
+        //   selling this keyword's products).
         $this->allCategories = $this->showCategoryFilter
             ? ($activeStoreSlug !== null
                 ? json_decode(app(ProductController::class)->getCategoriesForStore($activeStoreSlug)->getContent(), true) ?? []
@@ -134,7 +138,7 @@ class DiscountFilters extends Component
 
         $this->allStores = $this->showStoreFilter
             ? ($this->mode === 'keyword'
-                ? json_decode(app(ProductController::class)->getStores()->getContent(), true)['data'] ?? []
+                ? json_decode(app(ProductController::class)->getStoresForKeyword($primarySlug)->getContent(), true)['data'] ?? []
                 : json_decode(app(ProductController::class)->getStoresForCategory($activeCategorySlug)->getContent(), true)['data'] ?? [])
             : [];
     }

@@ -540,6 +540,40 @@ class ProductController extends Controller
         return response()->json($payload);
     }
 
+    // Same scoping idea as getStoresForCategory() above, but for a keyword
+    // page: only stores that actually have an active discount on one of the
+    // page's mapped products, instead of every store site-wide (a keyword
+    // page's "Parduotuvė" filter previously listed pharmacies/cosmetics
+    // chains alongside grocery stores for something like "duona").
+    public function getStoresForKeyword(string $keywordSlug)
+    {
+        $page = \App\Models\KeywordPage::where('slug', $keywordSlug)->first();
+
+        if (! $page) {
+            return response()->json(['data' => []]);
+        }
+
+        $cacheKey = "stores_for_keyword_{$page->id}_".CacheVersion::suffix(['discounts', 'keywords']);
+
+        $payload = Cache::remember($cacheKey, 3600, function () use ($page) {
+            $productIds = \App\Models\KeywordPageProduct::where('keyword_page_id', $page->id)->pluck('product_id');
+
+            $stores = \App\Models\Store::select('id', 'name', 'slug')
+                ->withCount([
+                    'discounts' => function ($query) use ($productIds) {
+                        $query->select(\DB::raw('count(distinct discounts.id)'))
+                            ->whereIn('product_id', $productIds);
+                    },
+                ])
+                ->having('discounts_count', '>', 0)
+                ->get();
+
+            return ['data' => $this->storesPageMetaService->formatStore($stores)];
+        });
+
+        return response()->json($payload);
+    }
+
     public function getStoreLocations($slug)
     {
         $store = \App\Models\Store::where('slug', $slug)->first();

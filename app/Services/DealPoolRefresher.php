@@ -292,7 +292,7 @@ class DealPoolRefresher
 
         $this->refreshGlobalCategoryBuckets();
         $this->refreshHomePools();
-        $this->priceIndex->refreshPersistedIndex();
+        $this->keywordPageService->refreshHomeTeasers();
     }
 
     /**

@@ -42,22 +42,31 @@
                                         {{ $item['label'] }}
                                     </span>
                                     <a href="{{ $item['href'] }}" class="section-link shrink-0 text-[0.85em]">
-                                        Žiūrėti visas
+                                        Žiūrėti visas{{ !empty($item['matching_offers_count']) ? ' ('.number_format($item['matching_offers_count'], 0, ',', ' ').')' : '' }}
                                         <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
                                     </a>
                                 </div>
 
+                                @php
+                                    // leading_deals is ordered by store priority first (see
+                                    // KeywordPageService::buildIndexBackedTeaserDeals()), not
+                                    // by price — index 0 is whichever main chain has this
+                                    // product, not necessarily the cheapest one. "Gera kaina"
+                                    // must mark the actual lowest discounted_price instead.
+                                    $cheapestIndex = collect($item['leading_deals'])
+                                        ->pluck('discounted_price')
+                                        ->map(fn ($p) => (float) $p)
+                                        ->sortBy(fn ($p) => $p > 0 ? $p : INF)
+                                        ->keys()
+                                        ->first();
+                                @endphp
                                 <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                                    {{-- leading_deals is already sorted cheapest-first, so the
-                                         first card is the real "Gera kaina" match — same badge/
-                                         featured-shell treatment <x-price-compare-card> used to
-                                         apply before this page moved off it. --}}
                                     @foreach ($item['leading_deals'] as $index => $deal)
                                         <div class="relative">
-                                            @if ($index === 0)
+                                            @if ($index === $cheapestIndex)
                                                 <span class="absolute left-2 top-2 z-20 inline-flex items-center rounded-md bg-[#ffdb4d] px-1.5 py-0.5 text-[0.65rem] font-extrabold uppercase tracking-wide text-gray-900">Gera kaina</span>
                                             @endif
-                                            <x-deal-card :deal="$deal" source="pigiausios-prekes" :featured="$index === 0" />
+                                            <x-deal-card :deal="$deal" source="pigiausios-prekes" :featured="$index === $cheapestIndex" />
                                         </div>
                                     @endforeach
                                 </div>

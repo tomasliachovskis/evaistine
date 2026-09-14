@@ -96,7 +96,7 @@
                                         {{ $item['label'] }}
                                     </p>
                                     <a href="{{ $item['href'] }}" class="section-link shrink-0 text-sm">
-                                        Žiūrėti visas
+                                        Žiūrėti visas{{ !empty($item['matching_offers_count']) ? ' ('.number_format($item['matching_offers_count'], 0, ',', ' ').')' : '' }}
                                         <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
                                     </a>
                                 </div>

@@ -138,28 +138,6 @@
                             <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'combined' ? 'rotate-180' : ''" />
                         </button>
                     @endif
-                    <div class="hidden min-w-0 flex-wrap gap-2 sm:flex">
-                        @foreach ($selectedStores as $slug)
-                            @php $selectedStoreData = collect($allStores)->firstWhere('slug', $slug); @endphp
-                            <button type="button" @click="window.trackGaEvent && window.trackGaEvent('filter_apply', { filter_type: 'store', filter_value: '{{ $slug }}', action: 'toggle_off' })" wire:click="toggleStore('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
-                                <x-store-logo :slug="$slug" :name="$selectedStoreData['name'] ?? $slug" size="xs" />
-                                {{ $selectedStoreData['name'] ?? $slug }}
-                                <x-app-icon name="x" class="size-4" />
-                            </button>
-                        @endforeach
-                        @foreach ($selectedCategories as $slug)
-                            <button type="button" @click="window.trackGaEvent && window.trackGaEvent('filter_apply', { filter_type: 'category', filter_value: '{{ $slug }}', action: 'toggle_off' })" wire:click="toggleCategory('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
-                                {{ collect($allCategories)->firstWhere('slug', $slug)['name'] ?? $slug }}
-                                <x-app-icon name="x" class="size-4" />
-                            </button>
-                        @endforeach
-                        @if ($activeCount > 0)
-                            <button type="button" wire:click="clearFilters" class="inline-flex cursor-pointer items-center gap-1.5 px-2 py-2 text-sm font-bold text-[#c0392b] hover:opacity-80">
-                                <x-app-icon name="x" class="size-4" />
-                                Išvalyti viską
-                            </button>
-                        @endif
-                    </div>
                 </div>
                 <div class="relative shrink-0">
                     <button type="button" @click="sortOpen = !sortOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
@@ -188,6 +166,7 @@
             @if ($showStoreFilter)
                 <div x-show="$wire.openPanel === 'store'" x-cloak class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" @click.self="$wire.openPanel = null">
                     <div class="max-h-[82vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-h-[80vh] sm:w-full sm:max-w-[420px] sm:rounded-2xl">
+                        <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Parduotuvės</div>
                         @include('components.partials.discount-filter-sections', [
                             'facet' => 'stores',
                             'items' => $allStores,
@@ -201,6 +180,7 @@
             @if ($showCategoryFilter)
                 <div x-show="$wire.openPanel === 'category'" x-cloak class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" @click.self="$wire.openPanel = null">
                     <div class="max-h-[82vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-h-[80vh] sm:w-full sm:max-w-[420px] sm:rounded-2xl">
+                        <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
                         @include('components.partials.discount-filter-sections', [
                             'facet' => 'categories',
                             'items' => $allCategories,
@@ -246,26 +226,6 @@
                 </div>
             @endif
 
-            <div class="mb-3 flex flex-wrap gap-2 sm:hidden">
-                @foreach ($selectedStores as $slug)
-                    <button type="button" wire:click="toggleStore('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
-                        {{ collect($allStores)->firstWhere('slug', $slug)['name'] ?? $slug }}
-                        <x-app-icon name="x" class="size-4" />
-                    </button>
-                @endforeach
-                @foreach ($selectedCategories as $slug)
-                    <button type="button" wire:click="toggleCategory('{{ $slug }}')" class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
-                        {{ collect($allCategories)->firstWhere('slug', $slug)['name'] ?? $slug }}
-                        <x-app-icon name="x" class="size-4" />
-                    </button>
-                @endforeach
-                @if ($activeCount > 0)
-                    <button type="button" wire:click="clearFilters" class="inline-flex cursor-pointer items-center gap-1.5 px-2 py-2 text-sm font-bold text-[#c0392b] hover:opacity-80">
-                        <x-app-icon name="x" class="size-4" />
-                        Išvalyti viską
-                    </button>
-                @endif
-            </div>
         @endif
 
         @php $current = (int) ($pagination['current_page'] ?? 1); $last = (int) ($pagination['last_page'] ?? 1); @endphp

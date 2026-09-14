@@ -212,9 +212,6 @@
                  for the store-comparison heading above, reused here too. --}}
             <div class="mt-6 flex items-center justify-between gap-2">
                 <h2 class="text-base font-bold leading-tight text-gray-900 sm:text-lg">Visos {{ $listingMeta['keyword_grammar']['genitive'] ?? '' }} akcijos</h2>
-                @if ($total > 0)
-                    <span class="shrink-0 text-sm font-medium text-gray-500">{{ number_format($total, 0, ',', ' ') }} {{ \App\Support\LithuanianPlural::offerWord($total) }}</span>
-                @endif
             </div>
         @endif
 
@@ -347,7 +344,6 @@
                                         <th class="p-3 font-bold">Parduotuvė</th>
                                         <th class="p-3 font-bold">Pigiausia prekė</th>
                                         <th class="p-3 font-bold">Mažiausia kaina</th>
-                                        <th class="p-3 text-right font-bold">Pasiūlymų</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
@@ -374,7 +370,6 @@
                                             <td class="p-3">
                                                 <span class="block font-bold tabular-nums text-gray-900">{{ number_format($row['min_price'], 2, ',', ' ') }}&nbsp;€</span>
                                             </td>
-                                            <td class="p-3 text-right text-gray-500">{{ $row['offers_count'] }} {{ \App\Support\LithuanianPlural::offerWord($row['offers_count']) }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
