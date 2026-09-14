@@ -73,12 +73,14 @@
                         <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="inline-flex h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeStoreName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede]">
                             <x-app-icon name="store" class="size-4 shrink-0" />
                             {{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}{{ count($selectedStores) > 0 ? ' (' . count($selectedStores) . ')' : '' }}
+                            <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'store' ? 'rotate-180' : ''" />
                         </button>
                     @endif
                     @if ($showCategoryFilter)
                         <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="inline-flex h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeCategoryName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede]">
                             <x-app-icon name="layout-grid" class="size-4 shrink-0" />
                             {{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}{{ count($selectedCategories) > 0 ? ' (' . count($selectedCategories) . ')' : '' }}
+                            <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'category' ? 'rotate-180' : ''" />
                         </button>
                     @endif
                     <div class="hidden min-w-0 flex-wrap gap-2 sm:flex">

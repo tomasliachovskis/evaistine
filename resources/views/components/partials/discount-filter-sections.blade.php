@@ -15,7 +15,10 @@
     <section>
         <div class="flex flex-col gap-0.5">
             @if ($allHref ?? null)
-                <a href="{{ $allHref }}" class="{{ $rowClass($activeSlug === null) }}">Visos</a>
+                <a href="{{ $allHref }}" class="{{ $rowClass($activeSlug === null) }}">
+                    <x-app-icon name="layout-grid" class="h-5 w-5 shrink-0 opacity-70" />
+                    <span class="truncate">Visos</span>
+                </a>
             @endif
             @foreach ($items as $category)
                 <a href="{{ $hrefFor($category['slug']) }}" class="{{ $rowClass($category['slug'] === $activeSlug) }}">

@@ -154,10 +154,19 @@
                  eyebrow "Populiari prekė", quick_stats already computed by
                  KeywordPageService::buildQuickStats(). --}}
             <div class="mb-2 flex flex-col gap-4 sm:mb-4">
+                @php
+                    // The keyword's own category logo (e.g. kava ->
+                    // gerimai-kava-arbata.svg) reads as more specific to this
+                    // page than the generic "popular" flame icon every
+                    // keyword page used to share — falls back to the flame
+                    // when a page has no resolvable category (rare).
+                    $heroCategorySlug = $listingMeta['keyword_categories'][0]['slug'] ?? null;
+                @endphp
                 <x-type-hero
                     eyebrow="Populiari prekė"
                     :title="$pageTitle"
                     :subtitle="$listingMeta['intro']['short_description'] ?? ($listingMeta['intro']['description'] ?? null)"
+                    :icon-src="$heroCategorySlug ? '/assets/categories/'.$heroCategorySlug.'.svg' : null"
                 >
                     @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
                         @if (!empty($stat['label_first']))
@@ -170,9 +179,11 @@
                         <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
                     @endif
 
-                    <x-slot:icon>
-                        <x-app-icon name="flame" class="size-7" />
-                    </x-slot:icon>
+                    @unless ($heroCategorySlug)
+                        <x-slot:icon>
+                            <x-app-icon name="flame" class="size-7" />
+                        </x-slot:icon>
+                    @endunless
                 </x-type-hero>
             </div>
         @else
@@ -279,8 +290,13 @@
             // summary below, which is the actually-fair comparison (same
             // brand across stores, not each store's own different cheapest
             // product).
-            $hasBrandSummary = !empty($listingMeta['intro']['brand_price_summary']);
-            $hasBottomBlocks = $hasBrandSummary || !empty($relatedPages) || $seoAboutHtml || !empty($tips) || !empty($faqItems);
+            // Per-store table (guarantees every main chain a row) replaced
+            // the old per-brand-frequency table per explicit product
+            // decision — that table could silently omit a main store
+            // entirely (found live: Norfa's cheapest "kava" match has no
+            // brand, so Norfa never made the old top-8-by-offer-count list).
+            $hasStorePriceTable = !empty($listingMeta['intro']['store_price_table']);
+            $hasBottomBlocks = $hasStorePriceTable || !empty($relatedPages) || $seoAboutHtml || !empty($tips) || !empty($faqItems);
             $aboutHeading = $isKeyword
                 ? 'Apie ' . mb_strtolower($listingMeta['keyword_grammar']['genitive'] ?? $pageTitle) . ' kainas ir akcijas'
                 : 'Apie šias akcijas';
@@ -325,30 +341,31 @@
                     </div>
                 @endif
 
-                @if ($hasBrandSummary)
-                    {{-- Per-brand "cheapest right now", not per-store — comparing
-                         the SAME brand across stores is a fair comparison; the
-                         store chips above compare each store's own cheapest
-                         match, which is a different product per store (pack
-                         size/variant), so a raw price-to-price read across them
-                         would be misleading. --}}
+                @if ($hasStorePriceTable)
+                    {{-- Per-store "cheapest right now" — guarantees a row for
+                         every main chain (Maxima/Norfa/Lidl/Iki/Rimi) even
+                         when its cheapest match has no brand or a low-volume
+                         one, still names the real brand/product per row. --}}
                     <div class="py-6 first:pt-0 last:pb-0">
                         <div class="section-heading-row">
-                            <h2 class="section-heading">Kainos pagal prekės ženklą</h2>
+                            <h2 class="section-heading">Kainos pagal parduotuvę</h2>
                         </div>
                         <div class="overflow-x-auto rounded-xl border border-gray-200">
                             <table class="w-full min-w-[560px] text-left text-sm">
                                 <thead>
                                     <tr class="bg-green text-white">
-                                        <th class="p-3 font-bold">Prekė</th>
-                                        <th class="p-3 font-bold">Kaina</th>
                                         <th class="p-3 font-bold">Parduotuvė</th>
+                                        <th class="p-3 font-bold">Pigiausia prekė</th>
+                                        <th class="p-3 font-bold">Mažiausia kaina</th>
                                         <th class="p-3 text-right font-bold">Pasiūlymų</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    @foreach ($listingMeta['intro']['brand_price_summary'] as $row)
+                                    @foreach ($listingMeta['intro']['store_price_table'] as $row)
                                         <tr class="odd:bg-white even:bg-gray-50 hover:bg-green-soft/60">
+                                            <td class="p-3">
+                                                <span class="font-bold text-gray-900">{{ $row['store_name'] }}</span>
+                                            </td>
                                             <td class="p-3">
                                                 <a href="{{ $row['product_href'] }}" class="flex min-w-0 items-center gap-3">
                                                     <span class="relative size-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -357,7 +374,9 @@
                                                         @endif
                                                     </span>
                                                     <span class="min-w-0">
-                                                        <span class="block truncate font-bold text-gray-900">{{ $row['brand'] }}</span>
+                                                        @if ($row['brand'])
+                                                            <span class="block truncate font-bold text-gray-900">{{ $row['brand'] }}</span>
+                                                        @endif
                                                         <span class="block truncate text-xs text-gray-500">{{ $row['product_name'] }}</span>
                                                     </span>
                                                 </a>
@@ -365,13 +384,21 @@
                                             <td class="p-3">
                                                 <span class="block font-bold tabular-nums text-gray-900">{{ number_format($row['min_price'], 2, ',', ' ') }}&nbsp;€</span>
                                             </td>
-                                            <td class="p-3">{{ $row['store_name'] }}</td>
                                             <td class="p-3 text-right text-gray-500">{{ $row['offers_count'] }} {{ \App\Support\LithuanianPlural::offerWord($row['offers_count']) }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
+                        @if (!empty($listingMeta['intro']['store_keyword_sentence']))
+                            {{-- The one place a literal "{store} + keyword + akcija"
+                                 phrase pairing appears in visible text — targets
+                                 store+keyword long-tail queries (e.g. "norfa kava
+                                 akcija") the table/chips alone don't. --}}
+                            <p class="mt-3 rounded-xl border border-green-soft-border bg-green-soft px-4 py-3 text-sm leading-relaxed text-gray-700">
+                                {{ $listingMeta['intro']['store_keyword_sentence'] }}
+                            </p>
+                        @endif
                     </div>
                 @endif
 

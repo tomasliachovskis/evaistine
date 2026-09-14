@@ -26,6 +26,13 @@ class KeywordPageService
 
     private const MIN_CHIP_OFFERS = 3;
 
+    // Same 5 chains buildStoreKeywordVariants()/KeywordPageGptService already
+    // treat as "the main stores" — guarantees each of these a row in
+    // buildStorePriceTable() even when it isn't among the top-8-by-offer-
+    // count brands (found live: Norfa's cheapest match for "kava" has no
+    // brand at all, so Norfa never appeared in the old per-brand table).
+    private const PRIORITY_STORE_NAMES = ['Maxima', 'Norfa', 'Lidl', 'Iki', 'Rimi'];
+
     public function __construct(
         private MeilisearchService $meilisearchService,
         private DiscountResponseFormatter $formatter,
@@ -246,7 +253,7 @@ class KeywordPageService
                 ->get()
                 ->filter(fn (KeywordPageProduct $row) => $row->keywordPage !== null)
                 ->map(fn (KeywordPageProduct $row) => [
-                    'label' => $row->keywordPage->h1 ?: $row->keywordPage->title,
+                    'label' => $this->stripAkcijaWord($row->keywordPage->h1 ?: $row->keywordPage->title),
                     'href' => "/akcijos/{$row->keywordPage->slug}",
                     'emoji' => $row->keywordPage->emoji,
                 ])
@@ -588,6 +595,8 @@ class KeywordPageService
                 'short_description' => $this->firstSentence($description),
                 'store_price_chips' => $storeComparison['summary_rows'],
                 'brand_price_summary' => $storeComparison['brand_summary'],
+                'store_price_table' => $storeComparison['store_price_table'],
+                'store_keyword_sentence' => $this->buildStoreKeywordSentence($page, $storeComparison['store_price_table']),
                 // The direct "kur šiandien pigiausia X" answer — single
                 // cheapest offer across every store, shown above the brand
                 // list rather than making a reader piece it together from
@@ -618,6 +627,20 @@ class KeywordPageService
                 'faq' => $page->faq ?? [],
             ],
         ];
+    }
+
+    /**
+     * "Susijusios akcijos" cross-link anchor text — the underlying h1 field
+     * itself is written as "{keyword} akcija" (e.g. "Vynuogės akcija") so it
+     * reads well as a page title, but that word repeated across 8 cards in
+     * one grid (product page and keyword page both) is noise the reader
+     * already gets from the section heading itself. Strips the standalone
+     * word only (not e.g. "reakcija") and leaves h1s that don't have it
+     * (a few, like "Akcija zaislams") untouched rather than mangling them.
+     */
+    private function stripAkcijaWord(string $label): string
+    {
+        return trim(preg_replace('/\s*\bakcij(?:a|ą|os|ai|oms|ų)\b\s*/ui', ' ', $label));
     }
 
     private function firstSentence(string $text): string
@@ -695,14 +718,14 @@ class KeywordPageService
      * explicit product decision); these are meant to lead the main results
      * grid instead, same card as every other product in it.
      *
-     * @return array{leading_deals: array, summary_rows: array, brand_summary: array}
+     * @return array{leading_deals: array, summary_rows: array, brand_summary: array, store_price_table: array}
      */
     private function buildStoreComparisonForPage(KeywordPage $page, int $matchingTotal): array
     {
         $discounts = $this->collectMatchingDiscountsForComparison($page, $matchingTotal);
 
         if ($discounts->isEmpty()) {
-            return ['leading_deals' => [], 'summary_rows' => [], 'brand_summary' => [], 'answer' => null];
+            return ['leading_deals' => [], 'summary_rows' => [], 'brand_summary' => [], 'store_price_table' => [], 'answer' => null];
         }
 
         $cheapestPerStoreAll = $discounts->groupBy('store_id')
@@ -733,6 +756,7 @@ class KeywordPageService
                 ])
                 ->all(),
             'brand_summary' => $this->buildBrandSummary($discounts),
+            'store_price_table' => $this->buildStorePriceTable($discounts),
             // The single cheapest offer across every store — the direct
             // "kur šiandien pigiausia X" answer, shown above everything else.
             // Also carries this week's biggest single discount (same
@@ -810,6 +834,93 @@ class KeywordPageService
             ->take(8)
             ->values()
             ->all();
+    }
+
+    /**
+     * Same $discounts as buildBrandSummary(), grouped by STORE instead of
+     * brand and ordered by store priority instead of offer count — the
+     * per-brand table's guarantee is "top 8 brands", not "every main store",
+     * so a main store whose cheapest match happens to have no brand or a
+     * low-volume brand can silently vanish from it. This table guarantees a
+     * row for every PRIORITY_STORE_NAMES entry that has any match at all,
+     * still shows the real brand/product per row, and lists any remaining
+     * (non-priority) stores afterwards, cheapest first.
+     *
+     * @return list<array{store_name: string, store_slug: string, offers_count: int, min_price: float, brand: ?string, product_name: string, product_image_url: ?string, product_href: string}>
+     */
+    private function buildStorePriceTable(Collection $discounts): array
+    {
+        $priorityRank = array_flip(self::PRIORITY_STORE_NAMES);
+
+        $rows = $discounts
+            ->filter(fn (Discount $discount) => (float) $discount->discounted_price > 0)
+            ->groupBy(fn (Discount $discount) => $discount->store->name)
+            ->map(function (Collection $storeDiscounts, string $storeName) {
+                $cheapest = $storeDiscounts->sortBy('discounted_price')->first();
+                $formatted = $this->formatter->formatListDiscount($cheapest);
+                $brand = trim($cheapest->product->brand ?? '');
+
+                return [
+                    'store_name' => $storeName,
+                    'store_slug' => $cheapest->store->slug,
+                    'offers_count' => $storeDiscounts->count(),
+                    'min_price' => (float) $cheapest->discounted_price,
+                    'brand' => $brand !== '' ? mb_convert_case(mb_strtolower($brand), MB_CASE_TITLE, 'UTF-8') : null,
+                    'product_name' => $formatted['product']['name'],
+                    'product_image_url' => $formatted['product']['image_url'],
+                    'product_href' => '/akcijos/' . $formatted['product']['full_slug'],
+                ];
+            })
+            ->values();
+
+        return $rows
+            ->sort(function (array $a, array $b) use ($priorityRank) {
+                $rankA = $priorityRank[$a['store_name']] ?? count($priorityRank);
+                $rankB = $priorityRank[$b['store_name']] ?? count($priorityRank);
+
+                return $rankA <=> $rankB ?: $a['min_price'] <=> $b['min_price'];
+            })
+            ->take(10)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * One real flowing sentence naming each priority store next to the
+     * keyword + "akcija" + a real price — the literal "{store} + keyword +
+     * akcija" phrase pairing nothing else on the page produces in visible
+     * text, meant to give this page a shot at store+keyword long-tail
+     * queries (e.g. "norfa kava akcija") the way the brand table/chips alone
+     * don't (a search-suggestion chip list isn't a real sentence Google can
+     * quote back).
+     */
+    private function buildStoreKeywordSentence(KeywordPage $page, array $storePriceTable): string
+    {
+        $keywordLower = mb_strtolower(trim($page->title));
+        $parts = [];
+
+        foreach ($storePriceTable as $row) {
+            if (!in_array($row['store_name'], self::PRIORITY_STORE_NAMES, true)) {
+                continue;
+            }
+
+            $label = $row['brand'] ? $row['brand'] . ' ' . $keywordLower : $keywordLower;
+            $parts[] = sprintf(
+                '%s — %s kaina nuo %s €',
+                $row['store_name'],
+                $label,
+                number_format($row['min_price'], 2, ',', ' ')
+            );
+        }
+
+        if ($parts === []) {
+            return '';
+        }
+
+        $genitive = $page->grammar_genitive ?: $keywordLower;
+
+        return ucfirst($genitive) . ' akcijos šiuo metu galioja pagrindinėse parduotuvėse: '
+            . implode('; ', $parts) . '. Palyginkite ir rinkitės pigiausią variantą.';
     }
 
     private function collectMatchingDiscountsForComparison(KeywordPage $page, int $matchingTotal): Collection
@@ -893,7 +1004,7 @@ class KeywordPageService
                     // title ("Kava", "Bulvės") — the anchor text itself is a
                     // relevance signal, and "Bulvės" alone doesn't say what
                     // the link is for the way "Bulvės akcija" does.
-                    'label' => $related->h1 ?: $related->title,
+                    'label' => $this->stripAkcijaWord($related->h1 ?: $related->title),
                     'href' => "/akcijos/{$related->slug}",
                     'emoji' => $related->emoji,
                 ])
@@ -926,7 +1037,7 @@ class KeywordPageService
             ->limit(8)
             ->get(['slug', 'title', 'h1', 'emoji'])
             ->map(fn (KeywordPage $related) => [
-                'label' => $related->h1 ?: $related->title,
+                'label' => $this->stripAkcijaWord($related->h1 ?: $related->title),
                 'href' => "/akcijos/{$related->slug}",
                 'emoji' => $related->emoji,
             ])
@@ -1058,6 +1169,7 @@ class KeywordPageService
 
                 return [
                     'name' => $category->name,
+                    'slug' => $category->slug,
                     'href' => '/akcijos/' . $category->slug,
                 ];
             })
