@@ -1,4 +1,4 @@
-@props(['sections', 'primarySlug' => null, 'secondarySlug' => null, 'topOffers' => []])
+@props(['sections', 'primarySlug' => null, 'secondarySlug' => null, 'topOffers' => [], 'availableCategories' => []])
 
 @php
     $contextStoreSlug = $primarySlug && \App\Support\StoreDisplayMeta::isStoreSlug($primarySlug)
@@ -9,7 +9,7 @@
 @if (! empty($topOffers))
     <x-landing-deals-section
         id="geriausi-pasiulymai"
-        title="Geriausi pasiūlymai"
+        title="Geriausi savaitės pasiūlymai"
         :deals="$topOffers"
         icon="flame"
         layout="carousel"
@@ -26,6 +26,7 @@
         :category-slug="$section['slug']"
         layout="carousel"
         :see-all-href="$secondarySlug ? null : ($primarySlug ? '/akcijos/'.$primarySlug.'/'.$section['slug'] : '/akcijos/'.$section['slug'])"
+        :see-all-count="collect($availableCategories)->firstWhere('slug', $section['slug'])['offers_count'] ?? null"
         :context-store-slug="$contextStoreSlug"
     />
 @endforeach

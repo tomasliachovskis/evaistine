@@ -65,8 +65,12 @@ class ScrapingController extends Controller
 
         $discounts = Discount::where('store_id', $store->id)
             ->where(function ($query) {
+                // Date-only (midnight), not the exact current time — end_at
+                // is a DATE stored at midnight ("valid through this day"),
+                // so comparing against the current moment wrongly excluded
+                // a discount expiring today for the rest of today.
                 $query->whereNull('end_at')
-                    ->orWhere('end_at', '>=', date('Y-m-d H:i:s'));
+                    ->orWhere('end_at', '>=', date('Y-m-d 00:00:00'));
             })
             ->with(['product'])
             ->orderBy('discount_percent', 'desc')

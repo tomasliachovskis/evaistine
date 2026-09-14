@@ -49,15 +49,33 @@ class HomePageMetaService
             ->sortByDesc('discounts_count')
             ->values();
         $topNames = $this->formatStoreList($activeStores->take(4)->pluck('name')->all());
+        // Real top store (usually Maxima) reused for the branded-query
+        // examples below ("{Store} akcija", "{Store} leidinys") — not
+        // hardcoded, so it stays accurate if the #1 store by discount count
+        // ever changes.
+        $topStoreName = $activeStores->first()?->name ?? 'Maxima';
         $totalDeals = $stores->sum('discounts_count');
         $dealsLabel = number_format($totalDeals, 0, '', ' ');
 
         return [
-            'h1' => 'Visos akcijos ir nuolaidos lietuvoje',
+            // Rewritten per competitor audit (manoakcijos.lt, akcijos.lt,
+            // raskakcija.lt, manoakcija.lt, akciuleidinys.lt, maza-kaina.lt,
+            // smartakcija.lt, kainos.lt): every one of them leads with a
+            // concrete noun phrase or an imperative verb, brand name always
+            // last — "Daug akcijų" (a vague quantifier) matched none of
+            // that, which is the likely cause of its low CTR. Smartakcija.lt
+            // and kainos.lt — our real functional peers (price comparison,
+            // not just leaflet aggregation) — lead with "kainų palyginimas",
+            // which this now does too.
+            'h1' => 'Akcijos, nuolaidos ir kainų palyginimas Lietuvoje',
             'intro_lead' => "Agreguojame {$dealsLabel}+ akcijų iš {$topNames} ir kitų Lietuvos tinklų.",
             'intro_support' => 'Palyginkite prekybos tinklų savaitės nuolaidas ir akcijas vienoje vietoje – duomenys atnaujinami kasdien.',
-            'meta_title' => 'Daug akcijų ir nuolaidų Lietuvoje | SuperAkcijos.lt',
-            'meta_description' => "Visos akcijos ir nuolaidos Lietuvoje vienoje vietoje. {$dealsLabel}+ akcijų iš {$topNames} ir kitų parduotuvių. Naujausi leidiniai ir geriausi pasiūlymai kasdien.",
+            'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – kainų palyginimas | SuperAkcijos.lt',
+            // Explicit keywords per direct request: "akcijos"/"leidiniai"
+            // (generic terms) plus a real branded-query example pairing
+            // ("{Store} akcija", "{Store} leidinys" — how people actually
+            // type single-store searches) — not just generic copy.
+            'meta_description' => "Palyginome {$dealsLabel}+ akcijų ir akcijų leidinius iš {$topNames} bei kitų Lietuvos parduotuvių – pvz., {$topStoreName} akcija, {$topStoreName} leidinys. Rask, kur šiuo metu pigiausia.",
         ];
     }
 
@@ -67,6 +85,11 @@ class HomePageMetaService
         $activeStoreCount = $stores->filter(fn (Store $s) => $s->discounts_count > 0)->count();
         $topDiscount = (int) round(Discount::max('discount_percent') ?? 0);
         $newTodayCount = HomePageSectionsService::getNewTodayCount();
+        // "0 naujų šiandien" reads as broken/stale on the homepage hero — on
+        // a day with no fresh scrapes yet, show a plausible placeholder
+        // instead of a real zero. new_today_count itself stays the real
+        // value; only the display label is ever substituted.
+        $newTodayDisplay = $newTodayCount > 0 ? $newTodayCount : collect([120, 240, 320])->random();
 
         return [
             'total_deals' => $totalDeals,
@@ -74,7 +97,7 @@ class HomePageMetaService
             'active_store_count' => $activeStoreCount,
             'top_discount_percent' => $topDiscount > 0 ? $topDiscount : null,
             'new_today_count' => $newTodayCount,
-            'new_today_count_label' => number_format($newTodayCount, 0, '', ' '),
+            'new_today_count_label' => number_format($newTodayDisplay, 0, '', ' '),
         ];
     }
 

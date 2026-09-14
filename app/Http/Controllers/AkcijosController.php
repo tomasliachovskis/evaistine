@@ -14,9 +14,14 @@ use App\Support\PageHtmlCache;
 use App\Support\ProductPageMeta;
 use App\Support\ProductSchema;
 use App\Support\StoreDisplayMeta;
+use App\Support\ContentFreshness;
+use App\Support\LithuanianDate;
+use App\Services\HomePageMetaService;
+use App\Support\CacheVersion;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -28,7 +33,7 @@ use Illuminate\View\View;
 // query/formatting logic the old JSON API used.
 class AkcijosController extends Controller
 {
-    public function index(Request $request, ProductController $api)
+    public function index(Request $request, ProductController $api, HomePageMetaService $metaService)
     {
         // Verified against production (not the invented category-tile grid
         // this used to be): the plain /akcijos hub looks exactly like a store
@@ -39,11 +44,28 @@ class AkcijosController extends Controller
         $payload = json_decode($api->getAllDiscounts()->getContent(), true);
 
         $sections = [];
+        $hubMeta = null;
         if (! $request->query('category') && ! $request->query('store')) {
             $sections = json_decode($api->getBestDiscountsByCategory()->getContent(), true);
+
+            // Same cache key/service NewHomeController already warms — a real
+            // genuine cache hit shared between "/" and the plain hub, not a
+            // second computation of the same stores/categories stats.
+            $pageMeta = Cache::remember(
+                'new_home_meta_'.CacheVersion::suffix(['discounts']),
+                1800,
+                fn () => $metaService->build()
+            );
+            $freshnessDate = ContentFreshness::forAll();
+
+            $hubMeta = [
+                'total_deals_label' => $pageMeta['stats']['total_deals_label'] ?? null,
+                'active_store_count' => $pageMeta['stats']['active_store_count'] ?? null,
+                'freshness_label' => $freshnessDate ? LithuanianDate::relative($freshnessDate) : null,
+            ];
         }
 
-        return $this->renderListingPayload($request, $payload, '/akcijos', 'discounts', null, null, $sections);
+        return $this->renderListingPayload($request, $payload, '/akcijos', 'discounts', null, null, $sections, [], $hubMeta);
     }
 
     public function show(Request $request, ProductController $api, KeywordPageController $keywordApi, string $slug1, ?string $slug2 = null)
@@ -84,12 +106,20 @@ class AkcijosController extends Controller
 
         $path = "/akcijos/paieska/{$query}";
 
+        // Same site-wide store list/cache the discount-filters sidebar
+        // already uses (Api\ProductController::getStores(), versioned cache)
+        // — reused here rather than a fresh query, since search has no
+        // store/category of its own to scope the list by.
+        $allStores = json_decode($api->getStores()->getContent(), true)['data'] ?? [];
+
         return view('akcijos.search', [
             'query' => $query,
             'deals' => $payload['data']['data'] ?? [],
             'pagination' => $payload['data'] ?? null,
             'total' => $payload['data']['total'] ?? 0,
             'basePath' => $path,
+            'allStores' => $allStores,
+            'selectedStore' => $request->get('store'),
             'canonical' => CanonicalUrl::build($path),
             // Search results are never indexed — matches getRobotsMeta()'s
             // "/paieska/" pathname check in the Next.js frontend.
@@ -137,7 +167,7 @@ class AkcijosController extends Controller
         return $this->renderListingPayload($request, $payload, "/akcijos/{$slug}", 'keyword', $slug, null);
     }
 
-    private function renderListingPayload(Request $request, array $payload, string $path, string $filtersMode, ?string $filtersPrimarySlug, ?string $filtersSecondarySlug, array $sections = [], array $topOffers = []): View|Response
+    private function renderListingPayload(Request $request, array $payload, string $path, string $filtersMode, ?string $filtersPrimarySlug, ?string $filtersSecondarySlug, array $sections = [], array $topOffers = [], ?array $hubMeta = null): View|Response
     {
         $data = $payload['data'] ?? [];
         $breadcrumbs = $payload['breadcrumbs'] ?? [];
@@ -168,17 +198,20 @@ class AkcijosController extends Controller
             $pageTitle = $seo['seo_title'] ?? $listingMeta['store_name'] ?? $listingMeta['category_name'] ?? $path;
         }
 
-        // Sidebar shows the *other* facet than the one already fixed by the
-        // URL: browsing a store → pick a category; browsing a category (or a
-        // keyword page) → pick a store. Matches product-filter-controls.tsx's
-        // filterMode semantics (categories-only vs stores-only). The plain
-        // /akcijos hub (no primary slug at all — verified against production,
-        // not the invented category-tile page this used to be) always shows
-        // categories, same as a store page.
-        $sidebarMode = 'categories';
-        if ($filtersPrimarySlug !== null && ($filtersMode === 'keyword' || ! StoreDisplayMeta::isStoreSlug($filtersPrimarySlug))) {
-            $sidebarMode = 'stores';
-        }
+        // Per explicit product decision: category and store+category pages
+        // now show BOTH a "Parduotuvės" and a "Kategorijos" filter (each
+        // pre-highlighting whichever facet the URL already fixes), instead
+        // of the old single-facet-only sidebar. Store-only pages are
+        // deliberately untouched — no shared filter bar there at all
+        // (unchanged, see $showFilters below); <x-store-nav-tabs> still
+        // owns category-switching for that one page type. The plain
+        // /akcijos hub and keyword pages keep their existing single-facet
+        // behavior too (categories-only / stores-only respectively).
+        $headerTypeForFilters = $listingMeta['type'] ?? null;
+        $showCategoryFilter = $filtersMode !== 'keyword' && $headerTypeForFilters !== 'store';
+        $showStoreFilter = $filtersMode === 'keyword' || $headerTypeForFilters === 'category' || $headerTypeForFilters === 'store_category';
+        $activeCategorySlug = $headerTypeForFilters === 'store_category' ? $filtersSecondarySlug : ($headerTypeForFilters === 'category' ? $filtersPrimarySlug : null);
+        $activeStoreSlug = $headerTypeForFilters === 'store_category' ? $filtersPrimarySlug : null;
 
         return PageHtmlCache::remember($request, $path, fn () => view('akcijos.listing', [
             'deals' => $deals,
@@ -192,9 +225,13 @@ class AkcijosController extends Controller
             'filtersMode' => $filtersMode,
             'filtersPrimarySlug' => $filtersPrimarySlug,
             'filtersSecondarySlug' => $filtersSecondarySlug,
-            'sidebarMode' => $sidebarMode,
+            'showStoreFilter' => $showStoreFilter,
+            'showCategoryFilter' => $showCategoryFilter,
+            'activeStoreSlug' => $activeStoreSlug,
+            'activeCategorySlug' => $activeCategorySlug,
             'sections' => $sections,
             'topOffers' => $topOffers,
+            'hubMeta' => $hubMeta,
             'canonical' => CanonicalUrl::build($path, $query),
             'robots' => CanonicalUrl::robotsMeta($path, $query),
             'breadcrumbSchema' => BreadcrumbSchema::build(
@@ -281,6 +318,16 @@ class AkcijosController extends Controller
             ? ProductPageMeta::priceDealSignal($primaryDeal['history'] ?? [], $bestPrice)
             : null;
 
+        // The one internal-link direction that never existed before —
+        // category pages already link to keyword pages, and keyword pages
+        // now link to each other (see KeywordPageService::buildRelatedPages),
+        // but a product page linked to neither. Cached per product identity
+        // inside the service itself, so this is cheap on every page load
+        // after the first.
+        $relatedKeywordPages = $primaryDeal
+            ? app(\App\Services\KeywordPageService::class)->relatedPagesForProduct($primaryDeal['product']['id'] ?? null)
+            : [];
+
         return view('akcijos.product', [
             'deals' => $deals,
             'primaryDeal' => $primaryDeal,
@@ -303,6 +350,7 @@ class AkcijosController extends Controller
             'faqItems' => $faqItems,
             'faqSchema' => $faqSchema,
             'priceDealSignal' => $priceDealSignal,
+            'relatedKeywordPages' => $relatedKeywordPages,
         ]);
     }
 }

@@ -7,11 +7,18 @@
         <div class="base-container mx-auto flex flex-col items-center gap-4 py-10 text-center sm:py-14">
             <span class="inline-flex items-center gap-1.5 text-sm font-extrabold uppercase tracking-wide text-green">
                 <span class="size-1.5 rounded-full bg-green"></span>
-                Viena vieta, penkios parduotuvės
+                Akcijos ir nuolaidos Lietuvoje
             </span>
             <h1 class="max-w-2xl font-extrabold text-gray-900">Kur pigiausia pirkti — palyginome už tave</h1>
+            @php
+                // active_store_count is the TOTAL active-store count, which
+                // already includes these 5 named ones — subtract them so
+                // "ir dar N kitų" doesn't double-count and overstate real
+                // coverage.
+                $otherStoreCount = max(0, $stats['active_store_count'] - 5);
+            @endphp
             <p class="max-w-xl text-base leading-snug text-gray-600 sm:text-lg">
-                Ieškok bet kurios kasdienės prekės ir iškart pamatyk realias kainas Maxima, Lidl, Iki, Rimi ir Norfa parduotuvėse.
+                Ieškok bet kurios kasdienės prekės ir iškart palygink realias kainas Maxima, Lidl, Iki, Rimi, Norfa ir dar {{ $otherStoreCount }} kitų Lietuvos parduotuvių.
             </p>
 
             <form
@@ -51,7 +58,7 @@
                     <div class="section-heading-row">
                         <h2 class="section-heading">{{ $category['name'] }}</h2>
                         <a href="/pigiausios-prekes" class="section-link text-base">
-                            Žiūrėti visas {{ $category['total_items'] }} prekes
+                            Žiūrėti visas prekes
                             <x-app-icon name="chevron-right" class="size-4 opacity-80" />
                         </a>
                     </div>
@@ -68,38 +75,46 @@
                         @foreach ($category['items'] as $item)
                             <div>
                                 <p class="mb-2 text-base font-semibold text-gray-600">{{ $item['name'] }}</p>
-                                {{-- Same card design as /pigiausios-prekes — logo + "Pigiausia" header,
-                                     real product image, name, price, and normalized unit price. --}}
-                                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                                    @foreach ($item['by_store'] as $slug => $matches)
-                                        @php $cheapest = $matches[0] ?? null; @endphp
-                                        @continue ($cheapest === null)
-                                        @php $trackedStore = collect($stores)->firstWhere('slug', $slug); @endphp
-                                        <div @class([
-                                            'flex flex-col gap-2.5 rounded-xl border p-3',
-                                            'border-[#ffdb4d] bg-[#fffaeb]' => $cheapest['price'] === $item['cheapest_price'],
-                                            'border-gray-200 bg-gray-50' => $cheapest['price'] !== $item['cheapest_price'],
-                                        ])>
-                                            <div class="flex items-center gap-1.5">
-                                                <x-store-logo :slug="$slug" :name="$trackedStore['name'] ?? $slug" size="sm" />
-                                                @if ($cheapest['price'] === $item['cheapest_price'])
-                                                    <span class="ml-auto inline-flex items-center rounded-md bg-[#ffdb4d] px-2 py-1 text-[0.78em] font-extrabold uppercase tracking-wide text-gray-900">Pigiausia</span>
-                                                @endif
-                                            </div>
-                                            <a href="{{ $cheapest['product_url'] ?? '#' }}" class="flex items-center gap-2.5 hover:opacity-80">
-                                                <div class="relative aspect-square size-16 shrink-0 overflow-hidden rounded-lg bg-white">
-                                                    @if ($cheapest['product_image_url'])
-                                                        <img src="{{ $cheapest['product_image_url'] }}" alt="{{ $cheapest['product_name'] }}" loading="lazy" class="h-full w-full object-contain p-0.5">
-                                                    @endif
-                                                </div>
-                                                <div class="min-w-0">
-                                                    <p class="line-clamp-2 text-[0.95em] leading-tight text-gray-700">{{ $cheapest['product_name'] }}</p>
-                                                    <p class="text-[1.3em] font-bold tabular-nums text-gray-900">{{ number_format($cheapest['raw_price'], 2, ',', ' ') }}&nbsp;€</p>
-                                                    @if ($unitLabel($item['unit_basis']))
-                                                        <p class="text-[0.8em] tabular-nums text-gray-400">{{ number_format($cheapest['price'], 2, ',', ' ') }}&nbsp;{{ $unitLabel($item['unit_basis']) }}</p>
-                                                    @endif
-                                                </div>
-                                            </a>
+                                {{-- Same shared card as /pigiausios-prekes (the real <x-deal-card>,
+                                     not a bespoke one) — one cheapest match per store first (up
+                                     to 5, one each); only when fewer than 5 stores currently
+                                     carry this item does it backfill the rest of the row with
+                                     next-cheapest matches (repeating a store if needed), so a
+                                     row never looks half-empty just because one tracked store
+                                     has no match today. 4 visible on mobile, 5 at lg+ (same
+                                     "hide the extra one on mobile" trick already used in
+                                     landing-deals-section). --}}
+                                @php
+                                    // Capped at 5 regardless of how many stores now carry a
+                                    // match (up to 16 since the price index widened past the
+                                    // old 5-store allowlist) — home is a teaser, not the full
+                                    // comparison; that's what /pigiausios-prekes is for.
+                                    $byStore = collect($item['by_store']);
+                                    $topMatches = $byStore
+                                        ->map(fn ($matches, $slug) => isset($matches[0]) ? ['slug' => $slug, 'match' => $matches[0]] : null)
+                                        ->filter()
+                                        ->sortBy('match.price')
+                                        ->values();
+                                    if ($topMatches->count() < 5) {
+                                        $backfill = $byStore
+                                            ->flatMap(fn ($matches, $slug) => collect($matches)->skip(1)->map(fn ($m) => ['slug' => $slug, 'match' => $m]))
+                                            ->sortBy('match.price')
+                                            ->values();
+                                        $topMatches = $topMatches->concat($backfill);
+                                    }
+                                    $topMatches = $topMatches->take(5)->values();
+                                @endphp
+                                <div class="grid grid-cols-4 gap-3 lg:grid-cols-5">
+                                    @foreach ($topMatches as $index => $row)
+                                        @php $trackedStore = collect($stores)->firstWhere('slug', $row['slug']) ?? ['slug' => $row['slug'], 'name' => $row['slug']]; @endphp
+                                        <div class="{{ $index >= 4 ? 'hidden lg:block' : '' }}">
+                                            <x-price-compare-card
+                                                :match="$row['match']"
+                                                :store="$trackedStore"
+                                                :unit-label="$unitLabel($item['unit_basis'])"
+                                                :is-cheapest="$row['match']['price'] === $item['cheapest_price']"
+                                                :highlight="false"
+                                            />
                                         </div>
                                     @endforeach
                                 </div>
@@ -113,7 +128,7 @@
                  section-card + heading pattern as the comparison blocks
                  above it, instead of floating bare on the page background. --}}
             <div class="section-card">
-                <h2 class="section-heading">Didžiausi tinklai</h2>
+                <h2 class="section-heading">Didžiausi Lietuvos parduotuvių tinklai</h2>
                 <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
                     @foreach ($stores as $store)
                         <x-store-card :store="$store" layout="grid" />
@@ -130,7 +145,7 @@
                  it read as oversized. --}}
             <div class="section-card">
                 <div class="section-heading-row">
-                    <h2 class="section-heading">Taip pat šiandien akcijoje</h2>
+                    <h2 class="section-heading">Akcijos ir nuolaidos šiandien</h2>
                     <a href="/akcijos" class="section-link text-base">
                         Žiūrėti visas
                         <x-app-icon name="chevron-right" class="size-4 opacity-80" />

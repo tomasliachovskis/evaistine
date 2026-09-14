@@ -1,4 +1,4 @@
-@props(['deal', 'source' => 'grid', 'contextStoreSlug' => null, 'inCarousel' => false])
+@props(['deal', 'source' => 'grid', 'contextStoreSlug' => null, 'inCarousel' => false, 'featured' => false])
 
 @php
     $product = $deal['product'];
@@ -16,11 +16,20 @@
 
     $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €';
 
-    $hideSingleStoreLogo = $contextStoreSlug
-        && $stores->count() === 1
-        && ($stores[0]['slug'] ?? null) === $contextStoreSlug;
+    // On a store page ($contextStoreSlug set) the store is already
+    // established by the page itself — no need to repeat it on every card's
+    // logo row, even for a product that's also on sale elsewhere.
+    $hideStoreLogos = (bool) $contextStoreSlug;
 
-    $shellClass = 'group relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-2.5 transition-colors hover:border-gray-300 sm:p-3';
+    // Featured (e.g. price-compare-card's "Gera kaina" match) reuses the
+    // site's one existing accent yellow (#ffdb4d, already the discount-%
+    // and no-price-fallback badge color) as a border/tint instead of the
+    // plain gray-200/gray-50 shell, so the standout card doesn't introduce a
+    // second accent color.
+    $shellClass = 'group relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border p-2.5 transition-colors sm:p-3 '
+        . ($featured
+            ? 'border-2 border-[#ffdb4d] bg-[#fffbeb] hover:border-[#f0c400]'
+            : 'border-gray-200 bg-gray-50 hover:border-gray-300');
 
     if ($inCarousel) {
         // discountCarouselWidthClass in discount-card.tsx — merged onto the card
@@ -91,7 +100,7 @@
                 {{ $product['name'] }}
             </p>
 
-            @if ($stores->count() > 1)
+            @if (! $hideStoreLogos && $stores->count() > 1)
                 <div class="mt-auto flex min-w-0 items-center gap-1.5 pt-2">
                     @foreach ($stores->take(3) as $storeItem)
                         <x-store-logo :slug="$storeItem['slug']" :name="$storeItem['name']" size="xs" />
@@ -100,7 +109,7 @@
                         <span class="text-xs font-medium text-gray-400">+{{ $stores->count() - 3 }}</span>
                     @endif
                 </div>
-            @elseif ($stores->count() === 1 && ! $hideSingleStoreLogo)
+            @elseif (! $hideStoreLogos && $stores->count() === 1)
                 <div class="mt-auto flex min-w-0 items-center pt-3">
                     <x-store-logo :slug="$stores[0]['slug']" :name="$stores[0]['name']" size="xs" class="object-left" />
                 </div>

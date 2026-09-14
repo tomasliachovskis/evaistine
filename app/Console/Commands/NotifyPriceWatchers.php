@@ -67,7 +67,12 @@ class NotifyPriceWatchers extends Command
             })
             ->whereNull('price_watch_notifications.id')
             ->where(function ($query) {
-                $query->whereNull('discounts.end_at')->orWhere('discounts.end_at', '>=', now());
+                // now()->startOfDay(): end_at is a DATE stored at midnight
+                // ("valid through this day") — comparing against the exact
+                // current moment wrongly treated a discount expiring today
+                // as already expired for the rest of today, so a user's
+                // last real day of a price drop could silently never email.
+                $query->whereNull('discounts.end_at')->orWhere('discounts.end_at', '>=', now()->startOfDay());
             })
             ->where(function ($query) {
                 $query->whereNull('discounts.start_at')->orWhere('discounts.start_at', '<=', now());

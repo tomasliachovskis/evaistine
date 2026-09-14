@@ -88,8 +88,11 @@ class CacheProductImages extends Command
         // seen, unlike a product only sitting in the catalog with no
         // current offer. Same "active" definition used elsewhere for a
         // discount (end_at null or in the future).
+        // now()->startOfDay(): end_at is a DATE stored at midnight ("valid
+        // through this day") — plain now() wrongly excluded a discount
+        // expiring today for the rest of today.
         $activeDiscountProductIds = fn ($query) => $query->whereHas('discounts', function ($q) {
-            $q->whereNull('end_at')->orWhere('end_at', '>=', now());
+            $q->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay());
         });
 
         $products = $activeDiscountProductIds($baseQuery())->limit($limit)->get();
@@ -99,7 +102,7 @@ class CacheProductImages extends Command
             $fillIds = $products->pluck('id');
             $fill = $baseQuery()
                 ->whereDoesntHave('discounts', function ($q) {
-                    $q->whereNull('end_at')->orWhere('end_at', '>=', now());
+                    $q->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay());
                 })
                 ->whereNotIn('id', $fillIds)
                 ->limit($remaining)

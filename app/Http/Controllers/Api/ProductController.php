@@ -990,7 +990,11 @@ class ProductController extends Controller
                     ->where('id', '!=', $product->id);
             })
             ->where(function ($query) {
-                $query->whereNull('end_at')->orWhere('end_at', '>=', now());
+                // now()->startOfDay(): end_at is a DATE stored at midnight
+                // ("valid through this day") — comparing against plain
+                // now() wrongly expired a discount at the START of its last
+                // valid day instead of the end of it.
+                $query->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay());
             })
             ->orderByRaw('CASE WHEN discounted_price > 0 THEN discounted_price ELSE 999999 END')
             ->get()

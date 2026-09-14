@@ -22,6 +22,14 @@
         $currentOrder = request('order', 'popular');
         $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[40px] text-[16px] leading-snug text-left transition-colors '
             . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
+        // Plain query-param navigation, same as the sort dropdown next to it
+        // (this page isn't Livewire, unlike discount-filters' multi-select
+        // store toggle) — single store at a time, "Visos" clears it.
+        $selectedStoreName = $selectedStore ? collect($allStores)->firstWhere('slug', $selectedStore)['name'] ?? $selectedStore : null;
+        $storeHref = fn (?string $slug) => $basePath . '?' . http_build_query(array_merge(
+            request()->except(['page', 'store']),
+            $slug ? ['store' => $slug] : []
+        ));
     @endphp
 
     {{-- Title block matches discounts-layout.tsx's <h1> treatment used by every
@@ -34,8 +42,35 @@
             @endif
         </h1>
 
-        @if (!empty($deals))
-            <div class="mt-4 flex w-full items-center justify-end rounded-2xl bg-[#e8e8e8] px-4 min-h-[40px]" x-data="{ sortOpen: false }" @click.outside="sortOpen = false">
+        @if (!empty($deals) || $selectedStore)
+            <div class="mt-4 flex w-full items-center justify-between gap-2 rounded-2xl bg-[#e8e8e8] px-4 min-h-[40px]" x-data="{ sortOpen: false, storeOpen: false }" @click.outside="sortOpen = false; storeOpen = false">
+                <div class="flex min-w-0 flex-1 items-center gap-2">
+                    <div class="relative shrink-0">
+                        <button type="button" @click="storeOpen = !storeOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="storeOpen">
+                            <x-app-icon name="store" class="size-4 shrink-0" />
+                            <span class="max-w-[140px] truncate">{{ $selectedStoreName ?? 'Parduotuvė' }}</span>
+                            <x-app-icon name="chevron-down" class="size-4 shrink-0 opacity-70" />
+                        </button>
+                        <div x-show="storeOpen" x-cloak class="absolute left-0 top-full z-30 mt-1.5 max-h-[360px] min-w-[240px] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                            <a href="{{ $storeHref(null) }}" class="{{ $rowClass($selectedStore === null) }}">Visos parduotuvės</a>
+                            @foreach ($allStores as $storeOption)
+                                <a href="{{ $storeHref($storeOption['slug']) }}" class="{{ $rowClass($selectedStore === $storeOption['slug']) }}">
+                                    <span class="flex h-6 w-8 shrink-0 items-center justify-center">
+                                        <img src="/assets/stores/{{ $storeOption['slug'] }}.svg?v=2" alt="" class="max-h-full max-w-full object-contain" onerror="this.style.display='none'">
+                                    </span>
+                                    <span class="truncate">{{ $storeOption['name'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                    @if ($selectedStore)
+                        <a href="{{ $storeHref(null) }}" class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:opacity-80">
+                            <x-store-logo :slug="$selectedStore" :name="$selectedStoreName" size="xs" />
+                            {{ $selectedStoreName }}
+                            <x-app-icon name="x" class="size-4" />
+                        </a>
+                    @endif
+                </div>
                 <div class="relative shrink-0">
                     <button type="button" @click="sortOpen = !sortOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
                         <x-app-icon name="arrow-down-up" class="size-4 shrink-0" />
@@ -90,10 +125,12 @@
                         'lastPage' => $last,
                         'shown' => count($deals),
                         'total' => (int) ($pagination['total'] ?? count($deals)),
+                        'gaSource' => 'search',
                         'params' => [
                             'mode' => 'search',
                             'primary_slug' => $query,
                             'order' => $currentOrder,
+                            'store' => $selectedStore,
                         ],
                     ]))"
                 >
@@ -104,18 +141,13 @@
                     </div>
 
                     @if ($current < $last)
-                        <div class="mt-6 flex justify-center">
-                            <button
-                                type="button"
-                                @click="loadMore()"
-                                :disabled="loading || page >= lastPage"
-                                data-ga-event="load_more_click"
-                                data-ga-source="search"
-                                class="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-green bg-white px-6 text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                <span x-show="!loading" x-text="`Rodyti daugiau (${shown} iš ${total})`"></span>
-                                <span x-show="loading" x-cloak>Kraunama...</span>
-                            </button>
+                        {{-- Infinite scroll: same IntersectionObserver sentinel
+                             pattern as discount-filters.blade.php. --}}
+                        <div x-ref="sentinel" class="mt-6 flex justify-center py-4">
+                            <span x-show="loading" x-cloak class="inline-flex items-center gap-2 text-sm font-medium text-gray-500">
+                                <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M12 3a9 9 0 1 0 9 9" /></svg>
+                                Kraunama...
+                            </span>
                             {{-- Same crawler-only fallback link as discount-filters.blade.php. --}}
                             <a href="{{ $basePath }}?{{ http_build_query(array_merge(request()->except('page'), ['page' => $current + 1])) }}" rel="next" class="sr-only" tabindex="-1" aria-hidden="true">Kitas puslapis</a>
                         </div>

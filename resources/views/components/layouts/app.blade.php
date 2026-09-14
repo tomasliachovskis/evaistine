@@ -83,7 +83,7 @@
 <body class="h-full min-h-screen bg-background text-font antialiased">
     <x-site-header />
 
-    <main class="pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] sm:pb-0 lg:pt-[calc(6.25rem+env(safe-area-inset-top,0px))]">
+    <main class="pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] sm:pb-0 lg:pt-[calc(7.25rem+env(safe-area-inset-top,0px))]">
         {{ $slot }}
     </main>
 

@@ -41,53 +41,18 @@
                 : count($categoryOrder));
     @endphp
 
-    {{-- Base font size for this page's content is user-adjustable (A-/A+ below) —
-         everything under it is sized in `em`, not the usual fixed Tailwind
-         text-sm/base/lg scale, so it actually scales together. Aimed at an
-         older audience checking prices daily: bigger type on request, and
-         every price is visible without clicking anything. --}}
-    <div
-        class="base-container mx-auto flex flex-col gap-4 py-2 pb-10 sm:gap-5"
-        x-data="{ step: 0 }"
-        x-init="step = parseInt(localStorage.getItem('ppFontStep') ?? '0') || 0"
-        :style="{ fontSize: (18 + step * 3) + 'px' }"
-    >
+    {{-- This page's content is sized in `em`, not the usual fixed Tailwind
+         text-sm/base/lg scale, so a single base font-size here scales
+         everything under it together. Aimed at an older audience checking
+         prices daily: bigger type than the site default, every price
+         visible without clicking anything. --}}
+    <div class="base-container mx-auto flex flex-col gap-4 py-2 pb-10 text-lg sm:gap-5">
 
         <x-type-hero
             title="Pigiausios prekės parduotuvėse"
             subtitle="Kelių kasdienių prekių kainos didžiausiuose prekybos tinkluose — kiekvienos prekės kaina matoma iš karto, jokių papildomų paspaudimų."
         >
-            <span class="inline-flex w-fit items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700">
-                <span class="inline-block size-1.5 rounded-full bg-green"></span>
-                Kainos gyvai, atnaujinama iš karto
-            </span>
-
-            <x-slot:cta>
-                <div class="flex items-center gap-2">
-                    <div class="inline-flex items-center overflow-hidden rounded-full border border-gray-200 bg-white print:hidden" role="group" aria-label="Teksto dydis">
-                        <button
-                            type="button"
-                            class="flex h-10 w-10 items-center justify-center border-r border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50"
-                            @click="step = Math.max(0, step - 1); localStorage.setItem('ppFontStep', step)"
-                            aria-label="Sumažinti šriftą"
-                        >A</button>
-                        <button
-                            type="button"
-                            class="flex h-10 w-10 items-center justify-center text-base font-bold text-gray-700 hover:bg-gray-50"
-                            @click="step = Math.min(2, step + 1); localStorage.setItem('ppFontStep', step)"
-                            aria-label="Padidinti šriftą"
-                        >A</button>
-                    </div>
-                    <button
-                        type="button"
-                        class="hidden h-10 items-center gap-2 whitespace-nowrap rounded-full border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 sm:inline-flex print:hidden"
-                        onclick="window.print()"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                        Spausdinti
-                    </button>
-                </div>
-            </x-slot:cta>
+            <x-content-freshness :label="$freshnessLabel" />
         </x-type-hero>
 
         @if (empty($data['items']))
@@ -139,37 +104,19 @@
                                         @continue ($cheapestMatch === null)
                                         <div
                                             data-card
-                                            @class([
-                                                'flex flex-col gap-2 rounded-xl border p-3',
-                                                'border-[#ffdb4d] bg-[#fffaeb]' => $cheapestMatch['price'] === $item['cheapest_price'],
-                                                'border-gray-200 bg-gray-50' => $cheapestMatch['price'] !== $item['cheapest_price'],
-                                            ])
-                                            :class="{ 'ring-2 ring-green ring-offset-1': open === '{{ $trackedStore['slug'] }}' }"
+                                            class="flex flex-col gap-1"
+                                            :class="{ 'ring-2 ring-green ring-offset-1 rounded-xl': open === '{{ $trackedStore['slug'] }}' }"
                                         >
-                                            <div class="flex items-center gap-1.5">
-                                                <x-store-logo :slug="$trackedStore['slug']" :name="$trackedStore['name']" size="xs" />
-                                                @if ($cheapestMatch['price'] === $item['cheapest_price'])
-                                                    <span class="ml-auto inline-flex items-center rounded-md bg-[#ffdb4d] px-1.5 py-0.5 text-[0.65em] font-extrabold uppercase tracking-wide text-gray-900">Pigiausia</span>
-                                                @endif
-                                            </div>
-                                            <a href="{{ $cheapestMatch['product_url'] ?? '#' }}" class="flex items-center gap-2.5 hover:opacity-80">
-                                                <div class="relative aspect-square size-14 shrink-0 overflow-hidden rounded-lg bg-white">
-                                                    @if ($cheapestMatch['product_image_url'])
-                                                        <img src="{{ $cheapestMatch['product_image_url'] }}" alt="{{ $cheapestMatch['product_name'] }}" loading="lazy" class="h-full w-full object-contain p-0.5">
-                                                    @endif
-                                                </div>
-                                                <div class="min-w-0">
-                                                    <p class="line-clamp-2 text-[0.82em] leading-tight text-gray-700">{{ $cheapestMatch['product_name'] }}</p>
-                                                    <p class="text-[1.1em] font-bold tabular-nums text-gray-900">{{ number_format($cheapestMatch['raw_price'], 2, ',', ' ') }}&nbsp;€</p>
-                                                    @if ($unitLabel($item['unit_basis']))
-                                                        <p class="text-[0.68em] tabular-nums text-gray-400">{{ number_format($cheapestMatch['price'], 2, ',', ' ') }}&nbsp;{{ $unitLabel($item['unit_basis']) }}</p>
-                                                    @endif
-                                                </div>
-                                            </a>
+                                            <x-price-compare-card
+                                                :match="$cheapestMatch"
+                                                :store="$trackedStore"
+                                                :unit-label="$unitLabel($item['unit_basis'])"
+                                                :is-cheapest="$cheapestMatch['price'] === $item['cheapest_price']"
+                                            />
                                             @if (count($others) > 0)
                                                 <button
                                                     type="button"
-                                                    class="mt-0.5 inline-flex w-fit items-center gap-1 text-[0.72em] font-bold text-green"
+                                                    class="inline-flex w-fit items-center gap-1 text-[0.72em] font-bold text-green"
                                                     @click="toggle('{{ $trackedStore['slug'] }}', $el)"
                                                 >
                                                     <span x-text="open === '{{ $trackedStore['slug'] }}' ? 'suslėpti' : '+{{ count($others) }} kiti'"></span>
@@ -232,7 +179,7 @@
 
             <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
                 <p>
-                    <strong>Kaip skaičiuojame:</strong> sekame kelias kasdienes prekes {{ implode(', ', collect(App\Models\Store::whereIn('slug', App\Services\PriceIndexService::TRACKED_STORE_SLUGS)->pluck('name'))->all()) }} tinkluose ir kiekvieną kartą atidarius puslapį rodome tuo metu galiojančias realias kainas — ne senesnę, kartą per savaitę atnaujintą nuotrauką. Kiekvienai prekei kiekvienoje parduotuvėje rodome iki penkių pigiausių šiuo metu galiojančių pasiūlymų — jei parduotuvė tos prekės neturi, tai pažymėta atskirai, o ne nutylima. Kainos remiasi realiais SuperAkcijos.lt sistemoje esančiais duomenimis ir gali kartais atspindėti pavienes šaltinio klaidas.
+                    <strong>Kaip skaičiuojame:</strong> sekame kelias kasdienes prekes {{ count($data['tracked_stores']) }} Lietuvos parduotuvių tinkluose (tarp jų {{ implode(', ', collect($data['tracked_stores'])->take(5)->pluck('name')->all()) }} ir kt.) ir kiekvieną kartą atidarius puslapį rodome tuo metu galiojančias realias kainas — ne senesnę, kartą per savaitę atnaujintą nuotrauką. Kiekvienai prekei kiekvienoje parduotuvėje rodome iki penkių pigiausių šiuo metu galiojančių pasiūlymų — jei parduotuvė tos prekės neturi, tai pažymėta atskirai, o ne nutylima. Kainos remiasi realiais SuperAkcijos.lt sistemoje esančiais duomenimis ir gali kartais atspindėti pavienes šaltinio klaidas.
                 </p>
             </div>
         @endif

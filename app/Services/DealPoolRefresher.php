@@ -69,8 +69,10 @@ class DealPoolRefresher
         'augalai-geles',
     ];
 
-    public function __construct(private HomeDealPoolService $pool)
-    {
+    public function __construct(
+        private HomeDealPoolService $pool,
+        private PriceIndexService $priceIndex,
+    ) {
     }
 
     /**
@@ -92,6 +94,7 @@ class DealPoolRefresher
 
         $this->refreshGlobalCategoryBuckets();
         $this->refreshHomePools();
+        $this->priceIndex->refreshPersistedIndex();
     }
 
     public function refreshForStore(int $storeId): void
@@ -286,6 +289,7 @@ class DealPoolRefresher
 
         $this->refreshGlobalCategoryBuckets();
         $this->refreshHomePools();
+        $this->priceIndex->refreshPersistedIndex();
     }
 
     /**

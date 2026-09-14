@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Services\PriceIndexService;
 use App\Support\BreadcrumbSchema;
+use App\Support\CacheVersion;
 use App\Support\CanonicalUrl;
+use App\Support\ContentFreshness;
+use App\Support\LithuanianDate;
+use Illuminate\Support\Facades\Cache;
 
 class CheapestProductsController extends Controller
 {
@@ -27,7 +31,19 @@ class CheapestProductsController extends Controller
             'robots' => 'noindex, nofollow, noarchive, nosnippet',
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
-            'data' => $service->getPageData(),
+            // Reads pre-warmed curated_deals rows — see
+            // PriceIndexService::refreshPersistedIndex()/DealPoolRefresher.
+            // Same cache key as NewHomeController's homepage teaser (same
+            // underlying data) — this dev DB is the real shared remote
+            // instance, so even this cheap indexed read still costs ~10
+            // network round trips; caching the assembled result avoids
+            // paying that twice.
+            'data' => Cache::remember(
+                'price_index_data_'.CacheVersion::suffix(['discounts']),
+                1800,
+                fn () => $service->getPageData()
+            ),
+            'freshnessLabel' => LithuanianDate::relative(ContentFreshness::forAll()),
         ]);
     }
 }

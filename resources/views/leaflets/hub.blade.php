@@ -3,9 +3,6 @@
     $sectionsData = $listingMeta['sections'] ?? [];
     $leaflets = $sectionsData['leaflets'] ?? [];
     $faq = $sectionsData['faq'] ?? [];
-    $availableCategories = $sectionsData['available_categories'] ?? [];
-    $featuredCategory = $sectionsData['featured_category'] ?? null;
-    $allCategoriesCount = count($availableCategories);
     $locationsCount = $listingMeta['locations_count'] ?? 0;
     $storeName = $listingMeta['store_name'] ?? $storeSlug;
     $storeIdForFreshness = \App\Models\Store::where('slug', $storeSlug)->value('id');
@@ -20,12 +17,6 @@
     $pageTitle = $storeName . ' ' . $leafletNounPlural;
     $seoAboutParagraphs = array_values(array_filter(explode("\n\n", $intro['seo_about'] ?? '')));
     $hasAbout = count($seoAboutParagraphs) > 0 || count($faq) > 0;
-
-    $daysWord = fn ($n) => match (true) {
-        $n === 1 => 'diena',
-        $n % 10 >= 2 && $n % 10 <= 9 && !($n % 100 >= 11 && $n % 100 <= 19) => 'dienas',
-        default => 'dienų',
-    };
 @endphp
 
 <x-layouts.app
@@ -71,9 +62,6 @@
                 :store-slug="$storeSlug"
                 :leaflets-count="count($leaflets)"
                 :total-offers="$totalOffers"
-                :categories="$availableCategories"
-                :featured-category="$featuredCategory"
-                :all-categories-count="$allCategoriesCount"
                 :aria-label="$storeName . ' skiltys'"
                 active="leidiniai"
             />
@@ -86,58 +74,16 @@
             // A separate, clearly-labeled section makes that unambiguous.
             $activeLeaflets = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) !== 'expired'));
             $expiredLeaflets = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) === 'expired'));
-
-            $formatLeafletDateRange = function (array $leaflet) {
-                if (empty($leaflet['valid_from']) || empty($leaflet['valid_to'])) {
-                    return null;
-                }
-
-                return \Illuminate\Support\Carbon::parse($leaflet['valid_from'])->format('Y.m.d')
-                    . ' – ' . \Illuminate\Support\Carbon::parse($leaflet['valid_to'])->format('Y.m.d');
-            };
         @endphp
 
         @if (! empty($activeLeaflets))
-            <section>
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+            <section class="section-card">
+                <div class="section-heading-row">
+                    <h2 class="section-heading">Galiojantys leidiniai</h2>
+                </div>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
                     @foreach ($activeLeaflets as $leaflet)
-                        @php
-                            $isExpired = ($leaflet['status'] ?? null) === 'expired';
-                            $href = $leaflet['view_url'] ?? "/leidinys/{$storeSlug}";
-                            $days = $leaflet['days_remaining'] ?? null;
-                            $dateRange = $formatLeafletDateRange($leaflet);
-                        @endphp
-                        {{-- Mobile gets a horizontal row (thumbnail left, info right) instead
-                             of the sm:+ vertical grid card — a full-width vertical card wastes
-                             most of its height on empty space at one-per-row mobile width. No
-                             padding around the mobile thumbnail either — it fills the card's
-                             full height edge-to-edge (article's own overflow-hidden +
-                             rounded-2xl clips its left corners) instead of sitting inset with
-                             wasted space around it. --}}
-                        <article class="group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all sm:flex-col sm:gap-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg">
-                            <a href="{{ $href }}" class="relative block w-32 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
-                                @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
-                                    <img src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}" alt="{{ $leaflet['title'] ?? $storeName }}" loading="lazy" class="h-full w-full object-cover object-top transition-transform duration-300 sm:group-hover:scale-[1.03] {{ $isExpired ? 'grayscale' : '' }}">
-                                @endif
-                            </a>
-                            <div class="flex flex-1 flex-col gap-1.5 py-3 pr-3 sm:gap-2 sm:p-4">
-                                <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
-                                @if ($dateRange)
-                                    {{-- A consistent, real identifier for every card — some
-                                         leaflets carry a themed campaign name instead of a
-                                         sequential number (e.g. "Skonių dienos"), so a fixed
-                                         "Nr. X" can't be shown for all of them without
-                                         fabricating one; the validity date range is always
-                                         real and always available. --}}
-                                    <p class="text-xs font-medium text-gray-500">{{ $dateRange }}</p>
-                                @endif
-                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ $isExpired ? 'text-gray-400' : ($days !== null && $days <= 2 ? 'text-red-600' : 'text-dark-green') }}">
-                                    <x-app-icon name="clock" class="size-3.5" />
-                                    {{ $isExpired ? 'Nebegalioja' : ($days !== null ? "Galioja dar {$days} {$daysWord($days)}" : 'Galioja') }}
-                                </span>
-                                <a href="{{ $href }}" class="mt-1 inline-flex h-8 w-fit items-center justify-center rounded-lg bg-green px-4 text-xs font-bold text-white hover:bg-dark-green sm:mt-auto sm:h-9 sm:w-full sm:text-sm">Peržiūrėti</a>
-                            </div>
-                        </article>
+                        <x-leaflet-card :leaflet="$leaflet" :show-store-name="false" />
                     @endforeach
                 </div>
             </section>
@@ -146,7 +92,7 @@
         @if (! empty($topOffers))
             <x-landing-deals-section
                 id="geriausi-pasiulymai"
-                title="Geriausi pasiūlymai"
+                title="Geriausi savaitės pasiūlymai"
                 :deals="$topOffers"
                 icon="flame"
                 layout="carousel"
@@ -154,40 +100,13 @@
         @endif
 
         @if (! empty($expiredLeaflets))
-            <section class="mt-8">
-                <h2 class="mb-3 text-base font-bold text-gray-900">Pasibaigę leidiniai</h2>
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+            <section class="section-card mt-2">
+                <div class="section-heading-row">
+                    <h2 class="section-heading text-gray-500">Pasibaigę leidiniai</h2>
+                </div>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
                     @foreach ($expiredLeaflets as $leaflet)
-                        @php
-                            $isExpired = ($leaflet['status'] ?? null) === 'expired';
-                            $href = $leaflet['view_url'] ?? "/leidinys/{$storeSlug}";
-                            $days = $leaflet['days_remaining'] ?? null;
-                            $dateRange = $formatLeafletDateRange($leaflet);
-                        @endphp
-                        {{-- No padding around the mobile thumbnail — it fills the card's full
-                             height edge-to-edge (article's own overflow-hidden + rounded-2xl
-                             clips its left corners), rather than sitting inset with wasted
-                             space around it. The leaflet's own title is dropped on mobile: the
-                             date range below already identifies the card, and store identity
-                             is already the whole page's context here. --}}
-                        <article class="group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all sm:flex-col sm:gap-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg">
-                            <a href="{{ $href }}" class="relative block w-32 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
-                                @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
-                                    <img src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}" alt="{{ $leaflet['title'] ?? $storeName }}" loading="lazy" class="h-full w-full object-cover object-top transition-transform duration-300 sm:group-hover:scale-[1.03] {{ $isExpired ? 'grayscale' : '' }}">
-                                @endif
-                            </a>
-                            <div class="flex flex-1 flex-col gap-1.5 py-3 pr-3 sm:gap-2 sm:p-4">
-                                <p class="line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
-                                @if ($dateRange)
-                                    <p class="text-xs font-medium text-gray-500">{{ $dateRange }}</p>
-                                @endif
-                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ $isExpired ? 'text-gray-400' : ($days !== null && $days <= 2 ? 'text-red-600' : 'text-dark-green') }}">
-                                    <x-app-icon name="clock" class="size-3.5" />
-                                    {{ $isExpired ? 'Nebegalioja' : ($days !== null ? "Galioja dar {$days} {$daysWord($days)}" : 'Galioja') }}
-                                </span>
-                                <a href="{{ $href }}" class="mt-1 inline-flex h-8 w-fit items-center justify-center rounded-lg bg-green px-4 text-xs font-bold text-white hover:bg-dark-green sm:mt-auto sm:h-9 sm:w-full sm:text-sm">Peržiūrėti</a>
-                            </div>
-                        </article>
+                        <x-leaflet-card :leaflet="$leaflet" :show-store-name="false" class="opacity-75" />
                     @endforeach
                 </div>
             </section>

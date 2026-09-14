@@ -129,7 +129,10 @@ class GenerateDescriptions extends Command
             $this->generateCategoryFaq($category);
         } elseif ($all) {
             $categoriesWithActiveDiscounts = Category::whereHas('products.discounts', function ($query) {
-                $query->where('end_at', '>=', now());
+                // now()->startOfDay(): end_at is a DATE stored at midnight
+                // ("valid through this day") — plain now() wrongly excluded
+                // a discount expiring today for the rest of today.
+                $query->where('end_at', '>=', now()->startOfDay());
             })->get();
             $this->info("Generating FAQ for {$categoriesWithActiveDiscounts->count()} categories with active discounts...");
 
@@ -225,7 +228,8 @@ class GenerateDescriptions extends Command
         try {
             $activeDiscountsCount = $category->products()
                 ->whereHas('discounts', function($query) {
-                    $query->where('end_at', '>=', now());
+                    // now()->startOfDay(): see comment above in the --all branch.
+                    $query->where('end_at', '>=', now()->startOfDay());
                 })
                 ->count();
 

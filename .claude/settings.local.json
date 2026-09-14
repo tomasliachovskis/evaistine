@@ -14,7 +14,10 @@
       "Bash(git commit *)",
       "Bash(npm run *)",
       "Bash(git push *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(sail npm *)",
+      "Bash(sail artisan *)",
+      "Bash(curl -s http://localhost/)"
     ]
   }
 }

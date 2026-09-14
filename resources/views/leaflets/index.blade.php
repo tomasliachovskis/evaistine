@@ -58,11 +58,11 @@
 
             @foreach ([['heading' => null, 'items' => $activeLeaflets], ['heading' => 'Pasibaigę leidiniai', 'items' => $expiredLeaflets]] as $group)
                 @continue(empty($group['items']))
-                <div class="{{ $loop->index > 0 ? 'mt-2' : '' }}">
+                <div class="section-card {{ $loop->index > 0 ? 'mt-2' : '' }}">
                     @if ($group['heading'])
-                        <h2 class="mb-3 text-lg font-bold text-gray-900">{{ $group['heading'] }}</h2>
+                        <h2 class="section-heading mb-3">{{ $group['heading'] }}</h2>
                     @endif
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
                         @foreach ($group['items'] as $leaflet)
                             <x-leaflet-card :leaflet="$leaflet" />
                         @endforeach

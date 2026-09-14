@@ -36,8 +36,10 @@
             @endif
         </header>
 
-        <section aria-labelledby="stores-list-heading">
-            <h2 id="stores-list-heading" class="mb-2.5 text-base font-bold text-gray-900">Prekybos tinklai</h2>
+        <section aria-labelledby="stores-list-heading" class="section-card">
+            <div class="section-heading-row">
+                <h2 id="stores-list-heading" class="section-heading">Prekybos tinklai</h2>
+            </div>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5">
                 @foreach ($sortedStores as $store)
                     <x-store-card :store="$store" layout="grid" />
@@ -46,8 +48,10 @@
         </section>
 
         @if ($withLocations->isNotEmpty())
-            <section aria-labelledby="store-locations-heading" class="flex flex-col gap-2.5">
-                <h2 id="store-locations-heading" class="text-base font-bold text-gray-900">Parduotuvių adresai ir darbo laikas</h2>
+            <section aria-labelledby="store-locations-heading" class="section-card">
+                <div class="section-heading-row">
+                    <h2 id="store-locations-heading" class="section-heading">Parduotuvių adresai ir darbo laikas</h2>
+                </div>
                 <div class="flex flex-wrap gap-2">
                     @foreach ($withLocations as $store)
                         <a href="/parduotuves/{{ $store['slug'] }}" class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-green hover:text-dark-green">

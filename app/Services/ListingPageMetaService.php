@@ -132,7 +132,6 @@ class ListingPageMetaService
         $validity = $this->freshnessService->getCurrentWeekRange();
         $storeComparison = $this->getStoreComparisonForCategory($category);
         $stats = $this->buildCategoryStats($category, $categoryName, $storeComparison);
-        $maxDiscount = $this->getMaxDiscountForCategory($category);
         $totalOffers = $this->getDiscountCountForCategory($category);
 
         return [
@@ -150,23 +149,10 @@ class ListingPageMetaService
                 'valid_to' => $validity['valid_to'],
                 'quick_stats' => [
                     ['label' => 'Aktyvios akcijos', 'value' => (string) $totalOffers],
-                    ['label' => 'Didžiausia nuolaida', 'value' => '-' . (int) $maxDiscount . '%'],
                     ['label' => 'Parduotuvių', 'value' => (string) count($storeComparison)],
-                ],
-                // The other two chips this used to include ("Vasaros derlius",
-                // "Ekologiški produktai") pointed at the category's own URL
-                // with no filter attached — dead links that did nothing when
-                // clicked — dropped rather than shipping a chip that lies
-                // about being clickable.
-                'discovery_chips' => [
-                    ['label' => 'Žemiausios kainos šiandien', 'href' => "/akcijos/{$categorySlug}?order=price"],
-                    ['label' => 'Didžiausios nuolaidos', 'href' => "/akcijos/{$categorySlug}?order=discount"],
                 ],
                 'freshness_label' => $this->freshnessLabel(ContentFreshness::forCategory($category->id)),
             ],
-            'switch_row_title' => 'Parduotuvės šioje kategorijoje',
-            'switch_row_helper' => 'Nori matyti tik vienos parduotuvės ' . mb_strtolower($categoryName) . ' akcijas? Pasirink parduotuvę.',
-            'switch_row_items' => $this->mapStoreComparisonToPopular($storeComparison),
             'sections' => [
                 'category_stats' => $stats,
                 'top_brands' => $this->getTopBrandsForCategory($category),
@@ -203,12 +189,6 @@ class ListingPageMetaService
                 'valid_to' => $validity['valid_to'],
                 'freshness_label' => $this->freshnessLabel(ContentFreshness::forStoreAndCategory($store->id, $category->id)),
             ],
-            'switch_row_title' => 'Kitos parduotuvės šioje kategorijoje',
-            'switch_row_helper' => 'Paspaudus kitą parduotuvę, iškart persijungi į jos akcijas šioje pačioje kategorijoje.',
-            'switch_row_items' => $this->mapStoreComparisonToPopular(
-                $this->getStoreComparisonForCategory($category),
-                $store->slug
-            ),
             'sections' => [
                 'top_categories' => $this->getTopCategoriesForStore($store),
                 'featured_category' => $this->getFeaturedFoodCategoryForStore($store),
@@ -560,29 +540,6 @@ class ListingPageMetaService
         })->values()->all();
     }
 
-    /** @return array<int, array{label: string, href: string, discounts_count: int, subtitle: string, image_slug: string}> */
-    /** @return array<int, array{label: string, href: string, discounts_count: int, subtitle: string, image_slug: string, is_current: bool}> */
-    private function mapStoreComparisonToPopular(array $storeComparison, ?string $currentStoreSlug = null): array
-    {
-        $items = array_map(
-            fn (array $row) => [
-                'label' => $row['store'],
-                'href' => $row['href'],
-                'discounts_count' => $row['offers_count'],
-                'subtitle' => 'nuo -' . $row['max_discount_percent'] . '%',
-                'image_slug' => $row['store_slug'],
-                'is_current' => $currentStoreSlug !== null && $row['store_slug'] === $currentStoreSlug,
-            ],
-            $storeComparison
-        );
-
-        // Current store leads the row regardless of its rank by offer count —
-        // matches the mockup's own example (the "Esi čia" chip shown first).
-        usort($items, fn (array $a, array $b) => ($b['is_current'] <=> $a['is_current']));
-
-        return $items;
-    }
-
     private function buildCategoryStats(Category $category, string $categoryName, array $storeComparison): array
     {
         $totalOffers = $this->getDiscountCountForCategory($category);
@@ -727,7 +684,10 @@ class ListingPageMetaService
 
     private function getExpiringDealsForStore(Store $store, int $limit = 4): array
     {
-        $now = Carbon::now();
+        // startOfDay(): end_at is a DATE stored at midnight ("valid through
+        // this day") — comparing against the exact current moment wrongly
+        // excluded a discount expiring today for the rest of today.
+        $now = Carbon::now()->startOfDay();
         $cutoff = $now->copy()->addDays(3);
 
         return Discount::query()
@@ -747,7 +707,8 @@ class ListingPageMetaService
 
     private function getWeekendDealsForStore(Store $store, int $limit = 6): array
     {
-        $now = Carbon::now();
+        // startOfDay(): same reasoning as getExpiringDealsForStore() above.
+        $now = Carbon::now()->startOfDay();
         $endOfWeekend = Carbon::now()->startOfWeek()->addDays(6)->endOfDay();
 
         return Discount::query()

@@ -5,11 +5,14 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\Discount;
 use App\Models\KeywordPage;
+use App\Models\KeywordPageProduct;
 use App\Models\Store;
+use App\Support\CacheVersion;
 use App\Support\LithuanianDate;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class KeywordPageService
 {
@@ -142,6 +145,7 @@ class KeywordPageService
         return $this->countMatchingOffers($page);
     }
 
+
     public function countDisplayedOffersForPage(KeywordPage $page): int
     {
         return $this->collectMatchingDiscountsCollection($page)->count();
@@ -203,6 +207,52 @@ class KeywordPageService
     public function productMatchesKeywordPage(Discount $discount, KeywordPage $page): bool
     {
         return $this->passesKeywordFilters($discount, $page);
+    }
+
+    /**
+     * Real, indexable cross-links from a single PRODUCT page to whichever
+     * published keyword pages that product actually belongs to (e.g. one
+     * Jacobs ground-coffee product -> "Kava" AND "Malta kava"). Completes
+     * the internal-link picture: category pages already link to keyword
+     * pages, keyword pages now link to each other (buildRelatedPages()
+     * above) — product pages linked to neither until this.
+     *
+     * Reads the keyword_page_products table (built by the
+     * `keywords:map-products` batch command — see
+     * app/Console/Commands/MapProductsToKeywordPages.php), not a live scan:
+     * looping every published keyword page's filters on every product-page
+     * request doesn't scale, so that matching runs once, product-first,
+     * over all ~53k products, and this just reads the precomputed result.
+     * Cache wraps the read itself (cheap either way, indexed on product_id)
+     * so a hot product page doesn't repeat even that query — versioned by
+     * the 'keywords' CacheVersion group, already bumped both by the mapping
+     * command and by every keyword-page admin save.
+     *
+     * @return list<array{label: string, href: string, emoji: ?string}>
+     */
+    public function relatedPagesForProduct(?int $productId): array
+    {
+        if (!$productId) {
+            return [];
+        }
+
+        $cacheKey = 'kw_related_product_' . $productId . '_' . CacheVersion::suffix(['keywords']);
+
+        return Cache::remember($cacheKey, 3600, function () use ($productId) {
+            return KeywordPageProduct::where('product_id', $productId)
+                ->orderByDesc('score')
+                ->with(['keywordPage' => fn ($q) => $q->published()])
+                ->take(4)
+                ->get()
+                ->filter(fn (KeywordPageProduct $row) => $row->keywordPage !== null)
+                ->map(fn (KeywordPageProduct $row) => [
+                    'label' => $row->keywordPage->h1 ?: $row->keywordPage->title,
+                    'href' => "/akcijos/{$row->keywordPage->slug}",
+                    'emoji' => $row->keywordPage->emoji,
+                ])
+                ->values()
+                ->all();
+        });
     }
 
     private function collectMatchingDiscountsCollection(KeywordPage $page): Collection
@@ -488,8 +538,13 @@ class KeywordPageService
     {
         $freshness = $this->freshnessService->build();
         $validity = $this->freshnessService->getCurrentWeekRange();
-        $stats = $this->buildQuickStats($displayedDiscounts, $matchingTotal);
         $storeComparison = $this->buildStoreComparisonForPage($page, $matchingTotal);
+        $cheapestPrice = $storeComparison['summary_rows'][0]['min_price'] ?? null;
+        // Real distinct store count (answer.store_count), not
+        // count(summary_rows) — summary_rows/leading_deals are capped at 8
+        // for display, which used to under-report "Parduotuvių" on any
+        // keyword covering more than 8 stores.
+        $stats = $this->buildQuickStats($matchingTotal, $storeComparison['answer']['store_count'] ?? count($storeComparison['summary_rows']), $cheapestPrice);
         $relatedPages = $this->buildRelatedPages($page);
         $leaflets = $this->buildLeafletsForDiscounts($displayedDiscounts);
         $description = strip_tags($page->intro_html ?? '');
@@ -522,11 +577,23 @@ class KeywordPageService
             ],
             'intro' => [
                 'description' => $description,
-                // First sentence only, for the hero — the full text (same
-                // string) still renders in full further down as "Apie šias
-                // akcijas" (seo_about); showing all of it twice, once as a
-                // multi-paragraph hero subtitle, blew up the hero's height.
+                // A short, real one-liner (not the admin intro's first
+                // sentence, which tends to be generic filler like "Kava –
+                // kasdienis daugeliui reikalingas ritualas.") — the per-store
+                // "how many, from what price" detail renders as its own chip
+                // row below the hero (store_price_chips), not crammed into
+                // this paragraph — a dense semicolon-separated sentence for
+                // 8 stores read as a wall of text. Full admin text still
+                // renders in full further down as "Apie šias akcijas".
                 'short_description' => $this->firstSentence($description),
+                'store_price_chips' => $storeComparison['summary_rows'],
+                'brand_price_summary' => $storeComparison['brand_summary'],
+                // The direct "kur šiandien pigiausia X" answer — single
+                // cheapest offer across every store, shown above the brand
+                // list rather than making a reader piece it together from
+                // chips/rows themselves.
+                'cheapest_answer' => $storeComparison['answer'],
+                'total_matching_offers' => $matchingTotal,
                 'seo_about' => $page->intro_html,
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
@@ -543,7 +610,7 @@ class KeywordPageService
                     'title' => $page->title . ' akcijų statistika',
                     'summary' => $this->buildStatsSummary($page, $displayedDiscounts, $matchingTotal),
                     'highlights' => array_slice($stats, 0, 4),
-                    'store_comparison' => $storeComparison,
+                    'store_comparison' => $storeComparison['leading_deals'],
                     'top_discounted_products' => [],
                     'updated_at' => Carbon::now()->format('Y-m-d'),
                 ],
@@ -564,49 +631,30 @@ class KeywordPageService
         return preg_split('/(?<=[.!?])\s+/u', $text, 2)[0];
     }
 
-    private function buildQuickStats(Collection $discounts, int $matchingTotal): array
+    /**
+     * The standard "Aktyvios akcijos" / "Parduotuvių" pair — same stat set
+     * as the category page's hero (see ListingPageMetaService::buildForCategory()),
+     * kept simple since the store_price_chips row already carries the
+     * per-store detail.
+     */
+    private function buildQuickStats(int $matchingTotal, int $storeCount, ?float $cheapestPrice): array
     {
-        if ($discounts->isEmpty()) {
+        if ($matchingTotal <= 0) {
             return [];
         }
 
-        $lowest = $discounts
-            ->filter(fn (Discount $d) => $d->discounted_price > 0)
-            ->sortBy('discounted_price')
-            ->first();
-
-        $avgDiscount = (int) round($discounts->avg('discount_percent') ?? 0);
-        $maxDeal = $discounts->sortByDesc('discount_percent')->first();
-
         $stats = [
-            [
-                'label' => 'Žemiausia kaina šią savaitę',
-                'value' => $lowest
-                    ? number_format($lowest->discounted_price, 2, ',', ' ') . ' €'
-                    : '—',
-                'sublabel' => $lowest
-                    ? ($lowest->product->name . ' – ' . $lowest->store->name)
-                    : null,
-            ],
-            [
-                'label' => 'Vidutinė nuolaida šią savaitę',
-                'value' => $avgDiscount > 0 ? '~' . $avgDiscount . '%' : '—',
-                'sublabel' => 'Remiantis visais šios savaitės pasiūlymais',
-            ],
+            ['label' => 'Aktyvūs pasiūlymai', 'value' => (string) $matchingTotal],
+            ['label' => 'Parduotuvių', 'value' => (string) $storeCount],
         ];
 
-        if ($maxDeal) {
-            $stats[] = [
-                'label' => 'Didžiausia nuolaida šią savaitę',
-                'value' => '-' . (int) round($maxDeal->discount_percent) . '%',
-                'sublabel' => $maxDeal->product->name . ' – ' . $maxDeal->store->name,
-            ];
+        if ($cheapestPrice !== null && $cheapestPrice > 0) {
+            // Label comes BEFORE the value here ("Kaina nuo 0,33 €"), unlike
+            // the other two stats above (value then label, "155 aktyvūs
+            // pasiūlymai") — 'label_first' tells the view to flip the order
+            // for this one instead of misreading as "0,33 € kaina nuo".
+            $stats[] = ['label' => 'Kaina nuo', 'value' => number_format($cheapestPrice, 2, ',', ' ') . ' €', 'label_first' => true];
         }
-
-        $stats[] = [
-            'label' => 'Aktyvūs pasiūlymai',
-            'value' => (string) $matchingTotal,
-        ];
 
         return $stats;
     }
@@ -641,51 +689,126 @@ class KeywordPageService
             ->all();
     }
 
+    /**
+     * The cheapest matching discount per store, one real <x-deal-card>-shaped
+     * item each — no separate "compare" section/card anymore (removed per
+     * explicit product decision); these are meant to lead the main results
+     * grid instead, same card as every other product in it.
+     *
+     * @return array{leading_deals: array, summary_rows: array, brand_summary: array}
+     */
     private function buildStoreComparisonForPage(KeywordPage $page, int $matchingTotal): array
     {
         $discounts = $this->collectMatchingDiscountsForComparison($page, $matchingTotal);
 
         if ($discounts->isEmpty()) {
-            return [];
+            return ['leading_deals' => [], 'summary_rows' => [], 'brand_summary' => [], 'answer' => null];
         }
 
-        $grouped = $discounts->groupBy('store_id');
-
-        return $grouped
+        $cheapestPerStoreAll = $discounts->groupBy('store_id')
             ->map(function (Collection $storeDiscounts) {
-                $store = $storeDiscounts->first()->store;
                 $priced = $storeDiscounts->filter(fn (Discount $discount) => (float) $discount->discounted_price > 0);
-                $cheapest = $priced->isNotEmpty()
-                    ? $priced->sortBy('discounted_price')->first()
-                    : null;
-                $minPrice = $cheapest ? (float) $cheapest->discounted_price : null;
+                $cheapest = $priced->isNotEmpty() ? $priced->sortBy('discounted_price')->first() : null;
+
+                return $cheapest ? ['discount' => $cheapest, 'offers_count' => $storeDiscounts->count()] : null;
+            })
+            ->filter()
+            ->sortBy(fn (array $row) => $row['discount']->discounted_price)
+            ->values();
+
+        $cheapestPerStore = $cheapestPerStoreAll->take(8);
+        $best = $cheapestPerStoreAll->first();
+
+        return [
+            'leading_deals' => $cheapestPerStore
+                ->map(fn (array $row) => $this->formatter->formatListDiscount($row['discount']))
+                ->all(),
+            // Per-store "how many, from what price" — used by the hero
+            // summary sentence (buildKeywordSummary()), not the grid.
+            'summary_rows' => $cheapestPerStore
+                ->map(fn (array $row) => [
+                    'name' => $row['discount']->store->name,
+                    'offers_count' => $row['offers_count'],
+                    'min_price' => (float) $row['discount']->discounted_price,
+                ])
+                ->all(),
+            'brand_summary' => $this->buildBrandSummary($discounts),
+            // The single cheapest offer across every store — the direct
+            // "kur šiandien pigiausia X" answer, shown above everything else.
+            // Also carries this week's biggest single discount (same
+            // $discounts already fetched here, just aggregated differently —
+            // no extra query) so the answer sentence can name a second real,
+            // week-fresh fact instead of stopping at the cheapest price.
+            'answer' => $best ? (function () use ($best, $cheapestPerStoreAll, $discounts) {
+                $formatted = $this->formatter->formatListDiscount($best['discount']);
+                $priced = $discounts->filter(fn (Discount $d) => (float) $d->discount_percent > 0);
+                $maxDiscountRow = $priced->isNotEmpty() ? $priced->sortByDesc('discount_percent')->first() : null;
 
                 return [
-                    'store' => $store->name,
-                    'store_slug' => $store->slug,
-                    'href' => "/akcijos/{$store->slug}",
-                    'offers_count' => $storeDiscounts->count(),
-                    'max_discount_percent' => (int) round($storeDiscounts->max('discount_percent') ?? 0),
-                    'avg_discount_percent' => (int) round($storeDiscounts->avg('discount_percent') ?? 0),
-                    'min_price' => $minPrice,
-                    // The mockup's compare-card shows the actual cheapest
-                    // matching product (photo + name + price) per store, not
-                    // just an aggregate — real data already loaded above,
-                    // just keeping the product identity instead of only its
-                    // price.
-                    'cheapest_product_name' => $cheapest?->product?->name,
-                    'cheapest_product_image' => $cheapest?->product?->image_url,
-                    'cheapest_product_href' => $cheapest && $cheapest->product?->category?->slug
-                        ? "/akcijos/{$cheapest->product->category->slug}/{$cheapest->product->slug}"
-                        : null,
+                    'product_name' => $best['discount']->product->name,
+                    'product_image_url' => $formatted['product']['image_url'],
+                    'product_href' => '/akcijos/' . $formatted['product']['full_slug'],
+                    'price' => (float) $best['discount']->discounted_price,
+                    'store_name' => $best['discount']->store->name,
+                    'store_slug' => $best['discount']->store->slug,
+                    'store_offers_count' => $best['offers_count'],
+                    'store_count' => $cheapestPerStoreAll->count(),
+                    'max_discount_percent' => $maxDiscountRow ? (int) round($maxDiscountRow->discount_percent) : null,
+                    'max_discount_product' => $maxDiscountRow?->product->name,
+                    'max_discount_store' => $maxDiscountRow?->store->name,
+                ];
+            })() : null,
+        ];
+    }
+
+    /**
+     * Per-brand "cheapest right now" — same $discounts already fetched for
+     * the store comparison above, just grouped a different way. Per explicit
+     * product decision: comparing two different stores' "from" price is
+     * comparing two different products (different pack size/variant), which
+     * reads as a real price comparison but isn't one — grouping by the SAME
+     * brand across stores is the one comparison that's actually fair.
+     * Grouped case-insensitively (product.brand has real duplicates in the
+     * data — "JACOBS" and "Jacobs" as distinct stored strings for the same
+     * brand) and sorted by offer count, not price, so the list leads with
+     * brands people actually buy, not whichever has one lone cheap outlier.
+     *
+     * @return list<array{brand: string, offers_count: int, min_price: float, store_name: string, store_slug: string, product_name: string, product_image_url: ?string, product_href: string, discount_percent: ?float, valid_to: ?string}>
+     */
+    private function buildBrandSummary(Collection $discounts): array
+    {
+        return $discounts
+            ->filter(fn (Discount $discount) => (float) $discount->discounted_price > 0
+                && trim($discount->product->brand ?? '') !== '')
+            ->groupBy(fn (Discount $discount) => mb_strtoupper(trim($discount->product->brand)))
+            ->map(function (Collection $brandDiscounts) {
+                $cheapest = $brandDiscounts->sortBy('discounted_price')->first();
+                // Reuses the same product/image/discount formatting every
+                // deal card on the site already uses, instead of resolving
+                // the product image URL a second, bespoke way here.
+                $formatted = $this->formatter->formatListDiscount($cheapest);
+
+                return [
+                    // Title-cased for display, not whichever raw casing the
+                    // cheapest row happened to be scraped with — the same
+                    // brand shows up as both "JACOBS" and "Jacobs" in the
+                    // data, and showing that inconsistency verbatim next to
+                    // 7 other brands looks like a bug, not real content.
+                    'brand' => mb_convert_case(mb_strtolower(trim($cheapest->product->brand)), MB_CASE_TITLE, 'UTF-8'),
+                    'offers_count' => $brandDiscounts->count(),
+                    'min_price' => (float) $cheapest->discounted_price,
+                    'store_name' => $cheapest->store->name,
+                    'store_slug' => $cheapest->store->slug,
+                    'product_name' => $formatted['product']['name'],
+                    'product_image_url' => $formatted['product']['image_url'],
+                    'product_href' => '/akcijos/' . $formatted['product']['full_slug'],
+                    'discount_percent' => $formatted['discount_percent'],
+                    'valid_to' => $formatted['to_date'],
                 ];
             })
-            ->sortBy(fn (array $row) => [
-                $row['min_price'] === null ? 1 : 0,
-                $row['min_price'] ?? 999999,
-            ])
-            ->values()
+            ->sortByDesc('offers_count')
             ->take(8)
+            ->values()
             ->all();
     }
 
@@ -759,17 +882,53 @@ class KeywordPageService
     private function buildRelatedPages(KeywordPage $page): array
     {
         $slugs = $page->related_slugs ?? [];
-        if (empty($slugs)) {
+
+        if (!empty($slugs)) {
+            return KeywordPage::query()
+                ->published()
+                ->whereIn('slug', $slugs)
+                ->get()
+                ->map(fn (KeywordPage $related) => [
+                    // h1 (e.g. "Kava akcija", "Bulvės akcija") over the bare
+                    // title ("Kava", "Bulvės") — the anchor text itself is a
+                    // relevance signal, and "Bulvės" alone doesn't say what
+                    // the link is for the way "Bulvės akcija" does.
+                    'label' => $related->h1 ?: $related->title,
+                    'href' => "/akcijos/{$related->slug}",
+                    'emoji' => $related->emoji,
+                ])
+                ->values()
+                ->all();
+        }
+
+        // Fallback: related_slugs is empty on almost every keyword page (21
+        // of 240 published as of 2026-09-13) — auto-derive siblings from
+        // shared category_slugs instead of leaving this section empty.
+        // Every coffee/tea page (kava, malta-kava, tirpi-kava, kavos-kapsules,
+        // arbata...) already shares "gerimai-kava-arbata", so this alone
+        // closes most of the cross-linking gap without curating 240 rows by
+        // hand. Real <a> links, not the nofollow search-term chips this
+        // replaced — every target here is its own indexable page.
+        $categorySlugs = (array) ($page->category_slugs ?? []);
+        if (empty($categorySlugs)) {
             return [];
         }
 
         return KeywordPage::query()
             ->published()
-            ->whereIn('slug', $slugs)
-            ->get()
+            ->where('id', '!=', $page->id)
+            ->where(function ($query) use ($categorySlugs) {
+                foreach ($categorySlugs as $slug) {
+                    $query->orWhereJsonContains('category_slugs', $slug);
+                }
+            })
+            ->orderByDesc('matching_offers_count')
+            ->limit(8)
+            ->get(['slug', 'title', 'h1', 'emoji'])
             ->map(fn (KeywordPage $related) => [
-                'label' => $related->title,
+                'label' => $related->h1 ?: $related->title,
                 'href' => "/akcijos/{$related->slug}",
+                'emoji' => $related->emoji,
             ])
             ->values()
             ->all();

@@ -14,7 +14,11 @@
     $favoritedJs = $favorited ? 'true' : 'false';
     $mobileLabel = $variant === 'noOffers' ? 'Pranešti, kai bus akcija' : 'Stebėkite kainą';
     $desktopLabel = $variant === 'noOffers' ? 'Pranešti, kai bus akcija' : 'Sekti kainą';
-    $desktopIcon = $variant === 'noOffers' ? 'bell' : 'heart';
+    // Bell everywhere a "follow/notify me" action is offered (matches the
+    // mobile button right above and every other Sekti* button site-wide,
+    // e.g. store-subscribe-button.blade.php) — this used to show a heart
+    // here specifically, the one inconsistent spot for the same action.
+    $desktopIcon = 'bell';
     $gaPayload = json_encode([
         'product_id' => $productId,
         'product_name' => $productName,

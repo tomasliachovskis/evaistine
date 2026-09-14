@@ -57,8 +57,28 @@ document.addEventListener('alpine:init', () => {
         shown: config.shown,
         total: config.total,
         loading: false,
+        observer: null,
+        // Infinite scroll: replaces the old "Rodyti daugiau" click button.
+        // rootMargin loads a page ahead of the sentinel actually entering
+        // the viewport, so content appears before the user hits the bottom
+        // rather than after a visible pause.
+        init() {
+            if (this.page >= this.lastPage || !this.$refs.sentinel) {
+                return;
+            }
+
+            this.observer = new IntersectionObserver((entries) => {
+                if (entries[0]?.isIntersecting) {
+                    this.loadMore();
+                }
+            }, { rootMargin: '400px 0px' });
+            this.observer.observe(this.$refs.sentinel);
+        },
         async loadMore() {
             if (this.loading || this.page >= this.lastPage) {
+                if (this.page >= this.lastPage) {
+                    this.observer?.disconnect();
+                }
                 return;
             }
 
@@ -91,6 +111,14 @@ document.addEventListener('alpine:init', () => {
                 this.lastPage = data.last_page;
                 this.shown += data.deals.length;
 
+                // Replaces the old click-triggered load_more_click event —
+                // there's no click anymore, but the same analytics event
+                // name/shape still matters for tracking how much of the
+                // infinite scroll people actually reach.
+                if (config.gaSource) {
+                    window.trackGaEvent('load_more_click', { source: config.gaSource, page: data.page });
+                }
+
                 const wire = config.wireId && window.Livewire?.find?.(config.wireId);
                 if (wire) {
                     wire.set('page', data.page);
@@ -105,6 +133,22 @@ document.addEventListener('alpine:init', () => {
                 console.error(error);
             } finally {
                 this.loading = false;
+
+                if (this.page >= this.lastPage) {
+                    this.observer?.disconnect();
+                } else if (this.$refs.sentinel) {
+                    // A single loaded page can be short enough that the
+                    // sentinel is still on-screen right after insertion (huge
+                    // viewport, small per-page count) — IntersectionObserver
+                    // only fires on a visibility CHANGE, so without this
+                    // check a still-visible sentinel would never trigger the
+                    // next load. rootMargin's 400px already covers "about to
+                    // scroll into view"; this covers "never left view".
+                    const rect = this.$refs.sentinel.getBoundingClientRect();
+                    if (rect.top < window.innerHeight + 400) {
+                        this.loadMore();
+                    }
+                }
             }
         },
     }));

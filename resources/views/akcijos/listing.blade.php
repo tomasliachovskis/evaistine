@@ -13,16 +13,21 @@
     // Everything below is keyword-page-only content the backend
     // (KeywordPageService::buildListingMeta()) already computes but the view
     // never rendered — verified against production's real section order:
-    // store comparison → related searches → about → tips → FAQ.
-    $storeComparisonRows = $isKeyword ? ($listingMeta['sections']['category_stats']['store_comparison'] ?? []) : [];
-    $storeComparisonHeading = $isKeyword
-        ? ucfirst($listingMeta['keyword_grammar']['genitive'] ?? '') . ' akcijos pagal parduotuves'
-        : null;
-    $searchExamples = $isKeyword
-        ? array_merge($listingMeta['keyword_examples'] ?? [], $listingMeta['keyword_store_keywords'] ?? [])
-        : [];
-    $keywordCategories = $isKeyword ? ($listingMeta['keyword_categories'] ?? []) : [];
+    // related searches → about → tips → FAQ. The old separate "store
+    // comparison" section is gone — those same cheapest-per-store deals now
+    // lead the main grid instead (see :leading-deals on discount-filters
+    // below), per explicit product decision.
+    $leadingDeals = $isKeyword ? ($listingMeta['sections']['category_stats']['store_comparison'] ?? []) : [];
+    // "Dažniausiai ieškoma" (keyword_examples + keyword_store_keywords chips)
+    // removed per explicit product decision — every one of those chips
+    // linked (rel=nofollow) to /akcijos/paieska/{term}, itself
+    // noindex,nofollow (AkcijosController::search()), so the section carried
+    // zero link equity and read as a keyword-stuffing wall of chips at the
+    // page bottom. keyword_categories was the section's only real link, and
+    // it's already the same category the breadcrumb above shows — dropping
+    // the whole section duplicates nothing.
     $tips = $isKeyword ? ($listingMeta['tips'] ?? []) : [];
+    $relatedPages = $isKeyword ? ($listingMeta['related_pages'] ?? []) : [];
     // Keyword pages store real admin-authored HTML (intro_html) in
     // intro.seo_about. Store/category/store_category have their own
     // real admin-authored HTML too, just under a different existing key —
@@ -33,13 +38,12 @@
     $seoAboutHtml = $isKeyword
         ? ($listingMeta['intro']['seo_about'] ?? null)
         : ($isRichHeader ? ($seo['seo_description'] ?? null) : null);
-    $primarySearchTerm = $listingMeta['keyword_primary_search_term'] ?? ($listingMeta['keyword_slug'] ?? '');
 
     // Flat-grid pages only (carousels have no page-by-page pagination) — the
-    // "Rodyti daugiau" AJAX button already lets a real user reach every page,
+    // infinite-scroll sentinel already lets a real user reach every page,
     // but a crawler following only real hrefs previously had no way past
     // page 1 except via the product sitemap. rel=next/prev plus the
-    // crawlable <a> next to the button (see discount-filters.blade.php) make
+    // crawlable <a> next to the sentinel (see discount-filters.blade.php) make
     // deep pages reachable through on-page link-following too.
     $paginationCurrent = (int) ($pagination['current_page'] ?? 1);
     $paginationLast = (int) ($pagination['last_page'] ?? 1);
@@ -96,11 +100,11 @@
                 >
                     @if ($headerType === 'store')
                         @if ($total > 0)
-                            <span><b class="font-extrabold text-gray-900">{{ number_format($total, 0, ',', ' ') }}</b> akcijos</span>
+                            <span class="whitespace-nowrap"><b class="font-extrabold text-gray-900">{{ number_format($total, 0, ',', ' ') }}</b> akcijos</span>
                         @endif
                         @if (($listingMeta['locations_count'] ?? 0) > 0)
-                            <a href="/parduotuves/{{ $listingMeta['store_slug'] }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
-                                {{ number_format($listingMeta['locations_count'], 0, ',', ' ') }} parduotuvės Lietuvoje
+                            <a href="/parduotuves/{{ $listingMeta['store_slug'] }}" class="inline-flex items-center gap-0.5 whitespace-nowrap font-semibold text-green hover:text-dark-green">
+                                {{ number_format($listingMeta['locations_count'], 0, ',', ' ') }} parduotuvės<span class="hidden sm:inline"> Lietuvoje</span>
                                 <x-app-icon name="arrow-right" class="size-3 shrink-0" />
                             </a>
                         @endif
@@ -124,29 +128,23 @@
                     @endif
                 </x-type-hero>
 
-                @if (!empty($listingMeta['intro']['discovery_chips']))
-                    <div class="flex flex-wrap gap-2">
-                        @foreach ($listingMeta['intro']['discovery_chips'] as $chip)
-                            <a href="{{ $chip['href'] }}" class="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-600 transition-colors hover:border-green/40">
-                                {{ $chip['label'] }}
-                            </a>
-                        @endforeach
-                    </div>
-                @endif
-
-                @if ($isStoreHeader)
+                @if ($headerType === 'store')
+                    {{-- store_category deliberately does NOT get this —
+                         explicit product decision: that page type now uses
+                         the shared "Parduotuvės"/"Kategorijos" filter bar
+                         below for both switching store and switching
+                         category, instead of this pill+its own modal. --}}
                     <x-store-nav-tabs
                         :store-slug="$listingMeta['store_slug']"
                         :leaflets-count="$listingMeta['leaflets_count'] ?? 0"
                         :total-offers="$listingMeta['total_offers'] ?? $total"
                         :categories="$listingMeta['sections']['available_categories'] ?? []"
-                        :featured-category="$headerType === 'store' ? ($listingMeta['sections']['featured_category'] ?? null) : null"
+                        :featured-category="$listingMeta['sections']['featured_category'] ?? null"
                         :all-categories-count="count($listingMeta['sections']['available_categories'] ?? [])"
-                        :current-category="$headerType === 'store_category' ? ['name' => $listingMeta['category_name'], 'offers_count' => $total] : null"
                         :aria-label="$listingMeta['store_name'] . ' skiltys'"
                         active="akcijos"
                     />
-                @else
+                @elseif ($headerType === 'category')
                     <x-keyword-chips-row :pages="$listingMeta['keyword_pages'] ?? []" />
                 @endif
             </div>
@@ -162,7 +160,11 @@
                     :subtitle="$listingMeta['intro']['short_description'] ?? ($listingMeta['intro']['description'] ?? null)"
                 >
                     @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
-                        <span><b class="font-extrabold text-gray-900">{{ $stat['value'] }}</b> {{ mb_strtolower($stat['label']) }}</span>
+                        @if (!empty($stat['label_first']))
+                            <span>{{ mb_strtolower($stat['label']) }} <b class="font-extrabold text-gray-900">{{ $stat['value'] }}</b></span>
+                        @else
+                            <span><b class="font-extrabold text-gray-900">{{ $stat['value'] }}</b> {{ mb_strtolower($stat['label']) }}</span>
+                        @endif
                     @endforeach
                     @if (!empty($listingMeta['intro']['freshness_label']))
                         <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
@@ -174,8 +176,14 @@
                 </x-type-hero>
             </div>
         @else
-            <div class="mb-2 flex flex-col gap-2 sm:mb-4">
-                <div class="mb-3 min-w-0">
+            {{-- The plain /akcijos hub has no listing_meta pipeline at all
+                 (getAllDiscounts() never built one) — $hubMeta is a small,
+                 separate real-data addition (AkcijosController::index()),
+                 reusing HomePageMetaService's already-cached stats + the
+                 same ContentFreshness mechanism every rich-header page uses,
+                 not new content. --}}
+            <div class="mb-2 flex flex-col gap-1 sm:mb-4">
+                <div class="min-w-0">
                     <h1 class="flex min-w-0 flex-wrap items-baseline gap-x-1.5 font-semibold text-gray-900">
                         <span class="text-gray-900">{{ $pageTitle }}</span>
                         @if ($total > 0)
@@ -183,66 +191,17 @@
                         @endif
                     </h1>
                 </div>
+                @if ($hubMeta)
+                    <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+                        @if (!empty($hubMeta['total_deals_label']) && !empty($hubMeta['active_store_count']))
+                            <span>{{ $hubMeta['total_deals_label'] }} aktyvios akcijos iš {{ $hubMeta['active_store_count'] }} parduotuvių.</span>
+                        @endif
+                        @if (!empty($hubMeta['freshness_label']))
+                            <x-content-freshness :label="$hubMeta['freshness_label']" />
+                        @endif
+                    </p>
+                @endif
             </div>
-        @endif
-
-        @if ($headerType === 'category' || $headerType === 'store_category')
-            <x-store-category-switch-row
-                :title="$listingMeta['switch_row_title'] ?? ''"
-                :helper-text="$listingMeta['switch_row_helper'] ?? null"
-                :items="$listingMeta['switch_row_items'] ?? []"
-            />
-        @endif
-
-        @if (!empty($storeComparisonRows))
-            {{-- Keyword pages only ($storeComparisonRows is always empty for
-                 store/category/store_category) — matches the mockup's order
-                 exactly: this is "the one place on the site that shows where
-                 it's cheapest right away", so it sits immediately after the
-                 hero, before the full offer grid — not buried below it. --}}
-            <section class="mt-6 w-full">
-                <h2 class="mb-2.5 text-base font-bold leading-tight text-gray-900 sm:mb-3 sm:text-lg">{{ $storeComparisonHeading }}</h2>
-                <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
-                    @foreach ($storeComparisonRows as $index => $row)
-                        @php $isBest = $index === 0 && !empty($row['min_price']); @endphp
-                        <a
-                            href="{{ $row['cheapest_product_href'] ?? ('/akcijos/paieska/' . rawurlencode($primarySearchTerm) . '?store=' . $row['store_slug']) }}"
-                            class="flex flex-col gap-2 rounded-xl border p-2.5 text-left transition-colors sm:p-3 {{ $isBest ? 'border-[#ecd09d] bg-[#fffaeb]' : 'border-gray-200 bg-gray-50 hover:border-green/30' }}"
-                        >
-                            <div class="flex items-center gap-1.5">
-                                <x-store-logo :slug="$row['store_slug']" size="xs" />
-                                <span class="truncate text-xs font-bold text-gray-600">{{ $row['store'] }}</span>
-                                @if ($isBest)
-                                    <span class="ml-auto shrink-0 rounded-md bg-[#ffdb4d] px-1.5 py-0.5 text-[0.65rem] font-extrabold uppercase tracking-wide text-gray-900">Pigiausia</span>
-                                @endif
-                            </div>
-
-                            <div class="relative aspect-square w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
-                                @if (!empty($row['cheapest_product_image']))
-                                    <img src="{{ $row['cheapest_product_image'] }}" alt="{{ $row['cheapest_product_name'] }}" loading="lazy" class="h-full w-full object-contain p-2">
-                                @endif
-                            </div>
-
-                            @if (!empty($row['cheapest_product_name']))
-                                <p class="line-clamp-2 min-h-[2.3em] text-xs leading-snug text-gray-600">{{ $row['cheapest_product_name'] }}</p>
-                            @endif
-
-                            <div>
-                                @if (!empty($row['min_price']))
-                                    <span class="text-base font-extrabold tabular-nums text-gray-900 sm:text-lg">{{ number_format($row['min_price'], 2, ',', ' ') }} €</span>
-                                @elseif (!empty($row['max_discount_percent']))
-                                    {{-- Not run through <x-discount-badge>: that component applies
-                                         the >=20% promotion threshold, but this badge always shows
-                                         the store's actual max discount regardless of size. --}}
-                                    <span class="inline-flex h-[1.6rem] items-center rounded-lg bg-[#ffdb4d] px-2.5 text-sm font-bold leading-none text-gray-900">iki -{{ $row['max_discount_percent'] }}%</span>
-                                @else
-                                    <span class="text-sm font-semibold text-gray-500">Tik nuolaida</span>
-                                @endif
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            </section>
         @endif
 
         @if ($isKeyword)
@@ -264,6 +223,7 @@
                     'primarySlug' => $filtersPrimarySlug,
                     'secondarySlug' => $filtersSecondarySlug,
                     'topOffers' => $isStoreHeader ? $topOffers : [],
+                    'availableCategories' => $listingMeta['sections']['available_categories'] ?? [],
                 ])->render()
                 : '';
         @endphp
@@ -298,56 +258,199 @@
                 :initial-pagination="$pagination"
                 :carousel-html="$carouselHtml"
                 :show-carousels="! empty($sections) || ($isStoreHeader && ! empty($topOffers))"
-                :sidebar-mode="$sidebarMode"
-                :primary-store-name="$listingMeta['store_name'] ?? null"
+                :show-store-filter="$showStoreFilter"
+                :show-category-filter="$showCategoryFilter"
+                :active-store-slug="$activeStoreSlug"
+                :active-category-slug="$activeCategorySlug"
+                :show-filters="$headerType === 'category' || $headerType === 'store_category' || $isKeyword"
+                :leading-deals="$leadingDeals"
                 :key="'filters-'.$basePath"
             />
         @endif
 
-        @if (!empty($searchExamples) || !empty($keywordCategories))
-            <section class="mt-10 w-full border-t border-gray-200 pt-6">
-                <h2 class="mb-3 text-base font-bold leading-tight text-gray-900 sm:text-lg">Dažniausiai ieškoma</h2>
-                <ul class="flex flex-col gap-1.5 text-sm">
-                    @foreach ($searchExamples as $term)
-                        <li><a href="/akcijos/paieska/{{ rawurlencode($term) }}" rel="nofollow" class="text-gray-700 transition-colors hover:text-green">{{ $term }}</a></li>
-                    @endforeach
-                    @foreach ($keywordCategories as $category)
-                        <li><a href="{{ $category['href'] }}" class="text-gray-700 transition-colors hover:text-green">{{ $category['name'] }}</a></li>
-                    @endforeach
-                </ul>
-            </section>
-        @endif
+        @php
+            // One unified block instead of alternating "card with border" /
+            // "plain top-rule divider" / "card with border again" styles —
+            // same section-card box throughout, divide-y draws the line
+            // between whichever of these five actually have content (not a
+            // fixed set of dividers, since any of them can be empty).
+            // "Kainos pagal parduotuves" (per-store chips) removed per
+            // explicit product decision — superseded by the per-brand
+            // summary below, which is the actually-fair comparison (same
+            // brand across stores, not each store's own different cheapest
+            // product).
+            $hasBrandSummary = !empty($listingMeta['intro']['brand_price_summary']);
+            $hasBottomBlocks = $hasBrandSummary || !empty($relatedPages) || $seoAboutHtml || !empty($tips) || !empty($faqItems);
+            $aboutHeading = $isKeyword
+                ? 'Apie ' . mb_strtolower($listingMeta['keyword_grammar']['genitive'] ?? $pageTitle) . ' kainas ir akcijas'
+                : 'Apie šias akcijas';
+        @endphp
 
-        @if ($seoAboutHtml)
-            <div class="category-description mt-10 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
-                <h2>Apie šias akcijas</h2>
-                {!! $seoAboutHtml !!}
-            </div>
-        @endif
-
-        @if (!empty($tips))
-            <section class="mt-10 w-full rounded-lg border border-gray-200 bg-white p-4 sm:p-5">
-                <h2 class="mb-3 text-base font-bold leading-tight text-gray-900">Patarimai pirkėjams</h2>
-                <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    @foreach ($tips as $tip)
-                        <li class="flex gap-3 rounded-lg border border-gray-100 bg-gray-50/80 p-3.5 sm:p-4">
-                            @if (!empty($tip['icon']))
-                                <span class="text-xl leading-none" aria-hidden="true">{{ $tip['icon'] }}</span>
-                            @endif
-                            <div>
-                                <p class="font-semibold text-gray-900">{{ $tip['title'] }}</p>
-                                <p class="mt-1 text-sm leading-relaxed text-gray-600">{{ $tip['text'] }}</p>
+        @if ($hasBottomBlocks)
+            <section class="section-card mt-10 w-full divide-y divide-gray-200">
+                @if (!empty($listingMeta['intro']['cheapest_answer']))
+                    {{-- Direct "kur šiandien pigiausia X" answer — the single
+                         cheapest offer across every store, front and center
+                         above the brand breakdown, not something a reader has
+                         to piece together from a list themselves. --}}
+                    @php $answer = $listingMeta['intro']['cheapest_answer']; @endphp
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <h2 class="section-heading mb-3">
+                            Kur šiandien pigiausia {{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }}?
+                        </h2>
+                        <div class="flex flex-wrap items-center gap-4 rounded-xl border border-green-soft-border bg-green-soft px-4 py-3">
+                            <x-store-logo :slug="$answer['store_slug']" :name="$answer['store_name']" size="sm" />
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Pigiausia dabar</p>
+                                <p class="truncate font-bold text-gray-900">{{ $answer['product_name'] }} — {{ $answer['store_name'] }}</p>
                             </div>
-                        </li>
-                    @endforeach
-                </ul>
-            </section>
-        @endif
+                            <span class="text-2xl font-extrabold tabular-nums text-dark-green">{{ number_format($answer['price'], 2, ',', ' ') }}&nbsp;€</span>
+                        </div>
+                        <p class="mt-3 text-sm leading-relaxed text-gray-600">
+                            Šiuo metu pigiausia {{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }} —
+                            <span class="font-bold text-gray-900">{{ $answer['product_name'] }}</span>
+                            parduotuvėje <span class="font-bold text-gray-900">{{ $answer['store_name'] }}</span>,
+                            už <span class="font-bold text-dark-green">{{ number_format($answer['price'], 2, ',', ' ') }}&nbsp;€</span>
+                            (iš {{ $answer['store_offers_count'] }} galiojančių pasiūlymų šioje parduotuvėje).
+                            Iš viso „{{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }}" akcijos šiuo metu galioja
+                            <span class="font-bold text-gray-900">{{ $answer['store_count'] }} {{ \App\Support\LithuanianPlural::offerWord($answer['store_count']) === 'pasiūlymas' ? 'parduotuvėje' : 'parduotuvėse' }}</span>,
+                            su <span class="font-bold text-gray-900">{{ number_format($listingMeta['intro']['total_matching_offers'] ?? 0, 0, ',', ' ') }} pasiūlymais</span>.
+                            @if (!empty($answer['max_discount_percent']))
+                                Didžiausia savaitės nuolaida —
+                                <span class="font-bold text-[#c0392b]">-{{ $answer['max_discount_percent'] }}%</span>
+                                prekei <span class="font-bold text-gray-900">{{ $answer['max_discount_product'] }}</span>
+                                ({{ $answer['max_discount_store'] }}).
+                            @endif
+                        </p>
+                    </div>
+                @endif
 
-        @if (!empty($faqItems))
-            <section class="mt-10 w-full border-t border-gray-200 pt-6">
-                <h2 class="mb-4 text-lg font-bold text-gray-900">Dažniausiai užduodami klausimai</h2>
-                <x-faq-accordion :items="$faqItems" />
+                @if ($hasBrandSummary)
+                    {{-- Per-brand "cheapest right now", not per-store — comparing
+                         the SAME brand across stores is a fair comparison; the
+                         store chips above compare each store's own cheapest
+                         match, which is a different product per store (pack
+                         size/variant), so a raw price-to-price read across them
+                         would be misleading. --}}
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <div class="section-heading-row">
+                            <h2 class="section-heading">Kainos pagal prekės ženklą</h2>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-gray-200">
+                            <table class="w-full min-w-[560px] text-left text-sm">
+                                <thead>
+                                    <tr class="bg-green text-white">
+                                        <th class="p-3 font-bold">Prekė</th>
+                                        <th class="p-3 font-bold">Kaina</th>
+                                        <th class="p-3 font-bold">Parduotuvė</th>
+                                        <th class="p-3 text-right font-bold">Pasiūlymų</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @foreach ($listingMeta['intro']['brand_price_summary'] as $row)
+                                        <tr class="odd:bg-white even:bg-gray-50 hover:bg-green-soft/60">
+                                            <td class="p-3">
+                                                <a href="{{ $row['product_href'] }}" class="flex min-w-0 items-center gap-3">
+                                                    <span class="relative size-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                                        @if ($row['product_image_url'])
+                                                            <img src="{{ $row['product_image_url'] }}" alt="{{ $row['product_name'] }}" loading="lazy" class="h-full w-full object-contain p-1">
+                                                        @endif
+                                                    </span>
+                                                    <span class="min-w-0">
+                                                        <span class="block truncate font-bold text-gray-900">{{ $row['brand'] }}</span>
+                                                        <span class="block truncate text-xs text-gray-500">{{ $row['product_name'] }}</span>
+                                                    </span>
+                                                </a>
+                                            </td>
+                                            <td class="p-3">
+                                                <span class="block font-bold tabular-nums text-gray-900">{{ number_format($row['min_price'], 2, ',', ' ') }}&nbsp;€</span>
+                                            </td>
+                                            <td class="p-3">{{ $row['store_name'] }}</td>
+                                            <td class="p-3 text-right text-gray-500">{{ $row['offers_count'] }} {{ \App\Support\LithuanianPlural::offerWord($row['offers_count']) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+
+                @if (!empty($relatedPages))
+                    {{-- Real, indexable cross-links to sibling keyword pages
+                         sharing this page's category (e.g. kava ->
+                         malta-kava/tirpi-kava/kavos-kapsules) — unlike the
+                         removed "Dažniausiai ieškoma" chips, every link here
+                         points at its own real page, no nofollow. These
+                         pages already existed and were live, just orphaned:
+                         nothing on the site linked to them. --}}
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <div class="section-heading-row">
+                            <h2 class="section-heading">Susijusios akcijos</h2>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                            @foreach ($relatedPages as $related)
+                                <a href="{{ $related['href'] }}" class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:border-green/40">
+                                    @if ($related['emoji'])
+                                        <span class="shrink-0 text-lg" aria-hidden="true">{{ $related['emoji'] }}</span>
+                                    @endif
+                                    <span class="truncate">{{ $related['label'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                @if ($seoAboutHtml)
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        {{-- Heading only for keyword pages ("Apie {kava} kainas ir
+                             akcijas") — kept OUTSIDE the .prose wrapper below since
+                             Tailwind Typography's own h2 size overrode
+                             section-heading when nested inside it. Store/category/
+                             store_category skip the heading entirely: that content
+                             (Store::description/Category::description) is
+                             admin-authored prose that already opens with its own
+                             heading, so a generic "Apie šias akcijas" label above
+                             it just repeated the same idea twice. --}}
+                        @if ($isKeyword)
+                            <h2 class="section-heading mb-3">{{ $aboutHeading }}</h2>
+                        @endif
+                        {{-- [&>*:first-child]:mt-0: this admin-authored HTML
+                             (Store::description/Category::description) already
+                             ships its own explicitly-styled heading (text-2xl/3xl
+                             etc) — Tailwind Typography's default ~2em top margin
+                             on that h2 wasn't being zeroed by its own first-child
+                             reset here, leaving a large gap above it. --}}
+                        <div class="category-description max-w-none text-sm prose prose-sm [&>p]:mb-4 [&>p:last-child]:mb-0 [&_:first-child]:mt-0! [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
+                            {!! $seoAboutHtml !!}
+                        </div>
+                    </div>
+                @endif
+
+                @if (!empty($tips))
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <h2 class="section-heading mb-3">Patarimai pirkėjams</h2>
+                        <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            @foreach ($tips as $tip)
+                                <li class="flex gap-3 rounded-lg border border-gray-100 bg-gray-50/80 p-3.5 sm:p-4">
+                                    @if (!empty($tip['icon']))
+                                        <span class="text-xl leading-none" aria-hidden="true">{{ $tip['icon'] }}</span>
+                                    @endif
+                                    <div>
+                                        <p class="font-semibold text-gray-900">{{ $tip['title'] }}</p>
+                                        <p class="mt-1 text-sm leading-relaxed text-gray-600">{{ $tip['text'] }}</p>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                @if (!empty($faqItems))
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <h2 class="section-heading mb-4">Dažniausiai užduodami klausimai</h2>
+                        <x-faq-accordion :items="$faqItems" />
+                    </div>
+                @endif
             </section>
         @endif
 

@@ -54,7 +54,10 @@ class PageFreshnessService
         $now = $now ?? Carbon::now();
         $end = Carbon::parse($validTo)->startOfDay();
         $today = $now->copy()->startOfDay();
-        $daysLeft = $today->diffInDays($end, false);
+        // Cast: Carbon 3's diffInDays() returns a float — the strict === 0
+        // check below never matched a float 0.0, so an offer expiring today
+        // always fell through to "iki {date}" instead of "tik šiandien".
+        $daysLeft = (int) $today->diffInDays($end, false);
 
         if ($daysLeft < 0) {
             return null;

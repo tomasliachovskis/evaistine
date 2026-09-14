@@ -1,4 +1,4 @@
-@props(['leaflet'])
+@props(['leaflet', 'showStoreName' => true])
 
 @php
     $daysWord = fn ($n) => match (true) {
@@ -14,14 +14,18 @@
         : null;
 @endphp
 
-{{-- Same card design as leaflets/hub.blade.php's (/leidinys/{store}) — kept
+{{-- Matches the mockup's .leaflet-card exactly: the whole card is one link
+     (no separate CTA button inside), title/date/status only in the body.
+     Same design as leaflets/hub.blade.php's (/leidinys/{store}) — kept
      identical on purpose so /leidiniai (all stores) and a single store's own
      hub page don't look like two different products. One addition here:
      a store-name line above the title — needed on this multi-store listing
-     to say which store a card is even for, unlike hub.blade.php's version
-     where the whole page is already scoped to one store. --}}
-<article {{ $attributes->merge(['class' => 'group flex flex-row gap-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all sm:flex-col sm:gap-0 sm:hover:-translate-y-0.5 sm:hover:shadow-lg']) }}>
-    <a href="{{ $href }}" class="relative block w-32 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
+     to say which store a card is even for (a real thumbnail photo doesn't
+     self-label like the mockup's placeholder text does), unlike
+     hub.blade.php's version where the whole page is already scoped to one
+     store. --}}
+<a href="{{ $href }}" {{ $attributes->merge(['class' => 'group flex flex-row gap-3 overflow-hidden rounded-[14px] border border-gray-200 bg-white shadow-sm transition-shadow sm:flex-col sm:gap-0 sm:hover:shadow-lg']) }}>
+    <div class="relative block w-24 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
         @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
             <img
                 src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}"
@@ -32,10 +36,12 @@
         @else
             <div class="flex h-full items-center justify-center px-2 text-center text-xs text-gray-500">{{ $leaflet['title'] ?? $leaflet['store_name'] }}</div>
         @endif
-    </a>
-    <div class="flex flex-1 flex-col gap-1.5 py-3 pr-3 sm:gap-2 sm:p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ $leaflet['store_name'] }}</p>
-        <p class="-mt-1 line-clamp-2 text-sm font-semibold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
+    </div>
+    <div class="flex flex-1 flex-col gap-1.5 py-2.5 pr-3 sm:gap-1.5 sm:p-3">
+        @if ($showStoreName)
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ $leaflet['store_name'] }}</p>
+        @endif
+        <p class="{{ $showStoreName ? '-mt-1' : '' }} line-clamp-2 text-sm font-bold text-gray-900">{{ $leaflet['title'] ?? '' }}</p>
         @if ($dateRange)
             {{-- A consistent, real identifier for every card — some
                  leaflets carry a themed campaign name instead of a
@@ -49,6 +55,5 @@
             <x-app-icon name="clock" class="size-3.5" />
             {{ $isExpired ? 'Nebegalioja' : ($days !== null ? "Galioja dar {$days} {$daysWord($days)}" : 'Galioja') }}
         </span>
-        <a href="{{ $href }}" class="mt-1 inline-flex h-8 w-fit items-center justify-center rounded-lg bg-green px-4 text-xs font-bold text-white hover:bg-dark-green sm:mt-auto sm:h-9 sm:w-full sm:text-sm">Peržiūrėti</a>
     </div>
-</article>
+</a>

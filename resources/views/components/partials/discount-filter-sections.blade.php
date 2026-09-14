@@ -1,23 +1,24 @@
-{{-- Persistent category/store nav — discount-filters' desktop sidebar AND
-     mobile "Filtrai" sheet both include this. Verified against production
-     (not the local .tsx checkout, which builds a different filter UI):
-     the sidebar shows ONLY the facet not already fixed by the URL —
-     categories when browsing a store, stores when browsing a category or
-     keyword page — ProductFilterSidebar/FilterListItem's row styling.
+{{-- Persistent category/store row list — used inside discount-filters'
+     centered modal, once per open facet ($facet: 'categories' | 'stores').
+     Explicit props (not ambient $sidebarMode/$primarySlug/$secondarySlug)
+     so the same partial renders either facet independently on pages that
+     now show both filters at once (category-only, store+category) — an
+     $hrefFor closure avoids re-deriving URL shape from ambient variables
+     whose meaning differs by page type (a bug found while unifying these:
+     $primarySlug means a store on one page type and a category on another).
 
-     These are plain navigation links to the dedicated /akcijos/{store}/{category}
-     URL, not wire:click filter toggles — confirmed against production by
-     clicking: selecting a category on a store page (or a store on a category
-     page) does a full page nav to the combined URL and highlights only that
-     one row, it doesn't accumulate a multi-select query-string filter. --}}
-@if ($sidebarMode === 'categories')
+     Plain navigation links, not wire:click toggles — confirmed against
+     production: selecting a row does a full page nav to the dedicated URL
+     and highlights only that one row, it doesn't accumulate a multi-select
+     query-string filter. --}}
+@if ($facet === 'categories')
     <section>
         <div class="flex flex-col gap-0.5">
-            @if ($allHref)
-                <a href="{{ $allHref }}" class="{{ $rowClass(empty($selectedCategories) && $mode === 'discounts' && $secondarySlug === null) }}">Visos</a>
+            @if ($allHref ?? null)
+                <a href="{{ $allHref }}" class="{{ $rowClass($activeSlug === null) }}">Visos</a>
             @endif
-            @foreach ($allCategories as $category)
-                <a href="{{ $primarySlug !== null ? '/akcijos/'.$primarySlug.'/'.$category['slug'] : '/akcijos/'.$category['slug'] }}" class="{{ $rowClass($category['slug'] === $secondarySlug) }}">
+            @foreach ($items as $category)
+                <a href="{{ $hrefFor($category['slug']) }}" class="{{ $rowClass($category['slug'] === $activeSlug) }}">
                     <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="h-5 w-5 shrink-0 opacity-70" onerror="this.style.display='none'">
                     <span class="truncate">{{ $category['name'] }}</span>
                 </a>
@@ -26,9 +27,9 @@
     </section>
 @else
     <section>
-        <div class="flex flex-col gap-2">
-            @foreach ($allStores as $store)
-                <a href="{{ $mode !== 'keyword' && $primarySlug !== null ? '/akcijos/'.$store['slug'].'/'.$primarySlug : '/akcijos/'.$store['slug'] }}" class="{{ $rowClass($store['slug'] === $primarySlug) }}">
+        <div class="flex flex-col gap-0.5">
+            @foreach ($items as $store)
+                <a href="{{ $hrefFor($store['slug']) }}" class="{{ $rowClass($store['slug'] === $activeSlug) }}">
                     {{-- Fixed-width icon column (unlike <x-store-logo>'s auto-width
                          tiers) so every row's name starts at the same x position
                          regardless of that store's own logo aspect ratio. --}}

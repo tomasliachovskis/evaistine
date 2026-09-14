@@ -190,5 +190,19 @@
             <path d="M12 9v4" />
             <path d="M12 17h.01" />
             @break
+        @case('maximize')
+            <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+            <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+            <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+            <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+            @break
+        @case('tag')
+            <path d="M12.6 2H6a2 2 0 0 0-2 2v6.6a1 1 0 0 0 .3.7l9.4 9.4a2 2 0 0 0 2.8 0l6.2-6.2a2 2 0 0 0 0-2.8l-9.4-9.4a1 1 0 0 0-.7-.3Z" />
+            <circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none" />
+            @break
+        @case('bookmark')
+            <path d="M4 4h13l3 3v13H4Z" />
+            <path d="M9 4v6l3-2 3 2V4" />
+            @break
     @endswitch
 </svg>

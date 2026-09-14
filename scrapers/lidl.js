@@ -68,6 +68,7 @@ const parseUnitPrice = (text) => {
     // offset trick or ever hitting the load-more button.
     const offers = [
         'https://www.lidl.lt/q/search?q=',
+        'https://www.lidl.lt/q/search?q=&offset=48',
     ];
 
     let allProducts = new Map();

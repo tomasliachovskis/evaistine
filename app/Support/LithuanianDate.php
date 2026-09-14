@@ -32,28 +32,16 @@ class LithuanianDate
         return self::MONTHS_ACCUSATIVE[$date->month - 1];
     }
 
-    // "Atnaujinta prieš N min/val." for anything under 24h old (matches the
-    // mockup's freshness-stat wording); falls back to the existing absolute
-    // "Atnaujinta D mėn." format beyond that, same as StoreDataFreshness's
-    // wording, so both mechanisms read consistently to a user.
+    // Absolute date+time, not "prieš N min/val." — per explicit product
+    // decision: a relative label goes stale-looking the moment the page sits
+    // open a while (and was also the site of a real bug, see git history —
+    // Carbon 3's diffInMinutes()/diffInHours() return floats, which briefly
+    // rendered as "prieš 55.398951266667 minutės"). One fixed format
+    // everywhere this is shown (pigiausios-prekes, store/category/keyword
+    // listing pages, leaflet hubs) is also simpler than maintaining the old
+    // minutes/hours/day-fallback ladder.
     public static function relative(Carbon $date): string
     {
-        $minutes = $date->diffInMinutes(now());
-
-        if ($minutes < 1) {
-            return 'Atnaujinta ką tik';
-        }
-
-        if ($minutes < 60) {
-            return 'Atnaujinta prieš ' . $minutes . ' ' . LithuanianPlural::minuteWord($minutes);
-        }
-
-        $hours = $date->diffInHours(now());
-
-        if ($hours < 24) {
-            return 'Atnaujinta prieš ' . $hours . ' ' . LithuanianPlural::hourWord($hours);
-        }
-
-        return 'Atnaujinta ' . $date->day . ' ' . self::shortMonth($date);
+        return 'Duomenys atnaujinti ' . $date->format('Y-m-d H:i');
     }
 }

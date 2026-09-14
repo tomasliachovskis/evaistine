@@ -11,7 +11,7 @@
     $leafletsActive = $path === 'leidiniai';
     $cheapestActive = $path === 'pigiausios-prekes';
 
-    $navLinkClass = fn (bool $active) => 'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[11px] px-4 py-2.5 text-[0.95rem] font-bold transition-colors '
+    $navLinkClass = fn (bool $active) => 'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[11px] px-4 py-2.5 my-[7px] text-[0.95rem] font-bold transition-colors '
         . ($active ? 'bg-green text-white' : 'text-gray-600 hover:bg-gray-100');
     $menuItemClass = fn (bool $active) => 'flex min-h-[56px] w-full items-center gap-3.5 rounded-xl px-2.5 py-4 text-[1.05rem] font-bold transition-colors '
         . ($active ? 'bg-green/10 text-dark-green' : 'text-gray-900 hover:bg-gray-100');
@@ -27,8 +27,8 @@
      separate mobile-only bottom sheet; there is now only one menu
      implementation, not two. --}}
 <header x-data="{ menuOpen: false, keywordsOpen: false, accountOpen: false }" @keydown.escape.window="menuOpen = false; accountOpen = false" class="fixed top-0 z-50 w-full bg-white pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(15,23,42,0.06),0_4px_16px_rgba(15,23,42,0.08)]">
-    <div class="bg-white">
-        <div class="base-container flex h-14 items-center gap-3 py-2 sm:gap-4 lg:gap-6">
+    <div class="border-b border-gray-200 bg-white">
+        <div class="base-container flex h-14 items-center gap-4 py-2">
             <a href="/" class="flex min-w-0 shrink-0 items-center no-underline outline-offset-2 hover:opacity-90">
                 <img src="/assets/logo.svg" alt="SuperAkcijos.lt" class="h-7 w-auto max-w-[min(178px,48vw)] object-contain object-left sm:h-8">
             </a>
@@ -43,7 +43,7 @@
                 <livewire:site-search mode="mobile" />
             </div>
 
-            <div class="ml-auto flex shrink-0 items-center gap-2">
+            <div class="ml-auto flex shrink-0 items-center gap-4">
                 <div class="relative" @click.outside="accountOpen = false">
                     @auth
                         <button type="button" @click="accountOpen = !accountOpen" class="{{ $headerIconClass }}" aria-label="Paskyra">
@@ -99,16 +99,16 @@
     <div class="hidden border-b border-gray-200 bg-white lg:block">
         <nav class="base-container flex items-center gap-2.5 overflow-x-auto" aria-label="Pagrindinė navigacija">
             <a href="/akcijos" class="{{ $navLinkClass($akcijosActive) }}">
-                <x-app-icon name="percent" class="size-4.5" />Akcijos
+                <x-app-icon name="tag" class="size-4.5" />Akcijos
             </a>
             <a href="/parduotuves" class="{{ $navLinkClass($storesActive) }}">
                 <x-app-icon name="store" class="size-4.5" />Parduotuvės
             </a>
             <a href="/leidiniai" class="{{ $navLinkClass($leafletsActive) }}">
-                <x-app-icon name="newspaper" class="size-4.5" />Leidiniai
+                <x-app-icon name="bookmark" class="size-4.5" />Leidiniai
             </a>
             <a href="/pigiausios-prekes" class="{{ $navLinkClass($cheapestActive) }}">
-                <x-app-icon name="shopping-basket" class="size-4.5" />Pigiausios prekės
+                <x-app-icon name="shopping-bag" class="size-4.5" />Pigiausios prekės
             </a>
         </nav>
     </div>
@@ -132,16 +132,16 @@
             </div>
             <nav class="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4.5">
                 <a href="/akcijos" @click="menuOpen = false" class="{{ $menuItemClass($akcijosActive) }}">
-                    <x-app-icon name="percent" class="size-5 shrink-0" />Akcijos
+                    <x-app-icon name="tag" class="size-5 shrink-0" />Akcijos
                 </a>
                 <a href="/parduotuves" @click="menuOpen = false" class="{{ $menuItemClass($storesActive) }}">
                     <x-app-icon name="store" class="size-5 shrink-0" />Parduotuvės
                 </a>
                 <a href="/leidiniai" @click="menuOpen = false" class="{{ $menuItemClass($leafletsActive) }}">
-                    <x-app-icon name="newspaper" class="size-5 shrink-0" />Leidiniai
+                    <x-app-icon name="bookmark" class="size-5 shrink-0" />Leidiniai
                 </a>
                 <a href="/pigiausios-prekes" @click="menuOpen = false" class="{{ $menuItemClass($cheapestActive) }}">
-                    <x-app-icon name="shopping-basket" class="size-5 shrink-0" />Pigiausios prekės
+                    <x-app-icon name="shopping-bag" class="size-5 shrink-0" />Pigiausios prekės
                 </a>
 
                 <div>

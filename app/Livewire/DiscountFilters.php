@@ -28,17 +28,41 @@ class DiscountFilters extends Component
     #[Locked]
     public ?string $secondarySlug = null;
 
-    // Only set on a store+category combo page (both slugs from the URL path,
-    // e.g. /akcijos/lidl/bakaleja) — lets the selected-filters row show a
-    // removable "Lidl" chip without an extra store lookup, since allStores
-    // stays empty in that mode (see mount()).
+    // Per explicit product decision: category and store+category pages show
+    // BOTH filters at once (each pre-highlighting whichever facet the URL
+    // already fixes) — no longer a single either/or "sidebarMode". Store-only
+    // pages show neither (showFilters is false there, unchanged) — that page
+    // type still uses <x-store-nav-tabs> for category-switching, untouched.
     #[Locked]
-    public ?string $primaryStoreName = null;
+    public bool $showStoreFilter = false;
 
-    // 'categories' when browsing a store (pick a category) or 'stores' when
-    // browsing a category/keyword page (pick a store) — see AkcijosController.
     #[Locked]
-    public string $sidebarMode = 'categories';
+    public bool $showCategoryFilter = false;
+
+    // The slug to pre-highlight in each panel — null means "no row is
+    // currently active" (e.g. the plain /akcijos hub's category list, or a
+    // category page's store list, where nothing is fixed by the URL).
+    #[Locked]
+    public ?string $activeStoreSlug = null;
+
+    #[Locked]
+    public ?string $activeCategorySlug = null;
+
+    // Filtering/sorting UI (the "Filtrai" bar + sort dropdown) only makes
+    // sense where there's something meaningful to narrow down: a category
+    // (pick a store), a store+category combo, or a keyword page. The plain
+    // /akcijos hub and a plain store page just show everything, in order —
+    // no filter/sort bar there, per explicit product decision.
+    #[Locked]
+    public bool $showFilters = true;
+
+    // Keyword pages only: the cheapest matching discount per store, meant to
+    // lead the grid (not a separate "compare" section) — only makes sense
+    // under the default popularity sort and only on the grid's first page,
+    // never merged permanently into $deals so it naturally drops out the
+    // moment a different sort/filter/page is requested.
+    #[Locked]
+    public array $leadingDeals = [];
 
     #[Url(as: 'order', except: 'popular')]
     public string $order = 'popular';
@@ -68,7 +92,10 @@ class DiscountFilters extends Component
 
     public array $allCategories = [];
 
-    public bool $panelOpen = false;
+    // Which single popup (if any) is open — 'store' | 'category' | null.
+    // Only one at a time, same UX as the old single-panel toggle, just keyed
+    // now that up to two independent buttons can open it.
+    public ?string $openPanel = null;
 
     // Rendered carousel markup from the parent listing view — kept only for
     // the initial full-page response and stripped in dehydrate() so it never
@@ -77,13 +104,17 @@ class DiscountFilters extends Component
 
     public bool $showCarousels = false;
 
-    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, string $carouselHtml = '', bool $showCarousels = false, string $sidebarMode = 'categories', ?string $primaryStoreName = null): void
+    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, string $carouselHtml = '', bool $showCarousels = false, bool $showStoreFilter = false, bool $showCategoryFilter = false, ?string $activeStoreSlug = null, ?string $activeCategorySlug = null, bool $showFilters = true, array $leadingDeals = []): void
     {
         $this->mode = $mode;
         $this->primarySlug = $primarySlug;
         $this->secondarySlug = $secondarySlug;
-        $this->sidebarMode = $sidebarMode;
-        $this->primaryStoreName = $primaryStoreName;
+        $this->showStoreFilter = $showStoreFilter;
+        $this->showCategoryFilter = $showCategoryFilter;
+        $this->activeStoreSlug = $activeStoreSlug;
+        $this->activeCategorySlug = $activeCategorySlug;
+        $this->showFilters = $showFilters;
+        $this->leadingDeals = $leadingDeals;
         $this->deals = $initialDeals;
         $this->pagination = $initialPagination;
         $this->carouselHtml = $carouselHtml;
@@ -91,23 +122,30 @@ class DiscountFilters extends Component
             && $this->storeFilter === ''
             && $this->categoryFilter === '';
 
-        // Scoped to the store/category already fixed by the URL — production
+        // Scoped to whichever facet is already fixed by the URL — production
         // only lists categories a store actually has discounts in (and vice
-        // versa), not every category/store site-wide. The plain /akcijos hub
-        // has no store to scope by, so it gets the unscoped (site-wide) list.
-        if ($this->sidebarMode === 'categories' && $this->primarySlug === null) {
-            $this->allStores = [];
-            $this->allCategories = json_decode(app(ProductController::class)->getCategories()->getContent(), true) ?? [];
-        } elseif ($this->sidebarMode === 'categories') {
-            $this->allStores = [];
-            $this->allCategories = json_decode(app(ProductController::class)->getCategoriesForStore($this->primarySlug)->getContent(), true) ?? [];
-        } elseif ($this->mode !== 'keyword') {
-            $this->allStores = json_decode(app(ProductController::class)->getStoresForCategory($this->primarySlug)->getContent(), true)['data'] ?? [];
-            $this->allCategories = [];
-        } else {
-            $this->allStores = json_decode(app(ProductController::class)->getStores()->getContent(), true)['data'] ?? [];
-            $this->allCategories = [];
-        }
+        // versa), not every category/store site-wide. $activeStoreSlug/
+        // $activeCategorySlug (not the raw $primarySlug/$secondarySlug, whose
+        // meaning differs by page type) are what tell us which scoping
+        // applies:
+        // - Categories: scoped to the store on a store+category combo page
+        //   ($activeStoreSlug set); unscoped (site-wide) everywhere else
+        //   (the plain hub and a category-only page, where there's no store
+        //   to scope by).
+        // - Stores: scoped to the category on both a category-only page and
+        //   a store+category combo page ($activeCategorySlug is the current
+        //   category in both cases); unscoped on a keyword page.
+        $this->allCategories = $this->showCategoryFilter
+            ? ($activeStoreSlug !== null
+                ? json_decode(app(ProductController::class)->getCategoriesForStore($activeStoreSlug)->getContent(), true) ?? []
+                : json_decode(app(ProductController::class)->getCategories()->getContent(), true) ?? [])
+            : [];
+
+        $this->allStores = $this->showStoreFilter
+            ? ($this->mode === 'keyword'
+                ? json_decode(app(ProductController::class)->getStores()->getContent(), true)['data'] ?? []
+                : json_decode(app(ProductController::class)->getStoresForCategory($activeCategorySlug)->getContent(), true)['data'] ?? [])
+            : [];
     }
 
     public function toggleStore(string $slug): void

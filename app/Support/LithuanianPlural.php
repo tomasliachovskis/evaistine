@@ -51,44 +51,4 @@ class LithuanianPlural
     {
         return str_replace(',', ' ', number_format($count));
     }
-
-    public static function minuteWord(int $count): string
-    {
-        $lastDigit = $count % 10;
-        $lastTwoDigits = $count % 100;
-
-        if ($lastTwoDigits >= 11 && $lastTwoDigits <= 19) {
-            return 'minučių';
-        }
-
-        if ($lastDigit === 1) {
-            return 'minutė';
-        }
-
-        if ($lastDigit >= 2 && $lastDigit <= 9) {
-            return 'minutės';
-        }
-
-        return 'minučių';
-    }
-
-    public static function hourWord(int $count): string
-    {
-        $lastDigit = $count % 10;
-        $lastTwoDigits = $count % 100;
-
-        if ($lastTwoDigits >= 11 && $lastTwoDigits <= 19) {
-            return 'valandų';
-        }
-
-        if ($lastDigit === 1) {
-            return 'valanda';
-        }
-
-        if ($lastDigit >= 2 && $lastDigit <= 9) {
-            return 'valandos';
-        }
-
-        return 'valandų';
-    }
 }
