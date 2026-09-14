@@ -36,7 +36,7 @@
                              same data/shape the homepage teaser uses, just every
                              candidate shown here instead of a random 2. --}}
                         @foreach ($group['items'] as $item)
-                            <div class="rounded-lg border border-gray-200 bg-white p-4">
+                            <div>
                                 <div class="mb-3 flex items-center justify-between gap-3">
                                     <span class="text-[1.05em] font-bold text-gray-900">
                                         {{ $item['label'] }}
