@@ -6,7 +6,7 @@
 
 {{-- Ported from discount/src/components/landing/landing-deals-section.tsx. --}}
 @if (count($deals))
-    <section id="{{ $id }}" aria-labelledby="{{ $id }}-heading" class="section-card min-w-0">
+    <section id="{{ $id }}" aria-labelledby="{{ $id }}-heading" class="min-w-0">
         <div class="mb-2.5 flex items-center justify-between gap-2 sm:mb-3">
             <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
