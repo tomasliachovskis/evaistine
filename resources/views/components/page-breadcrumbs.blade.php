@@ -3,7 +3,7 @@
 {{-- Ported from discount/src/components/common/breadcrumbs.tsx. $items is an
      ordered list of ['name' => ..., 'href' => ...]; $current marks which
      href is the active page (bold, non-link styling). --}}
-<div class="base-container pb-1.5 pt-3">
+<div class="base-container pb-4 pt-3">
     <nav aria-label="breadcrumb">
         <ol class="flex flex-wrap items-center gap-1.5 text-sm break-words text-gray-600 sm:gap-2.5">
             @foreach ($items as $index => $item)

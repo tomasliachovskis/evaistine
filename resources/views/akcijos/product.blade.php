@@ -146,7 +146,7 @@ use App\Support\ProductPageMeta;
         @endif
     @endpush
 
-    <div class="base-container pb-1.5 pt-3">
+    <div class="base-container pb-4 pt-3">
         <nav class="flex flex-wrap items-center gap-1" aria-label="Naršymo kelias">
             @foreach ($breadcrumbs as $index => $crumb)
                 @if ($index > 0)<x-app-icon name="arrow-right" class="size-3.5 text-gray-300" />@endif
@@ -163,7 +163,7 @@ use App\Support\ProductPageMeta;
              per-product follower count (resolveProductFollowerCount in
              product-social-proof.ts), and the price-deal signal badge
              (resolvePriceDealSignal). --}}
-        <div class="base-container pb-3 pt-1 sm:pt-2">
+        <div class="base-container pb-3">
             <div class="rounded-2xl border border-gray-200 bg-white p-4 max-lg:border-gray-100 sm:p-6">
                 <div class="grid grid-cols-[128px_minmax(0,1fr)] items-start gap-x-4 gap-y-6 sm:grid-cols-[144px_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-7 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-x-8">
                     <div class="flex min-w-0 items-start justify-center self-start overflow-hidden pt-2 pl-1.5 sm:pt-3 sm:pl-2 lg:p-3">

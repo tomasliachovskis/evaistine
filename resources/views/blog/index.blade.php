@@ -7,9 +7,9 @@
 
     <x-page-breadcrumbs :items="$breadcrumbs" current="/naujienos" />
 
-    <div class="base-container mx-auto justify-center gap-4 py-2">
+    <div class="base-container mx-auto justify-center gap-4 pb-2">
         <div class="mb-4 flex flex-col sm:mb-[32px] sm:flex-row sm:items-center sm:justify-between">
-            <h1 class="mb-1 text-2xl font-extrabold text-gray-900 sm:mb-0 sm:text-3xl">Naujienos</h1>
+            <h1 class="mb-1 sm:mb-0">Naujienos</h1>
         </div>
 
         <div class="mb-8 w-full">

@@ -82,7 +82,17 @@ class HomeDealPoolService
             ->limit(min($limit * 4, 40))
             ->get();
 
-        return collect($this->applyFamilyCap($candidates, $limit));
+        // A global (unscoped, $storeId === null) category carousel mixes
+        // every store's discounts into one deal_score ranking — without a
+        // per-store cap, one store's storewide campaign in a category (e.g.
+        // "-30% all cat food") can legitimately out-score every other store's
+        // single discount there and take every slot, even though other
+        // stores have real offers in the same category. Scoped
+        // (single-store) calls don't need this — every candidate is already
+        // that one store.
+        $maxPerStore = $storeId === null ? max(2, (int) ceil($limit / 2)) : PHP_INT_MAX;
+
+        return collect($this->applyFamilyCap($candidates, $limit, 1, $maxPerStore));
     }
 
     /**
@@ -350,10 +360,11 @@ class HomeDealPoolService
      *
      * @return list<Discount>
      */
-    private function applyFamilyCap(Collection $candidates, int $limit, int $maxPerFamily = 1): array
+    private function applyFamilyCap(Collection $candidates, int $limit, int $maxPerFamily = 1, int $maxPerStore = PHP_INT_MAX): array
     {
         $picked = [];
         $familyCounts = [];
+        $storeCounts = [];
         $pricelessCount = 0;
 
         foreach ($candidates as $discount) {
@@ -366,21 +377,28 @@ class HomeDealPoolService
                 continue;
             }
 
+            if (($storeCounts[$discount->store_id] ?? 0) >= $maxPerStore) {
+                continue;
+            }
+
             if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
                 continue;
             }
 
             $picked[] = $discount;
             $familyCounts[$familyKey] = ($familyCounts[$familyKey] ?? 0) + 1;
+            $storeCounts[$discount->store_id] = ($storeCounts[$discount->store_id] ?? 0) + 1;
             if ($this->isPriceless($discount)) {
                 $pricelessCount++;
             }
         }
 
-        // Same two-tier backfill reasoning as pickDiversePool(): relax the
-        // family cap first if still short, but keep the priceless cap as
-        // long as possible so a thin category doesn't fill up entirely with
-        // "Sutaupyk iki X%" pills instead of real priced cards.
+        // Same reasoning as pickDiversePool()'s tiered backfill: relax the
+        // store cap first if still short (a thin category may genuinely
+        // only have 1-2 stores with any offer at all), then the family cap,
+        // but keep the priceless cap as long as possible so a thin category
+        // doesn't fill up entirely with "Sutaupyk iki X%" pills instead of
+        // real priced cards.
         if (count($picked) < $limit) {
             $pickedIds = array_map(fn (Discount $d) => $d->id, $picked);
             foreach ($candidates as $discount) {
@@ -390,12 +408,16 @@ class HomeDealPoolService
                 if (in_array($discount->id, $pickedIds, true)) {
                     continue;
                 }
+                if (($familyCounts[$this->familyKeyResolver->resolve($discount)] ?? 0) >= $maxPerFamily) {
+                    continue;
+                }
                 if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
                     continue;
                 }
 
                 $picked[] = $discount;
                 $pickedIds[] = $discount->id;
+                $familyCounts[$this->familyKeyResolver->resolve($discount)] = ($familyCounts[$this->familyKeyResolver->resolve($discount)] ?? 0) + 1;
                 if ($this->isPriceless($discount)) {
                     $pricelessCount++;
                 }

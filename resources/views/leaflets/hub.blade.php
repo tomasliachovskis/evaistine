@@ -32,10 +32,9 @@
     <x-breadcrumb-trail :items="$breadcrumbs" :current="$canonical" />
 
     {{-- Ported from listing-store-hub-page.tsx + store-listing-header.tsx --}}
-    <div class="base-container mx-auto flex w-full flex-col gap-6 pb-8 pt-2 sm:gap-8 sm:pb-10 sm:pt-3">
+    <div class="base-container mx-auto flex w-full flex-col gap-6 pb-8 sm:gap-8 sm:pb-10">
         <div class="flex w-full flex-col gap-4">
             <x-type-hero
-                eyebrow="Parduotuvė"
                 :icon-src="'/assets/stores/' . $storeSlug . '.svg'"
                 :title="$pageTitle"
                 :subtitle="$intro['description'] ?? null"

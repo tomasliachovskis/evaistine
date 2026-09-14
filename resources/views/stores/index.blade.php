@@ -30,7 +30,7 @@
 
     <div class="base-container mx-auto flex flex-col gap-4 pb-8 sm:pb-10">
         <header>
-            <h1 class="min-w-0 text-2xl font-extrabold text-gray-900 sm:text-3xl">{{ $pageMeta['seo']['h1'] ?? 'Parduotuvių akcijos Lietuvoje' }}</h1>
+            <h1 class="min-w-0">{{ $pageMeta['seo']['h1'] ?? 'Parduotuvių akcijos Lietuvoje' }}</h1>
             @if (!empty($pageMeta['seo']['intro']))
                 <p class="mt-2 max-w-3xl text-sm leading-relaxed text-gray-600 sm:text-base">{{ $pageMeta['seo']['intro'] }}</p>
             @endif

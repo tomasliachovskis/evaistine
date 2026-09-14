@@ -7,7 +7,7 @@
 
     <x-page-breadcrumbs :items="$breadcrumbs" :current="'/naujienos/' . $post->slug" />
 
-    <div class="base-container mb-8 mt-4 sm:mb-[68px] sm:mt-8">
+    <div class="base-container mb-8 sm:mb-[68px]">
         <div class="flex w-full justify-start">
             <div class="w-full cursor-default rounded-xl border bg-card p-4 sm:max-w-[70%] sm:p-6">
                 <div class="flex flex-col gap-4">

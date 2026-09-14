@@ -2,7 +2,7 @@
     <x-page-breadcrumbs :items="$breadcrumbs" current="/apie" />
 
     <div class="base-container">
-        <div class="flex flex-col gap-4 py-[40px] pb-[56px]">
+        <div class="flex flex-col gap-4 pb-[56px]">
             <h1>Apie SuperAkcijos.lt</h1>
 
             <h2 class="mb-4 text-xl font-semibold">Kas mes esame</h2>

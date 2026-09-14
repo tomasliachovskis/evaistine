@@ -3,8 +3,25 @@
     {{-- Hero: comparison-first pitch + a real, working search box (same
          redirect pattern as akcijos/search-form.blade.php) — search is the
          primary action here, not an afterthought. --}}
-    <div class="border-b border-gray-100 bg-green/5">
-        <div class="base-container mx-auto flex flex-col items-center gap-4 py-10 text-center sm:py-14">
+    <div class="relative overflow-hidden border-b border-gray-100 bg-green/5">
+        {{-- Decorative, desktop-only (the hero is tight enough on mobile
+             without them) — genuinely true, non-fabricated claims only
+             (real store count, real "always up to date" promise), never a
+             specific product/price that could read as a real live deal. --}}
+        <div class="pointer-events-none absolute left-[6%] top-[18%] hidden -rotate-6 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-bold text-gray-900 shadow-[0_10px_24px_-8px_rgba(4,73,35,0.15)] lg:flex">
+            <x-app-icon name="store" class="size-4 text-green" />
+            40+ parduotuvių
+        </div>
+        <div class="pointer-events-none absolute right-[8%] top-[10%] hidden rotate-6 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-bold text-gray-900 shadow-[0_10px_24px_-8px_rgba(4,73,35,0.15)] lg:flex">
+            <x-app-icon name="trending-up" class="size-4 text-green" />
+            Kainos kas dieną
+        </div>
+        <div class="pointer-events-none absolute bottom-[12%] right-[6%] hidden rotate-3 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-bold text-gray-900 shadow-[0_10px_24px_-8px_rgba(4,73,35,0.15)] lg:flex">
+            <x-app-icon name="percent" class="size-4 text-green" />
+            Tikros akcijų kainos
+        </div>
+
+        <div class="base-container relative z-10 mx-auto flex flex-col items-center gap-4 py-10 text-center sm:py-14">
             <span class="inline-flex items-center gap-1.5 text-sm font-extrabold uppercase tracking-wide text-green">
                 <span class="size-1.5 rounded-full bg-green"></span>
                 Akcijos ir nuolaidos Lietuvoje
@@ -39,6 +56,22 @@
                 <strong class="text-gray-700 tabular-nums">{{ $stats['total_deals_label'] }}+</strong> aktyvių akcijų šiuo metu ·
                 <strong class="text-gray-700 tabular-nums">{{ $stats['new_today_count_label'] }}</strong> naujų šiandien
             </p>
+
+            {{-- Trust row — real logos of the 5 main chains the subtitle
+                 above already names, so the pitch isn't just a text claim.
+                 Horizontally scrollable on mobile instead of wrapping, same
+                 "don't grow the hero" reasoning as everything else here. --}}
+            <div class="flex w-full max-w-xl flex-col items-center gap-2">
+                <span class="text-[11px] font-bold uppercase tracking-wide text-gray-400">Palyginame kainas iš</span>
+                <div class="scroll-cards-x flex w-full items-center justify-center gap-2 sm:flex-wrap">
+                    @foreach (['maxima', 'lidl', 'iki', 'rimi', 'norfa'] as $slug)
+                        <span class="flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3">
+                            <x-store-logo :slug="$slug" size="sm" />
+                        </span>
+                    @endforeach
+                    <span class="shrink-0 whitespace-nowrap px-2 text-xs font-semibold text-gray-400">+20 kitų</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -53,7 +86,7 @@
                  to a generic page anymore. --}}
             @foreach ($comparisonCategories as $category)
                 <div>
-                    <h2 class="section-heading">{{ $category['name'] }}</h2>
+                    <h2 class="section-heading-lg">{{ $category['name'] }}</h2>
 
                     <div class="mt-4 flex flex-col gap-5">
                         @foreach ($category['items'] as $item)
@@ -91,7 +124,7 @@
                  section-card + heading pattern as the comparison blocks
                  above it, instead of floating bare on the page background. --}}
             <div class="section-card">
-                <h2 class="section-heading">Didžiausi Lietuvos parduotuvių tinklai</h2>
+                <h2 class="section-heading-lg">Didžiausi Lietuvos parduotuvių tinklai</h2>
                 <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
                     @foreach ($stores as $store)
                         <x-store-card :store="$store" layout="grid" />
@@ -111,7 +144,7 @@
             @if (count($latestLeaflets))
                 <div class="section-card">
                     <div class="section-heading-row">
-                        <h2 class="section-heading">Naujausi akcijų leidiniai</h2>
+                        <h2 class="section-heading-lg">Naujausi akcijų leidiniai</h2>
                         <a href="/leidiniai" class="section-link text-base">
                             Žiūrėti visus
                             <x-app-icon name="chevron-right" class="size-4 opacity-80" />

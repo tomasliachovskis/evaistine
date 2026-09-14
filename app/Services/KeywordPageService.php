@@ -257,7 +257,7 @@ class KeywordPageService
                 ->get()
                 ->filter(fn (KeywordPageProduct $row) => $row->keywordPage !== null)
                 ->map(fn (KeywordPageProduct $row) => [
-                    'label' => $this->stripAkcijaWord($row->keywordPage->h1 ?: $row->keywordPage->title),
+                    'label' => $this->capitalizeFirst($row->keywordPage->grammar_dative ?: $row->keywordPage->title),
                     'href' => "/akcijos/{$row->keywordPage->slug}",
                     'emoji' => $row->keywordPage->emoji,
                 ])
@@ -443,19 +443,72 @@ class KeywordPageService
             return $perStoreCheapest->take($limit);
         }
 
-        // Backfill with more products from the SAME stores when there
-        // simply aren't $limit distinct stores with an active discount —
-        // per explicit product decision, this teaser should show $limit
-        // products whenever that many exist at all, not stop early just
-        // because they repeat a store. Excludes discounts already picked
-        // above, then fills the rest cheapest-first regardless of store.
+        // Still short of $limit distinct stores — round-robin a second,
+        // third, ... cheapest item per store (same priority order as above)
+        // before ever giving one store more slots than another. Without
+        // this, a store running a storewide campaign across many SKUs in
+        // this category (e.g. "-30% all cat food") could out-supply every
+        // other store and take every remaining slot on cheapest-price alone,
+        // even though other real stores have their own offer here too —
+        // confirmed live on "Sausas kačių maistas" (all 4 slots landing on
+        // one store despite others having active discounts).
+        $byStore = $priced->groupBy('store_id')
+            ->map(fn (Collection $storeDiscounts) => $storeDiscounts->sortBy('discounted_price')->values());
+        $storeOrder = $byStore->keys()
+            ->sort(function ($a, $b) use ($byStore, $priorityRank) {
+                $rankA = $priorityRank[$byStore[$a]->first()->store->name] ?? count($priorityRank);
+                $rankB = $priorityRank[$byStore[$b]->first()->store->name] ?? count($priorityRank);
+
+                return $rankA <=> $rankB;
+            })
+            ->values();
+
         $usedIds = $perStoreCheapest->pluck('id')->all();
+        $combined = $perStoreCheapest;
+        $roundIndex = 1; // index 0 (cheapest per store) is already in $perStoreCheapest
+
+        while ($combined->count() < $limit) {
+            $addedThisRound = false;
+
+            foreach ($storeOrder as $storeId) {
+                if ($combined->count() >= $limit) {
+                    break;
+                }
+
+                $items = $byStore[$storeId];
+                if ($roundIndex >= $items->count()) {
+                    continue;
+                }
+
+                $discount = $items[$roundIndex];
+                $combined = $combined->push($discount);
+                $usedIds[] = $discount->id;
+                $addedThisRound = true;
+            }
+
+            if (! $addedThisRound) {
+                break;
+            }
+
+            $roundIndex++;
+        }
+
+        $combined = $combined->values();
+
+        if ($combined->count() >= $limit) {
+            return $combined;
+        }
+
+        // Still short even after exhausting every store's own active
+        // discounts round-robin — fill the rest cheapest-first regardless of
+        // store, same "don't stop early just because it repeats a store"
+        // decision as before, just as the last resort instead of the first.
         $backfill = $priced
             ->reject(fn (Discount $d) => in_array($d->id, $usedIds, true))
             ->sortBy('discounted_price')
-            ->take($limit - $perStoreCheapest->count());
+            ->take($limit - $combined->count());
 
-        $combined = $perStoreCheapest->concat($backfill)->values();
+        $combined = $combined->concat($backfill)->values();
 
         if ($combined->count() >= $limit) {
             return $combined;
@@ -896,17 +949,14 @@ class KeywordPageService
     }
 
     /**
-     * "Susijusios akcijos" cross-link anchor text — the underlying h1 field
-     * itself is written as "{keyword} akcija" (e.g. "Vynuogės akcija") so it
-     * reads well as a page title, but that word repeated across 8 cards in
-     * one grid (product page and keyword page both) is noise the reader
-     * already gets from the section heading itself. Strips the standalone
-     * word only (not e.g. "reakcija") and leaves h1s that don't have it
-     * (a few, like "Akcija zaislams") untouched rather than mangling them.
+     * "Susijusios akcijos" cross-link anchor text uses grammar_dative (e.g.
+     * "varškei", "kavai") — stored lowercase since it's normally used
+     * mid-sentence, so a standalone chip label needs its first letter
+     * capitalized. mb_* to not mangle multi-byte Lithuanian diacritics.
      */
-    private function stripAkcijaWord(string $label): string
+    private function capitalizeFirst(string $label): string
     {
-        return trim(preg_replace('/\s*\bakcij(?:a|ą|os|ai|oms|ų)\b\s*/ui', ' ', $label));
+        return mb_strtoupper(mb_substr($label, 0, 1)) . mb_substr($label, 1);
     }
 
     private function firstSentence(string $text): string
@@ -1266,11 +1316,12 @@ class KeywordPageService
                 ->whereIn('slug', $slugs)
                 ->get()
                 ->map(fn (KeywordPage $related) => [
-                    // h1 (e.g. "Kava akcija", "Bulvės akcija") over the bare
-                    // title ("Kava", "Bulvės") — the anchor text itself is a
-                    // relevance signal, and "Bulvės" alone doesn't say what
-                    // the link is for the way "Bulvės akcija" does.
-                    'label' => $this->stripAkcijaWord($related->h1 ?: $related->title),
+                    // grammar_dative (e.g. "varškei", "kavai") reads better as
+                    // a standalone chip label than the h1-minus-"akcija"
+                    // approach used before ("Bulvės akcija" -> "Bulvės",
+                    // wrong case for some declensions) — every published page
+                    // has this field populated.
+                    'label' => $this->capitalizeFirst($related->grammar_dative ?: $related->title),
                     'href' => "/akcijos/{$related->slug}",
                     'emoji' => $related->emoji,
                 ])
@@ -1301,9 +1352,9 @@ class KeywordPageService
             })
             ->orderByDesc('matching_offers_count')
             ->limit(8)
-            ->get(['slug', 'title', 'h1', 'emoji'])
+            ->get(['slug', 'title', 'grammar_dative', 'emoji'])
             ->map(fn (KeywordPage $related) => [
-                'label' => $this->stripAkcijaWord($related->h1 ?: $related->title),
+                'label' => $this->capitalizeFirst($related->grammar_dative ?: $related->title),
                 'href' => "/akcijos/{$related->slug}",
                 'emoji' => $related->emoji,
             ])

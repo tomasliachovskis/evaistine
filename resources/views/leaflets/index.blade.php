@@ -9,6 +9,10 @@
             'title' => $group->first()['store_name'],
             'href' => "/leidinys/{$slug}",
             'matching_offers_count' => $group->where('status', '!=', 'expired')->count(),
+            // No fallback for a missing store logo file (renders as a plain
+            // broken image) — only pass a slug through when the file
+            // actually exists, so a store without one just shows plain text.
+            'logo_slug' => file_exists(public_path("assets/stores/{$slug}.svg")) ? $slug : null,
         ])
         ->filter(fn ($chip) => $chip['matching_offers_count'] > 0)
         ->sortByDesc('matching_offers_count')
@@ -27,16 +31,19 @@
 
     <x-breadcrumb-trail :items="$breadcrumbs" :current="$canonical" />
 
-    <div class="base-container mx-auto flex flex-col gap-5 pb-8 pt-3 sm:gap-6 sm:pb-10 sm:pt-5">
+    <div class="base-container mx-auto flex flex-col gap-5 pb-8 sm:gap-6 sm:pb-10">
         <div class="flex flex-col gap-2">
-            <h1 class="text-2xl font-extrabold text-gray-900 sm:text-3xl">Populiariausi akcijų leidiniai</h1>
-            <p class="max-w-3xl text-sm leading-relaxed text-gray-600 sm:text-base">
-                Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje –
-                {{ count($leaflets) }} savaitės katalogai. Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.
+            <h1>Populiariausi akcijų leidiniai</h1>
+            <p class="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-gray-600 sm:text-base">
+                Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje.
+                Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.
             </p>
-            @if ($freshnessLabel)
-                <x-content-freshness :label="$freshnessLabel" />
-            @endif
+            <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 sm:text-sm">
+                <span><b class="font-extrabold text-gray-900">{{ count($leaflets) }}</b> savaitės katalogai</span>
+                @if ($freshnessLabel)
+                    <x-content-freshness :label="$freshnessLabel" />
+                @endif
+            </p>
         </div>
 
         <x-keyword-chips-row :pages="$storeChips" aria-label="Parduotuvės" />

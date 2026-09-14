@@ -127,8 +127,10 @@ body {
         cursor: not-allowed;
     }
 
+    /* Bare <h1>title</h1> is enough everywhere — weight/color live here once
+       instead of every page re-adding its own font-semibold/text-gray-900. */
     h1 {
-        @apply text-[22px] sm:text-[32px] font-bold leading-tight tracking-tight;
+        @apply text-[22px] sm:text-[32px] font-semibold leading-tight tracking-tight text-gray-900;
     }
 
     h2 {
@@ -153,6 +155,15 @@ body {
 
     .section-heading {
         @apply text-base font-bold leading-tight text-gray-900;
+    }
+
+    /* Bigger top-level section heading — same size/weight as the /akcijos
+       category carousels' own h2 (<x-landing-deals-section>), reused
+       wherever another page's main section titles should read at that same
+       size (home page comparison/store/leaflet sections, pigiausios-prekes
+       group headings) instead of each picking its own one-off size. */
+    .section-heading-lg {
+        @apply text-lg font-semibold leading-tight text-gray-900 sm:text-2xl sm:font-extrabold sm:leading-snug;
     }
 
     .section-heading-row {

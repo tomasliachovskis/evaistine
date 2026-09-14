@@ -1262,7 +1262,7 @@ class ProductController extends Controller
                 // "Rask akciją" specifically forced in below — confirmed high-volume
                 // search phrase for this page type, not just a competitor's brand name.
                 return [
-                    'seo_title' => 'Akcijos ir nuolaidos Lietuvoje',
+                    'seo_title' => 'Visos akcijos ir nuolaidos Lietuvoje',
                     'seo_description' => '<div class="space-y-4">
   <h2 class="text-2xl md:text-3xl font-semibold leading-tight mb-3">Akcijos ir nuolaidos Lietuvoje – visi prekybos tinklai vienoje vietoje</h2>
   <p class="leading-relaxed">Norite greitai rasti akciją, o ne vartytis po kiekvieno prekybos tinklo puslapį atskirai? Čia rasite šios savaitės pasiūlymus iš <a href="/akcijos/maxima">Maxima</a>, <a href="/akcijos/lidl">Lidl</a>, <a href="/akcijos/iki">Iki</a>, <a href="/akcijos/rimi">Rimi</a>, <a href="/akcijos/norfa">Norfa</a> ir kitų parduotuvių sudėtus į vieną vietą – patogu palyginti kainas prieš perkant, o ne po to.</p>

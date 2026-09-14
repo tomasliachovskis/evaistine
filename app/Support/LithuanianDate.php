@@ -42,6 +42,6 @@ class LithuanianDate
     // minutes/hours/day-fallback ladder.
     public static function relative(Carbon $date): string
     {
-        return 'atnaujinta ' . $date->format('Y-m-d H:i');
+        return 'Atnaujinta ' . $date->format('Y-m-d H:i');
     }
 }

@@ -20,7 +20,7 @@
 
     <div class="base-container mx-auto flex flex-col gap-6 pb-8 sm:pb-10">
         <div>
-            <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">{{ $store->name }} parduotuvės ir darbo laikas</h1>
+            <h1>{{ $store->name }} parduotuvės ir darbo laikas</h1>
             <p class="mt-1 text-sm text-gray-600">
                 Iš viso {{ $totalCount }} {{ $cityLabel($totalCount) }} Lietuvoje.
                 Pasirinkite miestą, kad pamatytumėte visus adresus ir darbo laiką.

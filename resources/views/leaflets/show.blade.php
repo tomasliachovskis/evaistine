@@ -25,7 +25,6 @@
     <main class="base-container py-6 sm:py-8">
         <div class="space-y-6">
             <x-type-hero
-                eyebrow="Parduotuvė"
                 :icon-src="'/assets/stores/' . $storeSlug . '.svg'"
                 :title="$flyer['title']"
                 :subtitle="$dateRange"

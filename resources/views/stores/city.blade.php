@@ -12,7 +12,7 @@
 
     <div class="base-container mx-auto flex flex-col gap-6 pb-8 sm:pb-10">
         <div>
-            <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">{{ $store->name }} {{ $cityName }}</h1>
+            <h1>{{ $store->name }} {{ $cityName }}</h1>
             <p class="mt-1 text-sm text-gray-600">
                 {{ $locations->count() }} {{ $locations->count() === 1 ? 'parduotuvė' : 'parduotuvės' }} {{ $cityName }} mieste — adresai, darbo laikas ir kontaktai.
             </p>

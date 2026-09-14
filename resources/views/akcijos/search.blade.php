@@ -35,8 +35,8 @@
     {{-- Title block matches discounts-layout.tsx's <h1> treatment used by every
          other listing page, for visual consistency. --}}
     <div class="base-container gap-4 pb-4 pt-4 sm:pb-5">
-        <h1 class="flex min-w-0 flex-wrap items-baseline gap-x-1.5 font-semibold text-gray-900">
-            <span class="text-gray-900">Paieškos rezultatai: „{{ $query }}“</span>
+        <h1 class="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+            <span>Paieškos rezultatai: „{{ $query }}“</span>
             @if ($total > 0)
                 <span class="whitespace-nowrap tabular-nums text-gray-500">({{ number_format($total, 0, ',', ' ') }})</span>
             @endif

@@ -73,7 +73,7 @@
          classes: breadcrumb row, h1 + total-count, sidebar/content two-column
          layout). The filter panel itself lives inside the Livewire component
          below; this file only owns the page chrome around it. --}}
-    <div class="base-container pb-1.5 pt-3">
+    <div class="base-container pb-4 pt-3">
         <nav class="flex flex-wrap items-center gap-1" aria-label="Naršymo kelias">
             @foreach ($breadcrumbs as $index => $crumb)
                 @if ($index > 0)<x-app-icon name="arrow-right" class="size-3.5 text-gray-300" />@endif
@@ -83,13 +83,12 @@
         </nav>
     </div>
 
-    <div class="base-container gap-4 pb-4 pt-2 sm:pb-5 sm:pt-3">
+    <div class="base-container gap-4 pb-4 sm:pb-5">
         @php $total = $pagination['total'] ?? count($deals); @endphp
 
         @if ($isRichHeader)
             <div class="mb-2 flex flex-col gap-4 sm:mb-4">
                 <x-type-hero
-                    :eyebrow="$headerType === 'store' ? 'Parduotuvė' : ($headerType === 'category' ? 'Kategorija' : 'Parduotuvė · Kategorija')"
                     :icon-src="$isStoreHeader ? '/assets/stores/' . $listingMeta['store_slug'] . '.svg' : '/assets/categories/' . $listingMeta['category_slug'] . '.svg'"
                     :title="$pageTitle"
                     :subtitle="$listingMeta['intro']['description'] ?? null"
@@ -160,7 +159,6 @@
                     $heroCategorySlug = $listingMeta['keyword_categories'][0]['slug'] ?? null;
                 @endphp
                 <x-type-hero
-                    eyebrow="Populiari prekė"
                     :title="$pageTitle"
                     :subtitle="$listingMeta['intro']['short_description'] ?? ($listingMeta['intro']['description'] ?? null)"
                     :icon-src="$heroCategorySlug ? '/assets/categories/'.$heroCategorySlug.'.svg' : null"
@@ -193,12 +191,7 @@
                  not new content. --}}
             <div class="mb-2 flex flex-col gap-1 sm:mb-4">
                 <div class="min-w-0">
-                    <h1 class="flex min-w-0 flex-wrap items-baseline gap-x-1.5 font-semibold text-gray-900">
-                        <span class="text-gray-900">{{ $pageTitle }}</span>
-                        @if ($total > 0)
-                            <span class="whitespace-nowrap tabular-nums text-gray-500">({{ number_format($total, 0, ',', ' ') }})</span>
-                        @endif
-                    </h1>
+                    <h1>{{ $pageTitle }}</h1>
                 </div>
                 @if ($hubMeta)
                     <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">

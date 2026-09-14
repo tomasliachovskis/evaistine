@@ -2,7 +2,7 @@
     <x-page-breadcrumbs :items="$breadcrumbs" current="/privatumo-politika" />
 
     <div class="base-container">
-        <div class="flex flex-col gap-4 py-[40px] pb-[56px]">
+        <div class="flex flex-col gap-4 pb-[56px]">
             <h1>Privatumo politika</h1>
             <p class="mb-6 text-sm text-gray-600">Paskutinį kartą atnaujinta: {{ now()->format('Y-m-d') }}</p>
 

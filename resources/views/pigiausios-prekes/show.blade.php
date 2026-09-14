@@ -28,7 +28,7 @@
         @else
             @foreach ($groups as $group)
                 <div class="flex flex-col gap-3">
-                    <h2 class="border-b-2 border-gray-200 pb-2 text-[1.2em] font-semibold text-gray-900">{{ $group['name'] }}</h2>
+                    <h2 class="section-heading-lg">{{ $group['name'] }}</h2>
 
                     <div class="flex flex-col gap-5">
                         {{-- Each item is one keyword page's own cheapest-per-store

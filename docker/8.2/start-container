@@ -15,6 +15,18 @@ fi
 
 chmod -R ugo+rw /.composer
 
+# Xdebug's zend_extension itself (not just its "mode") adds real overhead to
+# every single PHP request — confirmed locally: a plain CPU loop ran ~2.6x
+# slower with the extension loaded even at xdebug.mode=off, because Zend
+# Engine hooks stay active regardless of mode. Setting XDEBUG_MODE=off (the
+# Sail default) only tells Xdebug to do nothing once loaded; it doesn't stop
+# it from loading. Remove the enabling symlink instead so the extension is
+# never loaded at all unless a real debug session is wanted
+# (XDEBUG_MODE=debug or similar via .env/SAIL_XDEBUG_MODE).
+if [ -z "$XDEBUG_MODE" ] || [ "$XDEBUG_MODE" = "off" ]; then
+    rm -f /etc/php/8.2/cli/conf.d/20-xdebug.ini
+fi
+
 if [ $# -gt 0 ]; then
     if [ "$SUPERVISOR_PHP_USER" = "root" ]; then
         exec "$@"

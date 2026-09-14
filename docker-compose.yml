@@ -18,6 +18,24 @@ services:
             LARAVEL_SAIL: 1
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+            # PHP's built-in dev server (php artisan serve, what Sail actually
+            # runs) is single-threaded by default: one slow/looping request
+            # blocks every other request, including your own testing. Since
+            # PHP 7.4, this env var makes it pre-fork worker processes (needs
+            # pcntl, confirmed enabled in this image) so requests actually run
+            # concurrently, without switching to nginx+php-fpm. A single page
+            # (e.g. a keyword listing page) fires 70+ static-asset requests
+            # (store logos, category icons) that all queue behind this same
+            # worker pool even though each is a trivial static file.
+            #
+            # IMPORTANT: Laravel's ServeCommand silently forces this back to
+            # 1 worker unless --no-reload is passed (its auto-restart-on-.env-
+            # change feature is mutually exclusive with pre-forked workers —
+            # see vendor/laravel/framework/.../ServeCommand.php's initialize()).
+            # SUPERVISOR_PHP_COMMAND below adds --no-reload for exactly this
+            # reason; don't drop it or this env var silently does nothing again.
+            PHP_CLI_SERVER_WORKERS: '${PHP_CLI_SERVER_WORKERS:-8}'
+            SUPERVISOR_PHP_COMMAND: '/usr/bin/php -d variables_order=EGPCS /var/www/html/artisan serve --host=0.0.0.0 --port=80 --no-reload'
         volumes:
             - '.:/var/www/html'
         networks:

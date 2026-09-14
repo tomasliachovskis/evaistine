@@ -4,7 +4,7 @@
      base-container spacing, ArrowRight separators, current-page item in
      green/font-medium. $items is the same ['name' => ..., 'href' => ...][]
      shape passed to App\Support\BreadcrumbSchema::build(). --}}
-<div class="base-container pb-1.5 pt-3">
+<div class="base-container pb-4 pt-3">
     <nav class="flex flex-wrap items-center gap-1.5">
         @foreach ($items as $index => $item)
             @if ($index > 0)

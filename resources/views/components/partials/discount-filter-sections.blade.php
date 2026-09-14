@@ -1,4 +1,4 @@
-{{-- Persistent category/store row list — used inside discount-filters'
+{{-- Persistent category/store chip grid — used inside discount-filters'
      centered modal, once per open facet ($facet: 'categories' | 'stores').
      Explicit props (not ambient $sidebarMode/$primarySlug/$secondarySlug)
      so the same partial renders either facet independently on pages that
@@ -10,36 +10,39 @@
      Plain navigation links, not wire:click toggles — confirmed against
      production: selecting a row does a full page nav to the dedicated URL
      and highlights only that one row, it doesn't accumulate a multi-select
-     query-string filter. --}}
+     query-string filter.
+
+     Chip-wrap grid (not a vertical list) — per explicit product decision,
+     matches the wrapping-pill pattern used elsewhere on these pages
+     (keyword-chips-row) instead of a tall single-column list. --}}
+@php
+    $chipClass = fn (bool $active) => 'inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold transition-colors '
+        . ($active ? 'border-green bg-green text-white' : 'border-gray-200 text-gray-700 hover:border-green/40');
+@endphp
 @if ($facet === 'categories')
     <section>
-        <div class="flex flex-col gap-0.5">
+        <div class="flex flex-wrap gap-2">
             @if ($allHref ?? null)
-                <a href="{{ $allHref }}" class="{{ $rowClass($activeSlug === null) }}">
-                    <x-app-icon name="layout-grid" class="h-5 w-5 shrink-0 opacity-70" />
-                    <span class="truncate">Visos</span>
+                <a href="{{ $allHref }}" class="{{ $chipClass($activeSlug === null) }}">
+                    <x-app-icon name="layout-grid" class="size-4 shrink-0 opacity-80" />
+                    <span>Visos</span>
                 </a>
             @endif
             @foreach ($items as $category)
-                <a href="{{ $hrefFor($category['slug']) }}" class="{{ $rowClass($category['slug'] === $activeSlug) }}">
-                    <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="h-5 w-5 shrink-0 opacity-70" onerror="this.style.display='none'">
-                    <span class="truncate">{{ $category['name'] }}</span>
+                <a href="{{ $hrefFor($category['slug']) }}" class="{{ $chipClass($category['slug'] === $activeSlug) }}">
+                    <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-4 shrink-0 opacity-80" onerror="this.style.display='none'">
+                    <span>{{ $category['name'] }}</span>
                 </a>
             @endforeach
         </div>
     </section>
 @else
     <section>
-        <div class="flex flex-col gap-0.5">
+        <div class="flex flex-wrap gap-2">
             @foreach ($items as $store)
-                <a href="{{ $hrefFor($store['slug']) }}" class="{{ $rowClass($store['slug'] === $activeSlug) }}">
-                    {{-- Fixed-width icon column (unlike <x-store-logo>'s auto-width
-                         tiers) so every row's name starts at the same x position
-                         regardless of that store's own logo aspect ratio. --}}
-                    <span class="flex h-8 w-10 shrink-0 items-center justify-center">
-                        <img src="/assets/stores/{{ $store['slug'] }}.svg" alt="" class="max-h-full max-w-full object-contain" onerror="this.style.display='none'">
-                    </span>
-                    <span class="truncate">{{ $store['name'] }}</span>
+                <a href="{{ $hrefFor($store['slug']) }}" class="{{ $chipClass($store['slug'] === $activeSlug) }}">
+                    <x-store-logo :slug="$store['slug']" :name="$store['name']" size="xs" />
+                    <span>{{ $store['name'] }}</span>
                 </a>
             @endforeach
         </div>

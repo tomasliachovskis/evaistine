@@ -76,23 +76,66 @@
                         // name that only reveals the selection once opened.
                         $activeStoreName = $activeStoreSlug ? (collect($allStores)->firstWhere('slug', $activeStoreSlug)['name'] ?? null) : null;
                         $activeCategoryName = $activeCategorySlug ? (collect($allCategories)->firstWhere('slug', $activeCategorySlug)['name'] ?? null) : null;
+
+                        // Collapsed mobile "Filtrai" pill must still say what's
+                        // active instead of a bare "Filtrai" label — same
+                        // reasoning as the desktop pills above, condensed into
+                        // one string. Prefers the URL-fixed facet name (same
+                        // source as the desktop pills); falls back to a count
+                        // when the selection instead came from the checkbox
+                        // list (multi-select, no single name to show).
+                        $mobileFilterParts = [];
+                        if ($activeStoreName) {
+                            $mobileFilterParts[] = $activeStoreName;
+                        } elseif (count($selectedStores) === 1) {
+                            $mobileFilterParts[] = collect($allStores)->firstWhere('slug', $selectedStores[0])['name'] ?? $selectedStores[0];
+                        } elseif (count($selectedStores) > 1) {
+                            $mobileFilterParts[] = count($selectedStores) . ' parduotuvės';
+                        }
+                        if ($activeCategoryName) {
+                            $mobileFilterParts[] = $activeCategoryName;
+                        } elseif (count($selectedCategories) === 1) {
+                            $mobileFilterParts[] = collect($allCategories)->firstWhere('slug', $selectedCategories[0])['name'] ?? $selectedCategories[0];
+                        } elseif (count($selectedCategories) > 1) {
+                            $mobileFilterParts[] = count($selectedCategories) . ' kategorijos';
+                        }
+                        $mobileFilterLabel = count($mobileFilterParts) > 0 ? implode(', ', $mobileFilterParts) : 'Filtrai';
                     @endphp
+                    {{-- Desktop (sm+): each facet gets its own inline pill,
+                         sized to its own content — no wrapping problem here,
+                         there's room. --}}
                     @if ($showStoreFilter)
-                        {{-- Both filter buttons go full-width on mobile (stacking
-                             Kategorija below Parduotuvė instead of the two fighting
-                             for one row's width and getting clipped/overlapped by
-                             the sort button) — sm+ reverts to inline pills. --}}
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="inline-flex h-full w-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeStoreName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:w-auto">
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeStoreName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
                             <x-app-icon name="store" class="size-4 shrink-0" />
                             <span class="truncate">{{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}{{ count($selectedStores) > 0 ? ' (' . count($selectedStores) . ')' : '' }}</span>
                             <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'store' ? 'rotate-180' : ''" />
                         </button>
                     @endif
                     @if ($showCategoryFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="inline-flex h-full w-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeCategoryName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:w-auto">
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeCategoryName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
                             <x-app-icon name="layout-grid" class="size-4 shrink-0" />
                             <span class="truncate">{{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}{{ count($selectedCategories) > 0 ? ' (' . count($selectedCategories) . ')' : '' }}</span>
                             <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'category' ? 'rotate-180' : ''" />
+                        </button>
+                    @endif
+                    {{-- Mobile: a single "Filtrai" pill combining both facets
+                         into one sheet instead of two full-width buttons that
+                         wrap into their own 2-line stack and collide with the
+                         sort button — always stays on one row (min-w-0 +
+                         truncate lets the label itself shrink/ellipsize
+                         instead of the row wrapping) regardless of how long
+                         the active store/category name is. Shows
+                         $mobileFilterLabel (built above) instead of a bare
+                         "Filtrai" so the active selection is still visible
+                         when the sheet is collapsed. --}}
+                    @if ($showStoreFilter || $showCategoryFilter)
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'combined' ? null : 'combined')" class="inline-flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeCount > 0 ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:hidden">
+                            <x-app-icon name="filter" class="size-4 shrink-0" />
+                            <span class="truncate">{{ $mobileFilterLabel }}</span>
+                            @if ($activeCount > 0)
+                                <span class="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-green text-[11px] font-bold text-white">{{ $activeCount }}</span>
+                            @endif
+                            <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'combined' ? 'rotate-180' : ''" />
                         </button>
                     @endif
                     <div class="hidden min-w-0 flex-wrap gap-2 sm:flex">
@@ -166,6 +209,39 @@
                             'allHref' => $categoryAllHref,
                             'rowClass' => $rowClass,
                         ])
+                    </div>
+                </div>
+            @endif
+            {{-- Mobile-only "Filtrai" sheet — both facets stacked, each under
+                 its own label so it's still clear which section is which. --}}
+            @if ($showStoreFilter || $showCategoryFilter)
+                <div x-show="$wire.openPanel === 'combined'" x-cloak class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:hidden" @click.self="$wire.openPanel = null">
+                    <div class="flex max-h-[82vh] w-full flex-col gap-4 overflow-y-auto rounded-t-2xl bg-white p-4">
+                        @if ($showStoreFilter)
+                            <section>
+                                <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Parduotuvė</div>
+                                @include('components.partials.discount-filter-sections', [
+                                    'facet' => 'stores',
+                                    'items' => $allStores,
+                                    'activeSlug' => $activeStoreSlug,
+                                    'hrefFor' => $storeHrefFor,
+                                    'rowClass' => $rowClass,
+                                ])
+                            </section>
+                        @endif
+                        @if ($showCategoryFilter)
+                            <section>
+                                <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
+                                @include('components.partials.discount-filter-sections', [
+                                    'facet' => 'categories',
+                                    'items' => $allCategories,
+                                    'activeSlug' => $activeCategorySlug,
+                                    'hrefFor' => $categoryHrefFor,
+                                    'allHref' => $categoryAllHref,
+                                    'rowClass' => $rowClass,
+                                ])
+                            </section>
+                        @endif
                     </div>
                 </div>
             @endif
