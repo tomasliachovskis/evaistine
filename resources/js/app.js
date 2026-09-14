@@ -58,10 +58,25 @@ document.addEventListener('alpine:init', () => {
         total: config.total,
         loading: false,
         observer: null,
-        // Infinite scroll: replaces the old "Rodyti daugiau" click button.
-        // rootMargin loads a page ahead of the sentinel actually entering
-        // the viewport, so content appears before the user hits the bottom
-        // rather than after a visible pause.
+        // Absolute, never-reset lifetime cap on loadMore() calls per page
+        // view — NOT reset per observer firing (an earlier attempt at this
+        // reset the counter every time the observer itself fired, which does
+        // nothing if the observer keeps re-firing on its own, e.g. from an
+        // unstable/thrashing layout where the sentinel's on-screen position
+        // never settles). Found this session: a real card-height bug can
+        // make the sentinel never genuinely leave view, and previously that
+        // meant this kept fetching pages forever ("the loader just spins").
+        // 20 covers every realistic real page (most listings are well under
+        // 10 pages); past that this permanently stops and the user would
+        // need to reload — better than a truly infinite fetch loop.
+        loadMoreCallCount: 0,
+        // Infinite scroll re-enabled — the root cause (the main listing
+        // grid's CSS Grid row-track-sizing bug on real mobile Safari, which
+        // compounded with this into runaway fetch loops) was fixed by
+        // switching that grid to flex-wrap (see discount-filters.blade.php).
+        // rootMargin '0px' (not the earlier '400px 0px') only fires once the
+        // sentinel has genuinely scrolled into view. loadMoreCallCount above
+        // is still a hard backstop against any future runaway loop.
         init() {
             if (this.page >= this.lastPage || !this.$refs.sentinel) {
                 return;
@@ -71,7 +86,7 @@ document.addEventListener('alpine:init', () => {
                 if (entries[0]?.isIntersecting) {
                     this.loadMore();
                 }
-            }, { rootMargin: '400px 0px' });
+            }, { rootMargin: '0px' });
             this.observer.observe(this.$refs.sentinel);
         },
         async loadMore() {
@@ -81,6 +96,13 @@ document.addEventListener('alpine:init', () => {
                 }
                 return;
             }
+
+            if (this.loadMoreCallCount >= 20) {
+                console.error('listingLoadMore: stopped after 20 loadMore() calls — sentinel likely never left view (unstable layout).');
+                this.observer?.disconnect();
+                return;
+            }
+            this.loadMoreCallCount++;
 
             this.loading = true;
 
@@ -142,10 +164,12 @@ document.addEventListener('alpine:init', () => {
                     // viewport, small per-page count) — IntersectionObserver
                     // only fires on a visibility CHANGE, so without this
                     // check a still-visible sentinel would never trigger the
-                    // next load. rootMargin's 400px already covers "about to
-                    // scroll into view"; this covers "never left view".
+                    // next load. Matches init()'s 0px rootMargin: only
+                    // re-chains if the sentinel is still genuinely on-screen,
+                    // not pre-emptively. loadMoreCallCount above is the real
+                    // backstop against this recursing forever.
                     const rect = this.$refs.sentinel.getBoundingClientRect();
-                    if (rect.top < window.innerHeight + 400) {
+                    if (rect.top < window.innerHeight) {
                         this.loadMore();
                     }
                 }

@@ -5,8 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Api\ProductController;
 use App\Models\Store;
 use App\Services\HomePageMetaService;
-use App\Services\HomePageSectionsService;
-use App\Services\PriceIndexService;
+use App\Services\KeywordPageService;
 use App\Services\StoresPageMetaService;
 use App\Support\CacheVersion;
 use App\Support\PageHtmlCache;
@@ -20,18 +19,13 @@ use Illuminate\Support\Facades\Cache;
  */
 class NewHomeController extends Controller
 {
-    // Manually curated POOLS per explicit product decision — the homepage
-    // always shows exactly two blocks (food / non-food), never an automatic
-    // "first N categories" pick, but which 2 items from each pool actually
-    // render is randomized per request (see buildComparisonBlock below) so
-    // the same two items aren't stuck showing on every load. Rotate this
-    // pool by hand occasionally; each slug must exist in
-    // PriceIndexService::CANDIDATE_ITEM_SLUGS or it's silently dropped (no
-    // match to show).
-    private const HOMEPAGE_FOOD_SLUGS = ['aliejus', 'makaronai', 'ryziai', 'miltai', 'cukrus', 'kava'];
-
-    private const HOMEPAGE_NONFOOD_SLUGS = ['skalbimo-milteliai', 'indaploviu-tabletes', 'dantu-pasta', 'sampunas', 'indu-ploviklis', 'muilas'];
-
+    // The homepage always shows exactly two blocks (food / non-food), never
+    // an automatic "first N categories" pick — but which 2 keyword pages
+    // from each candidate pool actually render is randomized per request
+    // (see the random pick below) so the same two items aren't stuck
+    // showing on every load. Candidates themselves come from
+    // KeywordPageService::topCandidatesByCategoryGroup() (ranked by each
+    // page's own matching_offers_count), not a hand-picked slug list.
     private const HOMEPAGE_ITEMS_PER_BLOCK = 2;
 
     // "Naujausi akcijų leidiniai" is one row (grid-cols-4 at sm+) — one
@@ -40,20 +34,13 @@ class NewHomeController extends Controller
     private const HOMEPAGE_LEAFLET_STORE_PRIORITY = ['maxima', 'norfa', 'lidl', 'rimi', 'iki'];
 
     public function __construct(
-        private HomePageSectionsService $sectionsService,
         private HomePageMetaService $metaService,
         private StoresPageMetaService $storesMetaService,
-        private PriceIndexService $priceIndexService,
+        private KeywordPageService $keywordPageService,
     ) {}
 
     public function index(Request $request)
     {
-        $sections = Cache::remember(
-            'new_home_sections_'.CacheVersion::suffix(['discounts']),
-            1800,
-            fn () => $this->sectionsService->build()
-        );
-
         $pageMeta = Cache::remember(
             'new_home_meta_'.CacheVersion::suffix(['discounts']),
             1800,
@@ -73,47 +60,33 @@ class NewHomeController extends Controller
         );
         $stores = collect(StoreListPriority::sort($stores))->take(5)->values()->all();
 
-        // Reuses /pigiausios-prekes' own live comparison, but two fixed
-        // blocks (food / non-food) instead of "first 2 categories, whichever
-        // those happen to be" — each block's items are hand-picked (see
-        // HOMEPAGE_*_SLUGS above), only each store's single cheapest match
-        // (not the "+N kiti" expansion) — a teaser, not a duplicate of the
-        // full page.
-        // getPageData() reads pre-warmed curated_deals rows (see
-        // PriceIndexService::refreshPersistedIndex(), run from
-        // DealPoolRefresher on the same schedule as every other curated_deals
-        // scope) instead of computing ~34 items' worth of queries live —
-        // that used to be the slowest part of loading this page (measured up
-        // to 37s cold). Still ~10 queries to assemble (curated_deals ->
-        // discounts -> products -> categories -> stores), and this dev DB is
-        // the real shared remote instance (see CLAUDE.md), so each round
-        // trip costs real network latency — cached here too so a warm
-        // request doesn't re-pay ~1s of that on every single load. Random
-        // pool selection below still runs fresh every request on top of
-        // whichever result (fresh or cached) it gets, so randomization isn't
-        // lost even on a cache hit.
-        $priceIndexData = Cache::remember(
-            'price_index_data_'.CacheVersion::suffix(['discounts']),
-            1800,
-            fn () => $this->priceIndexService->getPageData()
-        );
-        $itemsBySlug = collect($priceIndexData['items'] ?? [])->keyBy('key');
-        $buildComparisonBlock = function (string $name, array $slugPool) use ($itemsBySlug) {
-            // Random 2 of the pool that actually have a live match right now
-            // (not just the pool's first 2) — a fixed slice always showed
-            // the exact same two items on every load.
-            $items = collect($slugPool)
-                ->map(fn ($slug) => $itemsBySlug->get($slug))
-                ->filter()
+        // Each block's items are real keyword pages now (not a GenericProduct
+        // basket) — topCandidatesByCategoryGroup() ranks by each page's own
+        // matching_offers_count and is itself cached, so only the random-2
+        // pick and the ~4 buildHomeTeaser() calls it triggers run fresh per
+        // request; buildHomeTeaser() is cached per keyword page too, so a
+        // repeat pick across requests doesn't recompute its comparison.
+        $candidates = $this->keywordPageService->topCandidatesByCategoryGroup();
+        $buildComparisonBlock = function (string $name, array $pages) {
+            // Random 2 of the pool that still have a live match right now
+            // (not just the pool's first 2 by offer count) — a fixed slice
+            // always showed the exact same two items on every load. Shuffle
+            // + a small buffer before calling buildHomeTeaser() (instead of
+            // mapping the whole candidate pool) keeps this to a handful of
+            // calls even though the pool itself can hold up to 20 pages.
+            $items = collect($pages)
                 ->shuffle()
+                ->take(self::HOMEPAGE_ITEMS_PER_BLOCK + 2)
+                ->map(fn ($page) => $this->keywordPageService->buildHomeTeaser($page, 5))
+                ->filter()
                 ->take(self::HOMEPAGE_ITEMS_PER_BLOCK)
                 ->values();
 
             return ['name' => $name, 'total_items' => $items->count(), 'items' => $items->all()];
         };
         $comparisonCategories = collect([
-            $buildComparisonBlock('Maisto prekių kainų palyginimas', self::HOMEPAGE_FOOD_SLUGS),
-            $buildComparisonBlock('Ne maisto prekių kainų palyginimas', self::HOMEPAGE_NONFOOD_SLUGS),
+            $buildComparisonBlock('Maisto prekių kainų palyginimas', $candidates['food']),
+            $buildComparisonBlock('Ne maisto prekių kainų palyginimas', $candidates['non_food']),
         ])->filter(fn (array $block) => !empty($block['items']))->values()->all();
 
         // Same source/filtering as HomeController — only genuinely current
@@ -146,7 +119,6 @@ class NewHomeController extends Controller
             'stats' => $pageMeta['stats'],
             'stores' => $stores,
             'comparisonCategories' => $comparisonCategories,
-            'deals' => array_slice($sections['best_pool'], 0, 8),
             'latestLeaflets' => $latestLeaflets,
         ]));
     }

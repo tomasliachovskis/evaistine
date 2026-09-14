@@ -13,11 +13,7 @@
     // Everything below is keyword-page-only content the backend
     // (KeywordPageService::buildListingMeta()) already computes but the view
     // never rendered — verified against production's real section order:
-    // related searches → about → tips → FAQ. The old separate "store
-    // comparison" section is gone — those same cheapest-per-store deals now
-    // lead the main grid instead (see :leading-deals on discount-filters
-    // below), per explicit product decision.
-    $leadingDeals = $isKeyword ? ($listingMeta['sections']['category_stats']['store_comparison'] ?? []) : [];
+    // related searches → about → tips → FAQ.
     // "Dažniausiai ieškoma" (keyword_examples + keyword_store_keywords chips)
     // removed per explicit product decision — every one of those chips
     // linked (rel=nofollow) to /akcijos/paieska/{term}, itself
@@ -97,6 +93,7 @@
                     :icon-src="$isStoreHeader ? '/assets/stores/' . $listingMeta['store_slug'] . '.svg' : '/assets/categories/' . $listingMeta['category_slug'] . '.svg'"
                     :title="$pageTitle"
                     :subtitle="$listingMeta['intro']['description'] ?? null"
+                    :hide-subtitle-on-mobile="true"
                 >
                     @if ($headerType === 'store')
                         @if ($total > 0)
@@ -167,6 +164,7 @@
                     :title="$pageTitle"
                     :subtitle="$listingMeta['intro']['short_description'] ?? ($listingMeta['intro']['description'] ?? null)"
                     :icon-src="$heroCategorySlug ? '/assets/categories/'.$heroCategorySlug.'.svg' : null"
+                    :hide-subtitle-on-mobile="true"
                 >
                     @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
                         @if (!empty($stat['label_first']))
@@ -274,7 +272,6 @@
                 :active-store-slug="$activeStoreSlug"
                 :active-category-slug="$activeCategorySlug"
                 :show-filters="$headerType === 'category' || $headerType === 'store_category' || $isKeyword"
-                :leading-deals="$leadingDeals"
                 :key="'filters-'.$basePath"
             />
         @endif

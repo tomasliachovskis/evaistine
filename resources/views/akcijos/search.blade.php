@@ -56,7 +56,7 @@
                             @foreach ($allStores as $storeOption)
                                 <a href="{{ $storeHref($storeOption['slug']) }}" class="{{ $rowClass($selectedStore === $storeOption['slug']) }}">
                                     <span class="flex h-6 w-8 shrink-0 items-center justify-center">
-                                        <img src="/assets/stores/{{ $storeOption['slug'] }}.svg?v=2" alt="" class="max-h-full max-w-full object-contain" onerror="this.style.display='none'">
+                                        <img src="/assets/stores/{{ $storeOption['slug'] }}.svg" alt="" class="max-h-full max-w-full object-contain" onerror="this.style.display='none'">
                                     </span>
                                     <span class="truncate">{{ $storeOption['name'] }}</span>
                                 </a>

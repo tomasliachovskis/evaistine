@@ -56,14 +56,6 @@ class DiscountFilters extends Component
     #[Locked]
     public bool $showFilters = true;
 
-    // Keyword pages only: the cheapest matching discount per store, meant to
-    // lead the grid (not a separate "compare" section) — only makes sense
-    // under the default popularity sort and only on the grid's first page,
-    // never merged permanently into $deals so it naturally drops out the
-    // moment a different sort/filter/page is requested.
-    #[Locked]
-    public array $leadingDeals = [];
-
     #[Url(as: 'order', except: 'popular')]
     public string $order = 'popular';
 
@@ -104,7 +96,7 @@ class DiscountFilters extends Component
 
     public bool $showCarousels = false;
 
-    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, string $carouselHtml = '', bool $showCarousels = false, bool $showStoreFilter = false, bool $showCategoryFilter = false, ?string $activeStoreSlug = null, ?string $activeCategorySlug = null, bool $showFilters = true, array $leadingDeals = []): void
+    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, string $carouselHtml = '', bool $showCarousels = false, bool $showStoreFilter = false, bool $showCategoryFilter = false, ?string $activeStoreSlug = null, ?string $activeCategorySlug = null, bool $showFilters = true): void
     {
         $this->mode = $mode;
         $this->primarySlug = $primarySlug;
@@ -114,7 +106,6 @@ class DiscountFilters extends Component
         $this->activeStoreSlug = $activeStoreSlug;
         $this->activeCategorySlug = $activeCategorySlug;
         $this->showFilters = $showFilters;
-        $this->leadingDeals = $leadingDeals;
         $this->deals = $initialDeals;
         $this->pagination = $initialPagination;
         $this->carouselHtml = $carouselHtml;

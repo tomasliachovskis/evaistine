@@ -1,4 +1,4 @@
-@props(['deal', 'source' => 'grid', 'contextStoreSlug' => null, 'inCarousel' => false, 'featured' => false])
+@props(['deal', 'source' => 'grid', 'contextStoreSlug' => null, 'inCarousel' => false, 'featured' => false, 'stretch' => true])
 
 @php
     $product = $deal['product'];
@@ -12,7 +12,23 @@
     $originalPrice = (float) ($deal['original_price'] ?? 0);
     $showOriginal = $originalPrice > 0 && $originalPrice !== $discountPrice && $discountPrice > 0;
     $discountPercent = $deal['discount_percent'] ?? null;
-    $infoLabel = trim($deal['info'] ?? '') ?: null;
+    // Real normalized unit price (discounts.unit_price/unit_price_basis —
+    // Rimi/Lidl scrape it directly, others get it parsed from the product
+    // name) instead of the raw scraped `info` field, which is free text and
+    // just as often something unrelated ("5 rūšys", a condition note) as an
+    // actual €/kg figure.
+    $unitPrice = $deal['unit_price'] ?? null;
+    $unitPriceBasis = $deal['unit_price_basis'] ?? null;
+    $unitPriceLabel = null;
+    if ($unitPrice !== null && $unitPriceBasis) {
+        $unitSuffix = match ($unitPriceBasis) {
+            'kg' => '€/kg',
+            'l' => '€/l',
+            '10vnt' => '€/10 vnt.',
+            default => '€/' . $unitPriceBasis,
+        };
+        $unitPriceLabel = number_format((float) $unitPrice, 2, ',', ' ') . ' ' . $unitSuffix;
+    }
 
     $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €';
 
@@ -26,7 +42,16 @@
     // and no-price-fallback badge color) as a border/tint instead of the
     // plain gray-200/gray-50 shell, so the standout card doesn't introduce a
     // second accent color.
-    $shellClass = 'group relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border p-2.5 transition-colors sm:p-3 '
+    // stretch=false (only passed by the main listing grid, which uses
+    // items-start instead of the grid default of stretch — see that grid's
+    // own comment) drops h-full: a grid item with an explicit height:100%
+    // fills the row's auto-computed height regardless of align-items,
+    // which silently defeats items-start and reintroduces the exact
+    // stretch-vs-aspect-ratio circular dependency items-start exists to
+    // avoid. Every other caller (carousels, homepage) still stretches as
+    // before.
+    $shellClass = 'group relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border p-2.5 transition-colors sm:p-3 '
+        . ($stretch ? 'h-full ' : '')
         . ($featured
             ? 'border-2 border-[#ffdb4d] bg-[#fffbeb] hover:border-[#f0c400]'
             : 'border-gray-200 bg-gray-50 hover:border-gray-300');
@@ -54,9 +79,15 @@
         data-ga-source="{{ $source }}"
     >
         <div class="relative shrink-0">
-            <div class="relative aspect-square w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
+            {{-- Bare photo box (no border/bg) per product decision — the
+                 white-bg/border reintroduction tried earlier this session
+                 (suspecting it fixed a real-device height-instability bug)
+                 turned out unrelated; reverted back to bare. onerror still
+                 hides a 404'd <img> instead of the browser's native broken-
+                 image icon. --}}
+            <div class="relative aspect-square w-full overflow-hidden rounded-lg">
                 @if ($product['image_url'])
-                    <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" loading="lazy" class="h-full w-full object-contain p-3 sm:p-3.5">
+                    <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" loading="lazy" class="h-full w-full object-contain p-3 sm:p-3.5" onerror="this.style.display='none'">
                 @endif
                 @if ($discountPrice > 0)
                     <div class="absolute bottom-2 left-2 z-10 sm:bottom-2.5 sm:left-2.5">
@@ -91,12 +122,15 @@
             </div>
 
             <div class="mt-1 min-h-[1.125rem] sm:min-h-[1.25rem]">
-                @if ($infoLabel)
-                    <p class="line-clamp-2 text-xs leading-snug text-gray-500">{{ $infoLabel }}</p>
+                @if ($unitPriceLabel)
+                    <p class="line-clamp-2 text-xs leading-snug text-gray-500">{{ $unitPriceLabel }}</p>
                 @endif
             </div>
 
-            <p class="{{ ($discountPrice > 0 || $infoLabel) ? 'mt-1.5' : '' }} line-clamp-2 max-h-[2.45rem] min-h-[2.45rem] min-w-0 overflow-hidden text-sm font-normal leading-snug text-gray-900">
+            {{-- 3 lines on mobile (more of the product name visible without
+                 opening the card), back to 2 at sm+ where cards are smaller
+                 relative to screen width and 3 lines would crowd the row. --}}
+            <p class="{{ ($discountPrice > 0 || $unitPriceLabel) ? 'mt-1.5' : '' }} line-clamp-3 max-h-[3.675rem] min-h-[3.675rem] min-w-0 overflow-hidden text-sm font-normal leading-snug text-gray-900 sm:line-clamp-2 sm:max-h-[2.45rem] sm:min-h-[2.45rem]">
                 {{ $product['name'] }}
             </p>
 

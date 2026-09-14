@@ -39,12 +39,18 @@
             <div class="hidden min-w-0 flex-1 lg:ml-4 lg:block">
                 <livewire:site-search mode="desktop" />
             </div>
-            <div class="flex items-center lg:hidden">
-                <livewire:site-search mode="mobile" />
-            </div>
 
-            <div class="ml-auto flex shrink-0 items-center gap-4">
-                <div class="relative" @click.outside="accountOpen = false">
+            <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-4">
+                {{-- Grouped with the other icon buttons (favorites, menu)
+                     on the right, next to the heart, instead of sitting
+                     alone right after the logo. --}}
+                <div class="flex items-center lg:hidden">
+                    <livewire:site-search mode="mobile" />
+                </div>
+
+                {{-- Hidden on mobile per explicit product decision — login/
+                     account still reachable via the mobile slide-out menu. --}}
+                <div class="relative hidden sm:block" @click.outside="accountOpen = false">
                     @auth
                         <button type="button" @click="accountOpen = !accountOpen" class="{{ $headerIconClass }}" aria-label="Paskyra">
                             <x-app-icon name="user" class="size-5" />

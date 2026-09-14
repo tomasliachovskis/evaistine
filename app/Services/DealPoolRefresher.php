@@ -71,7 +71,7 @@ class DealPoolRefresher
 
     public function __construct(
         private HomeDealPoolService $pool,
-        private PriceIndexService $priceIndex,
+        private KeywordPageService $keywordPageService,
     ) {
     }
 
@@ -83,6 +83,9 @@ class DealPoolRefresher
      * reads from those same global_category rows instead of running its own
      * ~19s keyword-page fan-out — the home page pools too, all cheap enough
      * to run on every batch instead of needing a separate schedule.
+     * refreshHomeTeasers() is the one genuinely expensive step left here
+     * (Meilisearch per candidate keyword page) — that cost belongs on this
+     * write path, not on every /pigiausios-prekes or homepage visit.
      *
      * @param  list<int>  $storeIds
      */
@@ -94,7 +97,7 @@ class DealPoolRefresher
 
         $this->refreshGlobalCategoryBuckets();
         $this->refreshHomePools();
-        $this->priceIndex->refreshPersistedIndex();
+        $this->keywordPageService->refreshHomeTeasers();
     }
 
     public function refreshForStore(int $storeId): void

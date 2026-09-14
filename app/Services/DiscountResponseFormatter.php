@@ -94,6 +94,8 @@ class DiscountResponseFormatter
             'discount_percent' => $discount->discount_percent,
             'condition' => $discount->condition,
             'info' => $discount->info,
+            'unit_price' => $discount->unit_price !== null ? (float) $discount->unit_price : null,
+            'unit_price_basis' => $discount->unit_price_basis,
             'card' => $discount->card,
             'from_date' => $discount->start_at ? $discount->start_at->format('Y-m-d') : null,
             'to_date' => $discount->end_at ? $discount->end_at->format('Y-m-d') : null,
@@ -147,6 +149,8 @@ class DiscountResponseFormatter
             'discount_percent' => $discount->discount_percent !== null ? (float) $discount->discount_percent : null,
             'condition' => $discount->condition,
             'info' => $discount->info,
+            'unit_price' => $discount->unit_price !== null ? (float) $discount->unit_price : null,
+            'unit_price_basis' => $discount->unit_price_basis,
             'card' => $discount->card,
             'valid_date' => ($discount->start_at ? $discount->start_at->format('Y-m-d') : '') . ' - ' . ($discount->end_at ? $discount->end_at->format('Y-m-d') : ''),
             'from_date' => $discount->start_at ? $discount->start_at->format('Y-m-d') : null,
@@ -155,9 +159,14 @@ class DiscountResponseFormatter
             // deal card shows one logo per store when there's more than one,
             // not just this one discount's own store. $productDiscounts is
             // already fetched above for offer_count/min_price, so this is free.
-            'offers' => $productDiscounts->map(function ($offer) {
-                return $this->formatOfferItem($offer);
-            }),
+            // Falls back to this single $discount itself when the product
+            // has no CURRENT discount at all (e.g. a DiscountHistory-sourced
+            // last-resort fallback item — see KeywordPageService::
+            // buildHomeTeaser()) — otherwise the card would show no store
+            // logo whatsoever.
+            'offers' => $productDiscounts->isNotEmpty()
+                ? $productDiscounts->map(fn ($offer) => $this->formatOfferItem($offer))
+                : collect([$this->formatOfferItem($discount)]),
             'offer_count' => $offerCount,
             'min_price' => (float) $minPrice,
             'home_keyword_slug' => $discount->getAttribute('home_keyword_slug'),
@@ -261,6 +270,19 @@ class DiscountResponseFormatter
         // old path, so `assets/product` is symlinked to the same files too
         // (see config/filesystems.php's `links`) and this keeps emitting
         // the old path rather than the new one.
-        return '/assets/product/' . $filename;
+        $relativePath = '/assets/product/' . $filename;
+
+        // Dev-only: these flyer-extracted files only actually exist on the
+        // real production storage, not in this local checkout — a relative
+        // path 404s here (confirmed on a real phone testing against this
+        // dev server) regardless of host, since there's no local copy to
+        // serve. Point at the live site instead so local/dev browsing shows
+        // the real image; production keeps emitting the relative path as
+        // above.
+        if (! app()->environment('production')) {
+            return 'https://superakcijos.lt' . $relativePath;
+        }
+
+        return $relativePath;
     }
 }

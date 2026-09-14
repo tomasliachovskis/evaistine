@@ -1,4 +1,4 @@
-@props(['eyebrow' => null, 'iconSrc' => null, 'title', 'subtitle' => null])
+@props(['eyebrow' => null, 'iconSrc' => null, 'title', 'subtitle' => null, 'hideSubtitleOnMobile' => false])
 
 {{-- Shared hero band (matches the mockup's .type-hero) used on every store/
      category/leidinys page: green-tinted rounded card, icon box, eyebrow,
@@ -28,10 +28,16 @@
             </div>
         </div>
         @if ($subtitle)
-            <p class="mt-2 max-w-[60ch] text-sm leading-relaxed text-gray-600 sm:text-base">{{ $subtitle }}</p>
+            <p class="mt-2 max-w-[60ch] text-sm leading-relaxed text-gray-600 sm:text-base {{ $hideSubtitleOnMobile ? 'hidden sm:block' : '' }}">{{ $subtitle }}</p>
         @endif
         @if ($slot->isNotEmpty())
-            <p class="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-600 sm:gap-x-4 sm:text-sm">
+            {{-- Vertical-bar separator before every stat but the first —
+                 sm+ only. On mobile these items wrap to their own line
+                 (narrower viewport, same gap-y-1 row spacing as before), and
+                 a leading "|" on each wrapped line reads as a stray bullet
+                 rather than a separator, so it's dropped there entirely
+                 instead of trying to hide it conditionally per line. --}}
+            <p class="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-600 sm:gap-x-4 sm:text-sm sm:[&>*:not(:first-child)]:before:mr-2 sm:[&>*:not(:first-child)]:before:text-gray-300 sm:[&>*:not(:first-child)]:before:content-['|']">
                 {{ $slot }}
             </p>
         @endif

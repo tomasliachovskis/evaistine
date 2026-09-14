@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\PriceIndexService;
+use App\Services\KeywordPageService;
 use App\Support\BreadcrumbSchema;
-use App\Support\CacheVersion;
 use App\Support\CanonicalUrl;
 use App\Support\ContentFreshness;
 use App\Support\LithuanianDate;
-use Illuminate\Support\Facades\Cache;
 
 class CheapestProductsController extends Controller
 {
-    public function index(PriceIndexService $service)
+    // Fuller list than the homepage teaser (which only ever shows 2 random
+    // picks per block) — every candidate keyword page gets its own teaser
+    // here, same buildHomeTeaser()/topCandidatesByCategoryGroup() the
+    // homepage uses, just not randomized down to 2.
+    private const ITEMS_PER_GROUP = 20;
+
+    public function index(KeywordPageService $keywordPageService)
     {
         $path = '/pigiausios-prekes';
 
@@ -20,6 +24,20 @@ class CheapestProductsController extends Controller
             ['name' => 'Akcijos', 'href' => '/'],
             ['name' => 'Pigiausios prekės', 'href' => $path],
         ];
+
+        $candidates = $keywordPageService->topCandidatesByCategoryGroup(self::ITEMS_PER_GROUP);
+        $buildGroup = fn (string $name, array $pages) => [
+            'name' => $name,
+            'items' => collect($pages)
+                ->map(fn ($page) => $keywordPageService->buildHomeTeaser($page, 5))
+                ->filter()
+                ->values()
+                ->all(),
+        ];
+        $groups = collect([
+            $buildGroup('Maisto prekių kainų palyginimas', $candidates['food']),
+            $buildGroup('Ne maisto prekių kainų palyginimas', $candidates['non_food']),
+        ])->filter(fn (array $group) => !empty($group['items']))->values()->all();
 
         return view('pigiausios-prekes.show', [
             'title' => 'Pigiausios prekės parduotuvėse – SuperAkcijos.lt',
@@ -31,18 +49,7 @@ class CheapestProductsController extends Controller
             'robots' => 'noindex, nofollow, noarchive, nosnippet',
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
-            // Reads pre-warmed curated_deals rows — see
-            // PriceIndexService::refreshPersistedIndex()/DealPoolRefresher.
-            // Same cache key as NewHomeController's homepage teaser (same
-            // underlying data) — this dev DB is the real shared remote
-            // instance, so even this cheap indexed read still costs ~10
-            // network round trips; caching the assembled result avoids
-            // paying that twice.
-            'data' => Cache::remember(
-                'price_index_data_'.CacheVersion::suffix(['discounts']),
-                1800,
-                fn () => $service->getPageData()
-            ),
+            'groups' => $groups,
             'freshnessLabel' => LithuanianDate::relative(ContentFreshness::forAll()),
         ]);
     }

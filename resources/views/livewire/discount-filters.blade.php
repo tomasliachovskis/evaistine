@@ -58,8 +58,16 @@
      needing its own matching bottom margin. --}}
 <div class="mt-6 flex w-full flex-col max-sm:gap-1">
         @if ($showFilters)
-            <div class="mb-4 flex w-full items-center justify-between gap-2 rounded-2xl bg-[#e8e8e8] px-4 min-h-[40px] sm:mb-[17px]" x-data="{ sortOpen: false }" @click.outside="sortOpen = false">
-                <div class="flex min-w-0 flex-1 items-center gap-2">
+            {{-- items-start (not items-center): on mobile the filter buttons
+                 wrap into their own 2-line stack (see the comment below),
+                 making this row taller than the sort button — items-center
+                 was floating the sort button vertically mid-way between the
+                 two stacked filter rows, disconnected from either. Aligning
+                 to the top instead keeps it visually paired with the first
+                 filter row, and sm:items-center below restores centering
+                 once the filters go back to one line at sm+. --}}
+            <div class="mb-4 flex w-full flex-wrap items-start justify-between gap-x-2 gap-y-1 rounded-2xl bg-[#e8e8e8] px-4 py-1.5 min-h-[40px] sm:flex-nowrap sm:items-center sm:py-0 sm:mb-[17px]" x-data="{ sortOpen: false }" @click.outside="sortOpen = false">
+                <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                     @php
                         // The button itself must show whichever store/
                         // category the URL already fixes (e.g. "Parduotuvė:
@@ -70,16 +78,20 @@
                         $activeCategoryName = $activeCategorySlug ? (collect($allCategories)->firstWhere('slug', $activeCategorySlug)['name'] ?? null) : null;
                     @endphp
                     @if ($showStoreFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="inline-flex h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeStoreName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede]">
+                        {{-- Both filter buttons go full-width on mobile (stacking
+                             Kategorija below Parduotuvė instead of the two fighting
+                             for one row's width and getting clipped/overlapped by
+                             the sort button) — sm+ reverts to inline pills. --}}
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="inline-flex h-full w-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeStoreName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:w-auto">
                             <x-app-icon name="store" class="size-4 shrink-0" />
-                            {{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}{{ count($selectedStores) > 0 ? ' (' . count($selectedStores) . ')' : '' }}
+                            <span class="truncate">{{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}{{ count($selectedStores) > 0 ? ' (' . count($selectedStores) . ')' : '' }}</span>
                             <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'store' ? 'rotate-180' : ''" />
                         </button>
                     @endif
                     @if ($showCategoryFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="inline-flex h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeCategoryName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede]">
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="inline-flex h-full w-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeCategoryName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:w-auto">
                             <x-app-icon name="layout-grid" class="size-4 shrink-0" />
-                            {{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}{{ count($selectedCategories) > 0 ? ' (' . count($selectedCategories) . ')' : '' }}
+                            <span class="truncate">{{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}{{ count($selectedCategories) > 0 ? ' (' . count($selectedCategories) . ')' : '' }}</span>
                             <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'category' ? 'rotate-180' : ''" />
                         </button>
                     @endif
@@ -187,30 +199,16 @@
                 {{-- wire:ignore keeps carousel HTML across sort updates; carouselHtml
                      is cleared in dehydrate() so the deal payload stays out of
                      wire:snapshot after the first response. --}}
-                <div wire:ignore>
+                <div wire:ignore class="flex flex-col gap-4 sm:gap-10">
                     {!! $carouselHtml !!}
                 </div>
             @else
                 @php
-                    // Keyword pages' leading "cheapest per store" deals —
-                    // folded into the grid itself (no separate section),
-                    // only under the default popular sort, only on the
-                    // grid's first page, and de-duplicated against $deals
-                    // so the same discount never renders twice.
-                    $showLeadingDeals = ! empty($leadingDeals)
-                        && $order === 'popular'
-                        && $page === 1
-                        && $storeFilter === ''
-                        && $categoryFilter === '';
-                    if ($showLeadingDeals) {
-                        $leadingIds = collect($leadingDeals)->pluck('id')->filter()->all();
-                        $displayDeals = [
-                            ...$leadingDeals,
-                            ...array_values(array_filter($deals, fn ($deal) => ! in_array($deal['id'] ?? null, $leadingIds, true))),
-                        ];
-                    } else {
-                        $displayDeals = $deals;
-                    }
+                    // Keyword pages' "leading deals" (cheapest per store)
+                    // used to be folded into the front of the grid on page 1
+                    // — removed per explicit product decision. The grid now
+                    // always shows exactly $deals, the real paginated set.
+                    $displayDeals = $deals;
                 @endphp
                 <div
                     class="flex w-full flex-col"
@@ -234,9 +232,26 @@
                         ],
                     ]))"
                 >
-                    <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5" x-ref="grid">
+                    {{-- CSS Grid abandoned entirely for this listing —
+                         confirmed on device this session: cards render
+                         overlapping each other (row track heights computing
+                         to ~0, all rows starting at the same offset) even
+                         with only 3 items, ruling out stretch/aspect-ratio
+                         and page-size/memory theories tried earlier. The
+                         only layouts confirmed working on the same device
+                         (store-page carousels, homepage teaser) are all
+                         flex, not grid — so this switches to flex-wrap +
+                         explicit basis widths (2/3/4/5 columns matching the
+                         old grid-cols breakpoints), which doesn't share
+                         CSS Grid's row-track-sizing algorithm at all. --}}
+                    <div class="flex w-full flex-wrap gap-2 sm:gap-3" x-ref="grid">
                         @foreach ($displayDeals as $deal)
-                            <x-deal-card :deal="$deal" class="h-full" :context-store-slug="$contextStoreSlug" />
+                            <x-deal-card
+                                :deal="$deal"
+                                :stretch="false"
+                                :context-store-slug="$contextStoreSlug"
+                                class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
+                            />
                         @endforeach
                     </div>
 

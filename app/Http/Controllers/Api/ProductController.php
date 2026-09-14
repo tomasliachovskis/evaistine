@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
+    private const PER_PAGE = 20;
+
     protected $formatter;
 
     protected $meilisearchService;
@@ -179,7 +181,7 @@ class ProductController extends Controller
 
         return Cache::remember($cacheKey, 3600, function () use ($filters) {
             $query = Discount::with(['product', 'store']);
-            $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
+            $discounts = $this->buildDiscountQuery($query, $filters)->paginate(self::PER_PAGE);
 
             return response()->json([
                 'data' => $this->formatter->format($discounts),
@@ -233,7 +235,7 @@ class ProductController extends Controller
             return response()->json(['error' => 'Store or category not found'], 404);
         }
 
-        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
+        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(self::PER_PAGE);
 
         $payload = [
             'data' => $this->formatter->format($discounts),
@@ -256,7 +258,7 @@ class ProductController extends Controller
                 $q->where('category_id', $category->id);
             });
 
-        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(24);
+        $discounts = $this->buildDiscountQuery($query, $filters)->paginate(self::PER_PAGE);
 
         $payload = [
             'data' => $this->formatter->format($discounts),
@@ -274,7 +276,7 @@ class ProductController extends Controller
                 $q->where('category_id', $category->id);
             })->where('store_id', '!=', $store->id);
 
-            $fallbackDiscounts = $this->buildDiscountQuery($fallbackQuery, $filters)->paginate(24);
+            $fallbackDiscounts = $this->buildDiscountQuery($fallbackQuery, $filters)->paginate(self::PER_PAGE);
 
             $payload['fallback_other_stores'] = [
                 'store_name' => $store->name,
@@ -574,7 +576,7 @@ class ProductController extends Controller
         return Cache::remember($cacheKey, 1800, function () use ($query, $filters) {
             try {
                 $page = $filters['page'] ?? 1;
-                $perPage = 24;
+                $perPage = self::PER_PAGE;
 
                 $meilisearchFilters = [];
                 if ($filters['store']) {
@@ -648,7 +650,7 @@ class ProductController extends Controller
                 $queryQb = Discount::searchByProductName($query)
                     ->with(['product', 'store']);
 
-                $discounts = $this->buildDiscountQuery($queryQb, $filters, $explicitOrder)->paginate(24);
+                $discounts = $this->buildDiscountQuery($queryQb, $filters, $explicitOrder)->paginate(self::PER_PAGE);
 
                 return response()->json([
                     'data' => $this->formatter->format($discounts),

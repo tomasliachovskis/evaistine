@@ -9,7 +9,4 @@
     };
 @endphp
 
-{{-- ?v= busts the CDN's 4h edge cache after a logo file changes — bump this
-     whenever public/assets/stores/*.svg content changes, since the filename
-     itself never does. --}}
-<img src="/assets/stores/{{ $slug }}.svg?v=2" alt="{{ $name }}" class="object-contain {{ $sizeClass }} {{ $attributes->get('class') }}">
+<img src="/assets/stores/{{ $slug }}.svg" alt="{{ $name }}" class="object-contain {{ $sizeClass }} {{ $attributes->get('class') }}">

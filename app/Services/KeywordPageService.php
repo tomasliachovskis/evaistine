@@ -3,20 +3,24 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\CuratedDeal;
 use App\Models\Discount;
+use App\Models\DiscountHistory;
 use App\Models\KeywordPage;
 use App\Models\KeywordPageProduct;
 use App\Models\Store;
 use App\Support\CacheVersion;
+use App\Support\FoodCategorySlugs;
 use App\Support\LithuanianDate;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class KeywordPageService
 {
-    private const PER_PAGE = 24;
+    private const PER_PAGE = 20;
 
     private const MAX_LISTING_FETCH = 1000;
 
@@ -259,6 +263,268 @@ class KeywordPageService
                 ])
                 ->values()
                 ->all();
+        });
+    }
+
+    /**
+     * Reads the persisted 'keyword_teaser' curated_deals rows written by
+     * refreshHomeTeasers() below — NOT a live computation anymore. An
+     * earlier version of this method called buildStoreComparisonForPage()
+     * directly per page, which meant a cold /pigiausios-prekes request ran
+     * a live Meilisearch comparison for every one of ~40 candidate keyword
+     * pages in sequence (measured: multiple minutes) — the same mistake
+     * this codebase's own refreshHomePools() docblock already describes
+     * making once before with HomeKeywordDealPoolBuilder, fixed the same
+     * way here: compute on the write path (refreshHomeTeasers(), run from
+     * DealPoolRefresher alongside every other curated_deals scope), read
+     * cheaply on the request path.
+     *
+     * @return array{slug: string, href: string, label: string, emoji: string, matching_offers_count: int, leading_deals: array}|null
+     */
+    public function buildHomeTeaser(KeywordPage $page, int $limit = 5): ?array
+    {
+        $cacheKey = 'kw_home_teaser_' . $page->slug . '_' . $limit . '_' . CacheVersion::suffix(['keywords', 'discounts']);
+
+        return Cache::remember($cacheKey, 1800, function () use ($page, $limit) {
+            $rows = CuratedDeal::query()
+                ->where('scope', 'keyword_teaser')
+                ->where('item_key', $page->slug)
+                ->with(['discount.product.category', 'discount.product.discounts.store', 'discount.product.discountHistories.store', 'discount.store'])
+                ->orderBy('position')
+                ->take($limit)
+                ->get();
+
+            $leadingDeals = $rows->pluck('discount')->filter()->values();
+
+            // Last-resort top-up when this keyword genuinely doesn't have
+            // $limit active/ever-scraped discounts among its mapped products
+            // (refreshHomeTeasers()'s own widen tier already exhausted the
+            // discounts table) — per explicit product decision, still show
+            // $limit real products with a real (if stale) price rather than
+            // stopping short. Not persisted into curated_deals — that table
+            // only ever references real Discount rows (its discount_id FK
+            // points at the discounts table) — so this runs live here on a
+            // cache miss instead, same cost profile as everything else in
+            // this method.
+            if ($leadingDeals->count() < $limit) {
+                $usedProductIds = $leadingDeals->pluck('product_id')->all();
+                $productIds = KeywordPageProduct::where('keyword_page_id', $page->id)->pluck('product_id');
+
+                $historical = DiscountHistory::query()
+                    ->whereIn('product_id', $productIds)
+                    ->whereNotIn('product_id', $usedProductIds)
+                    ->where('discounted_price', '>', 0)
+                    ->with(['product.category', 'store'])
+                    ->orderBy('discounted_price')
+                    ->take($limit - $leadingDeals->count())
+                    ->get();
+
+                $leadingDeals = $leadingDeals->concat($historical)->values();
+            }
+
+            if ($leadingDeals->isEmpty()) {
+                return null;
+            }
+
+            return [
+                'slug' => $page->slug,
+                'href' => "/akcijos/{$page->slug}",
+                // title, not h1 — h1 is written as "{keyword} akcija" (e.g.
+                // "Varškei akcija") for the page's own SEO heading, and
+                // stripping "akcija" from it can leave an odd standalone
+                // case-inflected fragment ("Varškei" — dative — instead of
+                // the plain "Varškė"). title is already the plain noun form.
+                'label' => $page->title,
+                'emoji' => $page->emoji,
+                'matching_offers_count' => (int) ($page->matching_offers_count ?? 0),
+                'leading_deals' => $this->formatter->formatList($leadingDeals),
+            ];
+        });
+    }
+
+    /**
+     * Write side for buildHomeTeaser() above — cheapest-per-store comparison
+     * per candidate keyword page, computed from the already-precomputed
+     * keyword_page_products index (product_id -> keyword page, built by
+     * keywords:map-products) instead of countMatchingOffers()/
+     * buildStoreComparisonForPage()'s Meilisearch-or-live-DB-scan path —
+     * per explicit product decision: we already have the product index for
+     * exactly this purpose, no reason to also hit search here. One indexed
+     * `WHERE product_id IN (...)` per page (typically 0.5-1s even against
+     * the remote dev DB), not a search query. Persisted as curated_deals
+     * rows (scope='keyword_teaser', item_key=the keyword page's slug,
+     * reusing the same item_key column the price_index scope already used
+     * for its own bucket key). Meant to be called from
+     * DealPoolRefresher::refreshAfterBatch(), same cadence as every other
+     * curated_deals scope.
+     */
+    public function refreshHomeTeasers(int $limitPerGroup = 20, int $dealsPerPage = 5): void
+    {
+        $candidates = $this->topCandidatesByCategoryGroup($limitPerGroup);
+        $pages = collect($candidates['food'])->concat($candidates['non_food'])->unique('id');
+
+        $rows = [];
+        $now = now();
+
+        foreach ($pages as $page) {
+            $deals = $this->buildIndexBackedTeaserDeals($page, $dealsPerPage);
+
+            foreach ($deals as $position => $deal) {
+                $rows[] = [
+                    'store_id' => null,
+                    'scope' => 'keyword_teaser',
+                    'category_id' => null,
+                    'item_key' => $page->slug,
+                    'position' => $position,
+                    'discount_id' => $deal->id,
+                    'deal_score' => (float) $deal->discounted_price,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        DB::transaction(function () use ($rows) {
+            CuratedDeal::where('scope', 'keyword_teaser')->delete();
+
+            foreach (array_chunk($rows, 500) as $chunk) {
+                DB::table('curated_deals')->insert($chunk);
+            }
+        });
+    }
+
+    /**
+     * @return Collection<int, Discount>
+     */
+    private function buildIndexBackedTeaserDeals(KeywordPage $page, int $limit): Collection
+    {
+        $productIds = KeywordPageProduct::where('keyword_page_id', $page->id)->pluck('product_id');
+        if ($productIds->isEmpty()) {
+            return collect();
+        }
+
+        $discounts = Discount::query()
+            ->whereIn('product_id', $productIds)
+            // Same still-valid check ProductController's own similar-products
+            // query uses — end_at is a DATE stored at midnight ("valid
+            // through this day"), so comparing against startOfDay() instead
+            // of plain now() doesn't wrongly expire a discount at the start
+            // of its last valid day. discounts:archive-expired only runs
+            // per-store as part of that store's own processing job (not a
+            // standalone sweep), so an already-expired row can otherwise
+            // still be sitting in this table.
+            ->where(function ($query) {
+                $query->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay());
+            })
+            ->with(['product.category', 'store'])
+            ->get();
+
+        // Same PRIORITY_STORE_NAMES-first, then-cheapest ordering
+        // buildStorePriceTable() already uses for the keyword page's own
+        // "Kainos pagal parduotuvę" table — without it, a teaser capped at
+        // 5 stores can silently miss a main chain (Maxima/Norfa/Lidl/Iki/
+        // Rimi) whenever a niche store's match happens to be cheaper.
+        $priorityRank = array_flip(self::PRIORITY_STORE_NAMES);
+
+        $priced = $discounts->filter(fn (Discount $d) => (float) $d->discounted_price > 0);
+
+        $perStoreCheapest = $priced->groupBy('store_id')
+            ->map(fn (Collection $storeDiscounts) => $storeDiscounts->sortBy('discounted_price')->first())
+            ->values()
+            ->sort(function (Discount $a, Discount $b) use ($priorityRank) {
+                $rankA = $priorityRank[$a->store->name] ?? count($priorityRank);
+                $rankB = $priorityRank[$b->store->name] ?? count($priorityRank);
+
+                return $rankA <=> $rankB ?: $a->discounted_price <=> $b->discounted_price;
+            })
+            ->values();
+
+        if ($perStoreCheapest->count() >= $limit) {
+            return $perStoreCheapest->take($limit);
+        }
+
+        // Backfill with more products from the SAME stores when there
+        // simply aren't $limit distinct stores with an active discount —
+        // per explicit product decision, this teaser should show $limit
+        // products whenever that many exist at all, not stop early just
+        // because they repeat a store. Excludes discounts already picked
+        // above, then fills the rest cheapest-first regardless of store.
+        $usedIds = $perStoreCheapest->pluck('id')->all();
+        $backfill = $priced
+            ->reject(fn (Discount $d) => in_array($d->id, $usedIds, true))
+            ->sortBy('discounted_price')
+            ->take($limit - $perStoreCheapest->count());
+
+        $combined = $perStoreCheapest->concat($backfill)->values();
+
+        if ($combined->count() >= $limit) {
+            return $combined;
+        }
+
+        // Still short after using every currently-active discount on these
+        // mapped products — per explicit product decision, widen to ANY
+        // discount ever scraped for them (drops the end_at validity check
+        // entirely), cheapest first, so a thin keyword still shows $limit
+        // real products with a real price instead of stopping short. A
+        // keyword this thin on active offers is rare; this only ever
+        // engages as the last resort after the two tiers above.
+        $usedIds = $combined->pluck('id')->all();
+        $widened = Discount::query()
+            ->whereIn('product_id', $productIds)
+            ->whereNotIn('id', $usedIds)
+            ->where('discounted_price', '>', 0)
+            ->with(['product.category', 'store'])
+            ->orderBy('discounted_price')
+            ->take($limit - $combined->count())
+            ->get();
+
+        return $combined->concat($widened)->values();
+    }
+
+    /**
+     * Candidate keyword pages for the homepage teaser / "pigiausios prekės"
+     * page — restricted to is_chip=true (the existing "worth surfacing as a
+     * popular page" flag, same one keyword-chips-row/home already key off)
+     * instead of every published page, ranked by matching_offers_count,
+     * split food/non-food using the same FoodCategorySlugs groups
+     * ListingPageMetaService already uses for a store's featured-category
+     * pick — no new categorization scheme.
+     *
+     * @return array{food: list<KeywordPage>, non_food: list<KeywordPage>}
+     */
+    public function topCandidatesByCategoryGroup(int $limitPerGroup = 20): array
+    {
+        $cacheKey = 'kw_home_candidates_' . $limitPerGroup . '_' . CacheVersion::suffix(['keywords']);
+
+        return Cache::remember($cacheKey, 1800, function () use ($limitPerGroup) {
+            $pages = KeywordPage::query()
+                ->published()
+                ->where('is_chip', true)
+                ->where('matching_offers_count', '>', 0)
+                ->orderByDesc('matching_offers_count')
+                ->get();
+
+            $food = [];
+            $nonFood = [];
+
+            foreach ($pages as $page) {
+                if (count($food) >= $limitPerGroup && count($nonFood) >= $limitPerGroup) {
+                    break;
+                }
+
+                $primary = $this->categoryResolver->resolvePrimaryListingCategorySlugs(
+                    (array) ($page->category_slugs ?? []),
+                );
+                $categorySlug = $primary[0] ?? null;
+
+                if (in_array($categorySlug, FoodCategorySlugs::FOOD, true) && count($food) < $limitPerGroup) {
+                    $food[] = $page;
+                } elseif (in_array($categorySlug, FoodCategorySlugs::NON_FOOD, true) && count($nonFood) < $limitPerGroup) {
+                    $nonFood[] = $page;
+                }
+            }
+
+            return ['food' => $food, 'non_food' => $nonFood];
         });
     }
 
@@ -720,7 +986,7 @@ class KeywordPageService
      *
      * @return array{leading_deals: array, summary_rows: array, brand_summary: array, store_price_table: array}
      */
-    private function buildStoreComparisonForPage(KeywordPage $page, int $matchingTotal): array
+    private function buildStoreComparisonForPage(KeywordPage $page, int $matchingTotal, int $limit = 8): array
     {
         $discounts = $this->collectMatchingDiscountsForComparison($page, $matchingTotal);
 
@@ -739,7 +1005,7 @@ class KeywordPageService
             ->sortBy(fn (array $row) => $row['discount']->discounted_price)
             ->values();
 
-        $cheapestPerStore = $cheapestPerStoreAll->take(8);
+        $cheapestPerStore = $cheapestPerStoreAll->take($limit);
         $best = $cheapestPerStoreAll->first();
 
         return [

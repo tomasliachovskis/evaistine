@@ -10,15 +10,10 @@
                 Akcijos ir nuolaidos Lietuvoje
             </span>
             <h1 class="max-w-2xl font-extrabold text-gray-900">Kur pigiausia pirkti — palyginome už tave</h1>
-            @php
-                // active_store_count is the TOTAL active-store count, which
-                // already includes these 5 named ones — subtract them so
-                // "ir dar N kitų" doesn't double-count and overstate real
-                // coverage.
-                $otherStoreCount = max(0, $stats['active_store_count'] - 5);
-            @endphp
             <p class="max-w-xl text-base leading-snug text-gray-600 sm:text-lg">
-                Ieškok bet kurios kasdienės prekės ir iškart palygink realias kainas Maxima, Lidl, Iki, Rimi, Norfa ir dar {{ $otherStoreCount }} kitų Lietuvos parduotuvių.
+                {{-- 20 is a static number by explicit product decision, not
+                     derived from active_store_count anymore. --}}
+                Palygink kasdienių prekių kainas Maxima, Lidl, Iki, Rimi, Norfa ir dar 20 kitų parduotuvių.
             </p>
 
             <form
@@ -48,73 +43,41 @@
     </div>
 
     <div class="bg-background">
-        <div class="base-container mx-auto flex flex-col gap-8 py-6 sm:gap-10 sm:py-10">
+        <div class="base-container mx-auto flex flex-col gap-8 py-6 sm:gap-16 sm:py-10">
 
-            {{-- Comparison teaser — the homepage's actual spine. Each category
-                 shows its 2 best-covered items, cheapest-per-store only (no
-                 "+N kiti" expansion here, that's what the full page is for). --}}
+            {{-- Comparison teaser — the homepage's actual spine. Each block
+                 (food / non-food) shows 2 keyword pages' own cheapest-per-
+                 store comparison (KeywordPageService::buildHomeTeaser()) —
+                 one small "Žiūrėti visas {label}" link per keyword item,
+                 straight to that keyword page, not one link per whole block
+                 to a generic page anymore. --}}
             @foreach ($comparisonCategories as $category)
-                <div class="section-card">
-                    <div class="section-heading-row">
-                        <h2 class="section-heading">{{ $category['name'] }}</h2>
-                        <a href="/pigiausios-prekes" class="section-link text-base">
-                            Žiūrėti visas prekes
-                            <x-app-icon name="chevron-right" class="size-4 opacity-80" />
-                        </a>
-                    </div>
+                <div>
+                    <h2 class="section-heading">{{ $category['name'] }}</h2>
 
-                    @php
-                        $unitLabel = fn (?string $basis) => match ($basis) {
-                            'kg' => '€/kg',
-                            'l' => '€/l',
-                            '10vnt' => '€/10 vnt.',
-                            default => null,
-                        };
-                    @endphp
                     <div class="mt-4 flex flex-col gap-5">
                         @foreach ($category['items'] as $item)
                             <div>
-                                <p class="mb-2 text-base font-semibold text-gray-600">{{ $item['name'] }}</p>
-                                {{-- Same shared card as /pigiausios-prekes (the real <x-deal-card>,
-                                     not a bespoke one) — one cheapest match per store first (up
-                                     to 5, one each); only when fewer than 5 stores currently
-                                     carry this item does it backfill the rest of the row with
-                                     next-cheapest matches (repeating a store if needed), so a
-                                     row never looks half-empty just because one tracked store
-                                     has no match today. 4 visible on mobile, 5 at lg+ (same
-                                     "hide the extra one on mobile" trick already used in
-                                     landing-deals-section). --}}
-                                @php
-                                    // Capped at 5 regardless of how many stores now carry a
-                                    // match (up to 16 since the price index widened past the
-                                    // old 5-store allowlist) — home is a teaser, not the full
-                                    // comparison; that's what /pigiausios-prekes is for.
-                                    $byStore = collect($item['by_store']);
-                                    $topMatches = $byStore
-                                        ->map(fn ($matches, $slug) => isset($matches[0]) ? ['slug' => $slug, 'match' => $matches[0]] : null)
-                                        ->filter()
-                                        ->sortBy('match.price')
-                                        ->values();
-                                    if ($topMatches->count() < 5) {
-                                        $backfill = $byStore
-                                            ->flatMap(fn ($matches, $slug) => collect($matches)->skip(1)->map(fn ($m) => ['slug' => $slug, 'match' => $m]))
-                                            ->sortBy('match.price')
-                                            ->values();
-                                        $topMatches = $topMatches->concat($backfill);
-                                    }
-                                    $topMatches = $topMatches->take(5)->values();
-                                @endphp
-                                <div class="grid grid-cols-4 gap-3 lg:grid-cols-5">
-                                    @foreach ($topMatches as $index => $row)
-                                        @php $trackedStore = collect($stores)->firstWhere('slug', $row['slug']) ?? ['slug' => $row['slug'], 'name' => $row['slug']]; @endphp
+                                <div class="mb-2 flex items-center justify-between gap-2">
+                                    <p class="text-lg font-semibold text-gray-600">
+                                        {{ $item['label'] }}
+                                    </p>
+                                    <a href="{{ $item['href'] }}" class="section-link shrink-0 text-sm">
+                                        Žiūrėti visas
+                                        <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
+                                    </a>
+                                </div>
+                                {{-- leading_deals is already the real <x-deal-card>
+                                     shape (DiscountResponseFormatter::formatListDiscount()),
+                                     one cheapest offer per store, capped at 5 — same
+                                     data the keyword page's own grid leads with, no
+                                     reshaping needed. 4 visible on mobile, 5 at lg+
+                                     (same "hide the extra one on mobile" trick used
+                                     in landing-deals-section). --}}
+                                <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+                                    @foreach ($item['leading_deals'] as $index => $deal)
                                         <div class="{{ $index >= 4 ? 'hidden lg:block' : '' }}">
-                                            <x-price-compare-card
-                                                :match="$row['match']"
-                                                :store="$trackedStore"
-                                                :unit-label="$unitLabel($item['unit_basis'])"
-                                                :is-cheapest="$row['match']['price'] === $item['cheapest_price']"
-                                                :highlight="false"
-                                            />
+                                            <x-deal-card :deal="$deal" source="home_comparison" />
                                         </div>
                                     @endforeach
                                 </div>
@@ -136,73 +99,6 @@
                 </div>
             </div>
 
-            {{-- Curated deals — secondary to the comparison, browsing-oriented.
-                 A compact custom card (same rounded-xl/gray-50/small-image
-                 language as the comparison and leaflet cards) instead of
-                 <x-deal-card> — that component's own size (generous padding,
-                 22px price, favorite-heart overlay) is right for a dedicated
-                 listing page, but next to the smaller comparison cards here
-                 it read as oversized. --}}
-            <div class="section-card">
-                <div class="section-heading-row">
-                    <h2 class="section-heading">Akcijos ir nuolaidos šiandien</h2>
-                    <a href="/akcijos" class="section-link text-base">
-                        Žiūrėti visas
-                        <x-app-icon name="chevron-right" class="size-4 opacity-80" />
-                    </a>
-                </div>
-                <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-                    @foreach ($deals as $deal)
-                        @php
-                            $product = $deal['product'];
-                            $discountPrice = (float) ($deal['discounted_price'] ?? 0);
-                            $originalPrice = (float) ($deal['original_price'] ?? 0);
-                            $showOriginal = $originalPrice > 0 && $originalPrice !== $discountPrice && $discountPrice > 0;
-                            // Every store this product currently has a discount in, primary
-                            // store (this deal's own store_id) first — same as <x-deal-card>.
-                            $dealStores = collect($deal['offers'] ?? [])->pluck('store')->filter()->unique('slug')
-                                ->sortBy(fn ($s) => ($s['id'] ?? null) === ($deal['store_id'] ?? null) ? 0 : 1)
-                                ->values();
-                        @endphp
-                        <a href="/akcijos/{{ $product['full_slug'] }}" class="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 hover:opacity-80">
-                            <div class="relative aspect-square w-full overflow-hidden rounded-lg bg-white">
-                                @if ($product['image_url'])
-                                    <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" loading="lazy" class="h-full w-full object-contain p-1.5">
-                                @endif
-                                @if ($discountPrice > 0)
-                                    <span class="absolute bottom-1.5 left-1.5"><x-discount-badge :percent="$deal['discount_percent'] ?? null" size="sm" /></span>
-                                @endif
-                            </div>
-                            <p class="line-clamp-2 text-[0.82em] leading-tight text-gray-700">{{ $product['name'] }}</p>
-                            @if ($discountPrice > 0)
-                                <div class="flex items-baseline gap-1.5">
-                                    <span class="text-[1.05em] font-bold tabular-nums text-gray-900">{{ number_format($discountPrice, 2, ',', ' ') }}&nbsp;€</span>
-                                    @if ($showOriginal)
-                                        <span class="text-[0.75em] tabular-nums text-gray-400 line-through">{{ number_format($originalPrice, 2, ',', ' ') }}&nbsp;€</span>
-                                    @endif
-                                </div>
-                            @elseif ($deal['discount_percent'] ?? null)
-                                {{-- Some flyer-scraped offers (multi-variant packs) never get a
-                                     clean per-item price, only a discount % — same fallback as
-                                     <x-deal-card>, just not a 0,00 € price. --}}
-                                <span class="inline-flex w-fit items-center rounded-md bg-[#ffdb4d] px-1.5 py-0.5 text-[0.78em] font-bold tabular-nums text-gray-900">
-                                    Sutaupyk iki {{ (int) round($deal['discount_percent']) }}%
-                                </span>
-                            @endif
-                            @if ($dealStores->count() > 0)
-                                <div class="mt-auto flex items-center gap-1.5 pt-1">
-                                    @foreach ($dealStores->take(3) as $storeItem)
-                                        <x-store-logo :slug="$storeItem['slug']" :name="$storeItem['name']" size="xs" />
-                                    @endforeach
-                                    @if ($dealStores->count() > 3)
-                                        <span class="text-[0.7em] font-medium text-gray-400">+{{ $dealStores->count() - 3 }}</span>
-                                    @endif
-                                </div>
-                            @endif
-                        </a>
-                    @endforeach
-                </div>
-            </div>
 
             {{-- Leaflets — same frame + card language as the rest of the page
                  (rounded-xl border, image on top, small store logo, minimal
