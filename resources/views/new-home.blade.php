@@ -13,8 +13,8 @@
             40+ parduotuvių
         </div>
         <div class="pointer-events-none absolute right-[8%] top-[10%] hidden rotate-6 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-bold text-gray-900 shadow-[0_10px_24px_-8px_rgba(4,73,35,0.15)] lg:flex">
-            <x-app-icon name="trending-up" class="size-4 text-green" />
-            Kainos kas dieną
+            <x-app-icon name="newspaper" class="size-4 text-green" />
+            Naujausi leidiniai
         </div>
         <div class="pointer-events-none absolute bottom-[12%] right-[6%] hidden rotate-3 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-bold text-gray-900 shadow-[0_10px_24px_-8px_rgba(4,73,35,0.15)] lg:flex">
             <x-app-icon name="percent" class="size-4 text-green" />
