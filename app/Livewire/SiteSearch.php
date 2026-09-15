@@ -39,8 +39,17 @@ class SiteSearch extends Component
 
         $payload = json_decode(app(KeywordPageController::class)->index()->getContent(), true);
 
+        // Shuffled, not the same fixed 8 on every visit — still drawn only
+        // from the top of the (already real-product-ranked) list. Sorted by
+        // a hash of (slug + current hour) instead of Collection::shuffle()
+        // (this Laravel version's shuffle() uses PHP 8.2's Random\Randomizer
+        // internally, which isn't seedable — confirmed live, the exact same
+        // seed produced a different order every call) — same hour always
+        // hashes to the same order, next hour reshuffles on its own.
+        $hourSeed = now()->format('YmdH');
         $this->popular = collect($payload['pages'] ?? [])
-            ->sortBy('sort_order')
+            ->take(24)
+            ->sortBy(fn ($page) => md5(($page['slug'] ?? '') . $hourSeed))
             ->take(8)
             ->map(fn ($page) => [
                 'title' => $page['title'] ?? $page['h1'] ?? $page['slug'],

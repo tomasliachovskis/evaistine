@@ -63,7 +63,7 @@
                  "don't grow the hero" reasoning as everything else here. --}}
             <div class="flex w-full max-w-xl flex-col items-center gap-2">
                 <span class="text-[11px] font-bold uppercase tracking-wide text-gray-400">Palyginame kainas iš</span>
-                <div class="scroll-cards-x flex w-full items-center justify-center gap-2 sm:flex-wrap">
+                <div class="scroll-cards-x flex w-full items-center justify-start gap-2 sm:justify-center sm:flex-wrap">
                     @foreach (['maxima', 'lidl', 'iki', 'rimi', 'norfa'] as $slug)
                         <span class="flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3">
                             <x-store-logo :slug="$slug" size="sm" />

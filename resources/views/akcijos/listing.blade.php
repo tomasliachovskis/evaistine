@@ -95,12 +95,16 @@
                     :hide-subtitle-on-mobile="true"
                 >
                     @if ($headerType === 'store')
-                        @if ($total > 0)
-                            <span class="whitespace-nowrap">{{ number_format($total, 0, ',', ' ') }} akcijos</span>
-                        @endif
+                        {{-- No count/freshness line here — the store-nav-tabs
+                             row right below already shows the real "Akcijos"
+                             count as a pill, so a second "N akcijos" line
+                             here was a plain duplicate. --}}
                     @elseif ($headerType === 'store_category')
                         @if ($total > 0)
                             <span>{{ number_format($total, 0, ',', ' ') }} akcijos</span>
+                        @endif
+                        @if (!empty($listingMeta['intro']['freshness_label']))
+                            <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
                         @endif
                     @else
                         @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
@@ -122,9 +126,9 @@
                                 <span>{{ $stat['value'] }} {{ mb_strtolower($stat['label']) }}</span>
                             @endif
                         @endforeach
-                    @endif
-                    @if (!empty($listingMeta['intro']['freshness_label']))
-                        <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
+                        @if (!empty($listingMeta['intro']['freshness_label']))
+                            <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
+                        @endif
                     @endif
 
                     @if ($isStoreHeader)

@@ -14,7 +14,7 @@
 @endphp
 
 <div class="relative" x-data="{ categoriesOpen: false }" @click.outside="categoriesOpen = false">
-    <nav aria-label="{{ $ariaLabel }}" class="flex flex-wrap items-center gap-2.5">
+    <nav aria-label="{{ $ariaLabel }}" class="scroll-cards-x flex flex-nowrap items-center gap-2.5 sm:flex-wrap">
         <a href="/leidinys/{{ $storeSlug }}" class="{{ $active === 'leidiniai' ? $activeClass : $mutedClass }}">
             Leidiniai
             <span class="{{ $pillClass($active === 'leidiniai') }}">{{ number_format($leafletsCount, 0, ',', ' ') }}</span>
