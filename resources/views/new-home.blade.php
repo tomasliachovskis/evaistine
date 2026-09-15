@@ -154,11 +154,11 @@
                     <h2 class="section-heading-lg">Kategorijos</h2>
                     <div class="scroll-cards-x mt-4 flex snap-x snap-mandatory gap-3">
                         @foreach ($categories as $category)
-                            <a href="/akcijos/{{ $category['slug'] }}" class="flex w-[140px] shrink-0 snap-start flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-3.5 text-center transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm sm:w-[168px] sm:rounded-2xl sm:p-4">
+                            <a href="/akcijos/{{ $category['slug'] }}" class="flex w-[140px] shrink-0 snap-start flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-2.5 text-center transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm sm:w-[168px] sm:p-3">
                                 <div class="flex h-[72px] w-full items-center justify-center sm:h-[80px]">
                                     <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-10 shrink-0 grayscale sm:size-12" onerror="this.style.display='none'">
                                 </div>
-                                <span class="line-clamp-2 text-sm font-bold leading-snug text-gray-900 sm:text-base">{{ $category['name'] }}</span>
+                                <span class="line-clamp-2 text-sm font-bold leading-snug text-gray-900">{{ $category['name'] }}</span>
                             </a>
                         @endforeach
                     </div>

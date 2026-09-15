@@ -15,7 +15,7 @@
          card look as the /parduotuves grid card below (logo, bold name,
          count as plain text), just narrower and without the "Žiūrėti
          akcijas" CTA since the whole tile is already clickable. --}}
-    <a href="/akcijos/{{ $store['slug'] }}" class="flex w-28 shrink-0 snap-start flex-col rounded-xl border border-gray-200 bg-white p-3 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:w-32 sm:rounded-2xl sm:p-3.5 {{ !$hasOffers ? 'opacity-75' : '' }}">
+    <a href="/akcijos/{{ $store['slug'] }}" class="flex w-28 shrink-0 snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:w-32 sm:p-3 {{ !$hasOffers ? 'opacity-75' : '' }}">
         <div class="flex h-14 items-center justify-center sm:h-16">
             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="md" />
         </div>
@@ -37,7 +37,7 @@
     </a>
 @else
     {{-- Ported from discount/src/components/stores/store-card.tsx (slider layout, view-only actions). --}}
-    <a href="/akcijos/{{ $store['slug'] }}" class="group flex snap-start flex-col rounded-xl border border-gray-200 bg-white p-3.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:rounded-2xl sm:p-4 {{ $widthClass }} {{ !$hasOffers ? 'opacity-75' : '' }}">
+    <a href="/akcijos/{{ $store['slug'] }}" class="group flex snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:p-3 {{ $widthClass }} {{ !$hasOffers ? 'opacity-75' : '' }}">
         <div class="flex h-[72px] items-center justify-center sm:h-[80px]">
             <x-store-logo :slug="$store['slug']" size="lg" />
         </div>
