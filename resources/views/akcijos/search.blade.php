@@ -134,9 +134,20 @@
                         ],
                     ]))"
                 >
-                    <div class="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5" x-ref="grid">
+                    {{-- flex-wrap, not CSS Grid — matches
+                         discount-filters.blade.php's main listing grid
+                         exactly (a real CSS-Grid row-track-sizing bug found
+                         on mobile Safari this session), and must stay
+                         identical to it since load-more here shares the same
+                         listing-deals-chunk.blade.php partial, which now
+                         renders these same width classes. --}}
+                    <div class="flex w-full flex-wrap gap-2 sm:gap-3" x-ref="grid">
                         @foreach ($deals as $deal)
-                            <x-deal-card :deal="$deal" class="h-full" />
+                            <x-deal-card
+                                :deal="$deal"
+                                :stretch="false"
+                                class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
+                            />
                         @endforeach
                     </div>
 

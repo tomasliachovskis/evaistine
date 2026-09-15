@@ -10,11 +10,6 @@
         <div class="mb-2.5 flex items-center justify-between gap-2 sm:mb-3">
             <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
-                    @if ($categorySlug)
-                        <img src="/assets/categories/{{ $categorySlug }}.svg" alt="" class="size-4 shrink-0 sm:hidden" onerror="this.style.display='none'">
-                    @else
-                        <x-app-icon :name="$icon" class="size-4 text-green sm:hidden" />
-                    @endif
                     <h2 id="{{ $id }}-heading" class="section-heading-lg">
                         {{ $title }}
                     </h2>

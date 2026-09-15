@@ -3,7 +3,6 @@
     $sectionsData = $listingMeta['sections'] ?? [];
     $leaflets = $sectionsData['leaflets'] ?? [];
     $faq = $sectionsData['faq'] ?? [];
-    $locationsCount = $listingMeta['locations_count'] ?? 0;
     $storeName = $listingMeta['store_name'] ?? $storeSlug;
     $storeIdForFreshness = \App\Models\Store::where('slug', $storeSlug)->value('id');
     $freshnessLabel = $storeIdForFreshness && ($freshnessDate = \App\Support\ContentFreshness::forStore($storeIdForFreshness))
@@ -37,17 +36,7 @@
             <x-type-hero
                 :icon-src="'/assets/stores/' . $storeSlug . '.svg'"
                 :title="$pageTitle"
-                :subtitle="$intro['description'] ?? null"
             >
-                @if ($totalOffers > 0)
-                    <span><b class="font-extrabold text-gray-900">{{ number_format($totalOffers, 0, ',', ' ') }}</b> akcijos</span>
-                @endif
-                @if ($locationsCount > 0)
-                    <a href="/parduotuves/{{ $storeSlug }}" class="inline-flex items-center gap-0.5 font-semibold text-green hover:text-dark-green">
-                        {{ number_format($locationsCount, 0, ',', ' ') }} parduotuvės Lietuvoje
-                        <x-app-icon name="arrow-right" class="size-3 shrink-0" />
-                    </a>
-                @endif
                 @if ($freshnessLabel)
                     <x-content-freshness :label="$freshnessLabel" />
                 @endif
