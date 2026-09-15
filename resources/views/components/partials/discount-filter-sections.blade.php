@@ -29,9 +29,9 @@
         @foreach ($items as $category)
             <a href="{{ $hrefFor($category['slug']) }}" class="{{ $rowClass($category['slug'] === $activeSlug) }}">
                 <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-5 shrink-0 opacity-70" onerror="this.style.display='none'">
-                <span class="min-w-0 flex-1 truncate">{{ $category['name'] }}</span>
+                <span class="min-w-0 flex-1 truncate text-lg">{{ $category['name'] }}</span>
                 @if (isset($category['offers_count']))
-                    <span class="shrink-0 text-sm font-normal text-gray-400">{{ number_format($category['offers_count'], 0, ',', ' ') }}</span>
+                    <span class="shrink-0 text-base font-normal text-gray-400">{{ number_format($category['offers_count'], 0, ',', ' ') }}</span>
                 @endif
             </a>
         @endforeach
@@ -40,10 +40,9 @@
     <section class="flex flex-col gap-0.5">
         @foreach ($items as $store)
             <a href="{{ $hrefFor($store['slug']) }}" class="{{ $rowClass($store['slug'] === $activeSlug) }}">
-                <x-store-logo :slug="$store['slug']" :name="$store['name']" size="xs" />
-                <span class="min-w-0 flex-1 truncate">{{ $store['name'] }}</span>
+                <span class="min-w-0 flex-1 truncate text-lg">{{ $store['name'] }}</span>
                 @if (isset($store['offers_count']))
-                    <span class="shrink-0 text-sm font-normal text-gray-400">{{ number_format($store['offers_count'], 0, ',', ' ') }}</span>
+                    <span class="shrink-0 text-base font-normal text-gray-400">{{ number_format($store['offers_count'], 0, ',', ' ') }}</span>
                 @endif
             </a>
         @endforeach
