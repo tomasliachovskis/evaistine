@@ -74,18 +74,22 @@
                     @endauth
                 </div>
 
-                @auth
-                    <a href="/favorites" class="{{ $headerIconClass }}" aria-label="Mano favoritai">
-                        <span class="relative inline-flex">
+                {{-- Hidden on mobile — favorites already has its own entry
+                     in the mobile bottom nav, so this would be a duplicate. --}}
+                <div class="hidden sm:block">
+                    @auth
+                        <a href="/favorites" class="{{ $headerIconClass }}" aria-label="Mano favoritai">
+                            <span class="relative inline-flex">
+                                <x-app-icon name="heart" class="size-5" />
+                                <livewire:favorites-badge />
+                            </span>
+                        </a>
+                    @else
+                        <button type="button" @click="$store.authModal.open = true" class="relative {{ $headerIconClass }}" aria-label="Mano favoritai">
                             <x-app-icon name="heart" class="size-5" />
-                            <livewire:favorites-badge />
-                        </span>
-                    </a>
-                @else
-                    <button type="button" @click="$store.authModal.open = true" class="relative {{ $headerIconClass }}" aria-label="Mano favoritai">
-                        <x-app-icon name="heart" class="size-5" />
-                    </button>
-                @endauth
+                        </button>
+                    @endauth
+                </div>
 
                 <button
                     type="button"
