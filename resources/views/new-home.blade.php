@@ -88,7 +88,7 @@
                 <div>
                     <h2 class="section-heading-lg">{{ $category['name'] }}</h2>
 
-                    <div class="mt-4 flex flex-col gap-5">
+                    <div class="mt-4 flex flex-col gap-8 sm:gap-10">
                         @foreach ($category['items'] as $item)
                             <div>
                                 <div class="mb-2 flex items-center justify-between gap-2">

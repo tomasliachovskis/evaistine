@@ -30,7 +30,7 @@
                 <div class="flex flex-col gap-3">
                     <h2 class="section-heading-lg">{{ $group['name'] }}</h2>
 
-                    <div class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-8 sm:gap-10">
                         {{-- Each item is one keyword page's own cheapest-per-store
                              comparison (KeywordPageService::buildHomeTeaser()) —
                              same data/shape the homepage teaser uses, just every

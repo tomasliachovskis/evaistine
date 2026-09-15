@@ -235,7 +235,7 @@
                 {{-- wire:ignore keeps carousel HTML across sort updates; carouselHtml
                      is cleared in dehydrate() so the deal payload stays out of
                      wire:snapshot after the first response. --}}
-                <div wire:ignore class="flex flex-col gap-4 sm:gap-10">
+                <div wire:ignore class="flex flex-col gap-8 sm:gap-14">
                     {!! $carouselHtml !!}
                 </div>
             @else
