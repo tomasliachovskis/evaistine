@@ -1,13 +1,11 @@
 @php
     // Mirrors discount/src/lib/header-nav.ts's isHeaderNavItemActive() family.
     $path = request()->path();
-    $order = request()->query('order');
     $akcijosSegment = str_starts_with($path, 'akcijos/') ? explode('/', $path)[1] ?? null : null;
     $keywordSlugs = array_column(config('header_nav.product_keyword_items'), 'slug');
     $isProductKeywordPath = $akcijosSegment && $akcijosSegment !== 'paieska' && in_array($akcijosSegment, $keywordSlugs, true);
     $akcijosActive = $path === 'akcijos' || str_starts_with($path, 'akcijos/');
     $storesActive = $path === 'parduotuves' || str_starts_with($path, 'leidinys/');
-    $topTodayActive = $path === 'akcijos' && $order === 'price_discount_proc_max';
     $leafletsActive = $path === 'leidiniai';
     $cheapestActive = $path === 'pigiausios-prekes';
 
@@ -26,7 +24,7 @@
      desktop-only inline dropdowns (categoriesOpen/productsOpen) and a
      separate mobile-only bottom sheet; there is now only one menu
      implementation, not two. --}}
-<header x-data="{ menuOpen: false, keywordsOpen: false, accountOpen: false }" @keydown.escape.window="menuOpen = false; accountOpen = false" class="fixed top-0 z-50 w-full bg-white pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(15,23,42,0.06),0_4px_16px_rgba(15,23,42,0.08)]">
+<header x-data="{ menuOpen: false, keywordsOpen: false, categoriesMenuOpen: false, categoriesNavOpen: false, accountOpen: false }" @keydown.escape.window="menuOpen = false; accountOpen = false; categoriesNavOpen = false" class="fixed top-0 z-50 w-full bg-white pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(15,23,42,0.06),0_4px_16px_rgba(15,23,42,0.08)]">
     <div class="border-b border-gray-200 bg-white">
         <div class="base-container flex h-14 items-center gap-4 py-2">
             <a href="/" class="flex min-w-0 shrink-0 items-center no-underline outline-offset-2 hover:opacity-90">
@@ -103,18 +101,27 @@
     </div>
 
     <div class="hidden border-b border-gray-200 bg-white lg:block">
-        <nav class="base-container flex items-center gap-2.5 overflow-x-auto" aria-label="Pagrindinė navigacija">
+        <nav class="base-container flex items-center gap-2.5" aria-label="Pagrindinė navigacija">
             <a href="/akcijos" class="{{ $navLinkClass($akcijosActive) }}">
                 <x-app-icon name="tag" class="size-4.5" />Akcijos
             </a>
             <a href="/parduotuves" class="{{ $navLinkClass($storesActive) }}">
                 <x-app-icon name="store" class="size-4.5" />Parduotuvės
             </a>
+            <div class="relative" @click.outside="categoriesNavOpen = false">
+                <button type="button" @click="categoriesNavOpen = !categoriesNavOpen" class="{{ $navLinkClass(false) }}">
+                    <x-app-icon name="layout-grid" class="size-4.5" />Kategorijos
+                    <span :class="categoriesNavOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-3.5" /></span>
+                </button>
+                <div x-show="categoriesNavOpen" x-cloak x-transition class="absolute left-0 top-full z-50 mt-2 max-h-[70vh] w-72 overflow-y-auto rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+                    <x-category-links-list :categories="$categories" />
+                </div>
+            </div>
             <a href="/leidiniai" class="{{ $navLinkClass($leafletsActive) }}">
                 <x-app-icon name="bookmark" class="size-4.5" />Leidiniai
             </a>
             <a href="/pigiausios-prekes" class="{{ $navLinkClass($cheapestActive) }}">
-                <x-app-icon name="shopping-bag" class="size-4.5" />Pigiausios prekės
+                <x-app-icon name="shopping-bag" class="size-4.5" />Didžiausios nuolaidos
             </a>
         </nav>
     </div>
@@ -143,11 +150,23 @@
                 <a href="/parduotuves" @click="menuOpen = false" class="{{ $menuItemClass($storesActive) }}">
                     <x-app-icon name="store" class="size-5 shrink-0" />Parduotuvės
                 </a>
+
+                <div>
+                    <button type="button" @click="categoriesMenuOpen = !categoriesMenuOpen" class="{{ $menuItemClass(false) }}">
+                        <x-app-icon name="layout-grid" class="size-5 shrink-0" />
+                        <span class="flex-1 text-left">Kategorijos</span>
+                        <span :class="categoriesMenuOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-4" /></span>
+                    </button>
+                    <div x-show="categoriesMenuOpen" x-cloak class="pl-2 pb-1">
+                        <x-category-links-list :categories="$categories" />
+                    </div>
+                </div>
+
                 <a href="/leidiniai" @click="menuOpen = false" class="{{ $menuItemClass($leafletsActive) }}">
                     <x-app-icon name="bookmark" class="size-5 shrink-0" />Leidiniai
                 </a>
                 <a href="/pigiausios-prekes" @click="menuOpen = false" class="{{ $menuItemClass($cheapestActive) }}">
-                    <x-app-icon name="shopping-bag" class="size-5 shrink-0" />Pigiausios prekės
+                    <x-app-icon name="shopping-bag" class="size-5 shrink-0" />Didžiausios nuolaidos
                 </a>
 
                 <div>
@@ -160,10 +179,6 @@
                         <x-product-keyword-links-list />
                     </div>
                 </div>
-
-                <a href="/akcijos?order=price_discount_proc_max" @click="menuOpen = false" class="{{ $menuItemClass($topTodayActive) }}">
-                    <x-app-icon name="trending-up" class="size-5 shrink-0" />Didžiausios nuolaidos
-                </a>
 
                 <div class="my-2 border-t border-gray-200"></div>
 
