@@ -419,23 +419,28 @@ class KeywordPageService
             ->with(['product.category', 'store'])
             ->get();
 
-        // Same PRIORITY_STORE_NAMES-first, then-cheapest ordering
-        // buildStorePriceTable() already uses for the keyword page's own
-        // "Kainos pagal parduotuvę" table — without it, a teaser capped at
-        // 5 stores can silently miss a main chain (Maxima/Norfa/Lidl/Iki/
-        // Rimi) whenever a niche store's match happens to be cheaper.
+        // Same PRIORITY_STORE_NAMES-first ordering buildStorePriceTable()
+        // already uses for the keyword page's own "Kainos pagal parduotuvę"
+        // table — without it, a teaser capped at 5 stores can silently miss
+        // a main chain (Maxima/Norfa/Lidl/Iki/Rimi) whenever a niche store's
+        // match happens to have a bigger discount. Within a store, the
+        // primary pick is the biggest discount_percent — per explicit
+        // product decision, a teaser's whole point is "best deals", so the
+        // headline number here is the discount size, not the lowest absolute
+        // price (a €0.30 item at -10% would otherwise beat a €20 item at
+        // -60% just for being cheaper in absolute terms).
         $priorityRank = array_flip(self::PRIORITY_STORE_NAMES);
 
         $priced = $discounts->filter(fn (Discount $d) => (float) $d->discounted_price > 0);
 
         $perStoreCheapest = $priced->groupBy('store_id')
-            ->map(fn (Collection $storeDiscounts) => $storeDiscounts->sortBy('discounted_price')->first())
+            ->map(fn (Collection $storeDiscounts) => $storeDiscounts->sortByDesc('discount_percent')->first())
             ->values()
             ->sort(function (Discount $a, Discount $b) use ($priorityRank) {
                 $rankA = $priorityRank[$a->store->name] ?? count($priorityRank);
                 $rankB = $priorityRank[$b->store->name] ?? count($priorityRank);
 
-                return $rankA <=> $rankB ?: $a->discounted_price <=> $b->discounted_price;
+                return $rankA <=> $rankB ?: $b->discount_percent <=> $a->discount_percent;
             })
             ->values();
 
@@ -453,7 +458,7 @@ class KeywordPageService
         // confirmed live on "Sausas kačių maistas" (all 4 slots landing on
         // one store despite others having active discounts).
         $byStore = $priced->groupBy('store_id')
-            ->map(fn (Collection $storeDiscounts) => $storeDiscounts->sortBy('discounted_price')->values());
+            ->map(fn (Collection $storeDiscounts) => $storeDiscounts->sortByDesc('discount_percent')->values());
         $storeOrder = $byStore->keys()
             ->sort(function ($a, $b) use ($byStore, $priorityRank) {
                 $rankA = $priorityRank[$byStore[$a]->first()->store->name] ?? count($priorityRank);
@@ -500,12 +505,13 @@ class KeywordPageService
         }
 
         // Still short even after exhausting every store's own active
-        // discounts round-robin — fill the rest cheapest-first regardless of
-        // store, same "don't stop early just because it repeats a store"
-        // decision as before, just as the last resort instead of the first.
+        // discounts round-robin — fill the rest by biggest discount_percent
+        // regardless of store, same "don't stop early just because it
+        // repeats a store" decision as before, just as the last resort
+        // instead of the first.
         $backfill = $priced
             ->reject(fn (Discount $d) => in_array($d->id, $usedIds, true))
-            ->sortBy('discounted_price')
+            ->sortByDesc('discount_percent')
             ->take($limit - $combined->count());
 
         $combined = $combined->concat($backfill)->values();
@@ -517,17 +523,17 @@ class KeywordPageService
         // Still short after using every currently-active discount on these
         // mapped products — per explicit product decision, widen to ANY
         // discount ever scraped for them (drops the end_at validity check
-        // entirely), cheapest first, so a thin keyword still shows $limit
-        // real products with a real price instead of stopping short. A
-        // keyword this thin on active offers is rare; this only ever
-        // engages as the last resort after the two tiers above.
+        // entirely), biggest discount_percent first, so a thin keyword still
+        // shows $limit real products with a real price instead of stopping
+        // short. A keyword this thin on active offers is rare; this only
+        // ever engages as the last resort after the two tiers above.
         $usedIds = $combined->pluck('id')->all();
         $widened = Discount::query()
             ->whereIn('product_id', $productIds)
             ->whereNotIn('id', $usedIds)
             ->where('discounted_price', '>', 0)
             ->with(['product.category', 'store'])
-            ->orderBy('discounted_price')
+            ->orderByDesc('discount_percent')
             ->take($limit - $combined->count())
             ->get();
 
