@@ -33,10 +33,23 @@
     //   (store+category combo); plain /akcijos/{category} otherwise (plain
     //   hub, or a category-only page switching to a sibling category).
     // - Picking a store: suffixed with the category when one is fixed
-    //   (category-only or store+category page); plain /akcijos/{store}
-    //   otherwise (keyword page — matches existing behavior, unchanged).
+    //   (category-only or store+category page); on a keyword page there is
+    //   no /akcijos/{store}/{keyword} route (that path only resolves
+    //   store+category), so a plain /akcijos/{store} nav silently dropped
+    //   the keyword filter entirely (confirmed live bug, 2026-09-15) —
+    //   KeywordPageController::show() already reads a ?store= query param
+    //   (same one toggleStore()'s wire re-fetch uses), so link there
+    //   instead, staying on the keyword page with the store applied.
     $categoryHrefFor = fn (string $slug) => ($activeStoreSlug !== null ? '/akcijos/' . $activeStoreSlug . '/' . $slug : '/akcijos/' . $slug) . $orderSuffix;
-    $storeHrefFor = fn (string $slug) => ($activeCategorySlug !== null ? '/akcijos/' . $slug . '/' . $activeCategorySlug : '/akcijos/' . $slug) . $orderSuffix;
+    $storeHrefFor = function (string $slug) use ($activeCategorySlug, $mode, $primarySlug, $order, $orderSuffix) {
+        if ($mode === 'keyword') {
+            $query = array_filter(['store' => $slug, 'order' => $order !== 'popular' ? $order : null]);
+
+            return '/akcijos/' . $primarySlug . '?' . http_build_query($query);
+        }
+
+        return ($activeCategorySlug !== null ? '/akcijos/' . $slug . '/' . $activeCategorySlug : '/akcijos/' . $slug) . $orderSuffix;
+    };
 
     // "Visos" clears the category facet — back to the plain store page. Only
     // meaningful on a store+category combo page (the only case with a

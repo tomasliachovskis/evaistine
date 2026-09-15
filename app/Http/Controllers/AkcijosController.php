@@ -211,7 +211,9 @@ class AkcijosController extends Controller
         $showCategoryFilter = $filtersMode !== 'keyword' && $headerTypeForFilters !== 'store';
         $showStoreFilter = $filtersMode === 'keyword' || $headerTypeForFilters === 'category' || $headerTypeForFilters === 'store_category';
         $activeCategorySlug = $headerTypeForFilters === 'store_category' ? $filtersSecondarySlug : ($headerTypeForFilters === 'category' ? $filtersPrimarySlug : null);
-        $activeStoreSlug = $headerTypeForFilters === 'store_category' ? $filtersPrimarySlug : null;
+        $activeStoreSlug = $headerTypeForFilters === 'store_category'
+            ? $filtersPrimarySlug
+            : ($filtersMode === 'keyword' ? $request->get('store') : null);
 
         return PageHtmlCache::remember($request, $path, fn () => view('akcijos.listing', [
             'deals' => $deals,
