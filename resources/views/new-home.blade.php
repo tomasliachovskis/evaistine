@@ -198,7 +198,10 @@
 
             <div class="flex flex-wrap gap-x-6 gap-y-2 border-t border-gray-200 pt-5 text-base text-gray-600">
                 <span><strong class="text-gray-900 tabular-nums">{{ $stats['total_deals_label'] }}</strong> aktyvios akcijos</span>
-                <span><strong class="text-gray-900 tabular-nums">{{ $stats['active_store_count'] }}</strong> parduotuvės su akcijomis ir leidiniais</span>
+                {{-- 40 is a static number by explicit product decision, same
+                     reasoning as the hero subtitle's "20 kitų parduotuvių" —
+                     not derived from active_store_count. --}}
+                <span><strong class="text-gray-900 tabular-nums">40</strong> parduotuvės su akcijomis ir leidiniais</span>
                 @if ($stats['top_discount_percent'])
                     <span><strong class="text-gray-900 tabular-nums">{{ $stats['top_discount_percent'] }}%</strong> didžiausia nuolaida šiandien</span>
                 @endif
