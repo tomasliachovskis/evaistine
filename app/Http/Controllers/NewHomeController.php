@@ -107,6 +107,15 @@ class NewHomeController extends Controller
             ->values()
             ->all();
 
+        // Reuses the same root-category data HomePageMetaService already
+        // computes for the footer links list — no new query needed, just
+        // filtered to categories with real live offers and ranked by count.
+        $categories = collect($pageMeta['all_category_footer_links'])
+            ->filter(fn (array $category) => ($category['discounts_count'] ?? 0) > 0)
+            ->sortByDesc('discounts_count')
+            ->values()
+            ->all();
+
         $seo = $pageMeta['seo'];
 
         // Deliberately NOT wrapped in PageHtmlCache — per explicit product
@@ -122,6 +131,7 @@ class NewHomeController extends Controller
             'robots' => null,
             'stats' => $pageMeta['stats'],
             'stores' => $stores,
+            'categories' => $categories,
             'comparisonCategories' => $comparisonCategories,
             'latestLeaflets' => $latestLeaflets,
         ]);

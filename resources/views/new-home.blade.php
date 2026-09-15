@@ -131,12 +131,39 @@
                         <x-app-icon name="chevron-right" class="size-4 opacity-80" />
                     </a>
                 </div>
-                <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                {{-- Horizontal snap-scroll slider on mobile (same
+                     scroll-cards-x pattern as the leaflets section below),
+                     a plain 5-col grid at sm+ where they all fit on one row
+                     anyway. --}}
+                <div class="scroll-cards-x mt-4 flex snap-x snap-mandatory gap-3 sm:grid sm:grid-cols-5 sm:overflow-visible">
                     @foreach ($stores as $store)
-                        <x-store-card :store="$store" layout="grid" />
+                        <div class="w-[30%] shrink-0 snap-start sm:w-auto sm:shrink">
+                            <x-store-card :store="$store" layout="grid" />
+                        </div>
                     @endforeach
                 </div>
             </div>
+
+            {{-- Category slider: same horizontal snap-scroll pattern as the
+                 stores row above. Icons rendered grayscale — this row is a
+                 quick-nav strip, not a place to compete visually with the
+                 real product photos in the sections around it, so icons
+                 stay plain black/white instead of their default full color. --}}
+            @if (count($categories))
+                <div>
+                    <h2 class="section-heading-lg">Kategorijos</h2>
+                    <div class="scroll-cards-x mt-4 flex snap-x snap-mandatory gap-3">
+                        @foreach ($categories as $category)
+                            <a href="/akcijos/{{ $category['slug'] }}" class="flex w-[30%] shrink-0 snap-start flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-3.5 text-center transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm sm:w-[168px] sm:rounded-2xl sm:p-4">
+                                <div class="flex h-[72px] w-full items-center justify-center sm:h-[80px]">
+                                    <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-10 shrink-0 grayscale sm:size-12" onerror="this.style.display='none'">
+                                </div>
+                                <span class="line-clamp-2 text-sm font-bold leading-snug text-gray-900 sm:text-base">{{ $category['name'] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
 
             {{-- Leaflets — same frame + card language as the rest of the page
