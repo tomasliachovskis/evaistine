@@ -53,7 +53,19 @@ class StoresPageMetaService
 
     public function formatStore(Collection $stores): array
     {
-        return $stores->map(function (Store $store) {
+        // Batched once for the whole collection (not per-store inside the
+        // map below) — this method also feeds /parduotuves, where $stores
+        // can be every store site-wide, not just the homepage's 5.
+        $leafletCounts = \App\Models\StoreFlyer::query()
+            ->whereIn('store_id', $stores->pluck('id'))
+            ->where(function ($query) {
+                $query->whereNull('valid_to')->orWhere('valid_to', '>=', now()->startOfDay());
+            })
+            ->selectRaw('store_id, count(*) as aggregate')
+            ->groupBy('store_id')
+            ->pluck('aggregate', 'store_id');
+
+        return $stores->map(function (Store $store) use ($leafletCounts) {
             $bestOffer = $this->buildBestOfferForStore($store);
             $maxDiscount = $this->getMaxDiscountPercentForStore($store);
 
@@ -62,6 +74,7 @@ class StoresPageMetaService
                 'name' => $store->name,
                 'slug' => $store->slug,
                 'discounts_count' => $store->discounts_count ?? 0,
+                'leaflets_count' => (int) ($leafletCounts[$store->id] ?? 0),
                 'max_discount_percent' => $maxDiscount,
                 'best_offer' => $bestOffer,
             ];

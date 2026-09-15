@@ -4,6 +4,7 @@
     use App\Support\LithuanianPlural;
 
     $hasOffers = ($store['discounts_count'] ?? 0) > 0;
+    $leafletsCount = $store['leaflets_count'] ?? 0;
     $widthClass = $layout === 'slider'
         ? 'w-[calc((100%-0.75rem)/2.2)] min-w-[calc((100%-0.75rem)/2.2)] max-w-[calc((100%-0.75rem)/2.2)] shrink-0 grow-0 basis-[calc((100%-0.75rem)/2.2)] sm:w-[200px] sm:min-w-[200px] sm:max-w-none sm:basis-auto lg:w-[210px]'
         : '';
@@ -27,6 +28,11 @@
                     Nėra akcijų
                 @endif
             </p>
+            @if ($leafletsCount > 0)
+                <p class="truncate text-center text-xs leading-snug text-gray-500 sm:text-sm">
+                    {{ $leafletsCount }} {{ LithuanianPlural::leafletWord($leafletsCount) }}
+                </p>
+            @endif
         </div>
     </a>
 @else
@@ -44,6 +50,11 @@
                     Nėra akcijų
                 @endif
             </p>
+            @if ($leafletsCount > 0)
+                <p class="truncate text-center text-xs leading-snug text-gray-500 sm:text-sm">
+                    {{ $leafletsCount }} {{ LithuanianPlural::leafletWord($leafletsCount) }}
+                </p>
+            @endif
         </div>
         <span class="mt-3 inline-flex h-8 w-full items-center justify-center rounded-lg border border-green bg-white px-2 text-xs font-bold text-green transition-colors group-hover:bg-green/5 group-hover:text-dark-green sm:mt-3.5 sm:h-9 sm:text-sm">
             Žiūrėti akcijas

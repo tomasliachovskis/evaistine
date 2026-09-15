@@ -47,6 +47,26 @@ class LithuanianPlural
         return 'pasiūlymų';
     }
 
+    public static function leafletWord(int $count): string
+    {
+        $lastDigit = $count % 10;
+        $lastTwoDigits = $count % 100;
+
+        if ($lastTwoDigits >= 11 && $lastTwoDigits <= 19) {
+            return 'leidinių';
+        }
+
+        if ($lastDigit === 1) {
+            return 'leidinys';
+        }
+
+        if ($lastDigit >= 2 && $lastDigit <= 9) {
+            return 'leidiniai';
+        }
+
+        return 'leidinių';
+    }
+
     public static function formatCount(int $count): string
     {
         return str_replace(',', ' ', number_format($count));

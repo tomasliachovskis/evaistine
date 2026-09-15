@@ -76,14 +76,38 @@ class KeywordPageService
         // through editorially-flagged pages with few or zero real matched
         // products (e.g. "Karpis", "Antis", "Tofu kraikas"), which read as
         // broken/random in a "popular" list. Real product count is now the
-        // actual ranking, not the manual sort_order field.
-        return KeywordPage::query()
+        // actual ranking, not the manual sort_order field. Food items list
+        // first, then non-food — same grouping topCandidatesByCategoryGroup()
+        // uses for the homepage teaser, per explicit product decision (was a
+        // single list mixing both, e.g. "Dantų pasta" next to "Kačių kraikas").
+        $pages = KeywordPage::query()
             ->published()
             ->where('is_chip', true)
             ->where('matching_offers_count', '>', 0)
             ->orderByDesc('matching_offers_count')
             ->orderBy('title')
-            ->get(['slug', 'title', 'h1', 'emoji', 'matching_offers_count'])
+            ->get(['slug', 'title', 'h1', 'emoji', 'matching_offers_count', 'category_slugs']);
+
+        $food = [];
+        $nonFood = [];
+        $other = [];
+
+        foreach ($pages as $page) {
+            $primary = $this->categoryResolver->resolvePrimaryListingCategorySlugs(
+                (array) ($page->category_slugs ?? []),
+            );
+            $categorySlug = $primary[0] ?? null;
+
+            if (in_array($categorySlug, FoodCategorySlugs::FOOD, true)) {
+                $food[] = $page;
+            } elseif (in_array($categorySlug, FoodCategorySlugs::NON_FOOD, true)) {
+                $nonFood[] = $page;
+            } else {
+                $other[] = $page;
+            }
+        }
+
+        return collect([...$food, ...$nonFood, ...$other])
             ->map(fn (KeywordPage $page) => $this->mapPublishedPageSummary($page))
             ->values()
             ->all();

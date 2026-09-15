@@ -36,7 +36,7 @@
             @endif
         </header>
 
-        <section aria-labelledby="stores-list-heading" class="section-card">
+        <section aria-labelledby="stores-list-heading">
             <div class="section-heading-row">
                 <h2 id="stores-list-heading" class="section-heading">Prekybos tinklai</h2>
             </div>
