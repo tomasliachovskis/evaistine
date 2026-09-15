@@ -10,9 +10,9 @@
     <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2 sm:gap-2.5">
             @if ($iconSrc)
-                <img src="{{ $iconSrc }}" alt="" class="size-8 shrink-0 object-contain sm:size-9" onerror="this.style.visibility='hidden'">
+                <img src="{{ $iconSrc }}" alt="" class="hidden size-8 shrink-0 object-contain sm:block sm:size-9" onerror="this.style.visibility='hidden'">
             @elseif (isset($icon))
-                <span class="flex size-8 shrink-0 items-center justify-center text-green sm:size-9">
+                <span class="hidden size-8 shrink-0 items-center justify-center text-green sm:flex sm:size-9">
                     {{ $icon }}
                 </span>
             @endif
@@ -24,13 +24,10 @@
             <p class="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-gray-600 sm:text-base {{ $hideSubtitleOnMobile ? 'hidden sm:block' : '' }}">{{ $subtitle }}</p>
         @endif
         @if ($slot->isNotEmpty())
-            {{-- Vertical-bar separator before every stat but the first —
-                 sm+ only. On mobile these items wrap to their own line
-                 (narrower viewport, same gap-y-1 row spacing as before), and
-                 a leading "|" on each wrapped line reads as a stray bullet
-                 rather than a separator, so it's dropped there entirely
-                 instead of trying to hide it conditionally per line. --}}
-            <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-600 sm:gap-x-4 sm:text-sm sm:[&>*:not(:first-child)]:before:mr-2 sm:[&>*:not(:first-child)]:before:text-gray-300 sm:[&>*:not(:first-child)]:before:content-['|']">
+            {{-- Dash separator before every stat but the first, at every
+                 width (previously sm+ only — explicit product decision to
+                 show it on mobile too). --}}
+            <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-600 sm:gap-x-4 sm:text-sm [&>*:not(:first-child)]:before:mr-2 [&>*:not(:first-child)]:before:text-gray-300 [&>*:not(:first-child)]:before:content-['-']">
                 {{ $slot }}
             </p>
         @endif
