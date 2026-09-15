@@ -103,7 +103,7 @@
     <div class="hidden border-b border-gray-200 bg-white lg:block">
         <nav class="base-container flex items-center gap-2.5" aria-label="Pagrindinė navigacija">
             <a href="/akcijos" class="{{ $navLinkClass($akcijosActive) }}">
-                <x-app-icon name="tag" class="size-4.5" />Akcijos
+                <x-app-icon name="tag" class="size-4.5" />Visos akcijos
             </a>
             <a href="/parduotuves" class="{{ $navLinkClass($storesActive) }}">
                 <x-app-icon name="store" class="size-4.5" />Parduotuvės
@@ -145,7 +145,7 @@
             </div>
             <nav class="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4.5">
                 <a href="/akcijos" @click="menuOpen = false" class="{{ $menuItemClass($akcijosActive) }}">
-                    <x-app-icon name="tag" class="size-5 shrink-0" />Akcijos
+                    <x-app-icon name="tag" class="size-5 shrink-0" />Visos akcijos
                 </a>
                 <a href="/parduotuves" @click="menuOpen = false" class="{{ $menuItemClass($storesActive) }}">
                     <x-app-icon name="store" class="size-5 shrink-0" />Parduotuvės
