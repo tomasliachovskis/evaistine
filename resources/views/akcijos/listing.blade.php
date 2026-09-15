@@ -96,7 +96,7 @@
                 >
                     @if ($headerType === 'store')
                         @if ($total > 0)
-                            <span class="whitespace-nowrap"><b class="font-extrabold text-gray-900">{{ number_format($total, 0, ',', ' ') }}</b> akcijos</span>
+                            <span class="whitespace-nowrap">{{ number_format($total, 0, ',', ' ') }} akcijos</span>
                         @endif
                         @if (($listingMeta['locations_count'] ?? 0) > 0)
                             <a href="/parduotuves/{{ $listingMeta['store_slug'] }}" class="inline-flex items-center gap-0.5 whitespace-nowrap font-semibold text-green hover:text-dark-green">
@@ -106,11 +106,11 @@
                         @endif
                     @elseif ($headerType === 'store_category')
                         @if ($total > 0)
-                            <span><b class="font-extrabold text-gray-900">{{ number_format($total, 0, ',', ' ') }}</b> akcijos</span>
+                            <span>{{ number_format($total, 0, ',', ' ') }} akcijos</span>
                         @endif
                     @else
                         @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
-                            <span><b class="font-extrabold text-gray-900">{{ $stat['value'] }}</b> {{ mb_strtolower($stat['label']) }}</span>
+                            <span>{{ $stat['value'] }} {{ mb_strtolower($stat['label']) }}</span>
                         @endforeach
                     @endif
                     @if (!empty($listingMeta['intro']['freshness_label']))
@@ -166,9 +166,9 @@
                 >
                     @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
                         @if (!empty($stat['label_first']))
-                            <span>{{ mb_strtolower($stat['label']) }} <b class="font-extrabold text-gray-900">{{ $stat['value'] }}</b></span>
+                            <span>{{ mb_strtolower($stat['label']) }} {{ $stat['value'] }}</span>
                         @else
-                            <span><b class="font-extrabold text-gray-900">{{ $stat['value'] }}</b> {{ mb_strtolower($stat['label']) }}</span>
+                            <span>{{ $stat['value'] }} {{ mb_strtolower($stat['label']) }}</span>
                         @endif
                     @endforeach
                     @if (!empty($listingMeta['intro']['freshness_label']))

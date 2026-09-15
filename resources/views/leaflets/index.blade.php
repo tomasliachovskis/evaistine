@@ -39,7 +39,7 @@
                 Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.
             </p>
             <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 sm:text-sm">
-                <span><b class="font-extrabold text-gray-900">{{ count($leaflets) }}</b> savaitės katalogai</span>
+                <span>{{ count($leaflets) }} savaitės katalogai</span>
                 @if ($freshnessLabel)
                     <x-content-freshness :label="$freshnessLabel" />
                 @endif
