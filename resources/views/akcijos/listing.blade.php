@@ -108,21 +108,7 @@
                         @endif
                     @else
                         @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
-                            @if ($stat['label'] === 'Parduotuvių')
-                                {{-- Real action, not a static count — the
-                                     store filter right below already lets you
-                                     pick one; this just opens it directly
-                                     from the hero instead of repeating the
-                                     number here too. --}}
-                                <button
-                                    type="button"
-                                    onclick="Livewire.dispatch('open-store-panel')"
-                                    class="inline-flex cursor-pointer items-center gap-0.5 whitespace-nowrap font-semibold text-green hover:text-dark-green"
-                                >
-                                    Keisti parduotuvę
-                                    <x-app-icon name="arrow-right" class="size-3 shrink-0" />
-                                </button>
-                            @else
+                            @if ($stat['label'] !== 'Parduotuvių')
                                 <span>{{ $stat['value'] }} {{ mb_strtolower($stat['label']) }}</span>
                             @endif
                         @endforeach
