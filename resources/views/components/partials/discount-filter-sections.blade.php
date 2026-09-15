@@ -1,4 +1,4 @@
-{{-- Persistent category/store chip grid — used inside discount-filters'
+{{-- Persistent category/store list — used inside discount-filters'
      centered modal, once per open facet ($facet: 'categories' | 'stores').
      Explicit props (not ambient $sidebarMode/$primarySlug/$secondarySlug)
      so the same partial renders either facet independently on pages that
@@ -12,39 +12,40 @@
      and highlights only that one row, it doesn't accumulate a multi-select
      query-string filter.
 
-     Chip-wrap grid (not a vertical list) — per explicit product decision,
-     matches the wrapping-pill pattern used elsewhere on these pages
-     (keyword-chips-row) instead of a tall single-column list. --}}
-@php
-    $chipClass = fn (bool $active) => 'inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-semibold transition-colors '
-        . ($active ? 'border-green bg-green text-white' : 'border-gray-200 text-gray-700 hover:border-green/40');
-@endphp
+     Standard one-row-per-item list (not a chip-wrap grid) — explicit
+     product decision, reversing this session's earlier chip-grid rewrite.
+     $rowClass is the same row style closure the sort dropdown in
+     discount-filters.blade.php already uses (ported from
+     product-filter-controls.tsx's row constants) — reused here instead of
+     a third bespoke row style. --}}
 @if ($facet === 'categories')
-    <section>
-        <div class="flex flex-wrap gap-2">
-            @if ($allHref ?? null)
-                <a href="{{ $allHref }}" class="{{ $chipClass($activeSlug === null) }}">
-                    <x-app-icon name="layout-grid" class="size-4 shrink-0 opacity-80" />
-                    <span>Visos</span>
-                </a>
-            @endif
-            @foreach ($items as $category)
-                <a href="{{ $hrefFor($category['slug']) }}" class="{{ $chipClass($category['slug'] === $activeSlug) }}">
-                    <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-4 shrink-0 opacity-80" onerror="this.style.display='none'">
-                    <span>{{ $category['name'] }}</span>
-                </a>
-            @endforeach
-        </div>
+    <section class="flex flex-col gap-0.5">
+        @if ($allHref ?? null)
+            <a href="{{ $allHref }}" class="{{ $rowClass($activeSlug === null) }}">
+                <x-app-icon name="layout-grid" class="size-5 shrink-0 opacity-70" />
+                <span class="min-w-0 flex-1 truncate">Visos</span>
+            </a>
+        @endif
+        @foreach ($items as $category)
+            <a href="{{ $hrefFor($category['slug']) }}" class="{{ $rowClass($category['slug'] === $activeSlug) }}">
+                <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-5 shrink-0 opacity-70" onerror="this.style.display='none'">
+                <span class="min-w-0 flex-1 truncate">{{ $category['name'] }}</span>
+                @if (isset($category['offers_count']))
+                    <span class="shrink-0 text-sm font-normal text-gray-400">{{ number_format($category['offers_count'], 0, ',', ' ') }}</span>
+                @endif
+            </a>
+        @endforeach
     </section>
 @else
-    <section>
-        <div class="flex flex-wrap gap-2">
-            @foreach ($items as $store)
-                <a href="{{ $hrefFor($store['slug']) }}" class="{{ $chipClass($store['slug'] === $activeSlug) }}">
-                    <x-store-logo :slug="$store['slug']" :name="$store['name']" size="xs" />
-                    <span>{{ $store['name'] }}</span>
-                </a>
-            @endforeach
-        </div>
+    <section class="flex flex-col gap-0.5">
+        @foreach ($items as $store)
+            <a href="{{ $hrefFor($store['slug']) }}" class="{{ $rowClass($store['slug'] === $activeSlug) }}">
+                <x-store-logo :slug="$store['slug']" :name="$store['name']" size="xs" />
+                <span class="min-w-0 flex-1 truncate">{{ $store['name'] }}</span>
+                @if (isset($store['offers_count']))
+                    <span class="shrink-0 text-sm font-normal text-gray-400">{{ number_format($store['offers_count'], 0, ',', ' ') }}</span>
+                @endif
+            </a>
+        @endforeach
     </section>
 @endif
