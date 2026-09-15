@@ -148,8 +148,8 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     # 0755 storage/ permissions over the server's fixed ones every deploy)
     # — that's fixed too (see --no-perms above), this stays as a second
     # line of defense against any other future permission drift.
-    find storage bootstrap/cache -type d -exec chmod g+ws {} \; 2>/dev/null || true
-    find storage bootstrap/cache -type f -exec chmod g+w {} \; 2>/dev/null || true
+    find storage bootstrap/cache -type d -exec chmod g+ws {} + 2>/dev/null || true
+    find storage bootstrap/cache -type f -exec chmod g+w {} + 2>/dev/null || true
 
     composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
     php artisan optimize:clear
@@ -210,8 +210,8 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     # rewrite that exact cache filename fails with "Permission denied"
     # (seen live: 2026-09-01 deploy). The first chmod pass above runs too
     # early to catch a file created during composer/npm.
-    find storage bootstrap/cache -type d -exec chmod g+ws {} \; 2>/dev/null || true
-    find storage bootstrap/cache -type f -exec chmod g+w {} \; 2>/dev/null || true
+    find storage bootstrap/cache -type d -exec chmod g+ws {} + 2>/dev/null || true
+    find storage bootstrap/cache -type f -exec chmod g+w {} + 2>/dev/null || true
 
     # Still an inherent race even right after the chmod above (seen live
     # again, same day: a request compiled a view in the split second between
@@ -222,8 +222,8 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     # happening twice in a row are negligible.
     php artisan view:cache || {
         echo "view:cache failed (permission race with a live request) — fixing perms and retrying once..."
-        find storage bootstrap/cache -type d -exec chmod g+ws {} \; 2>/dev/null || true
-        find storage bootstrap/cache -type f -exec chmod g+w {} \; 2>/dev/null || true
+        find storage bootstrap/cache -type d -exec chmod g+ws {} + 2>/dev/null || true
+        find storage bootstrap/cache -type f -exec chmod g+w {} + 2>/dev/null || true
         php artisan view:cache
     }
 
