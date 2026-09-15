@@ -8,9 +8,7 @@ use App\Services\HomePageMetaService;
 use App\Services\KeywordPageService;
 use App\Services\StoresPageMetaService;
 use App\Support\CacheVersion;
-use App\Support\PageHtmlCache;
 use App\Support\StoreListPriority;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -39,7 +37,7 @@ class NewHomeController extends Controller
         private KeywordPageService $keywordPageService,
     ) {}
 
-    public function index(Request $request)
+    public function index()
     {
         $pageMeta = Cache::remember(
             'new_home_meta_'.CacheVersion::suffix(['discounts']),
@@ -111,7 +109,13 @@ class NewHomeController extends Controller
 
         $seo = $pageMeta['seo'];
 
-        return PageHtmlCache::remember($request, '/', fn () => view('new-home', [
+        // Deliberately NOT wrapped in PageHtmlCache — per explicit product
+        // decision, the homepage changes too often (comparison teasers,
+        // leaflets, stats) to serve a 24h-stale cached copy in production;
+        // every other request already covers its own real cost via the
+        // versioned Cache::remember() calls inside buildHomeTeaser()/
+        // getStores()/etc. this view's own data already goes through.
+        return view('new-home', [
             'title' => $seo['meta_title'] ?: 'Daug akcijų ir nuolaidų Lietuvoje | SuperAkcijos.lt',
             'description' => $seo['meta_description'] ?: 'Visos akcijos ir nuolaidos Lietuvoje vienoje vietoje.',
             'canonical' => url('/'),
@@ -120,6 +124,6 @@ class NewHomeController extends Controller
             'stores' => $stores,
             'comparisonCategories' => $comparisonCategories,
             'latestLeaflets' => $latestLeaflets,
-        ]));
+        ]);
     }
 }
