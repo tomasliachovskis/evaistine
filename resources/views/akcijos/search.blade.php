@@ -63,13 +63,6 @@
                             @endforeach
                         </div>
                     </div>
-                    @if ($selectedStore)
-                        <a href="{{ $storeHref(null) }}" class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 hover:opacity-80">
-                            <x-store-logo :slug="$selectedStore" :name="$selectedStoreName" size="xs" />
-                            {{ $selectedStoreName }}
-                            <x-app-icon name="x" class="size-4" />
-                        </a>
-                    @endif
                 </div>
                 <div class="relative shrink-0">
                     <button type="button" @click="sortOpen = !sortOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
