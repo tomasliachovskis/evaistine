@@ -113,7 +113,7 @@
                     <x-app-icon name="layout-grid" class="size-4.5" />Kategorijos
                     <span :class="categoriesNavOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-3.5" /></span>
                 </button>
-                <div x-show="categoriesNavOpen" x-cloak x-transition class="absolute left-0 top-full z-50 mt-2 max-h-[70vh] w-[48rem] overflow-y-auto rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+                <div x-show="categoriesNavOpen" x-cloak x-transition class="absolute left-0 top-full z-50 mt-2 max-h-[70vh] w-max overflow-y-auto rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
                     <x-category-links-list :categories="$categories" />
                 </div>
             </div>
