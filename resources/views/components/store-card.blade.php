@@ -20,8 +20,8 @@
             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="md" />
         </div>
         <div class="mt-2 flex min-w-0 flex-col gap-0.5 sm:mt-2.5">
-            <p class="whitespace-nowrap text-center text-sm font-bold leading-snug text-gray-900">{{ $store['name'] }}</p>
-            <p class="truncate text-center text-xs leading-snug text-gray-600">
+            <p class="whitespace-nowrap text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
+            <p class="truncate text-center text-sm leading-snug text-gray-600">
                 @if ($hasOffers)
                     {{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::discountWord($store['discounts_count']) }}
                 @else
@@ -29,7 +29,7 @@
                 @endif
             </p>
             @if ($leafletsCount > 0)
-                <p class="truncate text-center text-xs leading-snug text-gray-500">
+                <p class="truncate text-center text-sm leading-snug text-gray-500">
                     {{ $leafletsCount }} {{ LithuanianPlural::leafletWord($leafletsCount) }}
                 </p>
             @endif
@@ -42,8 +42,8 @@
             <x-store-logo :slug="$store['slug']" size="lg" />
         </div>
         <div class="mt-2 flex min-w-0 flex-col gap-0.5 sm:mt-2.5">
-            <p class="line-clamp-2 text-center text-sm font-bold leading-snug text-gray-900">{{ $store['name'] }}</p>
-            <p class="truncate text-center text-xs leading-snug text-gray-600">
+            <p class="line-clamp-2 text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
+            <p class="truncate text-center text-sm leading-snug text-gray-600">
                 @if ($hasOffers)
                     {{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::discountWord($store['discounts_count']) }}
                 @else
@@ -51,12 +51,12 @@
                 @endif
             </p>
             @if ($leafletsCount > 0)
-                <p class="truncate text-center text-xs leading-snug text-gray-500">
+                <p class="truncate text-center text-sm leading-snug text-gray-500">
                     {{ $leafletsCount }} {{ LithuanianPlural::leafletWord($leafletsCount) }}
                 </p>
             @endif
         </div>
-        <span class="mt-3 inline-flex h-8 w-full items-center justify-center rounded-lg border border-green bg-white px-2 text-xs font-bold text-green transition-colors group-hover:bg-green/5 group-hover:text-dark-green sm:mt-3.5 sm:h-9">
+        <span class="mt-3 inline-flex h-8 w-full items-center justify-center rounded-lg border border-green bg-white px-2 text-sm font-bold text-green transition-colors group-hover:bg-green/5 group-hover:text-dark-green sm:mt-3.5 sm:h-9">
             Žiūrėti akcijas
         </span>
     </a>
