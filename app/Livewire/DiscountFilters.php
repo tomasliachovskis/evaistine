@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\KeywordPageController;
 use App\Http\Controllers\Api\ProductController;
 use App\Support\ListingDealsFetcher;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -88,6 +89,16 @@ class DiscountFilters extends Component
     // Only one at a time, same UX as the old single-panel toggle, just keyed
     // now that up to two independent buttons can open it.
     public ?string $openPanel = null;
+
+    // Lets the plain-Blade hero above this component (akcijos/listing.blade.php's
+    // "Keisti parduotuvę" action, outside this component's own DOM) open the
+    // store filter panel via a global Livewire event instead of duplicating
+    // the panel/filter UI a second time up there.
+    #[On('open-store-panel')]
+    public function openStorePanel(): void
+    {
+        $this->openPanel = 'store';
+    }
 
     // Rendered carousel markup from the parent listing view — kept only for
     // the initial full-page response and stripped in dehydrate() so it never

@@ -98,19 +98,29 @@
                         @if ($total > 0)
                             <span class="whitespace-nowrap">{{ number_format($total, 0, ',', ' ') }} akcijos</span>
                         @endif
-                        @if (($listingMeta['locations_count'] ?? 0) > 0)
-                            <a href="/parduotuves/{{ $listingMeta['store_slug'] }}" class="inline-flex items-center gap-0.5 whitespace-nowrap font-semibold text-green hover:text-dark-green">
-                                {{ number_format($listingMeta['locations_count'], 0, ',', ' ') }} parduotuvės<span class="hidden sm:inline"> Lietuvoje</span>
-                                <x-app-icon name="arrow-right" class="size-3 shrink-0" />
-                            </a>
-                        @endif
                     @elseif ($headerType === 'store_category')
                         @if ($total > 0)
                             <span>{{ number_format($total, 0, ',', ' ') }} akcijos</span>
                         @endif
                     @else
                         @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
-                            <span>{{ $stat['value'] }} {{ mb_strtolower($stat['label']) }}</span>
+                            @if ($stat['label'] === 'Parduotuvių')
+                                {{-- Real action, not a static count — the
+                                     store filter right below already lets you
+                                     pick one; this just opens it directly
+                                     from the hero instead of repeating the
+                                     number here too. --}}
+                                <button
+                                    type="button"
+                                    onclick="Livewire.dispatch('open-store-panel')"
+                                    class="inline-flex cursor-pointer items-center gap-0.5 whitespace-nowrap font-semibold text-green hover:text-dark-green"
+                                >
+                                    Keisti parduotuvę
+                                    <x-app-icon name="arrow-right" class="size-3 shrink-0" />
+                                </button>
+                            @else
+                                <span>{{ $stat['value'] }} {{ mb_strtolower($stat['label']) }}</span>
+                            @endif
                         @endforeach
                     @endif
                     @if (!empty($listingMeta['intro']['freshness_label']))
