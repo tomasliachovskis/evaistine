@@ -24,7 +24,7 @@ class NewHomeController extends Controller
     // showing on every load. Candidates themselves come from
     // KeywordPageService::topCandidatesByCategoryGroup() (ranked by each
     // page's own matching_offers_count), not a hand-picked slug list.
-    private const HOMEPAGE_ITEMS_PER_BLOCK = 2;
+    private const HOMEPAGE_ITEMS_PER_BLOCK = 3;
 
     // "Naujausi akcijų leidiniai" is one row (grid-cols-4 at sm+) — one
     // leaflet per store, in this priority order, per explicit product

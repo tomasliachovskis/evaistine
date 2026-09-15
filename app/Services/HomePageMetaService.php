@@ -70,7 +70,7 @@ class HomePageMetaService
             'h1' => 'Akcijos, nuolaidos ir kainų palyginimas Lietuvoje',
             'intro_lead' => "Agreguojame {$dealsLabel}+ akcijų iš {$topNames} ir kitų Lietuvos tinklų.",
             'intro_support' => 'Palyginkite prekybos tinklų savaitės nuolaidas ir akcijas vienoje vietoje – duomenys atnaujinami kasdien.',
-            'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – kainų palyginimas | SuperAkcijos.lt',
+            'meta_title' => 'Visos akcijos ir nuolaidos Lietuvoje – kainų palyginimas | SuperAkcijos.lt',
             // Explicit keywords per direct request: "akcijos"/"leidiniai"
             // (generic terms) plus a real branded-query example pairing
             // ("{Store} akcija", "{Store} leidinys" — how people actually
@@ -82,7 +82,19 @@ class HomePageMetaService
     private function buildStats(Collection $stores): array
     {
         $totalDeals = $stores->sum('discounts_count');
-        $activeStoreCount = $stores->filter(fn (Store $s) => $s->discounts_count > 0)->count();
+        // "Active" = has a discount OR a current leaflet — a store-only-in-
+        // leaflets store (some smaller chains are only ever scraped as PDF
+        // leaflets, no per-SKU discounts extracted) was otherwise invisible
+        // in this count even though it genuinely has live content on-site.
+        $storeIdsWithCurrentFlyer = \App\Models\StoreFlyer::query()
+            ->where(function ($query) {
+                $query->whereNull('valid_to')->orWhere('valid_to', '>=', now()->startOfDay());
+            })
+            ->distinct()
+            ->pluck('store_id');
+        $activeStoreCount = $stores
+            ->filter(fn (Store $s) => $s->discounts_count > 0 || $storeIdsWithCurrentFlyer->contains($s->id))
+            ->count();
         $topDiscount = (int) round(Discount::max('discount_percent') ?? 0);
         $newTodayCount = HomePageSectionsService::getNewTodayCount();
         // "0 naujų šiandien" reads as broken/stale on the homepage hero — on

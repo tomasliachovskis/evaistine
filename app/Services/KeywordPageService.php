@@ -71,10 +71,17 @@ class KeywordPageService
 
     public function listPublishedPages(): array
     {
+        // Footer "Produktai" list and the search modal's "Populiariausi"
+        // suggestions both come from this one list — is_chip alone let
+        // through editorially-flagged pages with few or zero real matched
+        // products (e.g. "Karpis", "Antis", "Tofu kraikas"), which read as
+        // broken/random in a "popular" list. Real product count is now the
+        // actual ranking, not the manual sort_order field.
         return KeywordPage::query()
             ->published()
             ->where('is_chip', true)
-            ->orderBy('sort_order')
+            ->where('matching_offers_count', '>', 0)
+            ->orderByDesc('matching_offers_count')
             ->orderBy('title')
             ->get(['slug', 'title', 'h1', 'emoji', 'matching_offers_count'])
             ->map(fn (KeywordPage $page) => $this->mapPublishedPageSummary($page))

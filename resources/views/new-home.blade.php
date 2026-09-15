@@ -123,8 +123,14 @@
             {{-- Store row: the 5 main chains, real discount counts. Same
                  section-card + heading pattern as the comparison blocks
                  above it, instead of floating bare on the page background. --}}
-            <div class="section-card">
-                <h2 class="section-heading-lg">Didžiausi Lietuvos parduotuvių tinklai</h2>
+            <div>
+                <div class="section-heading-row">
+                    <h2 class="section-heading-lg">Didžiausi Lietuvos parduotuvių tinklai</h2>
+                    <a href="/parduotuves" class="section-link text-base">
+                        Žiūrėti visas
+                        <x-app-icon name="chevron-right" class="size-4 opacity-80" />
+                    </a>
+                </div>
                 <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
                     @foreach ($stores as $store)
                         <x-store-card :store="$store" layout="grid" />
@@ -142,7 +148,7 @@
                  different product. Same grid as the deals section above, no
                  carousel, for the same reason. --}}
             @if (count($latestLeaflets))
-                <div class="section-card">
+                <div>
                     <div class="section-heading-row">
                         <h2 class="section-heading-lg">Naujausi akcijų leidiniai</h2>
                         <a href="/leidiniai" class="section-link text-base">
@@ -150,14 +156,18 @@
                             <x-app-icon name="chevron-right" class="size-4 opacity-80" />
                         </a>
                     </div>
-                    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {{-- Horizontal snap-scroll slider on mobile (same
+                         scroll-cards-x pattern as the carousel sections
+                         above), a plain 4-col grid at sm+ where they all fit
+                         on one row anyway. --}}
+                    <div class="scroll-cards-x mt-4 flex snap-x snap-mandatory gap-3 sm:grid sm:grid-cols-4 sm:overflow-visible">
                         @foreach ($latestLeaflets as $leaflet)
                             @php
                                 $isExpired = $leaflet['status'] === 'expired';
                                 $days = $leaflet['days_remaining'] ?? null;
                                 $href = $leaflet['view_url'] ?? "/leidinys/{$leaflet['store_slug']}";
                             @endphp
-                            <a href="{{ $href }}" class="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 hover:opacity-80">
+                            <a href="{{ $href }}" class="flex w-[42%] shrink-0 snap-start flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 hover:opacity-80 sm:w-auto sm:shrink">
                                 <div class="relative aspect-square w-full overflow-hidden rounded-lg bg-white">
                                     @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
                                         <img src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}" alt="{{ $leaflet['title'] ?? $leaflet['store_name'] }}" loading="lazy" class="h-full w-full object-contain p-2 {{ $isExpired ? 'grayscale' : '' }}">
@@ -188,7 +198,7 @@
 
             <div class="flex flex-wrap gap-x-6 gap-y-2 border-t border-gray-200 pt-5 text-base text-gray-600">
                 <span><strong class="text-gray-900 tabular-nums">{{ $stats['total_deals_label'] }}</strong> aktyvios akcijos</span>
-                <span><strong class="text-gray-900 tabular-nums">{{ $stats['active_store_count'] }}</strong> parduotuvės su akcijomis</span>
+                <span><strong class="text-gray-900 tabular-nums">{{ $stats['active_store_count'] }}</strong> parduotuvės su akcijomis ir leidiniais</span>
                 @if ($stats['top_discount_percent'])
                     <span><strong class="text-gray-900 tabular-nums">{{ $stats['top_discount_percent'] }}%</strong> didžiausia nuolaida šiandien</span>
                 @endif
