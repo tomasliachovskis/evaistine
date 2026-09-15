@@ -20,7 +20,7 @@
             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="md" />
         </div>
         <div class="mt-2 flex min-w-0 flex-col gap-0.5 sm:mt-2.5">
-            <p class="whitespace-nowrap text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
+            <p class="mb-1 whitespace-nowrap text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
             <p class="truncate text-center text-sm leading-snug text-gray-600">
                 @if ($hasOffers)
                     {{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::discountWord($store['discounts_count']) }}
@@ -42,7 +42,7 @@
             <x-store-logo :slug="$store['slug']" size="lg" />
         </div>
         <div class="mt-2 flex min-w-0 flex-col gap-0.5 sm:mt-2.5">
-            <p class="line-clamp-2 text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
+            <p class="mb-1 line-clamp-2 text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
             <p class="truncate text-center text-sm leading-snug text-gray-600">
                 @if ($hasOffers)
                     {{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::discountWord($store['discounts_count']) }}
