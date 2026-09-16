@@ -1,6 +1,6 @@
 <x-layouts.app title="Atsisakyta kainų priminimų" :robots="'noindex, nofollow'">
     <div class="base-container">
-        <div class="mx-auto flex max-w-md flex-col items-center gap-4 pt-8 pb-16 text-center sm:pt-12">
+        <div class="mx-auto flex max-w-md flex-col items-center gap-4 pt-12 pb-16 text-center sm:pt-16">
             <h1 class="text-xl font-bold text-gray-900">Atsisakyta</h1>
             <p class="text-base text-gray-600">
                 Daugiau nebegausite el. laiškų apie sekamų prekių kainų pokyčius. Jūsų sekamų prekių sąrašas

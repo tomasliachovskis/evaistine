@@ -1,6 +1,6 @@
 <x-layouts.app title="Atsisakyti kainų priminimų" :robots="'noindex, nofollow'">
     <div class="base-container">
-        <div class="mx-auto flex max-w-md flex-col items-center gap-4 pt-8 pb-16 text-center sm:pt-12">
+        <div class="mx-auto flex max-w-md flex-col items-center gap-4 pt-12 pb-16 text-center sm:pt-16">
             <h1 class="text-xl font-bold text-gray-900">Atsisakyti kainų priminimų?</h1>
             <p class="text-base text-gray-600">
                 Nebegausite el. laiškų, kai sekamos prekės atpinga. Jūsų sekamų prekių sąrašas
