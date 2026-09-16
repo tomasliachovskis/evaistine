@@ -64,7 +64,7 @@
         @endphp
 
         @if (! empty($activeLeaflets))
-            <section class="section-card">
+            <section>
                 <div class="section-heading-row">
                     <h2 class="section-heading">Galiojantys leidiniai</h2>
                 </div>
@@ -87,7 +87,7 @@
         @endif
 
         @if (! empty($expiredLeaflets))
-            <section class="section-card mt-2">
+            <section class="mt-6">
                 <div class="section-heading-row">
                     <h2 class="section-heading text-gray-500">Pasibaigę leidiniai</h2>
                 </div>

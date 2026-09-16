@@ -25,7 +25,7 @@
      hub.blade.php's version where the whole page is already scoped to one
      store. --}}
 <a href="{{ $href }}" {{ $attributes->merge(['class' => 'group flex flex-row gap-3 overflow-hidden rounded-[14px] border border-gray-200 bg-white shadow-sm transition-shadow sm:flex-col sm:gap-0 sm:hover:shadow-lg']) }}>
-    <div class="relative block w-24 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
+    <div class="relative block w-32 shrink-0 overflow-hidden bg-gray-50 sm:aspect-[6/5] sm:w-full">
         @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
             <img
                 src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}"
