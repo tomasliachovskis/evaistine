@@ -38,7 +38,7 @@
             {{-- Lets someone start comparing without typing anything —
                  straight to real keyword pages, same ones the search box
                  itself would land on for these terms. --}}
-            <div class="flex flex-wrap items-center justify-center gap-2">
+            <div class="hidden flex-wrap items-center justify-center gap-2 sm:flex">
                 @foreach (['kava' => 'Kava', 'sviestas' => 'Sviestas', 'pienas' => 'Pienas', 'kiausiniai' => 'Kiaušiniai'] as $slug => $label)
                     <a href="/akcijos/{{ $slug }}" class="rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green">
                         {{ $label }}
