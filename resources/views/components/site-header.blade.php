@@ -106,14 +106,14 @@
 
     <div class="hidden border-b border-gray-200 bg-white lg:block">
         <nav class="base-container flex items-center gap-2.5" aria-label="Pagrindinė navigacija">
-            <a href="/akcijos" class="{{ $navLinkClass($akcijosActive) }}">
+            <a href="/akcijos" data-ga-event="desktop_nav_click" data-ga-item="products" class="{{ $navLinkClass($akcijosActive) }}">
                 <x-app-icon name="tag" class="size-4.5" />Visos akcijos
             </a>
-            <a href="/parduotuves" class="{{ $navLinkClass($storesActive) }}">
+            <a href="/parduotuves" data-ga-event="desktop_nav_click" data-ga-item="stores" class="{{ $navLinkClass($storesActive) }}">
                 <x-app-icon name="store" class="size-4.5" />Parduotuvės
             </a>
             <div class="relative" @click.outside="categoriesNavOpen = false">
-                <button type="button" @click="categoriesNavOpen = !categoriesNavOpen" class="{{ $navLinkClass(false) }}">
+                <button type="button" @click="categoriesNavOpen = !categoriesNavOpen" data-ga-event="desktop_nav_click" data-ga-item="categories" class="{{ $navLinkClass(false) }}">
                     <x-app-icon name="layout-grid" class="size-4.5" />Kategorijos
                     <span :class="categoriesNavOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-3.5" /></span>
                 </button>
@@ -121,10 +121,10 @@
                     <x-category-links-list :categories="$categories" />
                 </div>
             </div>
-            <a href="/leidiniai" class="{{ $navLinkClass($leafletsActive) }}">
+            <a href="/leidiniai" data-ga-event="desktop_nav_click" data-ga-item="leaflets" class="{{ $navLinkClass($leafletsActive) }}">
                 <x-app-icon name="bookmark" class="size-4.5" />Leidiniai
             </a>
-            <a href="/pigiausios-prekes" class="{{ $navLinkClass($cheapestActive) }}">
+            <a href="/pigiausios-prekes" data-ga-event="desktop_nav_click" data-ga-item="cheapest" class="{{ $navLinkClass($cheapestActive) }}">
                 <x-app-icon name="shopping-bag" class="size-4.5" />Didžiausios nuolaidos
             </a>
         </nav>

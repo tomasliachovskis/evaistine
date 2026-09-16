@@ -35,7 +35,7 @@ document.addEventListener('click', (event) => {
     }
 
     const params = {};
-    const { gaProductId, gaProductName, gaSource } = target.dataset;
+    const { gaProductId, gaProductName, gaSource, gaItem } = target.dataset;
 
     if (gaProductId) {
         params.product_id = Number(gaProductId);
@@ -45,6 +45,9 @@ document.addEventListener('click', (event) => {
     }
     if (gaSource) {
         params.source = gaSource;
+    }
+    if (gaItem) {
+        params.item = gaItem;
     }
 
     window.trackGaEvent(target.dataset.gaEvent, params);

@@ -54,16 +54,16 @@
     aria-label="Mobili navigacija"
 >
     <div class="grid grid-cols-5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <a href="/" class="{{ $itemClass($activeTab === 'home') }}">
+        <a href="/" data-ga-event="mobile_nav_click" data-ga-item="home" class="{{ $itemClass($activeTab === 'home') }}">
             <span class="relative inline-flex"><x-app-icon name="home" class="size-6" style="{{ $activeTab === 'home' ? 'stroke-width:2.25' : '' }}" /></span>
             <span class="truncate">Pagrindinis</span>
         </a>
-        <button type="button" @click="categoriesOpen = true; storesOpen = false" class="{{ $itemClass(false) }}" :class="(categoriesOpen || '{{ $activeTab }}' === 'categories') && 'text-green'">
+        <button type="button" @click="categoriesOpen = true; storesOpen = false" data-ga-event="mobile_nav_click" data-ga-item="categories" class="{{ $itemClass(false) }}" :class="(categoriesOpen || '{{ $activeTab }}' === 'categories') && 'text-green'">
             <span class="relative inline-flex"><x-app-icon name="layout-grid" class="size-6" /></span>
             <span class="truncate">Kategorijos</span>
         </button>
         @auth
-            <a href="/favorites" class="{{ $itemClass($activeTab === 'favorites') }}">
+            <a href="/favorites" data-ga-event="mobile_nav_click" data-ga-item="favorites" class="{{ $itemClass($activeTab === 'favorites') }}">
                 <span class="relative inline-flex">
                     <x-app-icon name="heart" class="size-6" style="{{ $activeTab === 'favorites' ? 'stroke-width:2.25' : '' }}" />
                     <livewire:favorites-badge />
@@ -71,16 +71,16 @@
                 <span class="truncate">Stebimos</span>
             </a>
         @else
-            <button type="button" @click="$store.authModal.open = true" class="{{ $itemClass(false) }}">
+            <button type="button" @click="$store.authModal.open = true" data-ga-event="mobile_nav_click" data-ga-item="favorites" class="{{ $itemClass(false) }}">
                 <span class="relative inline-flex"><x-app-icon name="heart" class="size-6" /></span>
                 <span class="truncate">Stebimos</span>
             </button>
         @endauth
-        <button type="button" @click="storesOpen = true; categoriesOpen = false" class="{{ $itemClass(false) }}" :class="(storesOpen || '{{ $activeTab }}' === 'stores') && 'text-green'">
+        <button type="button" @click="storesOpen = true; categoriesOpen = false" data-ga-event="mobile_nav_click" data-ga-item="stores" class="{{ $itemClass(false) }}" :class="(storesOpen || '{{ $activeTab }}' === 'stores') && 'text-green'">
             <span class="relative inline-flex"><x-app-icon name="store" class="size-6" /></span>
             <span class="truncate">Parduotuvės</span>
         </button>
-        <a href="/akcijos" class="{{ $itemClass($activeTab === 'products') }}">
+        <a href="/akcijos" data-ga-event="mobile_nav_click" data-ga-item="products" class="{{ $itemClass($activeTab === 'products') }}">
             <span class="relative inline-flex"><x-app-icon name="package" class="size-6" style="{{ $activeTab === 'products' ? 'stroke-width:2.25' : '' }}" /></span>
             <span class="truncate">Produktai</span>
         </a>
