@@ -46,7 +46,25 @@
             </p>
         </div>
 
-        <x-keyword-chips-row :pages="$storeChips" aria-label="Parduotuvės" />
+        {{-- Same sticky pill-bar language as discount-filters.blade.php's
+             filter bar / leaflet-quick-links.blade.php — was a plain
+             unstickied chip row before, now docks under the header on
+             scroll like every other listing-page filter bar. Flat link
+             pills (no own border/background) instead of
+             <x-keyword-chips-row>'s bordered white chips — those read as a
+             second, nested pill design once placed inside this bar. --}}
+        <div class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:min-h-[52px] sm:px-[20px]">
+            <nav aria-label="Parduotuvės" class="scroll-cards-x flex flex-nowrap items-center gap-1">
+                @foreach ($storeChips as $chip)
+                    <a href="{{ $chip['href'] }}" class="inline-flex h-full shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]">
+                        @if (!empty($chip['logo_slug']))
+                            <x-store-logo :slug="$chip['logo_slug']" :name="$chip['title']" size="xs" />
+                        @endif
+                        <span>{{ $chip['title'] }}{{ !empty($chip['matching_offers_count']) ? ' (' . $chip['matching_offers_count'] . ')' : '' }}</span>
+                    </a>
+                @endforeach
+            </nav>
+        </div>
 
         @if (empty($leaflets))
             <div class="flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-6 text-center">

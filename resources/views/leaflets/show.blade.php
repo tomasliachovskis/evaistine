@@ -25,7 +25,6 @@
     <main class="base-container py-6 sm:py-8">
         <div class="space-y-6">
             <x-type-hero
-                :icon-src="'/assets/stores/' . $storeSlug . '.svg'"
                 :title="$flyer['title']"
                 :subtitle="$dateRange"
             >
@@ -37,13 +36,7 @@
                 </x-slot:cta>
             </x-type-hero>
 
-            <x-store-nav-tabs
-                :store-slug="$storeSlug"
-                :leaflets-count="$listingMeta['leaflets_count'] ?? 0"
-                :total-offers="$totalOffers"
-                :aria-label="$storeName . ' skiltys'"
-                active="leidiniai"
-            />
+            <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" :show-leaflets-link="true" :leaflets-count="$listingMeta['leaflets_count'] ?? 0" />
 
             <div class="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
                 @if (!empty($pages))
@@ -134,7 +127,7 @@
                             @else
                                 <div class="flex flex-col gap-2">
                                     @foreach ($otherLeaflets->take(6) as $other)
-                                        <a href="{{ $other['view_url'] ?? "/leidinys/{$storeSlug}" }}" class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 transition-colors hover:border-green hover:bg-green/5">
+                                        <a href="{{ $other['view_url'] ?? "/leidinys/{$storeSlug}" }}" class="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-green/5">
                                             @if (!empty($other['image_url']))
                                                 <img src="{{ $other['image_url'] }}" alt="" class="h-20 w-16 shrink-0 rounded-md object-cover">
                                             @endif

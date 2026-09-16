@@ -45,13 +45,7 @@
                 </x-slot:cta>
             </x-type-hero>
 
-            <x-store-nav-tabs
-                :store-slug="$storeSlug"
-                :leaflets-count="count($leaflets)"
-                :total-offers="$totalOffers"
-                :aria-label="$storeName . ' skiltys'"
-                active="leidiniai"
-            />
+            <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" />
         </div>
 
         @php
