@@ -135,7 +135,7 @@
                      anyway. --}}
                 <div class="scroll-cards-x mt-4 flex snap-x snap-mandatory gap-3 sm:grid sm:grid-cols-5 sm:overflow-visible">
                     @foreach ($stores as $store)
-                        <div class="w-[30%] shrink-0 snap-start sm:w-auto sm:shrink">
+                        <div class="w-[42%] shrink-0 snap-start sm:w-auto sm:shrink">
                             <x-store-card :store="$store" layout="grid" />
                         </div>
                     @endforeach
