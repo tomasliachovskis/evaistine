@@ -199,19 +199,23 @@ class AkcijosController extends Controller
         }
 
         // Per explicit product decision: category and store+category pages
-        // now show BOTH a "Parduotuvės" and a "Kategorijos" filter (each
+        // show BOTH a "Parduotuvės" and a "Kategorijos" filter (each
         // pre-highlighting whichever facet the URL already fixes), instead
-        // of the old single-facet-only sidebar. Store-only pages are
-        // deliberately untouched — no shared filter bar there at all
-        // (unchanged, see $showFilters below); <x-store-nav-tabs> still
-        // owns category-switching for that one page type. The plain
+        // of the old single-facet-only sidebar. Plain store pages now get
+        // the same bar too (added 2026-09-16) — <x-store-nav-tabs> still owns
+        // the "Akcijos/Leidiniai/categories" tab row above it, this bar is
+        // purely the facet-switcher, same as every other listing page type.
+        // No sort control there though (see $showSort below) — store pages
+        // render curated carousels ($showCarousels), never the sortable flat
+        // grid, so a sort dropdown would have nothing to act on. The plain
         // /akcijos hub and keyword pages keep their existing single-facet
-        // behavior too (categories-only / stores-only respectively).
+        // behavior (categories-only / stores-only respectively).
         $headerTypeForFilters = $listingMeta['type'] ?? null;
-        $showCategoryFilter = $filtersMode !== 'keyword' && $headerTypeForFilters !== 'store';
-        $showStoreFilter = $filtersMode === 'keyword' || $headerTypeForFilters === 'category' || $headerTypeForFilters === 'store_category';
+        $showCategoryFilter = $filtersMode !== 'keyword';
+        $showStoreFilter = $filtersMode === 'keyword' || $headerTypeForFilters === 'category' || $headerTypeForFilters === 'store_category' || $headerTypeForFilters === 'store';
+        $showSort = $headerTypeForFilters !== 'store';
         $activeCategorySlug = $headerTypeForFilters === 'store_category' ? $filtersSecondarySlug : ($headerTypeForFilters === 'category' ? $filtersPrimarySlug : null);
-        $activeStoreSlug = $headerTypeForFilters === 'store_category'
+        $activeStoreSlug = ($headerTypeForFilters === 'store_category' || $headerTypeForFilters === 'store')
             ? $filtersPrimarySlug
             : ($filtersMode === 'keyword' ? $request->get('store') : null);
 
@@ -229,6 +233,7 @@ class AkcijosController extends Controller
             'filtersSecondarySlug' => $filtersSecondarySlug,
             'showStoreFilter' => $showStoreFilter,
             'showCategoryFilter' => $showCategoryFilter,
+            'showSort' => $showSort,
             'activeStoreSlug' => $activeStoreSlug,
             'activeCategorySlug' => $activeCategorySlug,
             'sections' => $sections,

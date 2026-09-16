@@ -14,6 +14,22 @@
     $menuItemClass = fn (bool $active) => 'flex min-h-[56px] w-full items-center gap-3.5 rounded-xl px-2.5 py-4 text-[1.05rem] font-bold transition-colors '
         . ($active ? 'bg-green/10 text-dark-green' : 'text-gray-900 hover:bg-gray-100');
     $headerIconClass = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-600 transition-colors hover:bg-gray-200';
+
+    // Same row style discount-filters.blade.php's store/category panels use
+    // (ported from product-filter-controls.tsx's row constants) — reused
+    // here so the desktop nav's Kategorijos click opens the identical modal
+    // instead of its own smaller bespoke dropdown.
+    $categoryRowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[40px] text-[16px] leading-snug text-left transition-colors '
+        . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
+    // discount-filter-sections.blade.php's categories branch reads
+    // offers_count; MobileNavComposer's $categories carries discounts_count
+    // — same figure, different key, since it's built for the different
+    // category-links-list caller instead.
+    $categoriesForModal = collect($categories)->map(fn ($category) => [
+        'slug' => $category['slug'],
+        'name' => $category['name'],
+        'offers_count' => $category['discounts_count'] ?? 0,
+    ])->all();
 @endphp
 
 {{-- x-data="{}" required for @click bindings here to survive Livewire's
@@ -24,7 +40,32 @@
      desktop-only inline dropdowns (categoriesOpen/productsOpen) and a
      separate mobile-only bottom sheet; there is now only one menu
      implementation, not two. --}}
-<header x-data="{ menuOpen: false, keywordsOpen: false, categoriesMenuOpen: false, categoriesNavOpen: false, accountOpen: false }" @keydown.escape.window="menuOpen = false; accountOpen = false; categoriesNavOpen = false" class="fixed top-0 z-50 w-full bg-white pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(15,23,42,0.06),0_4px_16px_rgba(15,23,42,0.08)]">
+<header
+    x-data="{
+        menuOpen: false, keywordsOpen: false, categoriesMenuOpen: false, categoriesNavOpen: false, accountOpen: false,
+        lastScrollY: 0,
+        init() {
+            this.lastScrollY = window.scrollY;
+            let ticking = false;
+            window.addEventListener('scroll', () => {
+                if (this.menuOpen) { return; }
+                if (ticking) { return; }
+                ticking = true;
+                requestAnimationFrame(() => {
+                    const currentY = window.scrollY;
+                    const delta = currentY - this.lastScrollY;
+                    if (currentY <= 12) { $store.siteHeader.visible = true; }
+                    else if (delta > 10) { $store.siteHeader.visible = false; }
+                    else if (delta < -10) { $store.siteHeader.visible = true; }
+                    this.lastScrollY = currentY;
+                    ticking = false;
+                });
+            }, { passive: true });
+        },
+    }"
+    @keydown.escape.window="menuOpen = false; accountOpen = false; categoriesNavOpen = false"
+    class="fixed top-0 z-50 w-full bg-white pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(15,23,42,0.06),0_4px_16px_rgba(15,23,42,0.08)]"
+>
     <div class="border-b border-gray-200 bg-white">
         <div class="base-container flex h-14 items-center gap-4 py-2">
             <a href="/" class="flex min-w-0 shrink-0 items-center no-underline outline-offset-2 hover:opacity-90">
@@ -104,7 +145,7 @@
         </div>
     </div>
 
-    <div class="hidden border-b border-gray-200 bg-white lg:block">
+    <div :class="!$store.siteHeader.visible && 'lg:!hidden'" class="hidden border-b border-gray-200 bg-white lg:block">
         <nav class="base-container flex items-center gap-2.5" aria-label="Pagrindinė navigacija">
             <a href="/akcijos" data-ga-event="desktop_nav_click" data-ga-item="products" class="{{ $navLinkClass($akcijosActive) }}">
                 <x-app-icon name="tag" class="size-4.5" />Visos akcijos
@@ -112,13 +153,29 @@
             <a href="/parduotuves" data-ga-event="desktop_nav_click" data-ga-item="stores" class="{{ $navLinkClass($storesActive) }}">
                 <x-app-icon name="store" class="size-4.5" />Parduotuvės
             </a>
-            <div class="relative" @click.outside="categoriesNavOpen = false">
+            <div class="relative">
                 <button type="button" @click="categoriesNavOpen = !categoriesNavOpen" data-ga-event="desktop_nav_click" data-ga-item="categories" class="{{ $navLinkClass(false) }}">
                     <x-app-icon name="layout-grid" class="size-4.5" />Kategorijos
                     <span :class="categoriesNavOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-3.5" /></span>
                 </button>
-                <div x-show="categoriesNavOpen" x-cloak x-transition class="absolute left-0 top-full z-50 mt-2 max-h-[70vh] w-max overflow-y-auto rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
-                    <x-category-links-list :categories="$categories" />
+                {{-- Same centered-modal shell as discount-filters.blade.php's
+                     category panel (akcijos listing pages) — reused here
+                     instead of a second, smaller bespoke dropdown, so
+                     "browse categories" looks and behaves the same wherever
+                     it's triggered. This button only ever renders at lg+, so
+                     the modal always opens in its "desktop" (sm:items-center)
+                     shape in practice. --}}
+                <div x-show="categoriesNavOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="categoriesNavOpen = false">
+                    <div class="max-h-[80vh] w-full max-w-[420px] overflow-y-auto rounded-2xl bg-white p-4">
+                        <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
+                        @include('components.partials.discount-filter-sections', [
+                            'facet' => 'categories',
+                            'items' => $categoriesForModal,
+                            'activeSlug' => null,
+                            'hrefFor' => fn ($slug) => '/akcijos/' . $slug,
+                            'rowClass' => $categoryRowClass,
+                        ])
+                    </div>
                 </div>
             </div>
             <a href="/leidiniai" data-ga-event="desktop_nav_click" data-ga-item="leaflets" class="{{ $navLinkClass($leafletsActive) }}">

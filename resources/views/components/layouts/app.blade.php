@@ -103,6 +103,15 @@
             Alpine.store('priceWatchModal', {
                 open: false,
             });
+            // Shared with site-header.blade.php (scroll-hide) and
+            // discount-filters.blade.php (sticky bar's top offset) — a
+            // global store instead of local component state so the two,
+            // living in unrelated files/components, can react to the same
+            // "is the fixed header currently showing its full height"
+            // signal without wiring a prop through every listing page.
+            Alpine.store('siteHeader', {
+                visible: true,
+            });
         });
     </script>
 

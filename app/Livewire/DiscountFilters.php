@@ -56,6 +56,12 @@ class DiscountFilters extends Component
     #[Locked]
     public bool $showFilters = true;
 
+    // Plain store pages show the facet bar (store/category/leaflets pills)
+    // but never a sort control — they render curated carousels, not the
+    // sortable flat grid, so there's nothing for setOrder() to act on.
+    #[Locked]
+    public bool $showSort = true;
+
     #[Url(as: 'order', except: 'popular')]
     public string $order = 'popular';
 
@@ -139,7 +145,12 @@ class DiscountFilters extends Component
         $this->allStores = $this->showStoreFilter
             ? ($this->mode === 'keyword'
                 ? json_decode(app(ProductController::class)->getStoresForKeyword($primarySlug)->getContent(), true)['data'] ?? []
-                : json_decode(app(ProductController::class)->getStoresForCategory($activeCategorySlug)->getContent(), true)['data'] ?? [])
+                : ($activeCategorySlug !== null
+                    ? json_decode(app(ProductController::class)->getStoresForCategory($activeCategorySlug)->getContent(), true)['data'] ?? []
+                    // Plain store page: no category to scope by (same reasoning
+                    // as $allCategories' unscoped branch above) — every store
+                    // site-wide, not just the current one.
+                    : json_decode(app(ProductController::class)->getStores()->getContent(), true)['data'] ?? []))
             : [];
     }
 

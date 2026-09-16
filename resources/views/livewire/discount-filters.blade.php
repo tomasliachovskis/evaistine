@@ -3,7 +3,7 @@
     // discount/src/components/common/product-filter-controls.tsx:
     // FILTER_ROW_HEIGHT_CLASS='min-h-[40px]' FILTER_ROW_TEXT_CLASS='text-[16px] leading-snug'
     // FILTER_LIST_GAP_CLASS='gap-0.5', and its active/hover row colors.
-    $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[40px] text-[16px] leading-snug text-left transition-colors '
+    $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-[18px] leading-snug text-left transition-colors '
         . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
     $selectedStores = array_values(array_filter(explode(',', $storeFilter)));
     $selectedCategories = array_values(array_filter(explode(',', $categoryFilter)));
@@ -60,6 +60,15 @@
         ? '/akcijos/' . $activeStoreSlug . $orderSuffix
         : null;
 
+    // "Visos" clears the store facet — back to the plain category page. Only
+    // meaningful on a store+category combo page, same reasoning as
+    // $categoryAllHref above (the only case with a "plain category page" to
+    // fall back to — category-only pages have no store fixed to drop, and
+    // keyword pages have no /akcijos/{keyword} route sharing this shape).
+    $storeAllHref = $showStoreFilter && $activeCategorySlug !== null
+        ? '/akcijos/' . $activeCategorySlug . $orderSuffix
+        : null;
+
     $contextStoreSlug = $primarySlug && \App\Support\StoreDisplayMeta::isStoreSlug($primarySlug)
         ? $primarySlug
         : null;
@@ -79,7 +88,44 @@
                  to the top instead keeps it visually paired with the first
                  filter row, and sm:items-center below restores centering
                  once the filters go back to one line at sm+. --}}
-            <div class="mb-4 flex w-full flex-wrap items-start justify-between gap-x-2 gap-y-1 rounded-2xl bg-[#e8e8e8] px-4 py-1.5 min-h-[40px] sm:flex-nowrap sm:items-center sm:py-0 sm:mb-[17px]" x-data="{ sortOpen: false }" @click.outside="sortOpen = false">
+            {{-- Sticky so the store/category/sort controls stay reachable
+                 while scrolling a long grid instead of scrolling away with
+                 no way back short of scrolling all the way to the top. `top`
+                 matches the fixed site header's own height exactly
+                 (layouts/app.blade.php's <main> padding-top) so the bar sits
+                 flush under it rather than overlapping or leaving a gap;
+                 z-30 keeps it below the header (z-50) and any open modal
+                 (z-50/z-[9999]) but above normal page content. --}}
+            {{-- Deliberately a single static shape (no full-bleed-when-stuck
+                 class swap, no IntersectionObserver) — an earlier version
+                 dynamically swapped width/rounding once "stuck" via a
+                 sentinel + IntersectionObserver, which combined with native
+                 CSS sticky recalculation and the header's own independent
+                 scroll-driven hide/show caused a real, hard-to-pin browser
+                 rendering bug (the fixed header's top row visually vanishing
+                 while its own layout/DOM position measured correctly —
+                 confirmed live 2026-09-16). Fewer scroll-reactive moving
+                 parts fighting each other, at the cost of the full-bleed
+                 nicety on mobile. --}}
+            {{-- top offset is a plain constant matching the header's top
+                 row height (3.5rem) at every breakpoint — the top row never
+                 hides, so this never needs to change. At lg+ that means the
+                 bar docks in the same spot the nav-links row occupies when
+                 visible; that row hides on scroll (site-header.blade.php)
+                 and the bar is simply already sitting where it left off,
+                 no coordination between the two needed. --}}
+            <div
+                {{-- z-[60], above the header's own z-50: the bar docks at
+                     top:3.5rem unconditionally (see comment below), which
+                     is exactly where the nav-links row sits while it's
+                     still visible (before its own scroll-triggered hide
+                     catches up) — without a higher z-index the bar was
+                     rendering BEHIND that still-visible row and disappearing
+                     outright, not just briefly overlapping it. --}}
+                class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] mb-4 flex w-full flex-wrap items-start justify-between gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:flex-nowrap sm:items-center sm:py-0 sm:min-h-[52px] sm:mb-[17px] sm:px-[20px]"
+                x-data="{ sortOpen: false }"
+                @click.outside="sortOpen = false"
+            >
                 <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                     @php
                         // The button itself must show whichever store/
@@ -118,19 +164,34 @@
                          sized to its own content — no wrapping problem here,
                          there's room. --}}
                     @if ($showStoreFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeStoreName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
-                            <x-app-icon name="store" class="size-4 shrink-0" />
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[18px] {{ $activeStoreName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
+                            <x-app-icon name="store" class="size-5 shrink-0" />
                             <span class="truncate">{{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}{{ count($selectedStores) > 0 ? ' (' . count($selectedStores) . ')' : '' }}</span>
-                            <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'store' ? 'rotate-180' : ''" />
+                            <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'store' ? 'rotate-180' : ''" />
                         </button>
                     @endif
                     @if ($showCategoryFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeCategoryName ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
-                            <x-app-icon name="layout-grid" class="size-4 shrink-0" />
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[18px] {{ $activeCategoryName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
+                            <x-app-icon name="layout-grid" class="size-5 shrink-0" />
                             <span class="truncate">{{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}{{ count($selectedCategories) > 0 ? ' (' . count($selectedCategories) . ')' : '' }}</span>
-                            <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'category' ? 'rotate-180' : ''" />
+                            <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'category' ? 'rotate-180' : ''" />
                         </button>
                     @endif
+                    {{-- Same pill style as the store/category buttons above,
+                         but a plain nav link (no panel to open) — routes to
+                         this store's own leaflet page when a store is fixed
+                         (matches the "{store} savaitės leidiniai" shortcut
+                         already in the mobile/store panels), otherwise the
+                         general leaflets hub. --}}
+                    @php
+                        $leafletsCount = $activeStoreSlug !== null
+                            ? \App\Models\Store::where('slug', $activeStoreSlug)->first()?->flyers()->ready()->count()
+                            : null;
+                    @endphp
+                    <a href="{{ $activeStoreSlug !== null ? '/leidinys/' . $activeStoreSlug : '/leidiniai' }}" class="hidden h-full shrink-0 items-center gap-2 rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede] sm:inline-flex">
+                        <x-app-icon name="bookmark" class="size-5 shrink-0" />
+                        <span class="truncate">{{ $activeStoreName ? "{$activeStoreName} leidiniai" : 'Leidiniai' }}{{ $leafletsCount ? ' (' . $leafletsCount . ')' : '' }}</span>
+                    </a>
                     {{-- Mobile: a single "Filtrai" pill combining both facets
                          into one sheet instead of two full-width buttons that
                          wrap into their own 2-line stack and collide with the
@@ -142,31 +203,33 @@
                          "Filtrai" so the active selection is still visible
                          when the sheet is collapsed. --}}
                     @if ($showStoreFilter || $showCategoryFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'combined' ? null : 'combined')" class="inline-flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] {{ $activeCount > 0 ? 'font-bold text-gray-900' : 'text-gray-900' }} hover:bg-[#dedede] sm:hidden">
-                            <x-app-icon name="filter" class="size-4 shrink-0" />
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'combined' ? null : 'combined')" class="inline-flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[19px] {{ $activeCount > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:hidden">
+                            <x-app-icon name="filter" class="size-6 shrink-0" />
                             <span class="truncate">{{ $mobileFilterLabel }}</span>
                             @if ($activeCount > 0)
-                                <span class="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-green text-[11px] font-bold text-white">{{ $activeCount }}</span>
+                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green text-sm font-bold text-white">{{ $activeCount }}</span>
                             @endif
-                            <x-app-icon name="chevron-down" class="size-3.5 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'combined' ? 'rotate-180' : ''" />
+                            <x-app-icon name="chevron-down" class="size-5 shrink-0 text-gray-500 transition-transform sm:size-4" x-bind:class="$wire.openPanel === 'combined' ? 'rotate-180' : ''" />
                         </button>
                     @endif
                 </div>
-                <div class="relative shrink-0">
-                    <button type="button" @click="sortOpen = !sortOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
-                        <x-app-icon name="arrow-down-up" class="size-4 shrink-0" />
-                        <span class="hidden max-w-[140px] truncate sm:inline">{{ $orderOptions[$order] }}</span>
-                        <x-app-icon name="chevron-down" class="size-4 shrink-0 opacity-70" />
-                    </button>
-                    <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
-                        @foreach ($orderOptions as $value => $label)
-                            <button type="button" wire:click="setOrder('{{ $value }}')" @click="sortOpen = false; window.trackGaEvent && window.trackGaEvent('sort_change', { sort_value: '{{ $value }}' })" class="{{ $rowClass($order === $value) }}">
-                                <x-app-icon :name="$orderIcons[$value]" class="size-3.5 shrink-0 opacity-90" />
-                                {{ $label }}
-                            </button>
-                        @endforeach
+                @if ($showSort)
+                    <div class="relative shrink-0">
+                        <button type="button" @click="sortOpen = !sortOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
+                            <x-app-icon name="arrow-down-up" class="size-6 shrink-0 sm:size-5" />
+                            <span class="hidden max-w-[140px] truncate sm:inline">{{ $orderOptions[$order] }}</span>
+                            <x-app-icon name="chevron-down" class="size-6 shrink-0 opacity-70 sm:size-5" />
+                        </button>
+                        <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                            @foreach ($orderOptions as $value => $label)
+                                <button type="button" wire:click="setOrder('{{ $value }}')" @click="sortOpen = false; window.trackGaEvent && window.trackGaEvent('sort_change', { sort_value: '{{ $value }}' })" class="{{ $rowClass($order === $value) }}">
+                                    <x-app-icon :name="$orderIcons[$value]" class="size-3.5 shrink-0 opacity-90" />
+                                    {{ $label }}
+                                </button>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
+                @endif
             </div>
 
             {{-- Centered modal on desktop (not a right-docked drawer) — per
@@ -177,7 +240,7 @@
                  available at once), sharing the exact same shell — only one
                  is ever open at a time ($wire.openPanel). --}}
             @if ($showStoreFilter)
-                <div x-show="$wire.openPanel === 'store'" x-cloak class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" @click.self="$wire.openPanel = null">
+                <div x-show="$wire.openPanel === 'store'" x-cloak class="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" @click.self="$wire.openPanel = null">
                     <div class="max-h-[82vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-h-[80vh] sm:w-full sm:max-w-[420px] sm:rounded-2xl">
                         <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Parduotuvės</div>
                         @include('components.partials.discount-filter-sections', [
@@ -185,13 +248,26 @@
                             'items' => $allStores,
                             'activeSlug' => $activeStoreSlug,
                             'hrefFor' => $storeHrefFor,
+                            'allHref' => $storeAllHref,
                             'rowClass' => $rowClass,
                         ])
+                        {{-- Only the store+category combo lacks any link to
+                             this store's leaflets — <x-store-nav-tabs> (with
+                             its own Leidiniai tab) only ever renders on the
+                             plain store page. A distinct bordered row, not
+                             another $rowClass list item — it's a navigation
+                             shortcut, not a facet choice. --}}
+                        @if ($activeStoreSlug !== null)
+                            <a href="/leidinys/{{ $activeStoreSlug }}" class="mt-2 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
+                                <x-app-icon name="bookmark" class="size-5 shrink-0" />
+                                <span class="min-w-0 flex-1 truncate">{{ $activeStoreName }} savaitės leidiniai</span>
+                            </a>
+                        @endif
                     </div>
                 </div>
             @endif
             @if ($showCategoryFilter)
-                <div x-show="$wire.openPanel === 'category'" x-cloak class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" @click.self="$wire.openPanel = null">
+                <div x-show="$wire.openPanel === 'category'" x-cloak class="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" @click.self="$wire.openPanel = null">
                     <div class="max-h-[82vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-h-[80vh] sm:w-full sm:max-w-[420px] sm:rounded-2xl">
                         <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
                         @include('components.partials.discount-filter-sections', [
@@ -208,7 +284,7 @@
             {{-- Mobile-only "Filtrai" sheet — both facets stacked, each under
                  its own label so it's still clear which section is which. --}}
             @if ($showStoreFilter || $showCategoryFilter)
-                <div x-show="$wire.openPanel === 'combined'" x-cloak class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:hidden" @click.self="$wire.openPanel = null">
+                <div x-show="$wire.openPanel === 'combined'" x-cloak class="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-0 sm:hidden" @click.self="$wire.openPanel = null">
                     <div class="flex max-h-[82vh] w-full flex-col gap-4 overflow-y-auto rounded-t-2xl bg-white p-4">
                         @if ($showStoreFilter)
                             <section>
@@ -218,12 +294,19 @@
                                     'items' => $allStores,
                                     'activeSlug' => $activeStoreSlug,
                                     'hrefFor' => $storeHrefFor,
+                                    'allHref' => $storeAllHref,
                                     'rowClass' => $rowClass,
                                 ])
+                                @if ($activeStoreSlug !== null)
+                                    <a href="/leidinys/{{ $activeStoreSlug }}" class="mt-2 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
+                                        <x-app-icon name="bookmark" class="size-5 shrink-0" />
+                                        <span class="min-w-0 flex-1 truncate">{{ $activeStoreName }} savaitės leidiniai</span>
+                                    </a>
+                                @endif
                             </section>
                         @endif
                         @if ($showCategoryFilter)
-                            <section>
+                            <section class="{{ $showStoreFilter ? 'border-t border-gray-200 pt-4' : '' }}">
                                 <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
                                 @include('components.partials.discount-filter-sections', [
                                     'facet' => 'categories',

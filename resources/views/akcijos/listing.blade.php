@@ -95,10 +95,19 @@
                     :hide-subtitle-on-mobile="true"
                 >
                     @if ($headerType === 'store')
-                        {{-- No count/freshness line here — the store-nav-tabs
-                             row right below already shows the real "Akcijos"
-                             count as a pill, so a second "N akcijos" line
-                             here was a plain duplicate. --}}
+                        {{-- <x-store-nav-tabs> (Leidiniai/Akcijos/Kategorijos
+                             tab pills) was removed 2026-09-16 — the shared
+                             filter bar below now covers store/category
+                             switching and the leaflets link, so this line is
+                             the only place the real offer count and
+                             freshness date still need to show. --}}
+                        @php $storeTotalOffers = $listingMeta['total_offers'] ?? $total; @endphp
+                        @if ($storeTotalOffers > 0)
+                            <span>{{ number_format($storeTotalOffers, 0, ',', ' ') }} akcijos</span>
+                        @endif
+                        @if (!empty($listingMeta['intro']['freshness_label']))
+                            <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
+                        @endif
                     @elseif ($headerType === 'store_category')
                         @if ($total > 0)
                             <span>{{ number_format($total, 0, ',', ' ') }} akcijos</span>
@@ -124,23 +133,7 @@
                     @endif
                 </x-type-hero>
 
-                @if ($headerType === 'store')
-                    {{-- store_category deliberately does NOT get this —
-                         explicit product decision: that page type now uses
-                         the shared "Parduotuvės"/"Kategorijos" filter bar
-                         below for both switching store and switching
-                         category, instead of this pill+its own modal. --}}
-                    <x-store-nav-tabs
-                        :store-slug="$listingMeta['store_slug']"
-                        :leaflets-count="$listingMeta['leaflets_count'] ?? 0"
-                        :total-offers="$listingMeta['total_offers'] ?? $total"
-                        :categories="$listingMeta['sections']['available_categories'] ?? []"
-                        :featured-category="$listingMeta['sections']['featured_category'] ?? null"
-                        :all-categories-count="count($listingMeta['sections']['available_categories'] ?? [])"
-                        :aria-label="$listingMeta['store_name'] . ' skiltys'"
-                        active="akcijos"
-                    />
-                @elseif ($headerType === 'category')
+                @if ($headerType === 'category')
                     <x-keyword-chips-row :pages="$listingMeta['keyword_pages'] ?? []" />
                 @endif
             </div>
@@ -259,9 +252,10 @@
                 :show-carousels="! empty($sections) || ($isStoreHeader && ! empty($topOffers))"
                 :show-store-filter="$showStoreFilter"
                 :show-category-filter="$showCategoryFilter"
+                :show-sort="$showSort"
                 :active-store-slug="$activeStoreSlug"
                 :active-category-slug="$activeCategorySlug"
-                :show-filters="$headerType === 'category' || $headerType === 'store_category' || $isKeyword"
+                :show-filters="$headerType === 'category' || $headerType === 'store_category' || $headerType === 'store' || $isKeyword"
                 :key="'filters-'.$basePath"
             />
         @endif
