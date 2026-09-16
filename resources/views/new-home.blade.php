@@ -123,7 +123,7 @@
                  above it, instead of floating bare on the page background. --}}
             <div>
                 <div class="section-heading-row">
-                    <h2 class="section-heading-lg">Didžiausi Lietuvos parduotuvių tinklai</h2>
+                    <h2 class="section-heading-lg">Parduotuvių tinklai</h2>
                     <a href="/parduotuves" class="section-link text-base">
                         Žiūrėti visas
                         <x-app-icon name="chevron-right" class="size-4 opacity-80" />
