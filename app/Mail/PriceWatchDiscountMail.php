@@ -22,7 +22,9 @@ class PriceWatchDiscountMail extends Mailable
     // logs the user in and lands them on /favorites — viewing an individual
     // product needs no login, so only this one shared link does.
     // $totalSavings: same "Galite sutaupyti dabar" figure shown on /favorites.
-    public function __construct(public Collection $productGroups, public string $favoritesUrl, public float $totalSavings)
+    // $unsubscribeUrl: signed, no-login-required link (see PriceWatchController)
+    // that opts the user out of future price-watch digests.
+    public function __construct(public Collection $productGroups, public string $favoritesUrl, public float $totalSavings, public string $unsubscribeUrl)
     {
     }
 
@@ -37,6 +39,7 @@ class PriceWatchDiscountMail extends Mailable
                 'productGroups' => $this->productGroups,
                 'favoritesUrl' => $this->favoritesUrl,
                 'totalSavings' => $this->totalSavings,
+                'unsubscribeUrl' => $this->unsubscribeUrl,
             ]);
     }
 }

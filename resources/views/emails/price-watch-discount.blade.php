@@ -114,6 +114,9 @@
                 </tr>
                 <tr>
                     <td style="padding:16px 32px; background-color:#f9fafb; border-top:1px solid #e5e7eb;">
+                        <p style="margin:0 0 8px; font-size:12px; color:#9ca3af;">
+                            Nenorite gauti tokių priminimų? <a href="{{ $unsubscribeUrl }}" style="color:#9ca3af; text-decoration:underline;">Spauskite čia, kad atsisakytumėte</a>.
+                        </p>
                         <p style="margin:0; font-size:12px; color:#9ca3af;">&copy; {{ now()->year }} SuperAkcijos.lt</p>
                     </td>
                 </tr>

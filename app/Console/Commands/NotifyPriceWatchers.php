@@ -11,6 +11,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 // Emails a user once a favorited (= "sekama", tracked via <x-favorite-button>/
 // price-watch-modal) product gets a new Discount. "New" means: this (user,
@@ -61,6 +62,12 @@ class NotifyPriceWatchers extends Command
         // here rather than trust the row's mere existence.
         $pending = DB::table('product_favorites')
             ->join('discounts', 'discounts.product_id', '=', 'product_favorites.product_id')
+            // Opted out via the signed unsubscribe link in a previous
+            // digest email (see PriceWatchController) — excluded up front so
+            // they never enter the per-user loop below at all. Favoriting
+            // itself is untouched; this only silences future emails.
+            ->join('users', 'users.id', '=', 'product_favorites.user_id')
+            ->whereNull('users.price_watch_unsubscribed_at')
             ->leftJoin('price_watch_notifications', function ($join) {
                 $join->on('price_watch_notifications.discount_id', '=', 'discounts.id')
                     ->on('price_watch_notifications.user_id', '=', 'product_favorites.user_id');
@@ -183,6 +190,10 @@ class NotifyPriceWatchers extends Command
             ]);
             $favoritesUrl = url("/auth/magic-link/{$magicLink->token}");
 
+            // Permanent (no expiry) signed link — this may sit unopened in an
+            // inbox for weeks, unlike the short-lived magic login link above.
+            $unsubscribeUrl = URL::signedRoute('price-watch.unsubscribe', ['user' => $user->id]);
+
             // Same calc as FavoritesController::resolveSavingsSummary() ("Galite
             // sutaupyti dabar" on /favorites) — one savings figure per
             // product, from its cheapest offer, not summed across every
@@ -196,7 +207,7 @@ class NotifyPriceWatchers extends Command
             });
 
             try {
-                Mail::to($user->email)->send(new PriceWatchDiscountMail($productGroups, $favoritesUrl, $totalSavings));
+                Mail::to($user->email)->send(new PriceWatchDiscountMail($productGroups, $favoritesUrl, $totalSavings, $unsubscribeUrl));
 
                 $now = now();
                 // Every underlying discount in a product's group is stamped

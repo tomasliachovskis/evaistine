@@ -8,6 +8,7 @@ use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\LeafletController;
 use App\Http\Controllers\ListingDealsPartialController;
 use App\Http\Controllers\NewHomeController;
+use App\Http\Controllers\PriceWatchController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\StoreController;
@@ -86,3 +87,10 @@ Route::get('/auth/{provider}/callback', [AuthController::class, 'handleProviderC
 
 Route::middleware('auth')->get('/favorites', [FavoritesController::class, 'index']);
 Route::post('/favorites/toggle/{product}', [FavoritesController::class, 'toggle'])->where('product', '[0-9]+');
+
+// No-login-required, signed link from the price-watch email — GET shows a
+// confirm page, POST performs the opt-out (the form posts back to the exact
+// same signed URL via url()->full(), so no second signature is needed).
+Route::match(['GET', 'POST'], '/price-watch/unsubscribe/{user}', [PriceWatchController::class, 'unsubscribe'])
+    ->middleware('signed')
+    ->name('price-watch.unsubscribe');
