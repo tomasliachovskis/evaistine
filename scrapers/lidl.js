@@ -360,7 +360,7 @@ const parseUnitPrice = (text) => {
                 store: 'lidl'
             };
         });
-        await axios.post('http://127.0.0.1/api/scrapers', data);
+        await axios.post('https://superakcijos.lt/api/scrapers', data);
     } catch (error) {
         console.error('Error posting products:', error.message);
     }

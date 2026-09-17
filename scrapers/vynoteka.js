@@ -248,7 +248,7 @@ const cleanPrice = (value) => {
                     store: STORE,
                 };
             });
-            await axios.post('http://127.0.0.1/api/scrapers', data);
+            await axios.post('https://superakcijos.lt/api/scrapers', data);
             console.log(`Posted ${data.length} products from page ${currentPage} to API`);
         } catch (error) {
             console.error(`Error posting products from page ${currentPage}:`, error.message);

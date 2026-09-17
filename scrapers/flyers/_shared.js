@@ -191,7 +191,7 @@ export async function extractCoverInfo({ store, imageBuffer, filename = 'cover.j
     form.append('image', new Blob([imageBuffer]), filename);
 
     try {
-        const response = await fetch('http://127.0.0.1/api/scrapers/extract-flyer-info', {
+        const response = await fetch('https://superakcijos.lt/api/scrapers/extract-flyer-info', {
             method: 'POST',
             body: form,
         });
@@ -272,7 +272,7 @@ export async function submitFlyer({
         return { skipped: true, reason: 'pdf_too_large' };
     }
 
-    const response = await fetch('http://127.0.0.1/api/scrapers/store-flyer', {
+    const response = await fetch('https://superakcijos.lt/api/scrapers/store-flyer', {
         method: 'POST',
         body: form,
     });

@@ -284,7 +284,7 @@ const enrichCategories = async (products, fallbackCategory) => {
                         store: STORE,
                     };
                 });
-                await axios.post('http://127.0.0.1/api/scrapers', data);
+                await axios.post('https://superakcijos.lt/api/scrapers', data);
                 console.log(`Posted ${data.length} products from ${categoryPath} page ${currentPage} to API`);
             } catch (error) {
                 console.error(`Error posting products from ${categoryPath} page ${currentPage}:`, error.message);
