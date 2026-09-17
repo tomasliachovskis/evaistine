@@ -6,6 +6,7 @@
     $storeChips = collect($leaflets)
         ->groupBy('store_slug')
         ->map(fn ($group, $slug) => [
+            'slug' => $slug,
             'title' => $group->first()['store_name'],
             'href' => "/leidinys/{$slug}",
             'matching_offers_count' => $group->where('status', '!=', 'expired')->count(),
@@ -53,10 +54,10 @@
              pills (no own border/background) instead of
              <x-keyword-chips-row>'s bordered white chips — those read as a
              second, nested pill design once placed inside this bar. --}}
-        <div class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:min-h-[52px] sm:px-[20px]">
+        <div data-sticky-filter-bar class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:min-h-[52px] sm:px-[20px]">
             <nav aria-label="Parduotuvės" class="scroll-cards-x flex flex-nowrap items-center gap-1">
                 @foreach ($storeChips as $chip)
-                    <a href="{{ $chip['href'] }}" class="inline-flex h-full shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]">
+                    <a href="{{ $chip['href'] }}" data-ga-event="filter_select" data-ga-item="store:{{ $chip['slug'] }}" data-ga-source="leidiniai_chip_bar" class="inline-flex h-full shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]">
                         @if (!empty($chip['logo_slug']))
                             <x-store-logo :slug="$chip['logo_slug']" :name="$chip['title']" size="xs" />
                         @endif

@@ -345,7 +345,7 @@ use App\Support\ProductPageMeta;
                  uses each tab's shortLabel + a tighter sticky offset (no
                  breadcrumb/hero-stats row above it like desktop has). --}}
             <nav
-                class="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-40 border-b border-gray-200 bg-white lg:top-[calc(6.25rem+env(safe-area-inset-top,0px))]"
+                class="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-40 border-b border-gray-200 bg-white lg:top-[calc(7.25rem+env(safe-area-inset-top,0px))]"
                 aria-label="Produkto skyriai"
                 x-data="{
                     activeId: '{{ $tabs[array_key_first($tabs)]['id'] }}',

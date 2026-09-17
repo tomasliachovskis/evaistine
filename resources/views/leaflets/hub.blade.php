@@ -44,9 +44,17 @@
                     <x-store-subscribe-button />
                 </x-slot:cta>
             </x-type-hero>
-
-            <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" />
         </div>
+
+        {{-- Deliberately NOT nested inside the hero wrapper div above —
+             that div is only as tall as its own content (~150px), which
+             is also its sticky containing block: once scrolled past that
+             short box, position:sticky has nothing left to stick within
+             and the bar just scrolls away with it instead of pinning to
+             the viewport for the rest of the (much taller) page —
+             confirmed live 2026-09-17. Needs to be a direct child of this
+             full-page-height column instead. --}}
+        <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" />
 
         @php
             // Split rather than just re-sort: an SEO audit flagged expired

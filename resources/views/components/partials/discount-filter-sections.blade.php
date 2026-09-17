@@ -21,6 +21,14 @@
      site (desktop store/category modals, site-header's Kategorijos
      modal) omits it and keeps today's exact behavior.
 
+     Optional $gaSource (string) adds GA4 tracking (data-ga-event
+     "filter_select", data-ga-item "{store|category}:{slug|'all'}",
+     data-ga-source $gaSource) to the immediate-nav <a> branch only —
+     never to $stagedModel buttons, since a tap there is just staging, not
+     a real selection yet (the mobile modal tracks its own single
+     "filter_apply" event instead, once, on "Filtruoti"). Omit $gaSource
+     to stay untracked, same as before this was added.
+
      Standard one-row-per-item list (not a chip-wrap grid) — explicit
      product decision, reversing this session's earlier chip-grid rewrite.
      $rowClass is the same row style closure the sort dropdown in
@@ -51,7 +59,9 @@
     // selected in that Alpine property. $slug is null for the "Visos" row.
     $stagedModel = $stagedModel ?? null;
     $allHref = $allHref ?? null;
-    $openRow = function (?string $slug) use ($stagedModel, $activeSlug, $rowClass, $hrefFor, $allHref) {
+    $gaSource = $gaSource ?? null;
+    $gaFacet = $facet === 'stores' ? 'store' : 'category';
+    $openRow = function (?string $slug) use ($stagedModel, $activeSlug, $rowClass, $hrefFor, $allHref, $gaSource, $gaFacet) {
         $isAllRow = $slug === null;
         if ($stagedModel) {
             $slugJs = \Illuminate\Support\Js::from($slug);
@@ -61,8 +71,11 @@
 
         $href = $isAllRow ? $allHref : $hrefFor($slug);
         $active = $isAllRow ? $activeSlug === null : $slug === $activeSlug;
+        $gaAttrs = $gaSource
+            ? ' data-ga-event="filter_select" data-ga-item="' . e($gaFacet . ':' . ($slug ?? 'all')) . '" data-ga-source="' . e($gaSource) . '"'
+            : '';
 
-        return '<a href="' . e($href) . '" class="' . e($rowClass($active)) . '">';
+        return '<a href="' . e($href) . '" class="' . e($rowClass($active)) . '"' . $gaAttrs . '>';
     };
     $closeRow = fn () => $stagedModel ? '</button>' : '</a>';
 @endphp

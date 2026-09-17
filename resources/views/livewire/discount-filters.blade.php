@@ -122,6 +122,7 @@
                      catches up) — without a higher z-index the bar was
                      rendering BEHIND that still-visible row and disappearing
                      outright, not just briefly overlapping it. --}}
+                data-sticky-filter-bar
                 class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] mb-4 flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:flex-nowrap sm:py-0 sm:min-h-[52px] sm:mb-[17px] sm:px-[20px]"
                 x-data="{ sortOpen: false }"
                 @click.outside="sortOpen = false"
@@ -285,6 +286,7 @@
                             'hrefFor' => $storeHrefFor,
                             'allHref' => $storeAllHref,
                             'rowClass' => $rowClass,
+                            'gaSource' => 'listing_filter_store',
                         ])
                         {{-- Only the store+category combo lacks any link to
                              this store's leaflets — <x-store-nav-tabs> (with
@@ -293,7 +295,7 @@
                              another $rowClass list item — it's a navigation
                              shortcut, not a facet choice. --}}
                         @if ($activeStoreSlug !== null)
-                            <a href="/leidinys/{{ $activeStoreSlug }}" class="mt-2 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
+                            <a href="/leidinys/{{ $activeStoreSlug }}" data-ga-event="filter_select" data-ga-item="leidiniai:{{ $activeStoreSlug }}" data-ga-source="filter_leaflet_shortcut" class="mt-2 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
                                 <x-app-icon name="bookmark" class="size-5 shrink-0" />
                                 <span class="min-w-0 flex-1 truncate">{{ $activeStoreName }} savaitės leidiniai</span>
                             </a>
@@ -312,6 +314,7 @@
                             'hrefFor' => $categoryHrefFor,
                             'allHref' => $categoryAllHref,
                             'rowClass' => $rowClass,
+                            'gaSource' => 'listing_filter_category',
                         ])
                     </div>
                 </div>
@@ -356,6 +359,11 @@
                             } else {
                                 url = '/akcijos' + orderSuffix;
                             }
+                            window.trackGaEvent && window.trackGaEvent('filter_apply', {
+                                store: this.stagedStore || null,
+                                category: this.stagedCategory || null,
+                                source: 'mobile_filter_modal',
+                            });
                             window.location.href = url;
                         },
                     }"
@@ -407,7 +415,7 @@
                             </section>
                         @endif
                         @if ($activeStoreSlug !== null)
-                            <a href="/leidinys/{{ $activeStoreSlug }}" class="mb-3 mt-3 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
+                            <a href="/leidinys/{{ $activeStoreSlug }}" data-ga-event="filter_select" data-ga-item="leidiniai:{{ $activeStoreSlug }}" data-ga-source="filter_leaflet_shortcut" class="mb-3 mt-3 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
                                 <x-app-icon name="bookmark" class="size-5 shrink-0" />
                                 <span class="min-w-0 flex-1 truncate">{{ $activeStoreName }} savaitės leidiniai</span>
                             </a>

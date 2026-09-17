@@ -46,8 +46,17 @@
         lastScrollY: 0,
         init() {
             this.lastScrollY = window.scrollY;
+            // Row2 only ever hides to make room for a page's own sticky
+            // filter/pill bar to dock in its place — on a page with no such
+            // bar (homepage, plain /akcijos hub) there's nothing to dock
+            // there, so hiding it just left dead space. Checked once here
+            // (not reactively) since these are full server-rendered page
+            // loads — the marker, when present, is already in the initial
+            // HTML by the time this runs.
+            const hasStickyFilterBar = document.querySelector('[data-sticky-filter-bar]') !== null;
             let ticking = false;
             window.addEventListener('scroll', () => {
+                if (!hasStickyFilterBar) { return; }
                 if (this.menuOpen) { return; }
                 if (ticking) { return; }
                 ticking = true;
@@ -186,6 +195,7 @@
                                 'activeSlug' => null,
                                 'hrefFor' => fn ($slug) => '/akcijos/' . $slug,
                                 'rowClass' => $categoryRowClass,
+                                'gaSource' => 'header_nav_categories',
                             ])
                         </div>
                     </div>
