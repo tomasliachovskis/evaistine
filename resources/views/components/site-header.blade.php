@@ -165,7 +165,7 @@
                      it's triggered. This button only ever renders at lg+, so
                      the modal always opens in its "desktop" (sm:items-center)
                      shape in practice. --}}
-                <div x-show="categoriesNavOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="categoriesNavOpen = false">
+                <div x-show="categoriesNavOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" @click.self="categoriesNavOpen = false">
                     <div class="max-h-[80vh] w-full max-w-[420px] overflow-y-auto rounded-2xl bg-white p-4">
                         <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
                         @include('components.partials.discount-filter-sections', [
