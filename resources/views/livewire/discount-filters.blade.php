@@ -7,7 +7,9 @@
         . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
     $selectedStores = array_values(array_filter(explode(',', $storeFilter)));
     $selectedCategories = array_values(array_filter(explode(',', $categoryFilter)));
-    $activeCount = count($selectedStores) + count($selectedCategories);
+    // $activeCount is (re)computed further down, once $activeStoreName/
+    // $activeCategoryName exist, so it also counts a URL-fixed facet, not
+    // just a checkbox pick — see the comment there.
     $orderOptions = [
         'popular' => 'Populiariausi',
         'price_min' => 'Mažiausia kaina',
@@ -80,14 +82,12 @@
      needing its own matching bottom margin. --}}
 <div class="mt-6 flex w-full flex-col max-sm:gap-1">
         @if ($showFilters)
-            {{-- items-start (not items-center): on mobile the filter buttons
-                 wrap into their own 2-line stack (see the comment below),
-                 making this row taller than the sort button — items-center
-                 was floating the sort button vertically mid-way between the
-                 two stacked filter rows, disconnected from either. Aligning
-                 to the top instead keeps it visually paired with the first
-                 filter row, and sm:items-center below restores centering
-                 once the filters go back to one line at sm+. --}}
+            {{-- items-center at every breakpoint: mobile only ever shows the
+                 single combined "Filtrai" pill here (the separate store/
+                 category pills are sm:inline-flex, hidden below sm), so
+                 there's no multi-line stack to protect against anymore —
+                 items-start left that one pill hugging the bar's top edge
+                 with dead space below it instead of vertically centered. --}}
             {{-- Sticky so the store/category/sort controls stay reachable
                  while scrolling a long grid instead of scrolling away with
                  no way back short of scrolling all the way to the top. `top`
@@ -122,7 +122,7 @@
                      catches up) — without a higher z-index the bar was
                      rendering BEHIND that still-visible row and disappearing
                      outright, not just briefly overlapping it. --}}
-                class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] mb-4 flex w-full flex-wrap items-start justify-between gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:flex-nowrap sm:items-center sm:py-0 sm:min-h-[52px] sm:mb-[17px] sm:px-[20px]"
+                class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] mb-4 flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:flex-nowrap sm:py-0 sm:min-h-[52px] sm:mb-[17px] sm:px-[20px]"
                 x-data="{ sortOpen: false }"
                 @click.outside="sortOpen = false"
             >
@@ -163,17 +163,45 @@
                     {{-- Desktop (sm+): each facet gets its own inline pill,
                          sized to its own content — no wrapping problem here,
                          there's room. --}}
+                    @php
+                        // A facet counts as "active" whether it's fixed by
+                        // the URL ($activeStoreName/$activeCategoryName —
+                        // one implied selection) or picked via the checkbox
+                        // multi-select ($selectedStores/$selectedCategories)
+                        // — either way, something is selected, so the badge
+                        // should show. Previously only the checkbox path
+                        // showed a badge, so a store_category/category page's
+                        // URL-fixed facet (already named in the label, e.g.
+                        // "Kategorija: Bakalėja") never got one at all.
+                        $storeBadgeCount = $activeStoreName ? 1 : count($selectedStores);
+                        $categoryBadgeCount = $activeCategoryName ? 1 : count($selectedCategories);
+                        // Mobile's combined pill badge — same "URL-fixed
+                        // counts too" fix as the desktop pills above, so it
+                        // doesn't disagree with them on a store_category/
+                        // category page (mobile's label already includes
+                        // the URL-fixed name via $mobileFilterLabel below,
+                        // but its badge previously only counted checkbox
+                        // picks, e.g. showing no badge at all on a plain
+                        // store_category page).
+                        $activeCount = $storeBadgeCount + $categoryBadgeCount;
+                    @endphp
                     @if ($showStoreFilter)
                         <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[18px] {{ $activeStoreName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
                             <x-app-icon name="store" class="size-5 shrink-0" />
-                            <span class="truncate">{{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}{{ count($selectedStores) > 0 ? ' (' . count($selectedStores) . ')' : '' }}</span>
+                            <span class="truncate">{{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}</span>
+                            @if ($storeBadgeCount > 0)
+                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green text-sm font-bold text-white">{{ $storeBadgeCount }}</span>
+                            @endif
                             <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'store' ? 'rotate-180' : ''" />
                         </button>
                     @endif
                     @if ($showCategoryFilter)
                         <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[18px] {{ $activeCategoryName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
                             <x-app-icon name="layout-grid" class="size-5 shrink-0" />
-                            <span class="truncate">{{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}{{ count($selectedCategories) > 0 ? ' (' . count($selectedCategories) . ')' : '' }}</span>
+                            <span class="truncate">{{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}</span>
+                            @if ($categoryBadgeCount > 0)
+                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green text-sm font-bold text-white">{{ $categoryBadgeCount }}</span>
+                            @endif
                             <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'category' ? 'rotate-180' : ''" />
                         </button>
                     @endif
@@ -203,7 +231,14 @@
                          "Filtrai" so the active selection is still visible
                          when the sheet is collapsed. --}}
                     @if ($showStoreFilter || $showCategoryFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'combined' ? null : 'combined')" class="inline-flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[19px] {{ $activeCount > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:hidden">
+                        {{-- flex-1 only when there's a sort button to its
+                             right to balance against — on store pages
+                             ($showSort false, no sort button at all), this
+                             is the bar's only mobile pill, and flex-1 there
+                             left the label hugging the left edge with a
+                             huge dead gap on the right instead of a normal
+                             evenly-padded pill. --}}
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'combined' ? null : 'combined')" class="inline-flex h-full min-w-0 {{ $showSort ? 'flex-1' : 'shrink-0' }} cursor-pointer items-center gap-2 rounded-2xl px-2 text-[19px] {{ $activeCount > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:hidden">
                             <x-app-icon name="filter" class="size-6 shrink-0" />
                             <span class="truncate">{{ $mobileFilterLabel }}</span>
                             @if ($activeCount > 0)
