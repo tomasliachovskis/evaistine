@@ -164,19 +164,32 @@
                      "browse categories" looks and behaves the same wherever
                      it's triggered. This button only ever renders at lg+, so
                      the modal always opens in its "desktop" (sm:items-center)
-                     shape in practice. --}}
-                <div x-show="categoriesNavOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" @click.self="categoriesNavOpen = false">
-                    <div class="max-h-[80vh] w-full max-w-[420px] overflow-y-auto rounded-2xl bg-white p-4">
-                        <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
-                        @include('components.partials.discount-filter-sections', [
-                            'facet' => 'categories',
-                            'items' => $categoriesForModal,
-                            'activeSlug' => null,
-                            'hrefFor' => fn ($slug) => '/akcijos/' . $slug,
-                            'rowClass' => $categoryRowClass,
-                        ])
+                     shape in practice.
+
+                     x-teleport to <body>: this modal lives inside <header>,
+                     which is itself `fixed` + `z-50` — that combination
+                     makes <header> its own stacking context, so ANY
+                     z-index on a descendant (tried z-[70] first) is capped
+                     at that context and never actually out-ranks page-level
+                     siblings like a listing/leaflet page's sticky filter
+                     bar (z-[60], living outside <header>) — confirmed live
+                     2026-09-17, the bar visually cut through the middle of
+                     this modal despite the z-[70]. Teleporting to <body>
+                     escapes <header>'s stacking context entirely. --}}
+                <template x-teleport="body">
+                    <div x-show="categoriesNavOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" @click.self="categoriesNavOpen = false">
+                        <div class="max-h-[80vh] w-full max-w-[420px] overflow-y-auto rounded-2xl bg-white p-4">
+                            <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
+                            @include('components.partials.discount-filter-sections', [
+                                'facet' => 'categories',
+                                'items' => $categoriesForModal,
+                                'activeSlug' => null,
+                                'hrefFor' => fn ($slug) => '/akcijos/' . $slug,
+                                'rowClass' => $categoryRowClass,
+                            ])
+                        </div>
                     </div>
-                </div>
+                </template>
             </div>
             <a href="/leidiniai" data-ga-event="desktop_nav_click" data-ga-item="leaflets" class="{{ $navLinkClass($leafletsActive) }}">
                 <x-app-icon name="bookmark" class="size-4.5" />Leidiniai
@@ -187,76 +200,83 @@
         </nav>
     </div>
 
-    <div x-show="menuOpen" x-cloak class="fixed inset-0 z-[9999]">
-        <button type="button" class="absolute inset-0 cursor-pointer bg-black/55" aria-label="Uždaryti" @click="menuOpen = false"></button>
-        <div
-            x-show="menuOpen"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="translate-x-full"
-            x-transition:enter-end="translate-x-0"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="translate-x-0"
-            x-transition:leave-end="translate-x-full"
-            class="absolute inset-y-0 right-0 flex w-full max-w-[360px] flex-col overflow-hidden bg-white shadow-xl"
-        >
-            <div class="flex shrink-0 items-center justify-end p-3.5">
-                <button type="button" @click="menuOpen = false" class="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100" aria-label="Uždaryti">
-                    <x-app-icon name="x" class="size-4.5" />
-                </button>
-            </div>
-            <nav class="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4.5">
-                <a href="/akcijos" @click="menuOpen = false" class="{{ $menuItemClass($akcijosActive) }}">
-                    <x-app-icon name="tag" class="size-5 shrink-0" />Visos akcijos
-                </a>
-                <a href="/parduotuves" @click="menuOpen = false" class="{{ $menuItemClass($storesActive) }}">
-                    <x-app-icon name="store" class="size-5 shrink-0" />Parduotuvės
-                </a>
-
-                <div>
-                    <button type="button" @click="categoriesMenuOpen = !categoriesMenuOpen" class="{{ $menuItemClass(false) }}">
-                        <x-app-icon name="layout-grid" class="size-5 shrink-0" />
-                        <span class="flex-1 text-left">Kategorijos</span>
-                        <span :class="categoriesMenuOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-4" /></span>
+    {{-- x-teleport to <body>: same stacking-context trap as the Kategorijos
+         modal above — this menu lives inside <header> (fixed + z-50), so
+         its own z-[9999] never actually escapes <header>'s stacking
+         context. A page with a z-[60] sticky filter bar would show that
+         bar rendering on top of this full-screen menu otherwise. --}}
+    <template x-teleport="body">
+        <div x-show="menuOpen" x-cloak class="fixed inset-0 z-[9999]">
+            <button type="button" class="absolute inset-0 cursor-pointer bg-black/55" aria-label="Uždaryti" @click="menuOpen = false"></button>
+            <div
+                x-show="menuOpen"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="translate-x-full"
+                x-transition:enter-end="translate-x-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="translate-x-0"
+                x-transition:leave-end="translate-x-full"
+                class="absolute inset-y-0 right-0 flex w-full max-w-[360px] flex-col overflow-hidden bg-white shadow-xl"
+            >
+                <div class="flex shrink-0 items-center justify-end p-3.5">
+                    <button type="button" @click="menuOpen = false" class="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100" aria-label="Uždaryti">
+                        <x-app-icon name="x" class="size-4.5" />
                     </button>
-                    <div x-show="categoriesMenuOpen" x-cloak class="pl-2 pb-1">
-                        <x-category-links-list :categories="$categories" />
-                    </div>
                 </div>
-
-                <a href="/leidiniai" @click="menuOpen = false" class="{{ $menuItemClass($leafletsActive) }}">
-                    <x-app-icon name="bookmark" class="size-5 shrink-0" />Leidiniai
-                </a>
-                <a href="/pigiausios-prekes" @click="menuOpen = false" class="{{ $menuItemClass($cheapestActive) }}">
-                    <x-app-icon name="shopping-bag" class="size-5 shrink-0" />Didžiausios nuolaidos
-                </a>
-
-                <div>
-                    <button type="button" @click="keywordsOpen = !keywordsOpen" class="{{ $menuItemClass($isProductKeywordPath) }}">
-                        <x-app-icon name="flame" class="size-5 shrink-0" />
-                        <span class="flex-1 text-left">Populiarios prekės</span>
-                        <span :class="keywordsOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-4" /></span>
-                    </button>
-                    <div x-show="keywordsOpen" x-cloak class="pl-8 pb-1">
-                        <x-product-keyword-links-list />
-                    </div>
-                </div>
-
-                <div class="my-2 border-t border-gray-200"></div>
-
-                @auth
-                    <a href="/favorites" @click="menuOpen = false" class="{{ $menuItemClass(false) }}">
-                        <x-app-icon name="heart" class="size-5 shrink-0" />Mėgstami
+                <nav class="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4.5">
+                    <a href="/akcijos" @click="menuOpen = false" class="{{ $menuItemClass($akcijosActive) }}">
+                        <x-app-icon name="tag" class="size-5 shrink-0" />Visos akcijos
                     </a>
-                @else
-                    <button type="button" @click="menuOpen = false; $store.authModal.open = true" class="{{ $menuItemClass(false) }}">
-                        <x-app-icon name="heart" class="size-5 shrink-0" />Mėgstami
-                    </button>
-                @endauth
+                    <a href="/parduotuves" @click="menuOpen = false" class="{{ $menuItemClass($storesActive) }}">
+                        <x-app-icon name="store" class="size-5 shrink-0" />Parduotuvės
+                    </a>
 
-                <a href="/naujienos" @click="menuOpen = false" class="{{ $menuItemClass(false) }}">
-                    <x-app-icon name="mail" class="size-5 shrink-0" />Naujienos
-                </a>
-            </nav>
+                    <div>
+                        <button type="button" @click="categoriesMenuOpen = !categoriesMenuOpen" class="{{ $menuItemClass(false) }}">
+                            <x-app-icon name="layout-grid" class="size-5 shrink-0" />
+                            <span class="flex-1 text-left">Kategorijos</span>
+                            <span :class="categoriesMenuOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-4" /></span>
+                        </button>
+                        <div x-show="categoriesMenuOpen" x-cloak class="pl-2 pb-1">
+                            <x-category-links-list :categories="$categories" />
+                        </div>
+                    </div>
+
+                    <a href="/leidiniai" @click="menuOpen = false" class="{{ $menuItemClass($leafletsActive) }}">
+                        <x-app-icon name="bookmark" class="size-5 shrink-0" />Leidiniai
+                    </a>
+                    <a href="/pigiausios-prekes" @click="menuOpen = false" class="{{ $menuItemClass($cheapestActive) }}">
+                        <x-app-icon name="shopping-bag" class="size-5 shrink-0" />Didžiausios nuolaidos
+                    </a>
+
+                    <div>
+                        <button type="button" @click="keywordsOpen = !keywordsOpen" class="{{ $menuItemClass($isProductKeywordPath) }}">
+                            <x-app-icon name="flame" class="size-5 shrink-0" />
+                            <span class="flex-1 text-left">Populiarios prekės</span>
+                            <span :class="keywordsOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-4" /></span>
+                        </button>
+                        <div x-show="keywordsOpen" x-cloak class="pl-8 pb-1">
+                            <x-product-keyword-links-list />
+                        </div>
+                    </div>
+
+                    <div class="my-2 border-t border-gray-200"></div>
+
+                    @auth
+                        <a href="/favorites" @click="menuOpen = false" class="{{ $menuItemClass(false) }}">
+                            <x-app-icon name="heart" class="size-5 shrink-0" />Mėgstami
+                        </a>
+                    @else
+                        <button type="button" @click="menuOpen = false; $store.authModal.open = true" class="{{ $menuItemClass(false) }}">
+                            <x-app-icon name="heart" class="size-5 shrink-0" />Mėgstami
+                        </button>
+                    @endauth
+
+                    <a href="/naujienos" @click="menuOpen = false" class="{{ $menuItemClass(false) }}">
+                        <x-app-icon name="mail" class="size-5 shrink-0" />Naujienos
+                    </a>
+                </nav>
+            </div>
         </div>
-    </div>
+    </template>
 </header>
