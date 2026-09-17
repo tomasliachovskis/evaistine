@@ -316,43 +316,106 @@
                     </div>
                 </div>
             @endif
-            {{-- Mobile-only "Filtrai" sheet — both facets stacked, each under
-                 its own label so it's still clear which section is which. --}}
+            {{-- Mobile-only "Filtrai" modal — full-screen takeover with an
+                 accordion (one section open at a time) and a sticky footer,
+                 matching a reference filter-modal's structure 1:1 (our own
+                 colors, not theirs). Store+category selection here is
+                 STAGED: tapping a row just marks it selected locally
+                 (Alpine state, not a real link) — nothing navigates until
+                 "Filtruoti" is tapped, so both facets can be changed
+                 together and applied as one redirect. Contrast with every
+                 other facet list on this page (desktop pills' modals,
+                 site-header's Kategorijos modal): those still navigate
+                 immediately per tap, unchanged — this staged behavior is
+                 unique to this one mobile modal. --}}
             @if ($showStoreFilter || $showCategoryFilter)
-                <div x-show="$wire.openPanel === 'combined'" x-cloak class="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-0 sm:hidden" @click.self="$wire.openPanel = null">
-                    <div class="flex max-h-[82vh] w-full flex-col gap-4 overflow-y-auto rounded-t-2xl bg-white p-4">
+                @php $defaultOpenSection = $showStoreFilter ? 'store' : 'category'; @endphp
+                <div
+                    x-show="$wire.openPanel === 'combined'"
+                    x-cloak
+                    x-data="{
+                        stagedStore: @js($activeStoreSlug),
+                        stagedCategory: @js($activeCategorySlug),
+                        openSection: @js($defaultOpenSection),
+                        applyFilters() {
+                            const mode = @js($mode), primarySlug = @js($primarySlug),
+                                  orderSuffix = @js($orderSuffix), order = @js($order);
+                            let url;
+                            if (mode === 'keyword') {
+                                const params = new URLSearchParams();
+                                if (this.stagedStore) { params.set('store', this.stagedStore); }
+                                if (order !== 'popular') { params.set('order', order); }
+                                const query = params.toString();
+                                url = '/akcijos/' + primarySlug + (query ? '?' + query : '');
+                            } else if (this.stagedStore && this.stagedCategory) {
+                                url = '/akcijos/' + this.stagedStore + '/' + this.stagedCategory + orderSuffix;
+                            } else if (this.stagedStore) {
+                                url = '/akcijos/' + this.stagedStore + orderSuffix;
+                            } else if (this.stagedCategory) {
+                                url = '/akcijos/' + this.stagedCategory + orderSuffix;
+                            } else {
+                                url = '/akcijos' + orderSuffix;
+                            }
+                            window.location.href = url;
+                        },
+                    }"
+                    class="fixed inset-0 z-[70] flex flex-col bg-white sm:hidden"
+                >
+                    <div class="relative flex shrink-0 items-center justify-center border-b border-gray-200 px-4 py-3">
+                        <h2 class="text-base font-bold text-gray-900">Filtrai</h2>
+                        <button type="button" @click="$wire.openPanel = null" class="absolute right-4 top-1/2 -translate-y-1/2" aria-label="Uždaryti">
+                            <x-app-icon name="x" class="size-5" />
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto px-4">
                         @if ($showStoreFilter)
-                            <section>
-                                <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Parduotuvė</div>
-                                @include('components.partials.discount-filter-sections', [
-                                    'facet' => 'stores',
-                                    'items' => $allStores,
-                                    'activeSlug' => $activeStoreSlug,
-                                    'hrefFor' => $storeHrefFor,
-                                    'allHref' => $storeAllHref,
-                                    'rowClass' => $rowClass,
-                                ])
-                                @if ($activeStoreSlug !== null)
-                                    <a href="/leidinys/{{ $activeStoreSlug }}" class="mt-2 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
-                                        <x-app-icon name="bookmark" class="size-5 shrink-0" />
-                                        <span class="min-w-0 flex-1 truncate">{{ $activeStoreName }} savaitės leidiniai</span>
-                                    </a>
-                                @endif
+                            <section class="py-3">
+                                <button type="button" @click="openSection = openSection === 'store' ? null : 'store'" class="flex w-full items-center justify-between text-left text-base font-bold text-gray-900">
+                                    Parduotuvė
+                                    <x-app-icon name="chevron-down" class="size-5 shrink-0 text-gray-500 transition-transform" x-bind:class="openSection === 'store' ? 'rotate-180' : ''" />
+                                </button>
+                                <div x-show="openSection === 'store'" class="mt-3">
+                                    @include('components.partials.discount-filter-sections', [
+                                        'facet' => 'stores',
+                                        'items' => $allStores,
+                                        'activeSlug' => $activeStoreSlug,
+                                        'hrefFor' => $storeHrefFor,
+                                        'allHref' => $storeAllHref,
+                                        'rowClass' => $rowClass,
+                                        'stagedModel' => 'stagedStore',
+                                    ])
+                                </div>
                             </section>
                         @endif
                         @if ($showCategoryFilter)
-                            <section class="{{ $showStoreFilter ? 'border-t border-gray-200 pt-4' : '' }}">
-                                <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
-                                @include('components.partials.discount-filter-sections', [
-                                    'facet' => 'categories',
-                                    'items' => $allCategories,
-                                    'activeSlug' => $activeCategorySlug,
-                                    'hrefFor' => $categoryHrefFor,
-                                    'allHref' => $categoryAllHref,
-                                    'rowClass' => $rowClass,
-                                ])
+                            <section class="{{ $showStoreFilter ? 'border-t border-gray-200' : '' }} py-3">
+                                <button type="button" @click="openSection = openSection === 'category' ? null : 'category'" class="flex w-full items-center justify-between text-left text-base font-bold text-gray-900">
+                                    Kategorija
+                                    <x-app-icon name="chevron-down" class="size-5 shrink-0 text-gray-500 transition-transform" x-bind:class="openSection === 'category' ? 'rotate-180' : ''" />
+                                </button>
+                                <div x-show="openSection === 'category'" class="mt-3">
+                                    @include('components.partials.discount-filter-sections', [
+                                        'facet' => 'categories',
+                                        'items' => $allCategories,
+                                        'activeSlug' => $activeCategorySlug,
+                                        'hrefFor' => $categoryHrefFor,
+                                        'allHref' => $categoryAllHref,
+                                        'rowClass' => $rowClass,
+                                        'stagedModel' => 'stagedCategory',
+                                    ])
+                                </div>
                             </section>
                         @endif
+                        @if ($activeStoreSlug !== null)
+                            <a href="/leidinys/{{ $activeStoreSlug }}" class="mb-3 mt-3 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
+                                <x-app-icon name="bookmark" class="size-5 shrink-0" />
+                                <span class="min-w-0 flex-1 truncate">{{ $activeStoreName }} savaitės leidiniai</span>
+                            </a>
+                        @endif
+                    </div>
+                    <div class="flex shrink-0 gap-2 border-t border-gray-200 px-4 py-3">
+                        <button type="button" @click="stagedStore = null; stagedCategory = null" class="flex-1 rounded-2xl border border-gray-300 px-4 py-3 text-[16px] font-semibold text-gray-900">Išvalyti viską</button>
+                        <button type="button" @click="applyFilters()" class="flex-1 rounded-2xl bg-green px-4 py-3 text-[16px] font-bold text-white">Filtruoti</button>
                     </div>
                 </div>
             @endif

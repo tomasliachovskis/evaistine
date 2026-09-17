@@ -12,6 +12,15 @@
      and highlights only that one row, it doesn't accumulate a multi-select
      query-string filter.
 
+     Optional $stagedModel (an Alpine property name in the enclosing
+     x-data scope, e.g. 'stagedStore') switches every row from that
+     immediate-nav <a> into a <button> that just marks itself selected in
+     that Alpine property instead — used only by the mobile "Filtrai"
+     modal's staged store+category selection (discount-filters.blade.php),
+     which applies both together on one "Filtruoti" tap. Every other call
+     site (desktop store/category modals, site-header's Kategorijos
+     modal) omits it and keeps today's exact behavior.
+
      Standard one-row-per-item list (not a chip-wrap grid) — explicit
      product decision, reversing this session's earlier chip-grid rewrite.
      $rowClass is the same row style closure the sort dropdown in
@@ -35,33 +44,54 @@
             $headItems->push($activeItem);
         }
     }
+
+    // Row markup (icon/label/count) is identical either way — only the
+    // wrapping tag differs: a real <a href> that navigates immediately, or
+    // (when $stagedModel is set) a <button> that just marks itself
+    // selected in that Alpine property. $slug is null for the "Visos" row.
+    $stagedModel = $stagedModel ?? null;
+    $allHref = $allHref ?? null;
+    $openRow = function (?string $slug) use ($stagedModel, $activeSlug, $rowClass, $hrefFor, $allHref) {
+        $isAllRow = $slug === null;
+        if ($stagedModel) {
+            $slugJs = \Illuminate\Support\Js::from($slug);
+
+            return '<button type="button" @click="' . $stagedModel . ' = ' . $slugJs . '" :class="' . $stagedModel . ' === ' . $slugJs . ' ? ' . \Illuminate\Support\Js::from($rowClass(true)) . ' : ' . \Illuminate\Support\Js::from($rowClass(false)) . '">';
+        }
+
+        $href = $isAllRow ? $allHref : $hrefFor($slug);
+        $active = $isAllRow ? $activeSlug === null : $slug === $activeSlug;
+
+        return '<a href="' . e($href) . '" class="' . e($rowClass($active)) . '">';
+    };
+    $closeRow = fn () => $stagedModel ? '</button>' : '</a>';
 @endphp
 @if ($facet === 'categories')
     <section class="flex flex-col gap-0.5" x-data="{ expanded: {{ $tailItems->isEmpty() ? 'true' : 'false' }} }">
-        @if ($allHref ?? null)
-            <a href="{{ $allHref }}" class="{{ $rowClass($activeSlug === null) }}">
+        @if ($allHref)
+            {!! $openRow(null) !!}
                 <x-app-icon name="layout-grid" class="size-5 shrink-0 opacity-70" />
                 <span class="min-w-0 flex-1 truncate">Visos kategorijos</span>
-            </a>
+            {!! $closeRow() !!}
         @endif
         @foreach ($headItems as $category)
-            <a href="{{ $hrefFor($category['slug']) }}" class="{{ $rowClass($category['slug'] === $activeSlug) }}">
+            {!! $openRow($category['slug']) !!}
                 <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-5 shrink-0 opacity-70" onerror="this.style.display='none'">
                 <span class="min-w-0 flex-1 truncate text-lg">{{ $category['name'] }}</span>
                 @if (isset($category['offers_count']))
                     <span class="shrink-0 text-base font-normal text-gray-400">{{ number_format($category['offers_count'], 0, ',', ' ') }}</span>
                 @endif
-            </a>
+            {!! $closeRow() !!}
         @endforeach
         <template x-if="expanded">
             @foreach ($tailItems as $category)
-                <a href="{{ $hrefFor($category['slug']) }}" class="{{ $rowClass($category['slug'] === $activeSlug) }}">
+                {!! $openRow($category['slug']) !!}
                     <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-5 shrink-0 opacity-70" onerror="this.style.display='none'">
                     <span class="min-w-0 flex-1 truncate text-lg">{{ $category['name'] }}</span>
                     @if (isset($category['offers_count']))
                         <span class="shrink-0 text-base font-normal text-gray-400">{{ number_format($category['offers_count'], 0, ',', ' ') }}</span>
                     @endif
-                </a>
+                {!! $closeRow() !!}
             @endforeach
         </template>
         @if ($tailItems->isNotEmpty())
@@ -73,28 +103,28 @@
     </section>
 @else
     <section class="flex flex-col gap-0.5" x-data="{ expanded: {{ $tailItems->isEmpty() ? 'true' : 'false' }} }">
-        @if ($allHref ?? null)
-            <a href="{{ $allHref }}" class="{{ $rowClass($activeSlug === null) }}">
+        @if ($allHref)
+            {!! $openRow(null) !!}
                 <x-app-icon name="store" class="size-5 shrink-0 opacity-70" />
                 <span class="min-w-0 flex-1 truncate">Visos parduotuvės</span>
-            </a>
+            {!! $closeRow() !!}
         @endif
         @foreach ($headItems as $store)
-            <a href="{{ $hrefFor($store['slug']) }}" class="{{ $rowClass($store['slug'] === $activeSlug) }}">
+            {!! $openRow($store['slug']) !!}
                 <span class="min-w-0 flex-1 truncate text-lg">{{ $store['name'] }}</span>
                 @if (isset($store['offers_count']))
                     <span class="shrink-0 text-base font-normal text-gray-400">{{ number_format($store['offers_count'], 0, ',', ' ') }}</span>
                 @endif
-            </a>
+            {!! $closeRow() !!}
         @endforeach
         <template x-if="expanded">
             @foreach ($tailItems as $store)
-                <a href="{{ $hrefFor($store['slug']) }}" class="{{ $rowClass($store['slug'] === $activeSlug) }}">
+                {!! $openRow($store['slug']) !!}
                     <span class="min-w-0 flex-1 truncate text-lg">{{ $store['name'] }}</span>
                     @if (isset($store['offers_count']))
                         <span class="shrink-0 text-base font-normal text-gray-400">{{ number_format($store['offers_count'], 0, ',', ' ') }}</span>
                     @endif
-                </a>
+                {!! $closeRow() !!}
             @endforeach
         </template>
         @if ($tailItems->isNotEmpty())
