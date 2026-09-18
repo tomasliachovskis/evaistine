@@ -39,6 +39,25 @@ class PdfFlyerProcessingService
     // manually grepping the flyer log to find.
     private ?string $lastGeminiFailureReason = null;
 
+    // Gemini returns the SAME "status": "RESOURCE_EXHAUSTED" for a genuine
+    // transient per-minute rate limit as it does for "monthly spending cap
+    // exceeded" — the status alone can't tell them apart. A real transient
+    // limit comes with an error.details[] RetryInfo.retryDelay telling you
+    // how long to wait; confirmed against every 429 this project has ever
+    // logged (11,700+ occurrences across 2026-09-01 through -18) that none
+    // of them ever included that field — every single one was the hard
+    // spending-cap kind. So absent a retryDelay, matching the message text
+    // is the only signal available; check this before assuming a bare 429
+    // is worth retrying soon.
+    public static function isQuotaExceededReason(?string $reason): bool
+    {
+        if ($reason === null) {
+            return false;
+        }
+
+        return str_contains($reason, 'HTTP 429') && stripos($reason, 'spending cap') !== false;
+    }
+
     public function __construct()
     {
         $this->apiKey = config('services.openai.api_key');
@@ -145,6 +164,11 @@ class PdfFlyerProcessingService
                     // deals on this page" outcome.
                     if ($result === null) {
                         $failedPages[$pageNum] = $this->lastGeminiFailureReason ?? 'unknown error';
+
+                        if (self::isQuotaExceededReason($failedPages[$pageNum])) {
+                            $this->abortRemainingPages($images, $currentPageNumber, $failedPages, $processId);
+                            break;
+                        }
                     }
                     Log::channel('flyer')->warning("No discounts found on page {$currentPageNumber}", ['result' => $result]);
                 }
@@ -157,6 +181,11 @@ class PdfFlyerProcessingService
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString()
                 ]);
+
+                if (self::isQuotaExceededReason($failedPages[$pageNum])) {
+                    $this->abortRemainingPages($images, $currentPageNumber, $failedPages, $processId);
+                    break;
+                }
             }
         }
 
@@ -216,6 +245,29 @@ class PdfFlyerProcessingService
             'process_id' => $processId,
             'images' => $images
         ];
+    }
+
+    // $currentPageNumber is the 1-based index of the page that just hit the
+    // quota error — array_slice() from there skips exactly the pages not
+    // yet attempted. Marking them failed too (not just the one that
+    // actually errored) is what lets the next scheduled retry
+    // (StoreFlyerDiscountProcessingService's 2min→15min backoff) come back
+    // for every one of them in one go, instead of discovering each is
+    // blocked one page per retry cycle.
+    private function abortRemainingPages(array $images, int $currentPageNumber, array &$failedPages, string $processId): void
+    {
+        $remainingImages = array_slice($images, $currentPageNumber);
+        $reason = $failedPages[array_key_last($failedPages)];
+
+        foreach ($remainingImages as $skipped) {
+            $failedPages[$skipped['page_number']] = $reason;
+        }
+
+        Log::channel('flyer')->error('Aborting PDF — quota exceeded, skipping remaining pages', [
+            'process_id' => $processId,
+            'skipped_pages' => array_column($remainingImages, 'page_number'),
+            'reason' => $reason,
+        ]);
     }
 
     /** @param array<int>|null $targetPages */
@@ -770,6 +822,16 @@ class PdfFlyerProcessingService
                         'headers' => $response->headers(),
                         'attempt' => $attempt
                     ]);
+
+                    // A quota/spending-cap 429 will fail identically on
+                    // every retry — confirmed live, this account has never
+                    // once seen a genuine transient 429 with a retryDelay
+                    // (see isQuotaExceededReason()'s own comment) — so the
+                    // remaining $maxAttempts-1 attempts (5s/10s backoff
+                    // apart) are guaranteed wasted time, not a real retry.
+                    if (self::isQuotaExceededReason($this->lastGeminiFailureReason)) {
+                        break;
+                    }
 
                     if ($attempt < $maxAttempts) {
                         continue;

@@ -85,9 +85,19 @@ class StoreFlyerDiscountProcessingService
                         $this->emit($output, 'warn', "Flyer #{$flyer->id} INCOMPLETE, will retry (attempt {$attempt}).");
                     }
 
+                    $lastErrorMessage = reset($result['failed_pages']) ?: null;
+
                     $flyer->update([
                         'discounts_retry_state' => [
                             'failed_pages' => array_keys($result['failed_pages']),
+                            // One representative reason string (e.g. "HTTP
+                            // 429: Your project has exceeded its monthly
+                            // spending cap...") — every failed page usually
+                            // shares the same cause, so this alone is enough
+                            // to tell what's wrong without grepping
+                            // storage/logs/flyer-*.log by hand.
+                            'last_error_message' => $lastErrorMessage,
+                            'is_quota_exceeded' => PdfFlyerProcessingService::isQuotaExceededReason($lastErrorMessage),
                             'validity_dates' => $result['validity_dates'] ?? null,
                             'attempts' => $attempt,
                             'last_attempted_at' => now()->toDateTimeString(),
@@ -102,9 +112,13 @@ class StoreFlyerDiscountProcessingService
                 }
             } else {
                 $this->emit($output, 'error', "Flyer #{$flyer->id} failed: {$result['message']}");
+                $lastErrorMessage = !empty($result['failed_pages']) ? reset($result['failed_pages']) : ($result['message'] ?? null);
+
                 $flyer->update([
                     'discounts_retry_state' => [
                         'failed_pages' => array_keys($result['failed_pages'] ?? []) ?: $targetPages,
+                        'last_error_message' => $lastErrorMessage,
+                        'is_quota_exceeded' => PdfFlyerProcessingService::isQuotaExceededReason($lastErrorMessage),
                         'validity_dates' => $result['validity_dates'] ?? $seedValidityDates,
                         'attempts' => $attempt,
                         'last_attempted_at' => now()->toDateTimeString(),

@@ -144,7 +144,7 @@ class PdfFlyerIncomingProcessor
                             ]);
                         }
 
-                        $this->writeRetryState($statePath, array_keys($result['failed_pages']), $result['validity_dates'] ?? null, $attempt);
+                        $this->writeRetryState($statePath, $result['failed_pages'], $result['validity_dates'] ?? null, $attempt);
                         $hadFailure = true;
                     } else {
                         @unlink($statePath);
@@ -160,7 +160,10 @@ class PdfFlyerIncomingProcessor
                     $this->emit($output, 'info', 'Next step: Run "sail artisan discounts:process" to finalize the discounts.');
                 } else {
                     $this->emit($output, 'error', "Failed {$filename}: {$result['message']}");
-                    $this->writeRetryState($statePath, array_keys($result['failed_pages'] ?? []) ?: $targetPages, $result['validity_dates'] ?? $seedValidityDates, $attempt);
+                    $failedPagesWithReasons = !empty($result['failed_pages'])
+                        ? $result['failed_pages']
+                        : array_fill_keys($targetPages ?? [], $result['message'] ?? 'unknown error');
+                    $this->writeRetryState($statePath, $failedPagesWithReasons, $result['validity_dates'] ?? $seedValidityDates, $attempt);
                     $hadFailure = true;
                 }
             } catch (\Exception $e) {
@@ -191,11 +194,18 @@ class PdfFlyerIncomingProcessor
         return is_array($decoded) ? $decoded : null;
     }
 
-    /** @param array<int> $failedPages */
+    /** @param array<int, string> $failedPages page_number => failure reason */
     private function writeRetryState(string $statePath, array $failedPages, ?array $validityDates, int $attempts): void
     {
+        // Same as StoreFlyerDiscountProcessingService's retry state — one
+        // representative reason string, plus a derived quota-limit flag, so
+        // the cause is visible without grepping storage/logs/flyer-*.log.
+        $lastErrorMessage = reset($failedPages) ?: null;
+
         file_put_contents($statePath, json_encode([
-            'failed_pages' => array_values($failedPages),
+            'failed_pages' => array_keys($failedPages),
+            'last_error_message' => $lastErrorMessage,
+            'is_quota_exceeded' => PdfFlyerProcessingService::isQuotaExceededReason($lastErrorMessage),
             'validity_dates' => $validityDates,
             'attempts' => $attempts,
             'last_attempted_at' => now()->toDateTimeString(),
