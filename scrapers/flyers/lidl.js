@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep } from './_shared.js';
+import { launchBrowser, fetchBuffer, submitFlyer, sleep } from './_shared.js';
 
 const LISTING_URL = 'https://www.lidl.lt/c/kainu-leidiniai/s10020254';
 
@@ -6,17 +6,6 @@ function addDays(isoDate, days) {
     const date = new Date(`${isoDate}T00:00:00Z`);
     date.setUTCDate(date.getUTCDate() + days);
     return date.toISOString().slice(0, 10);
-}
-
-function decodeImgproxyPath(src) {
-    try {
-        const { pathname } = new URL(src);
-        const lastSegment = pathname.split('/').pop();
-        const base64 = lastSegment.replace(/\.jpg$/, '');
-        return Buffer.from(base64, 'base64url').toString('utf8');
-    } catch (error) {
-        return null;
-    }
 }
 
 async function dismissCookieDialog(page) {
@@ -38,80 +27,55 @@ async function findLeaflets(page) {
     })));
 }
 
-async function getTotalPages(detailPage) {
-    const text = await detailPage.evaluate(() => document.body.innerText);
-    const match = text.match(/(\d+)\s*\/\s*(\d+)/);
-    return match ? parseInt(match[2], 10) : 1;
-}
-
-async function goToPage(detailPage, slug, n) {
-    const url = `https://www.lidl.lt/l/lt/leidinys/${slug}/view/flyer/page/${n}`;
-
+async function goToUrl(detailPage, url, description) {
     for (let attempt = 0; attempt < 3; attempt++) {
         try {
             await detailPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
             return;
         } catch (error) {
-            console.log(`Navigation retry for ${slug} page ${n} (${error.message})`);
+            console.log(`Navigation retry for ${description} (${error.message})`);
             await sleep(1500);
         }
     }
 
-    throw new Error(`Could not navigate to page ${n} after retries`);
+    throw new Error(`Could not navigate to ${description} after retries`);
 }
 
-// Rather than requiring page N's own image to exist after navigating to page
-// N — which broke at the boundary: the viewer's own "N / total" counter
-// counts one more "page" than there are distinct page-NN images (the very
-// last one appears to be an empty back-cover slot with no image of its
-// own) — passively collect every distinct page-NN image encountered via
-// network responses while sweeping through every page URL, and use
-// whatever was actually found. This also sidesteps the virtualized-list
-// timing issues a DOM read right after navigation was prone to.
+// Used to assemble the PDF page-by-page from screenshotted viewer images —
+// fragile (a network-response race against the virtualized page list
+// regularly dropped a handful of pages out of e.g. 43, confirmed live
+// 2026-09-18: 39/43 collected, leaflet rejected as untrustworthy). The
+// viewer's own "Navigacija" menu has a real "Atsisiųsti PDF" link straight
+// to the original PDF on Schwarz's asset CDN — use that directly instead of
+// reconstructing the file ourselves. The menu panel is only mounted once its
+// own route is loaded (confirmed live: present on /view/menu/page/1, absent
+// from a fresh load of /view/flyer/page/1 even after waiting — it's not
+// just a hidden-until-clicked overlay), so navigate straight to that route
+// rather than the flyer-viewer one.
 async function fetchLeafletPdf(browser, slug) {
     const detailPage = await browser.newPage();
     detailPage.setDefaultNavigationTimeout(45000);
 
-    const pageImages = new Map();
-
-    detailPage.on('response', response => {
-        const url = response.url();
-        if (!url.includes('imgproxy.leaflets.schwarz')) return;
-
-        const decoded = decodeImgproxyPath(url);
-        const match = decoded && decoded.match(/page-(\d+)_/);
-        if (!match) return;
-
-        const n = parseInt(match[1], 10);
-        if (!pageImages.has(n)) pageImages.set(n, url);
-    });
-
     try {
-        await goToPage(detailPage, slug, 1);
+        await goToUrl(detailPage, `https://www.lidl.lt/l/lt/leidinys/${slug}/view/menu/page/1`, `${slug} menu`);
         await dismissCookieDialog(detailPage);
-        await sleep(1500);
 
-        const totalPages = await getTotalPages(detailPage);
-        console.log(`Leaflet ${slug}: ${totalPages} page(s) reported by viewer`);
-
-        for (let n = 1; n <= totalPages; n++) {
-            await goToPage(detailPage, slug, n);
-            await sleep(1200);
+        let pdfUrl = null;
+        try {
+            await detailPage.waitForSelector('a[href*="assets.leaflets.schwarz"][href$=".pdf"]', { timeout: 15000 });
+            pdfUrl = await detailPage.evaluate(() => {
+                const link = document.querySelector('a[href*="assets.leaflets.schwarz"][href$=".pdf"]');
+                return link ? link.href : null;
+            });
+        } catch (error) {
+            // waitForSelector timed out — pdfUrl stays null, handled below.
         }
 
-        const collected = Array.from(pageImages.keys()).sort((a, b) => a - b);
-        console.log(`Leaflet ${slug}: collected ${collected.length}/${totalPages} distinct page image(s)`);
-
-        if (collected.length < totalPages - 1) {
-            throw new Error(`Only found ${collected.length}/${totalPages} page images — too many missing to trust`);
+        if (!pdfUrl) {
+            throw new Error('No "Atsisiųsti PDF" link found on the viewer page');
         }
 
-        const buffers = [];
-        for (const n of collected) {
-            buffers.push(await fetchBuffer(pageImages.get(n)));
-        }
-
-        return imagesToPdf(buffers);
+        return { pdfBuffer: await fetchBuffer(pdfUrl), pdfUrl };
     } finally {
         await detailPage.close();
     }
@@ -160,7 +124,7 @@ async function fetchLeafletPdf(browser, slug) {
             const weekMatch = slug.match(/kw(\d+)/);
 
             try {
-                const pdfBuffer = await fetchLeafletPdf(browser, slug);
+                const { pdfBuffer, pdfUrl } = await fetchLeafletPdf(browser, slug);
 
                 await submitFlyer({
                     store: 'Lidl',
@@ -170,6 +134,7 @@ async function fetchLeafletPdf(browser, slug) {
                     validFrom,
                     validTo,
                     pdfBuffer,
+                    sourcePdfUrl: pdfUrl,
                     filename: `lidl-${slug}.pdf`,
                 });
             } catch (error) {
