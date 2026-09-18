@@ -36,7 +36,26 @@
         <div
             class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
             @if (!empty($pages))
-                x-data="{ currentPage: 1, totalPages: {{ count($pages) }}, fullscreen: false, touchStartX: null }"
+                x-data="{
+                    currentPage: 1, totalPages: {{ count($pages) }}, fullscreen: false, touchStartX: null,
+                    viewerHeight: null,
+                    // Height was a guessed calc(100vh - Nrem) constant, tied to
+                    // this page's current header/padding sizes — any future
+                    // change to those (or a device's own chrome/safe-area
+                    // quirks) would silently reopen the dead-space gap this was
+                    // meant to fix. Measure the real remaining space instead:
+                    // however tall the frame's own top offset actually renders,
+                    // fill everything below it down to a small bottom margin.
+                    sizeViewer() {
+                        if (this.fullscreen || !this.$refs.viewerFrame) return;
+                        const top = this.$refs.viewerFrame.getBoundingClientRect().top;
+                        this.viewerHeight = Math.max(320, window.innerHeight - top - 16);
+                    },
+                    init() {
+                        this.$nextTick(() => this.sizeViewer());
+                        window.addEventListener('resize', () => this.sizeViewer());
+                    },
+                }"
                 @keydown.window="
                     if ($event.key === 'ArrowRight') currentPage = Math.min(totalPages, currentPage + 1);
                     if ($event.key === 'ArrowLeft') currentPage = Math.max(1, currentPage - 1);
@@ -49,7 +68,8 @@
                 <div class="order-1 min-w-0">
                     <div
                         x-ref="viewerFrame"
-                        class="relative flex h-[75vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 lg:h-[calc(100vh-5.5rem)]"
+                        class="relative flex h-[75vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
+                        :style="viewerHeight && !fullscreen ? `height: ${viewerHeight}px` : ''"
                         :class="fullscreen && 'fixed inset-0 z-[9999] h-auto rounded-none border-none bg-black/95 p-4'"
                         @touchstart="touchStartX = $event.touches[0].clientX"
                         @touchend="
