@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep } from './_shared.js';
+import { launchBrowser, fetchBuffer, imagesToPdf, isValidJpeg, submitFlyer, sleep } from './_shared.js';
 
 // Iki's /leidiniai/ listing is plain server-rendered HTML with two distinct
 // sections: a "hero" block above the grid holding the current main weekly
@@ -87,11 +87,30 @@ async function fetchLeafletPdf(browser, detailHref) {
 
         const buffers = [];
         for (let n = 1; ; n++) {
+            const pageUrl = `https://image.isu.pub/${slug}/jpg/page_${n}.jpg`;
+            let buffer;
+
             try {
-                buffers.push(await fetchBuffer(`https://image.isu.pub/${slug}/jpg/page_${n}.jpg`));
+                buffer = await fetchBuffer(pageUrl);
             } catch (error) {
                 break;
             }
+
+            // Issuu's CDN answers an out-of-range page with 200 and a
+            // non-JPEG body instead of a real 404 — confirmed live: this
+            // used to crash the whole run (pdf-lib's JpegEmbedder throwing
+            // "SOI not found in JPEG") instead of the loop just stopping
+            // here like it does on a real 404. One retry first, in case
+            // it's a genuine transient blip on a real page rather than the
+            // end of the document.
+            if (!isValidJpeg(buffer)) {
+                await sleep(1000);
+                buffer = await fetchBuffer(pageUrl).catch(() => null);
+
+                if (!buffer || !isValidJpeg(buffer)) break;
+            }
+
+            buffers.push(buffer);
         }
 
         if (buffers.length === 0) throw new Error('No page images fetched');

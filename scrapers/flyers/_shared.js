@@ -40,6 +40,18 @@ export async function fetchBuffer(url, init = {}) {
     return Buffer.from(await response.arrayBuffer());
 }
 
+// A "does this page exist" loop that stops on a non-ok status (fetchBuffer
+// throwing) can still get fooled by a CDN that answers an out-of-range page
+// with 200 and a non-image body instead of a real 404 — confirmed live on
+// Issuu's image.isu.pub (iki.js): pdf-lib's JpegEmbedder crashed the whole
+// scraper run with "SOI not found in JPEG" on page N+1's response instead
+// of the loop just stopping at N like every other store's does. Checking
+// the real JPEG magic bytes (0xFFD8) catches that case the same way a 404
+// would.
+export function isValidJpeg(buffer) {
+    return buffer.length > 2 && buffer[0] === 0xFF && buffer[1] === 0xD8;
+}
+
 // Merges page images (JPEG or PNG buffers, in order) into a single PDF, one
 // full-page image per page — used whenever a store only exposes flyer pages
 // as images rather than a downloadable PDF.
