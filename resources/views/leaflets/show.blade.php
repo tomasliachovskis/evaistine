@@ -49,7 +49,7 @@
                 <div class="order-1 min-w-0">
                     <div
                         x-ref="viewerFrame"
-                        class="relative flex h-[75vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
+                        class="relative flex h-[75vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 lg:h-[calc(100vh-5.5rem)]"
                         :class="fullscreen && 'fixed inset-0 z-[9999] h-auto rounded-none border-none bg-black/95 p-4'"
                         @touchstart="touchStartX = $event.touches[0].clientX"
                         @touchend="
