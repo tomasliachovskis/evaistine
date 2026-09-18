@@ -20,8 +20,6 @@
         <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
     @endpush
 
-    <x-breadcrumb-trail :items="$breadcrumbs" :current="$canonical" />
-
     <main class="base-container py-6 sm:py-8">
         {{-- The leaflet page image is the whole point of this page — it used
              to render after a full-width breadcrumb/H1/dates/pill-bar stack,
@@ -133,20 +131,35 @@
                 </div>
             @endif
 
-            <aside class="order-2 flex min-w-0 flex-col gap-4">
-                <x-type-hero
-                    :title="$flyer['title']"
-                    :subtitle="$dateRange"
-                >
-                    <x-slot:cta>
-                        {{-- The raw PDF is scrape/OCR source material, never a user-facing
-                             download — production shows a "Sekti akcijas" follow CTA here
-                             instead, never exposing the PDF URL at all. --}}
-                        <x-store-subscribe-button />
-                    </x-slot:cta>
-                </x-type-hero>
+            {{-- data-sticky-filter-bar: gates the header's row2 (nav links)
+                 scroll-hide behavior — this page previously had none of the
+                 sticky bars that mechanism looks for, so row2 stayed
+                 permanently visible here, wasting space. Presence-only, read
+                 once by site-header.blade.php's scroll listener; doesn't
+                 need to sit on the thing that visually docks in that space
+                 (there isn't one on this page), just needs to exist. --}}
+            <aside data-sticky-filter-bar class="order-2 flex min-w-0 flex-col gap-4">
+                {{-- Compact breadcrumb + title instead of <x-breadcrumb-trail>
+                     (full-width, its own row) and <x-type-hero> (h1 with no
+                     size class — inherits the global, large h1 rule meant
+                     for full-width headers, which ballooned to 4+ wrapped
+                     lines at this rail's ~320px width, confirmed live
+                     2026-09-18). Both moved/rebuilt here instead, sized for
+                     the rail. --}}
+                <nav class="flex flex-wrap items-center gap-1 text-xs text-gray-500" aria-label="Naršymo kelias">
+                    @foreach ($breadcrumbs as $index => $crumb)
+                        @if ($index > 0)<x-app-icon name="arrow-right" class="size-3 text-gray-300" />@endif
+                        <a href="{{ $crumb['href'] }}" class="transition-colors hover:text-green {{ $canonical === $crumb['href'] ? 'font-medium text-green' : '' }}">{{ $crumb['name'] }}</a>
+                    @endforeach
+                </nav>
+                <div>
+                    <h1 class="text-xl font-bold leading-tight">{{ $flyer['title'] }}</h1>
+                    @if ($dateRange)
+                        <p class="mt-1 text-sm text-gray-600">{{ $dateRange }}</p>
+                    @endif
+                </div>
 
-                <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" :show-leaflets-link="true" :leaflets-count="$listingMeta['leaflets_count'] ?? 0" />
+                <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" :show-leaflets-link="true" :leaflets-count="$listingMeta['leaflets_count'] ?? 0" :compact="true" />
 
                 <div class="section-card">
                     <h2 class="section-heading mb-3">Kiti {{ $storeName }} leidiniai</h2>
