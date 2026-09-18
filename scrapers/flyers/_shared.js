@@ -1,23 +1,9 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 import { PDFDocument } from 'pdf-lib';
 
 puppeteer.use(StealthPlugin());
-
-const execFileAsync = promisify(execFile);
-
-// Repo root — this file lives at scrapers/flyers/_shared.js.
-const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-
-// Same target as deploy.sh's rsync — kept in sync manually since this is
-// the same one-off VPS deploy.sh already hardcodes.
-const PROD_SERVER = 'deploy@84.247.186.143';
-const PROD_REMOTE_DIR = '/var/www/api';
 
 export const sleep = ms => new Promise(res => setTimeout(res, ms));
 
@@ -68,45 +54,6 @@ export async function imagesToPdf(imageBuffers) {
     }
 
     return Buffer.from(await pdfDoc.save());
-}
-
-// Pushes a local file straight to production over SSH/rsync — same server
-// and key deploy.sh already hardcodes. Used for two independent targets
-// after a successful submitFlyer (see below): the public/flyers/pdfs copy
-// (deploy.sh's own rsync covers that path too, as a fallback for whenever
-// this fails — offline VPN, key not present, transient network error) and
-// the flyers-incoming copy (deploy.sh has no fallback for that one — it only
-// rsyncs the repo's own storage/app/flyers-incoming, which is normally
-// empty locally, so this SSH push is the only way that file reaches
-// production short of a manual copy). Logged, not thrown, either way.
-async function syncFileToProduction(localPath, remotePath) {
-    const remoteDir = path.dirname(remotePath).replace(/\\/g, '/');
-
-    const deployKeyPath = path.join(PROJECT_ROOT, 'deploy_key');
-    const sshOpts = ['-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null'];
-
-    if (fs.existsSync(deployKeyPath)) {
-        fs.chmodSync(deployKeyPath, 0o600);
-        sshOpts.unshift('-i', deployKeyPath);
-    }
-
-    const sshCommand = `ssh ${sshOpts.join(' ')}`;
-
-    try {
-        await execFileAsync('ssh', [...sshOpts, PROD_SERVER, `mkdir -p '${remoteDir}'`]);
-        await execFileAsync('rsync', ['-avz', '-e', sshCommand, localPath, `${PROD_SERVER}:${remotePath}`]);
-        console.log(`Synced ${remotePath} to production.`);
-        return true;
-    } catch (error) {
-        console.error(`Failed to sync ${remotePath} to production:`, error.message);
-        return false;
-    }
-}
-
-async function syncPdfToProduction(relativePath) {
-    const localPath = path.join(PROJECT_ROOT, 'storage', 'app', 'public', relativePath);
-    const remotePath = `${PROD_REMOTE_DIR}/storage/app/public/${relativePath}`;
-    return syncFileToProduction(localPath, remotePath);
 }
 
 // Rebuilds an oversized source PDF (over the backend's 60MB cap — see
@@ -279,16 +226,6 @@ export async function submitFlyer({
 
     const data = await response.json().catch(() => ({}));
     console.log(`[${store}] ${title || ''} (${validFrom} - ${validTo}): HTTP ${response.status}`, data);
-
-    if (response.status === 201 && data?.slug && data?.store?.slug) {
-        // storage/app/public/flyers/pdfs/ is the only copy production needs
-        // now — flyers:process-discounts (Kernel.php, every 5 min) reads
-        // discounts straight from the StoreFlyer's own pdf_url, and
-        // flyers:process-pages reads the same file for the /leidinys
-        // page-viewer. No second copy in storage/app/flyers-incoming/
-        // needed anymore.
-        await syncPdfToProduction(`flyers/pdfs/${data.store.slug}-${data.slug}.pdf`);
-    }
 
     return data;
 }
