@@ -39,6 +39,14 @@
                 x-data="{
                     currentPage: 1, totalPages: {{ count($pages) }}, fullscreen: false, touchStartX: null,
                     viewerHeight: null,
+                    // Pages beyond the first two are loading='lazy' and
+                    // hidden (x-show) until picked — the browser only starts
+                    // fetching them once shown, so jumping to e.g. page 5
+                    // flashed a blank/broken frame for as long as that fetch
+                    // took (confirmed live 2026-09-18). Track per-page load
+                    // state so a spinner can cover that gap instead.
+                    loadedPages: {},
+                    pageLoaded(page) { return !!this.loadedPages[page]; },
                     // Height was a guessed calc(100vh - Nrem) constant, tied to
                     // this page's current header/padding sizes — any future
                     // change to those (or a device's own chrome/safe-area
@@ -52,7 +60,16 @@
                         this.viewerHeight = Math.max(320, window.innerHeight - top - 16);
                     },
                     init() {
-                        this.$nextTick(() => this.sizeViewer());
+                        this.$nextTick(() => {
+                            this.sizeViewer();
+                            // Eager-loaded pages (1-2) can finish loading
+                            // before this @load listener is even bound —
+                            // catch that race so the spinner doesn't get
+                            // stuck showing over an already-loaded image.
+                            this.$refs.viewerFrame?.querySelectorAll('img').forEach(img => {
+                                if (img.complete) img.dispatchEvent(new Event('load'));
+                            });
+                        });
                         window.addEventListener('resize', () => this.sizeViewer());
                     },
                 }"
@@ -91,8 +108,18 @@
                                 class="block h-full w-auto max-w-full object-contain"
                                 :class="fullscreen && 'mx-auto max-h-full'"
                                 loading="{{ $page['page_number'] <= 2 ? 'eager' : 'lazy' }}"
+                                @load="loadedPages[{{ $page['page_number'] }}] = true"
+                                x-on:error="loadedPages[{{ $page['page_number'] }}] = true"
                             >
                         @endforeach
+
+                        <div
+                            x-show="currentPage > 0 && !pageLoaded(currentPage)"
+                            x-cloak
+                            class="pointer-events-none absolute inset-0 flex items-center justify-center bg-gray-50"
+                        >
+                            <div class="size-8 animate-spin rounded-full border-[3px] border-gray-200 border-t-green"></div>
+                        </div>
 
                         <button
                             type="button"
