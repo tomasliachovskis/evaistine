@@ -80,10 +80,19 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
+@php
+    // Mirrors site-header.blade.php's own $hideNavRow check — that
+    // component drops row2 entirely on the leaflet detail page, so this
+    // page's lg+ header is only 3.5rem tall (row1 only), not the usual
+    // 7.25rem (row1 + row2). Without this, <main> kept reserving space for
+    // a row2 that no longer renders, leaving a dead gap above the leaflet
+    // image the user wanted flush with the header instead.
+    $hideNavRow = preg_match('#^leidinys/[^/]+/[^/]+#', request()->path()) === 1;
+@endphp
 <body class="h-full min-h-screen bg-background text-font antialiased">
     <x-site-header />
 
-    <main class="pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] sm:pb-0 lg:pt-[calc(7.25rem+env(safe-area-inset-top,0px))]">
+    <main class="pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] sm:pb-0 {{ $hideNavRow ? '' : 'lg:pt-[calc(7.25rem+env(safe-area-inset-top,0px))]' }}">
         {{ $slot }}
     </main>
 

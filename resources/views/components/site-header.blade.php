@@ -30,6 +30,13 @@
         'name' => $category['name'],
         'offers_count' => $category['discounts_count'] ?? 0,
     ])->all();
+
+    // Experiment (leaflets/show.blade.php only, not the /leidinys/{store}
+    // hub): row2 nav links already eat vertical space above a page whose
+    // whole point is showing the leaflet image itself, even with the
+    // hide-on-scroll behavior — try dropping it entirely on this page
+    // instead of just hiding it on scroll.
+    $hideNavRow = preg_match('#^leidinys/[^/]+/[^/]+#', $path) === 1;
 @endphp
 
 {{-- x-data="{}" required for @click bindings here to survive Livewire's
@@ -154,6 +161,7 @@
         </div>
     </div>
 
+    @if (!$hideNavRow)
     <div :class="!$store.siteHeader.visible && 'lg:!hidden'" class="hidden border-b border-gray-200 bg-white lg:block">
         <nav class="base-container flex items-center gap-2.5" aria-label="Pagrindinė navigacija">
             <a href="/akcijos" data-ga-event="desktop_nav_click" data-ga-item="products" class="{{ $navLinkClass($akcijosActive) }}">
@@ -209,6 +217,7 @@
             </a>
         </nav>
     </div>
+    @endif
 
     {{-- x-teleport to <body>: same stacking-context trap as the Kategorijos
          modal above — this menu lives inside <header> (fixed + z-50), so

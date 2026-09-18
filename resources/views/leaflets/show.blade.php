@@ -20,7 +20,7 @@
         <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
     @endpush
 
-    <main class="base-container py-6 sm:py-8">
+    <main class="base-container pb-6 pt-3 sm:pb-8 sm:pt-4">
         {{-- The leaflet page image is the whole point of this page — it used
              to render after a full-width breadcrumb/H1/dates/pill-bar stack,
              squeezed into a 7fr/3fr column beside a "Kiti leidiniai"
@@ -33,39 +33,22 @@
              quick-links pill bar, "Kiti leidiniai") moves into a narrow side
              rail instead. Below lg, the rail collapses to a single column
              below the viewer — same relative order mobile already had. --}}
-        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div
+            class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
             @if (!empty($pages))
-                @php $lastPage = count($pages); @endphp
-                <div
-                    class="order-1 min-w-0"
-                    x-data="{ currentPage: 1, totalPages: {{ $lastPage }}, fullscreen: false, touchStartX: null }"
-                    @keydown.escape.window="fullscreen = false"
-                    @keydown.window="
-                        if ($event.key === 'ArrowRight') currentPage = Math.min(totalPages, currentPage + 1);
-                        if ($event.key === 'ArrowLeft') currentPage = Math.max(1, currentPage - 1);
-                    "
-                >
-                    {{-- Real gap found benchmarking manoakcijos.lt: this used to
-                         stack every scanned page into one long vertical strip —
-                         unusable for a 60-70 page leaflet (no way to jump to a
-                         page except scrolling). Numbered pager + prev/next +
-                         fullscreen instead, same page images already loaded. --}}
-                    <div class="mb-3 flex flex-wrap items-center gap-1.5">
-                        @foreach ($pages as $page)
-                            @continue($lastPage > 6 && $page['page_number'] > 5 && $page['page_number'] !== $lastPage)
-                            @if ($lastPage > 6 && $page['page_number'] === $lastPage)
-                                <span class="px-1 text-sm font-bold text-gray-400">…</span>
-                            @endif
-                            <button
-                                type="button"
-                                @click="currentPage = {{ $page['page_number'] }}"
-                                :class="currentPage === {{ $page['page_number'] }} ? 'border-green bg-green text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-green/40'"
-                                class="flex min-h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-colors"
-                            >{{ $page['page_number'] }}</button>
-                        @endforeach
-                    </div>
-
+                x-data="{ currentPage: 1, totalPages: {{ count($pages) }}, fullscreen: false, touchStartX: null }"
+                @keydown.window="
+                    if ($event.key === 'ArrowRight') currentPage = Math.min(totalPages, currentPage + 1);
+                    if ($event.key === 'ArrowLeft') currentPage = Math.max(1, currentPage - 1);
+                "
+                @fullscreenchange.window="fullscreen = !!document.fullscreenElement"
+                @webkitfullscreenchange.window="fullscreen = !!document.webkitFullscreenElement"
+            @endif
+        >
+            @if (!empty($pages))
+                <div class="order-1 min-w-0">
                     <div
+                        x-ref="viewerFrame"
                         class="relative flex h-[75vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
                         :class="fullscreen && 'fixed inset-0 z-[9999] h-auto rounded-none border-none bg-black/95 p-4'"
                         @touchstart="touchStartX = $event.touches[0].clientX"
@@ -111,13 +94,27 @@
                         </button>
                         <button
                             type="button"
-                            @click="fullscreen = !fullscreen"
+                            @click="
+                                if (fullscreen) {
+                                    (document.exitFullscreen && document.exitFullscreen()) || (document.webkitExitFullscreen && document.webkitExitFullscreen());
+                                } else {
+                                    const el = $refs.viewerFrame;
+                                    (el.requestFullscreen && el.requestFullscreen()) || (el.webkitRequestFullscreen && el.webkitRequestFullscreen());
+                                }
+                            "
                             :aria-label="fullscreen ? 'Uždaryti pilną ekraną' : 'Pilnas ekranas'"
                             class="absolute right-2 top-2 flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
                         >
                             <x-app-icon x-show="!fullscreen" name="maximize" class="size-4" />
                             <x-app-icon x-show="fullscreen" name="x" class="size-4" />
                         </button>
+                    </div>
+
+                    {{-- Mobile only — desktop shows this same pager in the
+                         rail, right under the date range, instead (see
+                         below). --}}
+                    <div class="mt-3 lg:hidden">
+                        @include('leaflets.partials.leaflet-pager', ['pages' => $pages])
                     </div>
                 </div>
             @elseif (!empty($flyer['image_url']))
@@ -158,6 +155,14 @@
                         <p class="mt-1 text-sm text-gray-600">{{ $dateRange }}</p>
                     @endif
                 </div>
+
+                {{-- Desktop only — mobile shows this same pager just below
+                     the image instead (see the viewer column above). --}}
+                @if (!empty($pages))
+                    <div class="hidden lg:block">
+                        @include('leaflets.partials.leaflet-pager', ['pages' => $pages])
+                    </div>
+                @endif
 
                 <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" :show-leaflets-link="true" :leaflets-count="$listingMeta['leaflets_count'] ?? 0" :compact="true" />
 
