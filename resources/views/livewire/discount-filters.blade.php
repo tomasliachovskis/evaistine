@@ -214,7 +214,7 @@
                          general leaflets hub. --}}
                     @php
                         $leafletsCount = $activeStoreSlug !== null
-                            ? \App\Models\Store::where('slug', $activeStoreSlug)->first()?->flyers()->ready()->count()
+                            ? \App\Models\Store::where('slug', $activeStoreSlug)->first()?->flyers()->ready()->currentlyValid()->count()
                             : null;
                     @endphp
                     <a href="{{ $activeStoreSlug !== null ? '/leidinys/' . $activeStoreSlug : '/leidiniai' }}" class="hidden h-full shrink-0 items-center gap-2 rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede] sm:inline-flex">

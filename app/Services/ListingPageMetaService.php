@@ -103,7 +103,7 @@ class ListingPageMetaService
 
     public function buildForStoreListing(Store $store): array
     {
-        $leafletsCount = $store->flyers()->ready()->count();
+        $leafletsCount = $this->activeLeafletsCount($store);
         $intro = $this->buildStoreIntro($store->name, $store->slug, $this->resolveStoreValidity($store), $leafletsCount);
         $intro['freshness_label'] = $this->freshnessLabel(ContentFreshness::forStore($store->id));
 
@@ -177,7 +177,7 @@ class ListingPageMetaService
             'category_name' => $categoryName,
             'keyword_pages' => $this->keywordPageService->listPublishedPagesForCategory($category->slug),
             'total_offers' => Discount::where('store_id', $store->id)->count(),
-            'leaflets_count' => $store->flyers()->ready()->count(),
+            'leaflets_count' => $this->activeLeafletsCount($store),
             'locations_count' => $store->locations()->active()->count(),
             'intro' => [
                 'description' => $this->pickVariant($store->slug . '/' . $category->slug, [
@@ -299,6 +299,17 @@ class ListingPageMetaService
             ->all();
     }
 
+    // Same is_active-is-unreliable caveat as StoreFlyerTitleBuilder::
+    // toListingArray() — derive current/expired from valid_to directly
+    // instead. Used for the "{Store} leidiniai (N)" badges site-wide, which
+    // should read as "how many can I browse right now", not the full
+    // all-time archive count (confirmed live 2026-09-18: showed 13 for Iki
+    // when only a couple were actually still valid).
+    private function activeLeafletsCount(Store $store): int
+    {
+        return $store->flyers()->ready()->currentlyValid()->count();
+    }
+
     private function buildLeaflets(Store $store): array
     {
         // is_active isn't a reliable current/expired signal (see
@@ -339,7 +350,11 @@ class ListingPageMetaService
             'type' => 'store_flyer',
             'store_slug' => $store->slug,
             'store_name' => $store->name,
-            'leaflets_count' => count($leaflets),
+            // Not count($leaflets) — that list intentionally includes full
+            // history for browsing (see buildLeaflets()'s own comment), but
+            // the "(N)" badge next to the "{Store} leidiniai" link should
+            // only count the ones actually still valid today.
+            'leaflets_count' => $this->activeLeafletsCount($store),
             'leaflets' => $leaflets,
             'top_categories' => $this->getTopCategoriesForStore($store),
             'flyer' => [

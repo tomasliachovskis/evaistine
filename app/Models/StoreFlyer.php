@@ -87,6 +87,15 @@ class StoreFlyer extends Model
         return $query->where('processing_status', self::STATUS_READY);
     }
 
+    // is_active is a manually-set flag that isn't kept in sync with real
+    // validity dates (see StoreFlyerTitleBuilder::toListingArray's own
+    // comment) — this derives "still browsable today" from valid_to
+    // instead, for the "{Store} leidiniai (N)" badges site-wide.
+    public function scopeCurrentlyValid(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->whereNull('valid_to')->orWhere('valid_to', '>=', now()->startOfDay()));
+    }
+
     public function scopeOrdered(Builder $query): Builder
     {
         return $query
