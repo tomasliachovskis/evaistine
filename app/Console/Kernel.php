@@ -64,8 +64,8 @@ class Kernel extends ConsoleKernel
         // pdf_url — no separate storage/app/flyers-incoming/ upload needed.
         // (That older path — ProcessPdfFlyerJob/PdfFlyerIncomingProcessor —
         // is retired now that nothing writes into that directory anymore;
-        // the command/service classes are parked in
-        // App\Console\CommandsQuarantine for reference, not deleted.)
+        // the old ProcessPdfFlyer command was deleted 2026-09-20 along with
+        // the rest of App\Console\CommandsQuarantine, unused.)
         // Same "quick, only queues" reasoning as flyers:process-pages above.
         // --pending only picks up the last 3 days by default (no
         // --include-backlog here) — deliberately, so flipping a store's

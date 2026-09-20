@@ -6,12 +6,14 @@ use App\Models\Store;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
-// Manual-only as of 2026-09-09: this used to be driven every minute by
+// Orphaned as of 2026-09-20: this used to be driven every minute by
 // ProcessPdfFlyerJob (removed — nothing writes into flyers-incoming/
 // anymore, scrapers now sync straight into a StoreFlyer's own pdf_url,
 // see flyers:process-discounts / StoreFlyerDiscountProcessingService).
-// Kept only for the quarantined App\Console\CommandsQuarantine\ProcessPdfFlyer
-// --sync fallback, in case a PDF is ever dropped into that directory by hand.
+// Its only remaining caller, App\Console\CommandsQuarantine\ProcessPdfFlyer,
+// was itself deleted (the whole CommandsQuarantine dir was unused) — nothing
+// in the app calls this class anymore. Left in place rather than deleted in
+// the same pass; a candidate for its own removal.
 class PdfFlyerIncomingProcessor
 {
     private const MAX_RETRY_ATTEMPTS = 5;
