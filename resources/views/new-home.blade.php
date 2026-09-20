@@ -63,11 +63,11 @@
             <div class="flex w-full max-w-xl flex-col items-center gap-2">
                 <div class="scroll-cards-x flex w-full items-center justify-start gap-2 sm:justify-center sm:flex-wrap">
                     @foreach (['maxima', 'lidl', 'iki', 'rimi', 'norfa'] as $slug)
-                        <span class="flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3">
+                        <a href="/akcijos/{{ $slug }}" data-ga-event="filter_select" data-ga-item="store:{{ $slug }}" data-ga-source="home_trust_row" class="flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 transition-colors hover:border-green/40">
                             <x-store-logo :slug="$slug" size="sm" />
-                        </span>
+                        </a>
                     @endforeach
-                    <span class="shrink-0 whitespace-nowrap px-2 text-xs font-semibold text-gray-400">+20 kitų</span>
+                    <a href="/parduotuves" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="home_trust_row" class="shrink-0 whitespace-nowrap px-2 text-xs font-semibold text-gray-400 transition-colors hover:text-green">+20 kitų</a>
                 </div>
             </div>
         </div>
