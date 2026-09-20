@@ -1,21 +1,20 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Services;
 
 use App\Models\Discount;
-use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-class RemoveDuplicateActiveDiscounts extends Command
+class DuplicateDiscountRemover
 {
-    protected $signature = 'discounts:remove-duplicate-active';
-
-    protected $description = 'Archive and remove older discounts when multiple exist for the same product in the same store';
-
-    public function handle(): int
+    // Archives and removes older discounts when multiple active rows
+    // exist for the same product+store (keeps the newest, per id DESC).
+    // Formerly the standalone discounts:remove-duplicate-active command —
+    // folded in here since it was only ever invoked from
+    // FinalizeScrapedStoresJob/ProcessScrapingFlow, never scheduled or
+    // run standalone (no dry-run/target args, unlike its neighbors).
+    public function remove(): int
     {
-        $this->info('Removing duplicate discounts...');
-
         $duplicateGroups = Discount::query()
             ->select('product_id', 'store_id')
             ->groupBy('product_id', 'store_id')
@@ -23,7 +22,6 @@ class RemoveDuplicateActiveDiscounts extends Command
             ->get();
 
         if ($duplicateGroups->isEmpty()) {
-            $this->info('No duplicate discounts found.');
             return 0;
         }
 
@@ -79,8 +77,6 @@ class RemoveDuplicateActiveDiscounts extends Command
             });
         });
 
-        $this->info("Archived and removed {$count} duplicate discount(s).");
-
-        return 0;
+        return $count;
     }
 }

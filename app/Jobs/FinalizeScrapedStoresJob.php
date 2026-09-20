@@ -6,6 +6,7 @@ use App\Models\DiscountTemp;
 use App\Models\Product;
 use App\Models\ScraperRun;
 use App\Services\CacheWarmingService;
+use App\Services\DuplicateDiscountRemover;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -83,7 +84,7 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        // products:merge-duplicates/discounts:remove-duplicate-active/
+        // products:merge-duplicates/DuplicateDiscountRemover/
         // discounts:archive-expired/discounts:index-meilisearch are just as
         // global as cache:clear-discounts below (none of them take a store
         // filter — checked: they all scan/operate across every
@@ -93,7 +94,7 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         // times. Moved out here, same "once per batch" reasoning as the
         // cache warms below.
         Artisan::call('products:merge-duplicates');
-        Artisan::call('discounts:remove-duplicate-active');
+        app(DuplicateDiscountRemover::class)->remove();
         Artisan::call('discounts:archive-expired');
         Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
 

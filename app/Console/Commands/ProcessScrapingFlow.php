@@ -174,14 +174,14 @@ class ProcessScrapingFlow extends Command
     {
         $this->info('Step 5: Removing duplicate active discounts...');
 
-        $exitCode = $this->call('discounts:remove-duplicate-active');
-
-        if ($exitCode !== 0) {
-            $this->error('discounts:remove-duplicate-active failed with exit code: ' . $exitCode);
+        try {
+            $count = app(\App\Services\DuplicateDiscountRemover::class)->remove();
+        } catch (\Throwable $e) {
+            $this->error('Removing duplicate active discounts failed: ' . $e->getMessage());
             return false;
         }
 
-        $this->info('✓ Duplicate active discounts removed successfully.');
+        $this->info("✓ Duplicate active discounts removed successfully ({$count} archived).");
         $this->newLine();
         return true;
     }
