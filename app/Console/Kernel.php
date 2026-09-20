@@ -93,6 +93,19 @@ class Kernel extends ConsoleKernel
         // (the "expiring soon"/"added today" bonuses), so a discount's ideal
         // rank can drift over time with no new scrape data to trigger a
         // refresh.
+        // Previously only ran as a side effect of whichever store's own
+        // FinalizeScrapedStoresJob had just touched it — not a standalone
+        // sweep, so a discount could sit expired in the live `discounts`
+        // table (and get picked up by everything downstream: keyword-page
+        // matching, deal-pool scoring, page-html cache) until some other
+        // store's own processing run happened to archive it. Runs first in
+        // this nightly chain so nothing after it (keyword mapping, deal
+        // pool, cache warm) works from stale still-active-looking expired
+        // rows.
+        $schedule->command('discounts:archive-expired')
+            ->dailyAt('04:00')
+            ->withoutOverlapping(60);
+
         // deal-pool:refresh's own keyword-teaser step (KeywordPageService::
         // refreshHomeTeasers() -> buildIndexBackedTeaserDeals()) reads
         // keyword_page_products to pick each keyword page's candidate
