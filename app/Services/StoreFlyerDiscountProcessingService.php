@@ -76,11 +76,8 @@ class StoreFlyerDiscountProcessingService
         $seedValidityDates = $retryState['validity_dates'] ?? null;
         $attempt = ($retryState['attempts'] ?? 0) + 1;
 
-        // Same backoff shape as PdfFlyerIncomingProcessor's flyers-incoming/
-        // sidecar-file retry state (2min after 1st failure, +2min per
-        // attempt, capped at 15min) — kept identical so a stuck leaflet
-        // isn't hammered every 5 minutes regardless of which of the two
-        // paths it came through.
+        // 2min after 1st failure, +2min per attempt, capped at 15min —
+        // backs off instead of retrying a stuck leaflet every 5 minutes.
         $lastAttemptedAt = $retryState['last_attempted_at'] ?? null;
         if ($lastAttemptedAt !== null) {
             $delayMinutes = min(2 * ($attempt - 1), 15);
