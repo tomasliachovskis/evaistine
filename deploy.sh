@@ -67,6 +67,21 @@ rsync -avz --no-perms --no-owner --no-group -e "ssh $SSH_OPTS" \
   --exclude='.git' \
   . "$SERVER:$REMOTE_DIR"
 
+# Second pass, app/ only, WITH --delete: the main sync above never removes
+# a file that no longer exists locally (plain rsync only adds/updates) —
+# a deleted Command/Job/Service class physically stayed on the server
+# indefinitely, and since Laravel's app/Console/Commands auto-discovery
+# scans the filesystem regardless of git state, a deleted command kept
+# working as a live, callable artisan command on prod for two full
+# deploys after being deleted locally (confirmed live 2026-09-20,
+# RemoveDuplicateActiveDiscounts.php). Scoped to just app/, not the whole
+# project, to keep this new deletion power narrow — no need for it in
+# resources/public/scrapers/etc. yet, and app/ has no excludes to worry
+# about replicating here (checked: none of the excludes above fall under
+# app/).
+rsync -avz --no-perms --no-owner --no-group --delete -e "ssh $SSH_OPTS" \
+  app/ "$SERVER:$REMOTE_DIR/app/"
+
 # Run Laravel commands on the server
 ssh $SSH_OPTS $SERVER << 'EOF'
     # This heredoc is a SEPARATE remote bash invocation — the outer script's
