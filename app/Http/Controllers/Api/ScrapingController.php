@@ -151,17 +151,38 @@ class ScrapingController extends Controller
         // week but are genuinely different leaflets, so title has to be part
         // of the identity too. Undated leaflets have no valid_from/valid_to
         // to key on at all, so title is the whole identity for those.
+        //
+        // valid_from and valid_to are matched INDEPENDENTLY of each other,
+        // not as an all-or-nothing pair — 18 scrapers (e.g. Senukai) only
+        // ever expose an end date, never a start date. The old paired check
+        // required BOTH dates present to do a date match, and fell back to
+        // requiring BOTH null otherwise — a real valid_to with a null
+        // valid_from matched neither branch, so $alreadyExists was always
+        // false and every re-scrape created a fresh duplicate row for the
+        // same leaflet (confirmed live 2026-09-18: Senukai's "Leidinys Nr.
+        // 29" scraped into 3 separate StoreFlyer rows over two weeks).
+        // LOWER(TRIM()) on both sides, not an exact match — a scraper
+        // re-reading the same leaflet's title on a later run can pick up a
+        // stray extra space or different capitalization from the source
+        // site without the leaflet itself having changed at all; an exact
+        // string compare would treat that as a "new" title and miss the
+        // duplicate exactly like the valid_from/valid_to bug above did.
+        $normalizedTitle = isset($validated['title']) ? mb_strtolower(trim($validated['title'])) : null;
+
         $alreadyExists = StoreFlyer::where('store_id', $store->id)
             ->when(
-                !empty($validated['valid_from']) && !empty($validated['valid_to']),
-                fn ($query) => $query
-                    ->whereDate('valid_from', $validated['valid_from'])
-                    ->whereDate('valid_to', $validated['valid_to']),
-                fn ($query) => $query->whereNull('valid_from')->whereNull('valid_to')
+                !empty($validated['valid_from']),
+                fn ($query) => $query->whereDate('valid_from', $validated['valid_from']),
+                fn ($query) => $query->whereNull('valid_from')
             )
             ->when(
-                !empty($validated['title']),
-                fn ($query) => $query->where('title', $validated['title']),
+                !empty($validated['valid_to']),
+                fn ($query) => $query->whereDate('valid_to', $validated['valid_to']),
+                fn ($query) => $query->whereNull('valid_to')
+            )
+            ->when(
+                !empty($normalizedTitle),
+                fn ($query) => $query->whereRaw('LOWER(TRIM(title)) = ?', [$normalizedTitle]),
                 fn ($query) => $query->whereNull('title')
             )
             ->exists();
