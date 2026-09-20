@@ -1194,8 +1194,6 @@ class ProductController extends Controller
                     'meta_description' => "Naujas {$entity->name} {$words['nominative']} galioja nuo {$validFromDot} iki {$validToDot}.",
                 ];
             case 'store':
-                $count = $this->getDiscountCountForStore($entity);
-                $countLabel = $this->formatCount($count);
                 // limit=2: title/H1 only ever use the first (best) category
                 // (see $topCategory below), but the description has enough
                 // character budget for a second one — see
@@ -1244,8 +1242,13 @@ class ProductController extends Controller
                     'meta_title' => $maxDiscount > 0
                         ? "{$entity->name} akcijos šiandien – nuolaidos iki {$maxDiscount}%"
                         : "{$entity->name} akcijos šiandien",
+                    // Offer count and the "{Store} akcijos:" lead-in both
+                    // dropped (was "{count}+ pasiūlymų" / store name prefix)
+                    // to free up character budget — explicit product
+                    // decision; category names + store's own page context
+                    // already carry the store identity without repeating it.
                     'meta_description' => $categoryLabelsForDescription !== ''
-                        ? "{$entity->name} akcijos: {$categoryLabelsForDescription}. {$countLabel}+ pasiūlymų, galioja iki {$endDateLabel}. Palyginkite ir sutaupykite!"
+                        ? "{$categoryLabelsForDescription}. Galioja iki {$endDateLabel}. Palyginkite ir sutaupykite!"
                         : "Visos {$entity->name} akcijos ir nuolaidos (galioja {$validityLabel}). Filtruokite, rūšiuokite ir palyginkite kainas. Naujas {$words['nominative']}: /leidinys/{$entity->slug}",
                 ];
             case 'store_category':
