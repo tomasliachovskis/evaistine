@@ -65,7 +65,7 @@ class ProcessStoreFlyerDiscounts extends Command
                 ->whereNotNull('pdf_url')
                 ->whereNull('discounts_processed_at')
                 ->whereNotNull('valid_to')
-                ->where('valid_to', '>=', now()->startOfDay())
+                ->where('valid_to', '>', now()->startOfDay())
                 ->whereHas('store', fn ($q) => $q->where('extract_discounts_from_flyer', true));
 
             // Without this, flipping a store's extract_discounts_from_flyer

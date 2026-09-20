@@ -32,10 +32,11 @@ class StoreFlyerDiscountProcessingService
         // that's just display text), a missing valid_to here means we
         // don't actually know this leaflet's validity window at all —
         // explicit choice: don't burn a Gemini call on it rather than
-        // assume it's still current. Only proceed when valid_to is set
-        // AND today or later.
-        if ($flyer->valid_to === null || $flyer->valid_to->lt(Carbon::today())) {
-            $reason = $flyer->valid_to === null ? 'no valid_to set' : "expired, valid_to {$flyer->valid_to->toDateString()}";
+        // assume it's still current. lte(), not lt(): valid_to == today is
+        // also skipped, by explicit request — only a valid_to strictly
+        // after today is processed.
+        if ($flyer->valid_to === null || $flyer->valid_to->lte(Carbon::today())) {
+            $reason = $flyer->valid_to === null ? 'no valid_to set' : "expired or expires today, valid_to {$flyer->valid_to->toDateString()}";
             $this->emit($output, 'line', "Flyer #{$flyer->id} skipping discount extraction ({$reason}).");
 
             // discounts_processed_at stays null (nothing was actually
