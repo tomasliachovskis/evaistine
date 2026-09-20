@@ -110,6 +110,16 @@ class Kernel extends ConsoleKernel
             ->dailyAt('04:30')
             ->withoutOverlapping(60);
 
+        // --type defaults to 'all' already (stores/categories/store-
+        // categories/products/favorites/page-html, plus keywords:refresh-
+        // counts) — runs right after deal-pool:refresh so the freshly
+        // recomputed curated_deals/keyword-teaser data is actually baked
+        // into warmed caches, not left for the first real visitor to pay
+        // the cold-render cost for.
+        $schedule->command('cache:warm')
+            ->dailyAt('05:00')
+            ->withoutOverlapping(60);
+
         // Store working hours change rarely (unlike flyers/discounts), so
         // weekly is plenty. No file-transfer complexity here (unlike
         // flyers) — it's plain JSON straight into the shared DB — so this
