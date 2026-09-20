@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\StoreFlyer;
 use App\Support\FlyerStorage;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,6 +23,34 @@ class StoreFlyerDiscountProcessingService
 
         if ($flyer->discounts_processed_at !== null) {
             $this->emit($output, 'line', "Flyer #{$flyer->id} already has discounts processed, skipping.");
+
+            return;
+        }
+
+        // Unlike StoreFlyerTitleBuilder::toListingArray()'s own status
+        // check (where a null valid_to is treated as always-valid, since
+        // that's just display text), a missing valid_to here means we
+        // don't actually know this leaflet's validity window at all —
+        // explicit choice: don't burn a Gemini call on it rather than
+        // assume it's still current. Only proceed when valid_to is set
+        // AND today or later.
+        if ($flyer->valid_to === null || $flyer->valid_to->lt(Carbon::today())) {
+            $reason = $flyer->valid_to === null ? 'no valid_to set' : "expired, valid_to {$flyer->valid_to->toDateString()}";
+            $this->emit($output, 'line', "Flyer #{$flyer->id} skipping discount extraction ({$reason}).");
+
+            // discounts_processed_at stays null (nothing was actually
+            // extracted) — the --pending query already excludes this row
+            // going forward (valid_to filter added alongside this check),
+            // so it won't loop being re-dispatched-then-skipped every 5
+            // min. This marker exists only so a future "why is this still
+            // pending" dig (see 2026-09-18's Oriflame queue investigation)
+            // finds the reason here instead of having to re-derive it.
+            $flyer->update([
+                'discounts_retry_state' => [
+                    'skipped_reason' => $reason,
+                    'skipped_at' => now()->toDateTimeString(),
+                ],
+            ]);
 
             return;
         }

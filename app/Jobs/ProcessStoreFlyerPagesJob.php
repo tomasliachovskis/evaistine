@@ -18,6 +18,15 @@ class ProcessStoreFlyerPagesJob implements ShouldQueue, ShouldBeUnique
 
     public function __construct(public int $storeFlyerId)
     {
+        // 2 parallel workers on this queue (deploy/supervisor-nuolaidos-
+        // flyers.conf, numprocs=2) — confirmed live 2026-09-18 a single
+        // huge catalog (Oriflame, 148 pages, ~114s/page) can otherwise tie
+        // up the only worker for ~4.7h, blocking every other flyer behind
+        // it. ShouldBeUnique below means these 2 workers only ever
+        // parallelize across DIFFERENT flyers, never duplicate the same
+        // one. Gemini discount extraction lives on its own single-worker
+        // 'flyers-gemini' queue (ProcessStoreFlyerDiscountsJob), by
+        // deliberate choice kept at exactly 1 concurrent job.
         $this->onQueue('flyers');
     }
 
