@@ -290,9 +290,19 @@ use App\Support\ProductPageMeta;
                                         $altPPrice = (float) ($alt['discounted_price'] ?? 0);
                                         $altPStore = collect($alt['offers'] ?? [])->pluck('store')->filter()->first();
                                     @endphp
+                                    {{-- Stacked (image on top) below lg, not the
+                                         side-by-side row the desktop card
+                                         (above, hidden here) uses — at 2-up on
+                                         a phone-width grid cell, an 80px image
+                                         next to text left almost no room for
+                                         the name/price, truncating badly
+                                         (confirmed live 2026-09-20: "Vaisiu
+                                         sk....", price wrapping mid-number).
+                                         lg+ still gets the compact row shape,
+                                         where 3-up leaves enough width. --}}
                                     <a href="{{ $altPHref }}" data-ga-event="product_card_click" data-ga-product-id="{{ $altP['id'] }}" data-ga-product-name="{{ $altP['name'] }}" data-ga-source="alternative"
-                                       class="{{ $loop->index >= 2 ? 'hidden lg:flex' : 'flex' }} items-center gap-2.5 rounded-xl bg-white p-2.5 transition-colors hover:bg-gray-50">
-                                        <div class="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white">
+                                       class="{{ $loop->index >= 2 ? 'hidden lg:flex' : 'flex' }} flex-col items-stretch gap-2 rounded-xl bg-white p-2.5 transition-colors hover:bg-gray-50 lg:flex-row lg:items-center lg:gap-2.5">
+                                        <div class="relative aspect-square w-full overflow-hidden rounded-lg bg-white lg:w-20 lg:shrink-0">
                                             @if ($altP['image_url'])
                                                 <img src="{{ $altP['image_url'] }}" alt="{{ $altP['name'] }}" loading="lazy" class="h-full w-full object-contain p-1.5">
                                             @endif
