@@ -189,17 +189,22 @@ class AkcijosController extends Controller
         // renders a different/older hero here): a plain store page reads
         // "{Store} akcijos šią savaitę" — generateSeoData('store')'s seo_title
         // is close ("{Store} akcijos") but missing that suffix, so it's added
-        // here rather than duplicated in the backend. Every other case (store
-        // category, category, keyword) already gets the right text straight
-        // from seo_title (e.g. "Maxima akcija bakalėja").
+        // here rather than duplicated in the backend. Category-only pages
+        // still get the right text straight from seo_title.
         //
-        // Deliberately generic, no injected category/% — explicit product
+        // Deliberately generic, no injected offer count — explicit product
         // decision to keep the H1 plain (title/meta_description already
-        // carry the real category+% data; akcijos/listing.blade.php's store
-        // hero subtitle also already renders "{count} akcijos" right under
-        // this H1, so a count there too would be a duplicate).
+        // carry the real %/product data; akcijos/listing.blade.php's store
+        // and store_category hero subtitles also already render
+        // "{count} akcijos" right under this H1, so a count there too would
+        // be a duplicate).
         if (($listingMeta['type'] ?? null) === 'store' && ! empty($listingMeta['store_name'])) {
             $pageTitle = "Visos {$listingMeta['store_name']} akcijos ir nuolaidos šią savaitę";
+        } elseif (($listingMeta['type'] ?? null) === 'store_category' && ! empty($listingMeta['store_name']) && ! empty($seo['category_dative_label'])) {
+            // Dative case ("akcijos buitinei chemijai") — generateSeoData()'s
+            // seo_title used to concatenate two nominative nouns ("Maxima
+            // akcija buitinė chemija"), which isn't grammatical Lithuanian.
+            $pageTitle = "Visos {$listingMeta['store_name']} akcijos {$seo['category_dative_label']} šią savaitę";
         } else {
             $pageTitle = $seo['seo_title'] ?? $listingMeta['store_name'] ?? $listingMeta['category_name'] ?? $path;
         }

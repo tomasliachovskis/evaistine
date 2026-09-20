@@ -1254,8 +1254,16 @@ class ProductController extends Controller
             case 'store_category':
                 $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);
                 $maxDiscount = $this->roundDownDiscountPercent($this->getMaxDiscountForStoreCategory($entity, $secondaryEntity));
-                $countLabel = $this->formatCount($count);
                 $categoryLower = mb_strtolower($secondaryEntity->name);
+
+                // Dative case ("akcijos buitinei chemijai") instead of the
+                // old nominative-juxtaposition ("akcija buitinė chemija") —
+                // see CATEGORY_DATIVE_LABELS's comment. Computed for both
+                // branches below (including the zero-offer one) so the H1
+                // built from it in AkcijosController reads grammatically
+                // correct either way.
+                $categoryShortName = $this->shortenCategoryName($secondaryEntity->name);
+                $categoryDative = self::CATEGORY_DATIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
 
                 $storeCategoryDescription = StoreCategoryDescription::where('store_id', $entity->id)
                     ->where('category_id', $secondaryEntity->id)
@@ -1271,6 +1279,7 @@ class ProductController extends Controller
                     $seoData = [
                         'seo_title' => $entity->name.' '.$categoryLower,
                         'seo_description' => '',
+                        'category_dative_label' => $categoryDative,
                         'meta_title' => $entity->name.' '.$categoryLower.' – palyginkite kainas kitose parduotuvėse',
                         'meta_description' => "Šiuo metu {$entity->name} neturi aktyvių {$categoryLower} akcijų. Peržiūrėkite {$categoryLower} pasiūlymus kitose parduotuvėse.",
                     ];
@@ -1278,15 +1287,29 @@ class ProductController extends Controller
                     return $seoData;
                 }
 
-                // Same full-catalog case as the 'category' branch above: real
-                // products can exist here with no discount_percent on any of
-                // them (price-only listing), so only claim a percentage when
-                // one actually exists rather than defaulting to "iki 0%".
+                // Real top-discounted products (not a category breakdown —
+                // this page is already scoped to one category, unlike the
+                // plain store page) — up to 2 distinct products, names
+                // already truncated+deduped by getTopDiscountedProductsForStoreCategory().
+                $topProducts = $this->getTopDiscountedProductsForStoreCategory($entity->id, $secondaryEntity->id, 2);
+                $productLabelsForDescription = implode(', ', array_map(
+                    fn ($p) => "{$p['name']} -{$p['discount_percent']}%",
+                    $topProducts
+                ));
+                $endDateLabel = Carbon::parse($this->resolveStoreValidity($entity)['valid_to'])->format('Y.m.d');
+
                 $seoData = [
-                    'seo_title' => $entity->name.' akcija '.$categoryLower,
+                    'seo_title' => $entity->name.' akcijos '.$categoryDative,
                     'seo_description' => '',
-                    'meta_title' => $entity->name.' akcija '.$categoryLower.($maxDiscount > 0 ? ' – iki '.$maxDiscount.'% nuolaidos' : ''),
-                    'meta_description' => "Naujausios {$entity->name} {$categoryLower} akcijos".($maxDiscount > 0 ? " – iki {$maxDiscount}% nuolaidos" : '').", {$countLabel}+ prekių. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
+                    // Consumed by AkcijosController for the H1 — same
+                    // pattern as the 'store' case's 'top_discount_category'.
+                    'category_dative_label' => $categoryDative,
+                    'meta_title' => $maxDiscount > 0
+                        ? "{$entity->name} akcijos {$categoryDative} šiandien – nuolaidos iki {$maxDiscount}%"
+                        : "{$entity->name} akcijos {$categoryDative} šiandien",
+                    'meta_description' => $productLabelsForDescription !== ''
+                        ? "{$productLabelsForDescription}. Galioja iki {$endDateLabel}. Palyginkite ir sutaupykite!"
+                        : "Naujausios {$entity->name} {$categoryLower} akcijos. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.",
                 ];
 
                 if ($storeCategoryDescription && $storeCategoryDescription->intro_html) {
@@ -1957,6 +1980,45 @@ class ProductController extends Controller
         'Namų ūkio ir laisvalaikio prekės' => 'Namų prekės',
     ];
 
+    // Lithuanian dative case ("akcijos buitinei chemijai", not the
+    // grammatically broken "akcija buitinė chemija" nominative-juxtaposition
+    // the old store_category seo_title produced) for the 16 root
+    // categories. Same reasoning as KeywordPage::grammar_dative
+    // (app/Models/KeywordPage.php:18) — with this few, fixed categories and
+    // no existing grammar column on `categories`, a small hand-verified map
+    // is the right level of effort, not a migration or a declension
+    // algorithm. Keyed by the SAME short name shortenCategoryName() already
+    // produces, so one lookup covers both the shortened and full-name cases.
+    private const CATEGORY_DATIVE_LABELS = [
+        'Vaisiai ir daržovės' => 'vaisiams ir daržovėms',
+        'Pieno produktai' => 'pieno produktams',
+        'Duonos gaminiai' => 'duonos gaminiams',
+        'Mėsa ir žuvis' => 'mėsai ir žuviai',
+        'Šaldyti produktai' => 'šaldytiems produktams',
+        'Bakalėja' => 'bakalėjai',
+        'Vaikų prekės' => 'vaikų prekėms',
+        'Saldumynai' => 'saldumynams',
+        'Gėrimai' => 'gėrimams',
+        'Nealkoholiniai gėrimai' => 'nealkoholiniams gėrimams',
+        'Alkoholis' => 'alkoholiui',
+        'Kosmetika' => 'kosmetikai',
+        'Buitinė chemija' => 'buitinei chemijai',
+        'Namų prekės' => 'namų prekėms',
+        'Gyvūnų prekės' => 'gyvūnų prekėms',
+        'Augalai' => 'augalams',
+    ];
+
+    // Shared by getTopDiscountCategoriesForStore() and the store_category
+    // SEO case — a handful of root categories are stored as long "X ir Y
+    // prekės"-style names (see SHORT_CATEGORY_LABELS's own comment); this
+    // is the one place that shortening logic lives now.
+    private function shortenCategoryName(string $name): string
+    {
+        $name = trim($name);
+
+        return self::SHORT_CATEGORY_LABELS[$name] ?? trim(explode(',', $name)[0]);
+    }
+
     // "Which root categories have this store's best discounts, and what are
     // they" — distinct from getMaxDiscountForStore() (one scalar, no
     // category context) and getMaxDiscountForStoreCategory() (needs the
@@ -1983,11 +2045,93 @@ class ProductController extends Controller
         return $rows
             ->filter(fn ($row) => (int) $row->max_discount_percent > 0)
             ->map(fn ($row) => [
-                'name' => self::SHORT_CATEGORY_LABELS[trim($row->name)] ?? trim(explode(',', $row->name)[0]),
+                'name' => $this->shortenCategoryName($row->name),
                 'max_discount_percent' => $this->roundDownDiscountPercent($row->max_discount_percent),
             ])
             ->values()
             ->all();
+    }
+
+    // Product-level equivalent of getTopDiscountCategoriesForStore(), but
+    // scoped to one specific store+category pair (used on the
+    // /akcijos/{store}/{category} page, which is already scoped to a single
+    // category — a category-level breakdown doesn't apply there the way it
+    // does on the plain store page, so this names actual products instead).
+    // Returns [] when there's no positive discount, same zero-guard
+    // reasoning as getTopDiscountCategoriesForStore().
+    //
+    // Pulls a larger candidate pool (not just $limit) and dedupes by
+    // shortened name before taking the final $limit — different pack
+    // sizes of the same product (e.g. "Kvapnūs šiukšlių maišai, 30 vnt."
+    // and "..., 45 vnt.") both truncate to the same short name and were
+    // showing up as two near-identical entries in a real store+category
+    // pair, which reads as a mistake rather than two genuine deals.
+    private function getTopDiscountedProductsForStoreCategory($storeId, $categoryId, int $limit = 2): array
+    {
+        $poolLimit = max($limit * 5, 10);
+
+        $candidates = Discount::where('store_id', $storeId)
+            ->whereHas('product', fn ($q) => $q->where('category_id', $categoryId))
+            ->whereNotNull('discount_percent')
+            ->where('discount_percent', '>', 0)
+            ->with('product')
+            ->orderByDesc('discount_percent')
+            ->limit($poolLimit)
+            ->get();
+
+        $seenShortNames = [];
+        $result = [];
+
+        foreach ($candidates as $d) {
+            $shortName = $this->truncateProductName($d->product->name);
+            $dedupeKey = mb_strtolower($shortName);
+
+            if (isset($seenShortNames[$dedupeKey])) {
+                continue;
+            }
+
+            $seenShortNames[$dedupeKey] = true;
+            $result[] = [
+                'name' => $shortName,
+                'discount_percent' => $this->roundDownDiscountPercent($d->discount_percent),
+            ];
+
+            if (count($result) >= $limit) {
+                break;
+            }
+        }
+
+        return $result;
+    }
+
+    // Product name up to the first comma — most product names in this
+    // catalog are "{item}, {size/variant}" (e.g. "Kvapnūs šiukšlių maišai,
+    // 30 vnt., 60 l"), so the comma already marks a natural, readable cut
+    // point, same spirit as SHORT_CATEGORY_LABELS's comma-split fallback.
+    // Falls back to word-boundary truncation at $max chars for the rare
+    // name with no comma at all, so an unusually long one-clause name still
+    // can't blow the meta description's character budget.
+    private function truncateProductName(string $name, int $max = 40): string
+    {
+        $name = trim($name);
+        $commaPos = mb_strpos($name, ',');
+
+        if ($commaPos !== false) {
+            return mb_substr($name, 0, $commaPos);
+        }
+
+        if (mb_strlen($name) <= $max) {
+            return $name;
+        }
+
+        $cut = mb_substr($name, 0, $max);
+        $lastSpace = mb_strrpos($cut, ' ');
+
+        if ($lastSpace !== false && $lastSpace > $max * 0.5) {
+            $cut = mb_substr($cut, 0, $lastSpace);
+        }
+
+        return rtrim($cut, ' ,.').'…';
     }
 
     private function getMaxEndAtForStore($store)
