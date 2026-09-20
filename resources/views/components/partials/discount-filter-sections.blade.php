@@ -96,7 +96,18 @@
                 @endif
             {!! $closeRow() !!}
         @endforeach
-        <template x-if="expanded">
+        {{-- x-show + a display:contents wrapper, not <template x-if> — Alpine's
+             x-if/x-for templates nested inside this modal's own
+             <template x-teleport="body"> (site-header.blade.php) don't
+             reliably activate: confirmed live 2026-09-20, "Rodyti daugiau
+             (11)" showed the right count but clicking it never actually
+             added any DOM nodes, since Alpine's teleport clone doesn't
+             re-bind nested templates correctly. x-show only ever toggles
+             CSS display on already-real DOM nodes, so it isn't affected by
+             that. class="contents" keeps these rows acting as direct flex
+             children of the enclosing <section> (its own flex/gap layout
+             still applies) instead of one nested block. --}}
+        <div x-show="expanded" class="contents">
             @foreach ($tailItems as $category)
                 {!! $openRow($category['slug']) !!}
                     <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-5 shrink-0 opacity-70" onerror="this.style.display='none'">
@@ -106,7 +117,7 @@
                     @endif
                 {!! $closeRow() !!}
             @endforeach
-        </template>
+        </div>
         @if ($tailItems->isNotEmpty())
             <button type="button" @click="expanded = !expanded" class="flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-[18px] font-semibold text-green text-left transition-colors hover:bg-[#f2f2f2]">
                 <x-app-icon name="chevron-down" class="size-5 shrink-0 transition-transform" x-bind:class="expanded ? 'rotate-180' : ''" />
@@ -130,7 +141,9 @@
                 @endif
             {!! $closeRow() !!}
         @endforeach
-        <template x-if="expanded">
+        {{-- x-show + display:contents, not <template x-if> — see the
+             categories branch above for why. --}}
+        <div x-show="expanded" class="contents">
             @foreach ($tailItems as $store)
                 {!! $openRow($store['slug']) !!}
                     <span class="min-w-0 flex-1 truncate text-lg">{{ $store['name'] }}</span>
@@ -139,7 +152,7 @@
                     @endif
                 {!! $closeRow() !!}
             @endforeach
-        </template>
+        </div>
         @if ($tailItems->isNotEmpty())
             <button type="button" @click="expanded = !expanded" class="flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-[18px] font-semibold text-green text-left transition-colors hover:bg-[#f2f2f2]">
                 <x-app-icon name="chevron-down" class="size-5 shrink-0 transition-transform" x-bind:class="expanded ? 'rotate-180' : ''" />
