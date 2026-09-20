@@ -204,6 +204,10 @@
                                 'hrefFor' => fn ($slug) => '/akcijos/' . $slug,
                                 'rowClass' => $categoryRowClass,
                                 'gaSource' => 'header_nav_categories',
+                                // This is a full category directory, not a
+                                // page-scoped filter — show every category
+                                // immediately, no "Rodyti daugiau" step.
+                                'visibleLimit' => count($categoriesForModal),
                             ])
                         </div>
                     </div>

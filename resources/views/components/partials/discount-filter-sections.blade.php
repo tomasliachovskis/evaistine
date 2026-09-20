@@ -36,13 +36,20 @@
      product-filter-controls.tsx's row constants) — reused here instead of
      a third bespoke row style. --}}
 @php
-    // Cap the always-visible list at 5 rows — on a store/category-heavy page
-    // this list can run past 20 entries, which on a phone means a lot of
-    // scrolling inside the sheet just to find the sort button below it. The
-    // active slug (if any) is always pinned into the visible head, even if
-    // it would otherwise fall past row 5, so re-opening the sheet never
-    // hides the user's own current selection behind "Rodyti daugiau".
-    $visibleLimit = 5;
+    // Cap the always-visible list at 8 rows by default — on a
+    // store/category-heavy page this list can run past 20 entries, which on
+    // a phone means a lot of scrolling inside the sheet just to find the
+    // sort button below it. The active slug (if any) is always pinned into
+    // the visible head, even if it would otherwise fall past row 8, so
+    // re-opening the sheet never hides the user's own current selection
+    // behind "Rodyti daugiau".
+    //
+    // Optional $visibleLimit override: site-header's Kategorijos modal is a
+    // full category directory, not a page-scoped filter — truncating it
+    // behind an extra click defeats its own purpose (confirmed live
+    // 2026-09-20, right after fixing "Rodyti daugiau" not actually
+    // expanding — the request right after was "just show them all here").
+    $visibleLimit = $visibleLimit ?? 8;
     $headItems = collect($items)->slice(0, $visibleLimit)->values();
     $tailItems = collect($items)->slice($visibleLimit)->values();
     if ($activeSlug !== null && !$headItems->contains('slug', $activeSlug)) {
