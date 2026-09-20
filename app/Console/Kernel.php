@@ -93,6 +93,19 @@ class Kernel extends ConsoleKernel
         // (the "expiring soon"/"added today" bonuses), so a discount's ideal
         // rank can drift over time with no new scrape data to trigger a
         // refresh.
+        // deal-pool:refresh's own keyword-teaser step (KeywordPageService::
+        // refreshHomeTeasers() -> buildIndexBackedTeaserDeals()) reads
+        // keyword_page_products to pick each keyword page's candidate
+        // products — that table was previously only ever rebuilt manually
+        // (keywords:map-products had no schedule at all), so a newly added
+        // keyword page or a search_terms/category_slugs edit wouldn't show
+        // up in curated_deals until someone remembered to run it by hand.
+        // Scheduled 15 min before deal-pool:refresh so the mapping is fresh
+        // by the time that reads it.
+        $schedule->command('keywords:map-products')
+            ->dailyAt('04:15')
+            ->withoutOverlapping(60);
+
         $schedule->command('deal-pool:refresh')
             ->dailyAt('04:30')
             ->withoutOverlapping(60);
