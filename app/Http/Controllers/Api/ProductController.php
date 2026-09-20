@@ -1196,7 +1196,15 @@ class ProductController extends Controller
             case 'store':
                 $count = $this->getDiscountCountForStore($entity);
                 $countLabel = $this->formatCount($count);
-                $maxDiscount = $this->roundDownDiscountPercent(Discount::where('store_id', $entity->id)->max('discount_percent') ?? 0);
+                // limit=2: title/H1 only ever use the first (best) category
+                // (see $topCategory below), but the description has enough
+                // character budget for a second one — see
+                // SHORT_CATEGORY_LABELS's comment for why the length math
+                // only works with shortened names.
+                $topCategories = $this->getTopDiscountCategoriesForStore($entity->id, 2);
+                $topCategory = $topCategories[0] ?? null;
+                $maxDiscount = $topCategory['max_discount_percent']
+                    ?? $this->roundDownDiscountPercent(Discount::where('store_id', $entity->id)->max('discount_percent') ?? 0);
                 $words = $this->getStoreLeafletWords($entity->slug);
                 // SXO audit finding: SERP competitors for "{store} akcijos šią
                 // savaitę" all bake a date range into their title, this page's
@@ -1205,20 +1213,40 @@ class ProductController extends Controller
                 // uses so both page types read consistently.
                 $validity = $this->resolveStoreValidity($entity);
                 $validityLabel = $this->formatValidityRangeLabel($validity['valid_from'], $validity['valid_to']);
-                // Month name (accusative, "akcija rugsėjį") instead of the
-                // exact date range in the title itself — reads as a normal
-                // sentence instead of a stitched-together string of clauses,
-                // and doesn't look stale mid-month the way a fixed date
-                // range does. The exact range still lives in meta_description.
-                $monthLabel = LithuanianDate::monthAccusative(now());
+
+                // Description gets up to 2 categories (title/H1 stay plain,
+                // no category name — explicit product decision), e.g.
+                // "Buitinė chemija iki 60%, Namų prekės iki 50%".
+                // $endDateLabel is just the end date, not the full validity
+                // range, to keep this within the ~140-150 char meta
+                // description sweet spot.
+                $categoryLabelsForDescription = implode(', ', array_map(
+                    fn ($c) => "{$c['name']} iki {$c['max_discount_percent']}%",
+                    $topCategories
+                ));
+                // Numeric Y.m.d ("2026.09.14") instead of formatLtDate()'s
+                // abbreviated-month form ("14 rugs.") — unambiguous and
+                // matches the app's existing date convention elsewhere
+                // (e.g. formatValidityRangeLabel()'s own callers' surrounding
+                // copy, leaflet issue dates).
+                $endDateLabel = Carbon::parse($validity['valid_to'])->format('Y.m.d');
 
                 return [
                     'seo_title' => $entity->name.' akcijos',
                     'seo_description' => $entity->description,
+                    // Consumed by AkcijosController::renderListingPayload() to
+                    // build the store page's H1 — not rendered directly here.
+                    'top_discount_category' => $topCategory,
+                    // No category name and no offer count in the title —
+                    // explicit product decision to keep it to just the store
+                    // name + a plain "nuolaidos iki X%" hook; category+count
+                    // still live in meta_description.
                     'meta_title' => $maxDiscount > 0
-                        ? "{$entity->name} -{$maxDiscount}% akcija {$monthLabel} – {$countLabel}+ pasiūlymų"
-                        : "{$entity->name} akcijos {$monthLabel} – {$countLabel}+ pasiūlymų",
-                    'meta_description' => "Visos {$entity->name} akcijos ir nuolaidos (galioja {$validityLabel}). Filtruokite, rūšiuokite ir palyginkite kainas. Naujas {$words['nominative']}: /leidinys/{$entity->slug}",
+                        ? "{$entity->name} akcijos šiandien – nuolaidos iki {$maxDiscount}%"
+                        : "{$entity->name} akcijos šiandien",
+                    'meta_description' => $categoryLabelsForDescription !== ''
+                        ? "{$entity->name} akcijos: {$categoryLabelsForDescription}. {$countLabel}+ pasiūlymų, galioja iki {$endDateLabel}. Palyginkite ir sutaupykite!"
+                        : "Visos {$entity->name} akcijos ir nuolaidos (galioja {$validityLabel}). Filtruokite, rūšiuokite ir palyginkite kainas. Naujas {$words['nominative']}: /leidinys/{$entity->slug}",
                 ];
             case 'store_category':
                 $count = $this->getDiscountCountForStoreCategory($entity, $secondaryEntity);
@@ -1895,13 +1923,68 @@ class ProductController extends Controller
         }
     }
 
-    // Round DOWN to the nearest 5 — "iki 51%" is an oddly specific number
-    // for a meta title/description to advertise, and rounding up (e.g. to
-    // 55%) would overstate a real discount, which "iki X%" ("up to X%")
-    // must never do.
+    // Round DOWN to the nearest 10 — "iki 51%"/"iki 65%" are oddly specific
+    // numbers for a meta title/description to advertise, real competitor
+    // copy overwhelmingly uses clean 10s, and rounding up (e.g. to 60%)
+    // would overstate a real discount, which "iki X%" ("up to X%") must
+    // never do.
     private function roundDownDiscountPercent($percent)
     {
-        return (int) (floor($percent / 5) * 5);
+        return (int) (floor($percent / 10) * 10);
+    }
+
+    // A handful of root categories are stored as long "X ir Y prekės"-style
+    // names — fine as a category-page/breadcrumb name, but they blow a meta
+    // description's ~140-150 char budget once two of them have to appear
+    // side by side alongside the store name, "iki X%" for each, the offer
+    // count, and a CTA. Character-length testing during SEO research showed
+    // 2 categories only fit the recommended length with these shortened —
+    // a generic "split on comma/'ir'" rule breaks grammar for names with no
+    // comma (e.g. splitting "Vaikų ir kūdikių prekės" on " ir " would drop
+    // "prekės" entirely), so this is a small curated map instead. Categories
+    // not listed here either already have a comma (handled by the fallback
+    // explode(',', ...) below) or are already short enough as-is.
+    private const SHORT_CATEGORY_LABELS = [
+        'Pieno produktai ir kiaušiniai' => 'Pieno produktai',
+        'Šaldytas maistas ir ledai' => 'Šaldyti produktai',
+        'Vaikų ir kūdikių prekės' => 'Vaikų prekės',
+        'Saldumynai ir užkandžiai' => 'Saldumynai',
+        'Alkoholiniai gėrimai' => 'Alkoholis',
+        'Kosmetika ir higiena' => 'Kosmetika',
+        'Namų ūkio ir laisvalaikio prekės' => 'Namų prekės',
+    ];
+
+    // "Which root categories have this store's best discounts, and what are
+    // they" — distinct from getMaxDiscountForStore() (one scalar, no
+    // category context) and getMaxDiscountForStoreCategory() (needs the
+    // category already known). Returns [] when there's no positive discount
+    // to report at all, so callers must fall back to generic copy rather
+    // than render a "0%"/empty-category string — the kaina24.lt "Nuo 0 €"
+    // and gudrusis.lt "0 pasiūlymų" live bugs found during SEO research are
+    // the concrete precedent for why this guard matters. $limit=1 (the H1/
+    // title use case) and $limit=2 (the meta description use case, which has
+    // more character budget for a second category) share this one query.
+    private function getTopDiscountCategoriesForStore($storeId, int $limit = 1): array
+    {
+        $rows = DB::table('discounts')
+            ->join('products', 'products.id', '=', 'discounts.product_id')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->where('discounts.store_id', $storeId)
+            ->whereNull('categories.parent_id')
+            ->select('categories.name', DB::raw('MAX(discounts.discount_percent) as max_discount_percent'))
+            ->groupBy('categories.id', 'categories.name')
+            ->orderByDesc('max_discount_percent')
+            ->limit($limit)
+            ->get();
+
+        return $rows
+            ->filter(fn ($row) => (int) $row->max_discount_percent > 0)
+            ->map(fn ($row) => [
+                'name' => self::SHORT_CATEGORY_LABELS[trim($row->name)] ?? trim(explode(',', $row->name)[0]),
+                'max_discount_percent' => $this->roundDownDiscountPercent($row->max_discount_percent),
+            ])
+            ->values()
+            ->all();
     }
 
     private function getMaxEndAtForStore($store)

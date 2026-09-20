@@ -192,8 +192,14 @@ class AkcijosController extends Controller
         // here rather than duplicated in the backend. Every other case (store
         // category, category, keyword) already gets the right text straight
         // from seo_title (e.g. "Maxima akcija bakalėja").
+        //
+        // Deliberately generic, no injected category/% — explicit product
+        // decision to keep the H1 plain (title/meta_description already
+        // carry the real category+% data; akcijos/listing.blade.php's store
+        // hero subtitle also already renders "{count} akcijos" right under
+        // this H1, so a count there too would be a duplicate).
         if (($listingMeta['type'] ?? null) === 'store' && ! empty($listingMeta['store_name'])) {
-            $pageTitle = $listingMeta['store_name'].' akcijos šią savaitę';
+            $pageTitle = "Visos {$listingMeta['store_name']} akcijos ir nuolaidos šią savaitę";
         } else {
             $pageTitle = $seo['seo_title'] ?? $listingMeta['store_name'] ?? $listingMeta['category_name'] ?? $path;
         }
