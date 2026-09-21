@@ -16,8 +16,15 @@
             'logo_slug' => file_exists(public_path("assets/stores/{$slug}.svg")) ? $slug : null,
         ])
         ->filter(fn ($chip) => $chip['matching_offers_count'] > 0)
-        ->sortByDesc('matching_offers_count')
         ->values();
+
+    // Same editorial store order as the home hero chips / /parduotuves
+    // directory (App\Support\StoreListPriority) — named chains first in a
+    // fixed order, then everyone else by active-leaflet count — instead of
+    // raw count desc, which put e.g. Officeday ahead of Maxima/Rimi/Lidl.
+    $storeChips = collect(\App\Support\StoreListPriority::sort(
+        $storeChips->map(fn ($chip) => [...$chip, 'discounts_count' => $chip['matching_offers_count']])->all()
+    ));
 
     // $leaflets is already active-only (buildAllLeaflets()'s own ->active()
     // scope) — real cover images (confirmed live, e.g.

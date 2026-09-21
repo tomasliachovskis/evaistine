@@ -22,17 +22,32 @@ class StoreListPriority
     {
         $active = array_values(array_filter($stores, fn ($store) => ($store['discounts_count'] ?? 0) > 0));
 
-        usort($active, function ($a, $b) {
-            $rankA = array_search($a['slug'], self::PRIORITY_SLUGS, true);
-            $rankB = array_search($b['slug'], self::PRIORITY_SLUGS, true);
-
-            if ($rankA !== false || $rankB !== false) {
-                return ($rankA === false ? PHP_INT_MAX : $rankA) <=> ($rankB === false ? PHP_INT_MAX : $rankB);
-            }
-
-            return $b['discounts_count'] <=> $a['discounts_count'];
-        });
+        usort($active, fn ($a, $b) => self::compare($a, $b));
 
         return $active;
+    }
+
+    // Same ranking as sort() above, minus the zero-count filter — for
+    // callers (e.g. the /leidiniai toolbar + grid) that still need to show
+    // a store with zero *active* items (an expired-only leaflet, say)
+    // rather than dropping it from the page entirely.
+    public static function sortKeepingZero(array $stores): array
+    {
+        $stores = array_values($stores);
+        usort($stores, fn ($a, $b) => self::compare($a, $b));
+
+        return $stores;
+    }
+
+    private static function compare(array $a, array $b): int
+    {
+        $rankA = array_search($a['slug'], self::PRIORITY_SLUGS, true);
+        $rankB = array_search($b['slug'], self::PRIORITY_SLUGS, true);
+
+        if ($rankA !== false || $rankB !== false) {
+            return ($rankA === false ? PHP_INT_MAX : $rankA) <=> ($rankB === false ? PHP_INT_MAX : $rankB);
+        }
+
+        return ($b['discounts_count'] ?? 0) <=> ($a['discounts_count'] ?? 0);
     }
 }

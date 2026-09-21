@@ -281,7 +281,7 @@ class ListingPageMetaService
 
         $sawActiveForStore = [];
 
-        return $leaflets->map(function (array $leaflet) use (&$sawActiveForStore) {
+        $leaflets = $leaflets->map(function (array $leaflet) use (&$sawActiveForStore) {
             if ($leaflet['status'] === 'active' && empty($sawActiveForStore[$leaflet['store_slug']])) {
                 $sawActiveForStore[$leaflet['store_slug']] = true;
                 $leaflet['status'] = 'new';
@@ -295,6 +295,24 @@ class ListingPageMetaService
             // instead of expired leaflets from an early-sort_order store
             // interleaving with active leaflets from a later one.
             ->sortBy(fn (array $leaflet) => $leaflet['status'] === 'expired' ? 1 : 0)
+            ->values();
+
+        // Group the stores themselves into the same editorial order the
+        // /leidiniai toolbar now uses (App\Support\StoreListPriority) —
+        // named chains first, then everyone else by active-leaflet count —
+        // instead of leaving them in whatever order the flat query
+        // happened to fetch rows in. Per-store internal order (current
+        // leaflet first, then history) is preserved by the groupBy below.
+        $byStore = $leaflets->groupBy('store_slug');
+        $storeOrder = \App\Support\StoreListPriority::sortKeepingZero(
+            $byStore->map(fn ($group, $slug) => [
+                'slug' => $slug,
+                'discounts_count' => $group->where('status', '!=', 'expired')->count(),
+            ])->values()->all()
+        );
+
+        return collect($storeOrder)
+            ->flatMap(fn (array $store) => $byStore[$store['slug']])
             ->values()
             ->all();
     }
