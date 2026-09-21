@@ -26,8 +26,17 @@
         $storeChips->map(fn ($chip) => [...$chip, 'discounts_count' => $chip['matching_offers_count']])->all()
     ));
 
-    // $leaflets is already active-only (buildAllLeaflets()'s own ->active()
-    // scope) — real cover images (confirmed live, e.g.
+    // $leaflets is NOT active-only despite buildAllLeaflets()'s own
+    // ->active() scope name — that scope filters on the DB is_active flag,
+    // which isn't kept in sync with real valid_to dates (same caveat as
+    // StoreFlyerTitleBuilder::toListingArray), so it still includes
+    // already-expired leaflets. Real "still browsable today" status is
+    // computed separately below per item, so count that instead of
+    // count($leaflets) for the header stat.
+    $activeLeafletsCount = collect($leaflets)->where('status', '!=', 'expired')->count();
+
+    // ItemList schema still lists every leaflet including expired ones
+    // (unfiltered $leaflets) — real cover images (confirmed live, e.g.
     // /storage/flyers/pages/103/page-1.webp) were previously in no
     // structured data anywhere on this page.
     $itemListSchema = ! empty($leaflets) ? \App\Support\ItemListSchema::build(
@@ -69,7 +78,7 @@
                 Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.
             </p>
             <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 sm:text-sm">
-                <span>{{ count($leaflets) }} savaitės katalogai</span>
+                <span>{{ $activeLeafletsCount }} galiojantys katalogai</span>
                 @if ($freshnessLabel)
                     <x-content-freshness :label="$freshnessLabel" />
                 @endif
