@@ -1207,7 +1207,14 @@ class ProductController extends Controller
                 return [
                     'seo_title' => $entity->name.' '.$words['nominative'],
                     'seo_description' => $entity->description,
-                    'meta_title' => "{$entity->name} naujas savaitės {$words['nominative']}{$issueLabel} {$validFromDot}",
+                    // Consumed by leaflets/hub.blade.php to append the real
+                    // end date to its blade-computed H1 (that view builds
+                    // its own $pageTitle, not via AkcijosController).
+                    'leaflet_valid_to_label' => $validToDot,
+                    // SXO audit finding (never fixed until now): every
+                    // competitor title includes the FULL validity range —
+                    // this only had the start date.
+                    'meta_title' => "{$entity->name} naujas savaitės {$words['nominative']}{$issueLabel} {$validFromDot}–{$validToDot}",
                     'meta_description' => "Naujas {$entity->name} {$words['nominative']} galioja nuo {$validFromDot} iki {$validToDot}.",
                 ];
             case 'store':
@@ -1399,6 +1406,24 @@ class ProductController extends Controller
                     'meta_description' => 'Rask akciją greičiau – visi akcijų leidiniai vienoje vietoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai, savaitės ir savaitgalio akcijos.',
                 ];
             case 'leaflets_index':
+                // $entity is the real distinct-store count for this case
+                // (passed by getAllLeaflets(), free from data already
+                // fetched — see its own comment). Guarded: fall back to the
+                // old generic copy rather than ever render "0+ parduotuvių".
+                $storeCount = (int) $entity;
+
+                if ($storeCount > 0) {
+                    return [
+                        'seo_title' => "Visi akcijų leidiniai – {$storeCount}+ parduotuvių",
+                        'seo_description' => "Visų parduotuvių akcijų leidiniai ir katalogai vienoje vietoje – {$storeCount}+ prekybos tinklų, tarp jų Maxima, Lidl, Iki, Rimi, Norfa.",
+                        // Consumed by leaflets/index.blade.php's H1 (that
+                        // view hardcodes its own <h1>, not via seo_title).
+                        'leaflet_store_count_label' => $storeCount,
+                        'meta_title' => "Akcijų leidiniai – {$storeCount}+ parduotuvių savaitės katalogai",
+                        'meta_description' => "Naujausi Maxima, Lidl, Iki, Rimi, Norfa ir kitų {$storeCount}+ parduotuvių akcijų leidiniai vienoje vietoje. Peržiūrėkite savaitės pasiūlymus PDF ir nuotraukose.",
+                    ];
+                }
+
                 return [
                     'seo_title' => 'Visi akcijų leidiniai',
                     'seo_description' => 'Visų parduotuvių akcijų leidiniai ir katalogai vienoje vietoje – Maxima, Lidl, Iki, Rimi, Norfa ir kiti prekybos tinklai.',
@@ -1421,12 +1446,17 @@ class ProductController extends Controller
 
         $payload = Cache::remember($cacheKey, 3600, function () {
             $leaflets = $this->listingPageMetaService->buildAllLeaflets();
+            // Free real number — no new query, $leaflets is already fetched
+            // above; mirrors the same dedupe the blade view does to build
+            // its store-chip pill bar, just counting instead of listing.
+            $storeCount = collect($leaflets)->pluck('store_slug')->unique()->count();
 
             return [
                 'leaflets' => $leaflets,
                 'total' => count($leaflets),
+                'store_count' => $storeCount,
                 'breadcrumbs' => $this->generateBreadcrumbs('leaflets_index'),
-                'seo' => $this->generateSeoData('leaflets_index'),
+                'seo' => $this->generateSeoData('leaflets_index', $storeCount),
             ];
         });
 
@@ -1467,14 +1497,34 @@ class ProductController extends Controller
             $listingMeta = $this->listingPageMetaService->buildForStoreFlyer($storeModel, $flyer);
             $title = $listingMeta['flyer']['title'];
 
+            // Real data this page didn't use at all before: the flyer's own
+            // validity dates (title/description only had them when the
+            // flyer had NO scraped title of its own — most do) and its real
+            // page count ($flyer->pages already eager-loaded above, so this
+            // is free — unlike $totalOffers below, which is the whole
+            // store's discount count, not scoped to this specific flyer).
+            $validFromDot = $flyer->valid_from ? Carbon::parse($flyer->valid_from)->format('Y.m.d') : null;
+            $validToDot = $flyer->valid_to ? Carbon::parse($flyer->valid_to)->format('Y.m.d') : null;
+            $hasValidity = $validFromDot && $validToDot;
+            $dateRangeLabel = $hasValidity ? " – {$validFromDot}–{$validToDot}" : '';
+            $validityClause = $hasValidity ? ", galioja {$validFromDot}–{$validToDot}" : '';
+            $pagesCount = $flyer->pages->count();
+            // "Naujausias" instead of "Naujas" for the description only —
+            // explicit product decision, H1/title keep "Naujas". Only swaps
+            // a genuine leading match; flyers whose own scraped title
+            // already names the store (see StoreFlyerTitleBuilder::
+            // mentionsStore()) are returned bare with no "Naujas " prefix
+            // at all, so this is a no-op for those.
+            $descriptionTitle = preg_replace('/^Naujas /', 'Naujausias ', $title, 1);
+
             return [
                 'listing_meta' => $listingMeta,
                 'breadcrumbs' => $this->generateBreadcrumbs('store_flyer_detail', $storeModel, $flyer),
                 'seo' => [
                     'seo_title' => $title,
                     'seo_description' => "{$title} – {$storeModel->name} akcijų leidinys.",
-                    'meta_title' => $title,
-                    'meta_description' => "{$title} – peržiūrėkite visus {$storeModel->name} leidinio puslapius.",
+                    'meta_title' => "{$title}{$dateRangeLabel}",
+                    'meta_description' => "{$descriptionTitle} – {$storeModel->name} leidinys, {$pagesCount} psl.{$validityClause}. Peržiūrėkite visus akcijų puslapius.",
                 ],
                 'total_offers' => Discount::where('store_id', $storeModel->id)->count(),
             ];

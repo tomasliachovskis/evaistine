@@ -24,7 +24,17 @@ class StoreFlyerTitleBuilder
                 return $flyer->title;
             }
 
-            return trim("Naujas {$store->name} leidinys - {$flyer->title}{$issuePart}");
+            // Don't append $issuePart when the scraped title already states
+            // the same issue number itself (seen live: a scraped title of
+            // "AČIŪ savaitinis leidinys Nr. 34" plus issue_number=34
+            // produced "... Nr. 34 Nr.34" — the number twice, in two
+            // different spacings). Case/spacing-insensitive: source titles
+            // aren't consistently formatted ("Nr.34" vs "Nr. 34").
+            if ($flyer->issue_number && preg_match('/\bNr\.?\s*'.preg_quote((string) $flyer->issue_number, '/').'\b/iu', $flyer->title)) {
+                $issuePart = '';
+            }
+
+            return trim("Naujas {$store->name} nuolaidų leidinys - {$flyer->title}{$issuePart}");
         }
 
         $catalogName = $flyer->catalog_name ?: $this->defaultCatalogName($store);

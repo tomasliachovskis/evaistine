@@ -18,6 +18,19 @@
         ->filter(fn ($chip) => $chip['matching_offers_count'] > 0)
         ->sortByDesc('matching_offers_count')
         ->values();
+
+    // $leaflets is already active-only (buildAllLeaflets()'s own ->active()
+    // scope) — real cover images (confirmed live, e.g.
+    // /storage/flyers/pages/103/page-1.webp) were previously in no
+    // structured data anywhere on this page.
+    $itemListSchema = ! empty($leaflets) ? \App\Support\ItemListSchema::build(
+        'Visi akcijų leidiniai',
+        collect($leaflets)->map(fn ($l) => [
+            'name' => $l['title'],
+            'href' => $l['view_url'] ?? "/leidinys/{$l['store_slug']}",
+            'image' => $l['image_url'] ?? null,
+        ])->all()
+    ) : null;
 @endphp
 
 <x-layouts.app
@@ -28,13 +41,22 @@
 >
     @push('head')
         <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @if ($itemListSchema)
+            <script type="application/ld+json">{!! json_encode($itemListSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @endif
     @endpush
 
     <x-breadcrumb-trail :items="$breadcrumbs" :current="$canonical" />
 
     <div class="base-container mx-auto flex flex-col gap-5 pb-8 sm:gap-6 sm:pb-10">
         <div class="flex flex-col gap-2">
-            <h1>Populiariausi akcijų leidiniai</h1>
+            <h1>
+                @if (! empty($seo['leaflet_store_count_label'] ?? null))
+                    Visi akcijų leidiniai – {{ $seo['leaflet_store_count_label'] }}+ parduotuvių
+                @else
+                    Populiariausi akcijų leidiniai
+                @endif
+            </h1>
             <p class="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-gray-600 sm:text-base">
                 Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje.
                 Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.

@@ -13,9 +13,32 @@
     // plain suffix append — naively concatenating 'iai' onto the singular
     // produced "leidinysiai" instead of "leidiniai" for every non-iki store.
     $leafletNounPlural = substr($leafletNoun, 0, -2) . 'iai';
-    $pageTitle = $storeName . ' ' . $leafletNounPlural;
+    $pageTitle = $storeName . ' naujausi ' . $leafletNounPlural;
+    // Real validity end date — the one piece of info not already shown
+    // near this H1 (offer count is covered by <x-leaflet-quick-links>
+    // below, freshness label is a relative "atnaujinta prieš X", not the
+    // actual date). Guarded: a store with no resolvable validity just
+    // keeps the plain "{Store} leidiniai" text.
+    if (! empty($seo['leaflet_valid_to_label'] ?? null)) {
+        $pageTitle .= ' – galioja iki ' . $seo['leaflet_valid_to_label'];
+    }
     $seoAboutParagraphs = array_values(array_filter(explode("\n\n", $intro['seo_about'] ?? '')));
     $hasAbout = count($seoAboutParagraphs) > 0 || count($faq) > 0;
+    // Only the currently-valid leaflets, not the expired archive below them
+    // — an ItemList should represent what's actually available now, same
+    // reasoning as excluding expired leaflets from the page's main visual
+    // section. Real cover images (confirmed live, e.g.
+    // /storage/flyers/pages/103/page-1.webp) were previously in no
+    // structured data anywhere on this page.
+    $activeLeafletsForSchema = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) !== 'expired'));
+    $itemListSchema = ! empty($activeLeafletsForSchema) ? \App\Support\ItemListSchema::build(
+        $pageTitle,
+        collect($activeLeafletsForSchema)->map(fn ($l) => [
+            'name' => $l['title'],
+            'href' => $l['view_url'] ?? "/leidinys/{$storeSlug}",
+            'image' => $l['image_url'] ?? null,
+        ])->all()
+    ) : null;
 @endphp
 
 <x-layouts.app
@@ -26,6 +49,9 @@
 >
     @push('head')
         <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @if ($itemListSchema)
+            <script type="application/ld+json">{!! json_encode($itemListSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @endif
     @endpush
 
     <x-breadcrumb-trail :items="$breadcrumbs" :current="$canonical" />

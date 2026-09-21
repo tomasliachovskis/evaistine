@@ -8,6 +8,16 @@
     $dateRange = ($flyer['valid_from'] ?? null) && ($flyer['valid_to'] ?? null)
         ? \Illuminate\Support\Carbon::parse($flyer['valid_from'])->format('Y.m.d') . ' – ' . \Illuminate\Support\Carbon::parse($flyer['valid_to'])->format('Y.m.d')
         : null;
+    // Real cover image (confirmed live, e.g. /storage/flyers/pages/15/page-1.webp)
+    // was previously in no structured data anywhere on this page, despite
+    // being the whole point of the page.
+    $imageObjectSchema = ! empty($flyer['image_url']) ? array_filter([
+        '@context' => 'https://schema.org',
+        '@type' => 'ImageObject',
+        'contentUrl' => url($flyer['image_url']),
+        'name' => $flyer['title'],
+        'representativeOfPage' => true,
+    ]) : null;
 @endphp
 
 <x-layouts.app
@@ -18,6 +28,9 @@
 >
     @push('head')
         <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @if ($imageObjectSchema)
+            <script type="application/ld+json">{!! json_encode($imageObjectSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @endif
     @endpush
 
     <main class="base-container pb-6 pt-3 sm:pb-8 sm:pt-4">

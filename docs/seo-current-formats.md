@@ -78,10 +78,60 @@ Source: `App\Services\KeywordPageDynamicMetaService`. This page type already had
 
 ---
 
+## Leaflet hub — `/leidinys/{store}`
+
+Source: `ProductController::generateSeoData()`'s `store_leaflet` case (`app/Http/Controllers/Api/ProductController.php`). This page has its own controller (`App\Http\Controllers\LeafletController::hub()`) and its own view (`resources/views/leaflets/hub.blade.php`) — H1 is computed inline in the blade file, not via `AkcijosController`.
+
+- **H1:** `{Store} naujausi leidiniai – galioja iki {validTo}` (`leidyniai` for Iki) — plural noun kept (this page is an archive of current+expired leaflets, not just one issue), real end date appended since nothing else near the H1 shows it (`<x-leaflet-quick-links>` already shows the real offer count, so that's not repeated).
+- **Title:** `{Store} naujas savaitės {leidinys/leidynys}{, Nr.N} {validFrom}–{validTo}` — added the missing end date (previously only had the start date; every competitor checked in the original research included the full range).
+- **Description:** unchanged (already had the full real date range).
+- Guarded: if a store has no resolvable validity, H1 falls back to the plain `{Store} naujausi leidiniai` with no date clause.
+
+**Live example (Maxima, 2026-09-21 — note: local dev flyer data is stale, shows an already-past date range):**
+- H1: `Maxima naujausi leidiniai – galioja iki 2026.09.14`
+- Title: `Maxima naujas savaitės leidinys, Nr.37 2026.09.08–2026.09.14`
+
+---
+
+## Leaflets index — `/leidiniai`
+
+Source: `ProductController::generateSeoData()`'s `leaflets_index` case, real store count computed for free in `ProductController::getAllLeaflets()` (no new query — same data the page's own store-chip pill bar already dedupes). Own controller (`LeafletController::index()`) and view (`resources/views/leaflets/index.blade.php`) — H1 was previously a hardcoded literal string.
+
+- **H1:** `Visi akcijų leidiniai – {storeCount}+ parduotuvių`
+- **Title:** `Akcijų leidiniai – {storeCount}+ parduotuvių savaitės katalogai`
+- **Description:** `Naujausi Maxima, Lidl, Iki, Rimi, Norfa ir kitų {storeCount}+ parduotuvių akcijų leidiniai vienoje vietoje. Peržiūrėkite savaitės pasiūlymus PDF ir nuotraukose.`
+- Guarded: `$storeCount === 0` falls back to the original hardcoded generic copy (verified via direct `generateSeoData()` call) — never renders "0+ parduotuvių".
+
+**Live example (2026-09-21):**
+- H1: `Visi akcijų leidiniai – 39+ parduotuvių`
+- Title: `Akcijų leidiniai – 39+ parduotuvių savaitės katalogai`
+
+**Schema.org — leaflet pages (hub, index, single-flyer show):** previously only had `BreadcrumbList`, nothing else, despite real leaflet cover images being available everywhere. Added:
+- **Hub + index:** `ItemList` with each leaflet's real name/URL/cover image, reusing `App\Support\ItemListSchema::build()` (same class used for the `akcijos/*` pages). Hub scopes to non-expired leaflets only (matches the page's own "Galiojantys"/"Pasibaigę" split); index already only ever contains active leaflets at the source query. Verified live: index reports `"numberOfItems": 91` with real images.
+- **Single-flyer show page:** a plain `ImageObject` (`contentUrl` = the flyer's real cover image, `representativeOfPage: true`) — the page's first-ever structured image data.
+
+---
+
+## Single flyer show page — `/leidinys/{store}/{flyerSlug}`
+
+Source: `ProductController::getStoreLeaflet()` (`app/Http/Controllers/Api/ProductController.php`), title composition shared with breadcrumbs/hub/index cards via `App\Services\StoreFlyerTitleBuilder::build()`.
+
+**Real bug fixed**: `build()` unconditionally appended `" Nr.{issue_number}"` even when the flyer's own scraped title already stated that same issue number, producing a live double-number title (`"...Nr. 34 Nr.34"`) — confirmed systemic (every issue-numbered flyer whose scraped title states its own "Nr. X" was affected, across multiple stores). Fixed by skipping the append when the scraped title already contains `Nr.`/`Nr. ` + that number (case/spacing-insensitive). Since `build()` is shared, this also fixed the same duplication on the leaflet hub's and leaflets index's card titles, and resolved an inconsistency where this page's breadcrumb (a different code path, never affected) showed the correct un-duplicated title while the H1 right below it showed the broken one.
+
+- **H1:** the shared flyer title (bug-fixed), e.g. `Naujas {Store} nuolaidų leidinys - {scraped title}` — wording changed from `"Naujas {Store} leidinys - ..."` to `"Naujas {Store} nuolaidų leidinys - ..."`. No injected date — the page already shows the real validity range as body text directly under the H1.
+- **Title:** same as H1 + real date range appended — `{H1 text} – {validFrom}–{validTo}` (previously had no date at all when the flyer had its own scraped title, which is the common case).
+- **Description:** leads with **"Naujausias"** instead of "Naujas" (description-only wording), adds the real per-flyer page count and date range — `Naujausias {Store} nuolaidų leidinys - {scraped title} – {Store} leidinys, {N} psl., galioja {validFrom}–{validTo}. Peržiūrėkite visus akcijų puslapius.`
+- Guarded: a flyer with no resolvable validity dates gets no date clause in title/description (rather than a broken empty range).
+
+**Live example (Maxima, flyer Nr.34, 2026-09-21 — note: local dev flyer data is stale):**
+- H1: `Naujas Maxima nuolaidų leidinys - AČIŪ savaitinis leidinys Nr. 34`
+- Title: `Naujas Maxima nuolaidų leidinys - AČIŪ savaitinis leidinys Nr. 34 – 2026.08.18–2026.08.24`
+- Description: `Naujausias Maxima nuolaidų leidinys - AČIŪ savaitinis leidinys Nr. 34 – Maxima leidinys, 48 psl., galioja 2026.08.18–2026.08.24. Peržiūrėkite visus akcijų puslapius.`
+
+---
+
 ## Not yet implemented (research/recommendations only, not shipped)
 
 These page types were researched in `docs/seo-meta-title-research.md` but no code changes were made — do not treat that doc's recommendations as live:
 
-- Leaflet hub — `/leidinys/{store}`
-- Leaflets index — `/leidiniai`
 - Product page — `/akcijos/{category}/{product}`
