@@ -4,6 +4,7 @@ use App\Http\Controllers\AkcijosController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CheapestProductsController;
+use App\Http\Controllers\CouponController;
 use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\LeafletController;
 use App\Http\Controllers\ListingDealsPartialController;
@@ -70,6 +71,9 @@ Route::get('/parduotuves/{slug}/{city?}', [StoreController::class, 'show']);
 Route::get('/leidiniai', [LeafletController::class, 'index']);
 Route::get('/leidinys/{store}/{flyerSlug}', [LeafletController::class, 'show']);
 Route::get('/leidinys/{store}', [LeafletController::class, 'hub']);
+
+Route::get('/kuponai', [CouponController::class, 'index']);
+Route::get('/kuponai/{website}', [CouponController::class, 'hub']);
 
 // Named "login" so the `auth` middleware's default guest-redirect has
 // somewhere to send people — there's no standalone login page, just the

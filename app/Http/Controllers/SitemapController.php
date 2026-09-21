@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Api\ProductController;
+use App\Models\CouponWebsite;
 use App\Support\CanonicalUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -109,6 +110,15 @@ class SitemapController extends Controller
 
         foreach ($data['store_location_slugs'] ?? [] as $slug) {
             $urls[] = ['loc' => CanonicalUrl::build("/parduotuves/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
+        }
+
+        $urls[] = ['loc' => CanonicalUrl::build('/kuponai'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'];
+
+        $couponWebsiteSlugs = CouponWebsite::whereHas('coupons', fn ($q) => $q->active()->currentlyValid())
+            ->pluck('slug');
+
+        foreach ($couponWebsiteSlugs as $slug) {
+            $urls[] = ['loc' => CanonicalUrl::build("/kuponai/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.6'];
         }
 
         return response()

@@ -91,11 +91,42 @@
              scroll like every other listing-page filter bar. Flat link
              pills (no own border/background) instead of
              <x-keyword-chips-row>'s bordered white chips — those read as a
-             second, nested pill design once placed inside this bar. --}}
-        <div data-sticky-filter-bar class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:min-h-[52px] sm:px-[20px]">
-            <nav aria-label="Parduotuvės" class="scroll-cards-x flex flex-nowrap items-center gap-1">
-                @foreach ($storeChips as $chip)
-                    <a href="{{ $chip['href'] }}" data-ga-event="filter_select" data-ga-item="store:{{ $chip['slug'] }}" data-ga-source="leidiniai_chip_bar" class="inline-flex h-full shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]">
+             second, nested pill design once placed inside this bar.
+
+             Same "top N visible + full list in a modal" split as
+             kuponai/partials/website-chip-bar.blade.php, with a
+             narrower-screens-show-fewer taper: 2 chips always visible
+             (guaranteed to fit next to "Visos parduotuvės" even on a small
+             phone), a 3rd from 400px up, and the remaining top-5 (desktop
+             cap) from sm+ (640px) up — real store-name lengths vary too
+             much to know exactly how many fit at a given width without
+             measuring at runtime, so this approximates it with breakpoints
+             rather than a JS overflow measurement (no precedent for that
+             elsewhere in the chip-bar patterns this is based on). The modal
+             always lists every store regardless of breakpoint, reusing
+             discount-filter-sections.blade.php like the header's
+             Kategorijos dropdown and the akcijos filter sheet. --}}
+        @php
+            $topStoreChips = $storeChips->take(5);
+            $storeChipRowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-[18px] leading-snug text-left transition-colors '
+                . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
+        @endphp
+        <div
+            data-sticky-filter-bar
+            x-data="{ allStoresOpen: false }"
+            @keydown.escape.window="allStoresOpen = false"
+            class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] flex items-center gap-2 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:min-h-[52px] sm:px-[20px]"
+        >
+            <nav aria-label="Parduotuvės" class="scroll-cards-x flex min-w-0 flex-1 flex-nowrap items-center gap-1">
+                @foreach ($topStoreChips as $chip)
+                    @php
+                        $chipVisibilityClass = match (true) {
+                            $loop->index < 2 => 'inline-flex',
+                            $loop->index === 2 => 'hidden min-[400px]:inline-flex',
+                            default => 'hidden sm:inline-flex',
+                        };
+                    @endphp
+                    <a href="{{ $chip['href'] }}" data-ga-event="filter_select" data-ga-item="store:{{ $chip['slug'] }}" data-ga-source="leidiniai_chip_bar" class="{{ $chipVisibilityClass }} h-full shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]">
                         @if (!empty($chip['logo_slug']))
                             <x-store-logo :slug="$chip['logo_slug']" :name="$chip['title']" size="xs" />
                         @endif
@@ -103,6 +134,70 @@
                     </a>
                 @endforeach
             </nav>
+
+            {{-- Pinned outside the scrollable nav, same recipe as
+                 discount-filters.blade.php's Parduotuvė/Kategorija toolbar
+                 buttons — always visible, and on mobile it's the only
+                 element in the bar (nav above is hidden there). --}}
+            <button
+                type="button"
+                @click="allStoresOpen = true"
+                data-ga-event="filter_select"
+                data-ga-item="store:all"
+                data-ga-source="leidiniai_chip_bar"
+                class="inline-flex h-full shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]"
+            >
+                <x-app-icon name="store" class="size-5 shrink-0" />
+                <span>Visos parduotuvės</span>
+                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green text-sm font-bold text-white">{{ $storeChips->count() }}</span>
+                <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="allStoresOpen ? 'rotate-180' : ''" />
+            </button>
+
+            <template x-teleport="body">
+                <div x-show="allStoresOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" @click.self="allStoresOpen = false">
+                    <div class="max-h-[80vh] w-full max-w-[420px] overflow-y-auto rounded-2xl bg-white p-4">
+                        <div class="mb-1.5 flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wide text-gray-400">Parduotuvė</span>
+                            <button type="button" @click="allStoresOpen = false" class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                                <x-app-icon name="x" class="size-5" />
+                            </button>
+                        </div>
+                        @include('components.partials.discount-filter-sections', [
+                            'facet' => 'stores',
+                            'items' => $storeChips->map(fn ($chip) => [
+                                'slug' => $chip['slug'],
+                                'name' => $chip['title'],
+                                'offers_count' => $chip['matching_offers_count'],
+                            ])->all(),
+                            'activeSlug' => null,
+                            'hrefFor' => fn ($slug) => "/leidinys/{$slug}",
+                            'rowClass' => $storeChipRowClass,
+                            'gaSource' => 'leidiniai_all_stores_modal',
+                            // Full directory, not a page-scoped filter — show
+                            // every store immediately, same reasoning as
+                            // site-header's Kategorijos modal.
+                            'visibleLimit' => $storeChips->count(),
+                        ])
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        {{-- Same "Rūšiuoti" toggle as kuponai/index.blade.php — plain text
+             links over ?order=, not a boxed <select>. --}}
+        @php
+            $leafletOrder = request('order', 'best');
+            $leafletOrderOptions = [
+                'best' => 'Populiariausi',
+                'newest' => 'Naujausi',
+                'old' => 'Baigsis greitai',
+            ];
+        @endphp
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-base">
+            <span class="font-bold text-gray-900">Rūšiuoti:</span>
+            @foreach ($leafletOrderOptions as $value => $label)
+                <a href="{{ $value === 'best' ? '/leidiniai' : '/leidiniai?order=' . $value }}" class="{{ $leafletOrder === $value ? 'font-bold text-green' : 'font-medium text-gray-600 hover:text-gray-900' }}">{{ $label }}</a>
+            @endforeach
         </div>
 
         @if (empty($leaflets))
@@ -118,6 +213,19 @@
                 // same fix there).
                 $activeLeaflets = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) !== 'expired'));
                 $expiredLeaflets = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) === 'expired'));
+
+                // 'best' (Populiariausi) keeps buildAllLeaflets()'s own
+                // editorial order (StoreListPriority-grouped, current
+                // leaflet first per store) — only re-sort for the other two
+                // explicit choices.
+                if ($leafletOrder === 'newest') {
+                    $activeLeaflets = collect($activeLeaflets)->sortByDesc('valid_from')->values()->all();
+                } elseif ($leafletOrder === 'old') {
+                    $activeLeaflets = collect($activeLeaflets)
+                        ->sortBy(fn ($l) => $l['valid_to'] !== '' ? $l['valid_to'] : '9999-99-99')
+                        ->values()
+                        ->all();
+                }
             @endphp
 
             @foreach ([['heading' => null, 'items' => $activeLeaflets], ['heading' => 'Pasibaigę leidiniai', 'items' => $expiredLeaflets]] as $group)

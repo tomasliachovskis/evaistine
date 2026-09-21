@@ -45,4 +45,9 @@ class Category extends Model
     {
         return $this->hasManyThrough(Discount::class, Product::class);
     }
+
+    public function coupons()
+    {
+        return $this->hasMany(Coupon::class);
+    }
 }
