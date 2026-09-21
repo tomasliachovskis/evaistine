@@ -201,11 +201,11 @@ class AkcijosController extends Controller
         if (($listingMeta['type'] ?? null) === 'store' && ! empty($listingMeta['store_name'])) {
             $pageTitle = "Visos {$listingMeta['store_name']} akcijos ir nuolaidos šią savaitę";
         } elseif (($listingMeta['type'] ?? null) === 'store_category' && ! empty($listingMeta['store_name']) && ! empty($seo['category_dative_label'])) {
-            // Dative case ("akcijos ir nuolaidos buitinei chemijai") —
+            // Dative plural case ("akcijos duonos gaminiams") —
             // generateSeoData()'s seo_title used to concatenate two
-            // nominative nouns ("Maxima akcija buitinė chemija"), which
+            // nominative nouns ("Maxima akcija duonos gaminiai"), which
             // isn't grammatical Lithuanian.
-            $pageTitle = "{$listingMeta['store_name']} akcijos ir nuolaidos {$seo['category_dative_label']} šią savaitę";
+            $pageTitle = "{$listingMeta['store_name']} akcijos {$seo['category_dative_label']} šią savaitę";
         } else {
             $pageTitle = $seo['seo_title'] ?? $listingMeta['store_name'] ?? $listingMeta['category_name'] ?? $path;
         }
