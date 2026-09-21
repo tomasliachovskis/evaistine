@@ -339,16 +339,72 @@ class KeywordPageService
             // this method.
             if ($leadingDeals->count() < $limit) {
                 $usedProductIds = $leadingDeals->pluck('product_id')->all();
+                $usedStoreIds = $leadingDeals->pluck('store_id')->filter()->all();
                 $productIds = KeywordPageProduct::where('keyword_page_id', $page->id)->pluck('product_id');
 
-                $historical = DiscountHistory::query()
+                // Same per-store diversification buildIndexBackedTeaserDeals()
+                // uses above — without it, ordering plain by discounted_price
+                // can fill every remaining slot from whichever single store
+                // happens to run the deepest storewide discount (confirmed
+                // live: a "Vanduo" teaser landed all 5 cards on Rimi even
+                // though Maxima/Norfa/Lidl/Iki also had matching products).
+                $priorityRank = array_flip(self::PRIORITY_STORE_NAMES);
+
+                $candidates = DiscountHistory::query()
                     ->whereIn('product_id', $productIds)
                     ->whereNotIn('product_id', $usedProductIds)
                     ->where('discounted_price', '>', 0)
                     ->with(['product.category', 'store'])
                     ->orderBy('discounted_price')
-                    ->take($limit - $leadingDeals->count())
+                    ->limit(200)
                     ->get();
+
+                $byStore = $candidates->groupBy('store_id')
+                    ->map(fn (Collection $storeItems) => $storeItems->sortBy('discounted_price')->values());
+
+                $storeOrder = $byStore->keys()
+                    ->sort(function ($a, $b) use ($byStore, $priorityRank) {
+                        $rankA = $priorityRank[$byStore[$a]->first()->store->name] ?? count($priorityRank);
+                        $rankB = $priorityRank[$byStore[$b]->first()->store->name] ?? count($priorityRank);
+
+                        return $rankA <=> $rankB;
+                    })
+                    ->values();
+
+                $needed = $limit - $leadingDeals->count();
+                $historical = collect();
+                $roundIndex = 0;
+
+                while ($historical->count() < $needed) {
+                    $addedThisRound = false;
+
+                    foreach ($storeOrder as $storeId) {
+                        if ($historical->count() >= $needed) {
+                            break;
+                        }
+
+                        // Prefer a store not already represented among the
+                        // real leading deals until every store has had a
+                        // turn, then allow repeats to still hit $limit.
+                        if ($roundIndex === 0 && in_array($storeId, $usedStoreIds, true) && count($storeOrder) > count($usedStoreIds)) {
+                            continue;
+                        }
+
+                        $items = $byStore[$storeId];
+                        if ($roundIndex >= $items->count()) {
+                            continue;
+                        }
+
+                        $historical->push($items[$roundIndex]);
+                        $addedThisRound = true;
+                    }
+
+                    if (! $addedThisRound) {
+                        break;
+                    }
+
+                    $roundIndex++;
+                }
 
                 $leadingDeals = $leadingDeals->concat($historical)->values();
             }
