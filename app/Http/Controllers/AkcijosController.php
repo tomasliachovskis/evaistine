@@ -206,6 +206,13 @@ class AkcijosController extends Controller
             // nominative nouns ("Maxima akcija duonos gaminiai"), which
             // isn't grammatical Lithuanian.
             $pageTitle = "{$listingMeta['store_name']} akcijos {$seo['category_dative_label']} šią savaitę";
+        } elseif (($listingMeta['type'] ?? null) === 'category' && ! empty($seo['category_genitive_label'])) {
+            // Genitive case ("Visos buitinės chemijos akcijos ir nuolaidos
+            // šią savaitę") — same shape as the store page's H1, swapping
+            // the (undeclined) store name for the category in genitive
+            // case; a category is a common noun and needs the case, unlike
+            // a store's proper name.
+            $pageTitle = "Visos {$seo['category_genitive_label']} akcijos ir nuolaidos šią savaitę";
         } else {
             $pageTitle = $seo['seo_title'] ?? $listingMeta['store_name'] ?? $listingMeta['category_name'] ?? $path;
         }
@@ -260,11 +267,17 @@ class AkcijosController extends Controller
                 ])->all()
             ),
             'faqSchema' => ! empty($faqItems) ? FaqSchema::build($faqItems) : null,
+            // $data['total'] is the real total match count (paginator's own
+            // total, not just this page's ~20-24 items) — ItemListSchema's
+            // numberOfItems used to just count($itemListDeals), understating
+            // a page's true size (confirmed live: a keyword page with 100
+            // real matches reported "numberOfItems": 20).
             'itemListSchema' => ! empty($itemListDeals) ? ItemListSchema::build($pageTitle, collect($itemListDeals)->map(fn ($d) => [
                 'name' => $d['product']['name'],
                 'href' => '/akcijos/'.$d['product']['full_slug'],
                 'image' => $d['product']['image_url'],
-            ])->all()) : null,
+                'price' => $d['discounted_price'] ?? $d['min_price'] ?? null,
+            ])->all(), $data['total'] ?? null) : null,
         ]));
     }
 

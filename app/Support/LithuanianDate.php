@@ -22,6 +22,13 @@ class LithuanianDate
         'liepą', 'rugpjūtį', 'rugsėjį', 'spalį', 'lapkritį', 'gruodį',
     ];
 
+    // Genitive case ("[until September 30] -> iki rugsėjo 30") — for
+    // "iki {mėnuo} {diena} d." style date phrases.
+    private const MONTHS_GENITIVE = [
+        'sausio', 'vasario', 'kovo', 'balandžio', 'gegužės', 'birželio',
+        'liepos', 'rugpjūčio', 'rugsėjo', 'spalio', 'lapkričio', 'gruodžio',
+    ];
+
     public static function shortMonth(Carbon $date): string
     {
         return self::MONTHS_SHORT[$date->month - 1];
@@ -30,6 +37,19 @@ class LithuanianDate
     public static function monthAccusative(Carbon $date): string
     {
         return self::MONTHS_ACCUSATIVE[$date->month - 1];
+    }
+
+    public static function monthGenitive(Carbon $date): string
+    {
+        return self::MONTHS_GENITIVE[$date->month - 1];
+    }
+
+    // "iki rugsėjo 30 d." — genitive month + day + the "d." (diena)
+    // abbreviation, the natural Lithuanian way to write a bare end date in
+    // running text (as opposed to the numeric "2026.09.30" used elsewhere).
+    public static function dayMonthGenitive(Carbon $date): string
+    {
+        return self::MONTHS_GENITIVE[$date->month - 1].' '.$date->day.' d.';
     }
 
     // Absolute date+time, not "prieš N min/val." — per explicit product

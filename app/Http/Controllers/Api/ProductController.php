@@ -1158,7 +1158,15 @@ class ProductController extends Controller
                 $maxDiscount = $this->roundDownDiscountPercent($this->getMaxDiscountForCategory($entity));
                 $storeNames = $this->getStoreNamesForCategory($entity);
                 $countLabel = $this->formatCount($count);
-                $lowerName = mb_strtolower($entity->name);
+
+                // Shortened category name ("Buitinė chemija" not "Buitinė
+                // chemija, valymo priemonės") plus genitive/dative case —
+                // same maps/helper already built for the store/store_category
+                // pages this session (see SHORT_CATEGORY_LABELS's comment for
+                // why the raw DB name breaks mid-sentence grammar).
+                $categoryShortName = $this->shortenCategoryName($entity->name);
+                $categoryGenitive = self::CATEGORY_GENITIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
+                $categoryDative = self::CATEGORY_DATIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
 
                 // Some listings are full-catalog (price-only, no discount_percent
                 // on any row) rather than discount-only — MAX(discount_percent)
@@ -1166,11 +1174,20 @@ class ProductController extends Controller
                 // nuolaidos" would misrepresent real priced products as a fake
                 // zero-value deal. Only claim a discount percentage when one
                 // genuinely exists.
+                $categoryGenitiveCap = mb_ucfirst($categoryGenitive);
+
                 return [
-                    'seo_title' => $entity->name.' akcijos prekybos centruose',
+                    'seo_title' => "{$categoryGenitiveCap} akcijos",
                     'seo_description' => $entity->description,
-                    'meta_title' => $entity->name.' akcijos – pigiausios kainos'.($maxDiscount > 0 ? ", iki {$maxDiscount}% nuolaidos" : ''),
-                    'meta_description' => "Palyginkite {$lowerName} akcijas prekybos centruose – {$countLabel}+ pasiūlymų iš {$storeNames}.".($maxDiscount > 0 ? " Iki {$maxDiscount}% nuolaidos šią savaitę!" : ''),
+                    // Consumed by AkcijosController for the H1 (lowercase
+                    // there — it follows "Visos", not sentence-initial).
+                    'category_genitive_label' => $categoryGenitive,
+                    'meta_title' => $maxDiscount > 0
+                        ? "{$categoryGenitiveCap} akcijos šiandien – nuolaidos iki {$maxDiscount}%"
+                        : "{$categoryGenitiveCap} akcijos šiandien",
+                    'meta_description' => $maxDiscount > 0
+                        ? "Iki {$maxDiscount}% nuolaidos {$categoryDative} iš {$storeNames}. {$countLabel}+ pasiūlymų šią savaitę!"
+                        : "Palyginkite {$categoryGenitive} pasiūlymus iš {$storeNames}. {$countLabel}+ prekių šią savaitę!",
                 ];
             case 'store_leaflet':
                 $validity = $this->resolveStoreValidity($entity);
@@ -1269,15 +1286,26 @@ class ProductController extends Controller
                 // Philipps) — not worth the risk of an awkward-sounding form.
                 $categoryShortName = $this->shortenCategoryName($secondaryEntity->name);
                 $categoryDative = self::CATEGORY_DATIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
+                // Genitive for the title ("Maxima duonos gaminių akcijos") —
+                // see CATEGORY_GENITIVE_LABELS's comment.
+                $categoryGenitive = self::CATEGORY_GENITIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
                 // Concrete illustrative item examples (dative plural, e.g.
-                // "duonai, bandelėms, kruasanams" for Duonos gaminiai) —
+                // "duonai, bandelėms ir kruasanams" for Duonos gaminiai) —
                 // explicit product decision to use hand-written, specific
                 // sub-item examples in the description instead of the
                 // single, more abstract category-level dative phrase, so a
                 // searcher sees real item types, not just the category name
                 // repeated. Falls back to the plain category dative if a
-                // category has no examples authored yet.
-                $categoryItemExamples = self::CATEGORY_ITEM_EXAMPLES[$categoryShortName] ?? $categoryDative;
+                // category has no examples authored yet. mb_ucfirst since
+                // it opens the description sentence.
+                $categoryItemExamples = mb_ucfirst(self::CATEGORY_ITEM_EXAMPLES[$categoryShortName] ?? $categoryDative);
+                // Locative ("Maximoje") only for the one store it's been
+                // verified for — see STORE_LOCATIVE_LABELS's comment. Every
+                // other store falls back to a plain nominative phrase that's
+                // always grammatically safe.
+                $storePhrase = isset(self::STORE_LOCATIVE_LABELS[$entity->name])
+                    ? "„".self::STORE_LOCATIVE_LABELS[$entity->name]."“"
+                    : "„{$entity->name}“ parduotuvėje";
 
                 $storeCategoryDescription = StoreCategoryDescription::where('store_id', $entity->id)
                     ->where('category_id', $secondaryEntity->id)
@@ -1301,7 +1329,11 @@ class ProductController extends Controller
                     return $seoData;
                 }
 
-                $endDateLabel = Carbon::parse($this->resolveStoreValidity($entity)['valid_to'])->format('Y.m.d');
+                // "iki rugsėjo 30 d." — natural running-text date, not the
+                // numeric "2026.09.30" used elsewhere (e.g. the store page).
+                $endDateGenitive = LithuanianDate::dayMonthGenitive(
+                    Carbon::parse($this->resolveStoreValidity($entity)['valid_to'])
+                );
 
                 $seoData = [
                     'seo_title' => "{$entity->name} akcijos {$categoryDative}",
@@ -1309,12 +1341,12 @@ class ProductController extends Controller
                     // Consumed by AkcijosController for the H1.
                     'category_dative_label' => $categoryDative,
                     'meta_title' => $maxDiscount > 0
-                        ? "{$entity->name} akcijos {$categoryDative} iki {$maxDiscount} % galioja iki {$endDateLabel}"
-                        : "{$entity->name} akcijos {$categoryDative}",
-                    // Discount % and the item examples lead the sentence
-                    // (not buried at the end) — explicit product decision.
+                        ? "{$entity->name} {$categoryGenitive} akcijos iki {$endDateGenitive}"
+                        : "{$entity->name} {$categoryGenitive} akcijos",
+                    // Item examples + store lead the sentence, discount %
+                    // right after — explicit product decision.
                     'meta_description' => $maxDiscount > 0
-                        ? "Iki {$maxDiscount} % nuolaidos {$categoryItemExamples} „{$entity->name}“ parduotuvėje. Nemokėkite pilnos kainos – patikrinkite pasiūlymus dabar!"
+                        ? "{$categoryItemExamples} {$storePhrase} – iki {$maxDiscount} % nuolaida. Patikrinkite pasiūlymus, galiojančius iki {$endDateGenitive}!"
                         : "Peržiūrėkite {$categoryLower} pasiūlymus „{$entity->name}“ parduotuvėje.",
                 ];
 
@@ -2014,32 +2046,70 @@ class ProductController extends Controller
         'Augalai' => 'augalams',
     ];
 
+    // Lithuanian genitive plural case ("duonos gaminių akcijos") — used in
+    // the store_category title. Same "small fixed set, hand-verified"
+    // reasoning as CATEGORY_DATIVE_LABELS; the two maps coexist because
+    // the title (genitive) and H1 (dative) need different cases for the
+    // same category.
+    private const CATEGORY_GENITIVE_LABELS = [
+        'Vaisiai ir daržovės' => 'vaisių ir daržovių',
+        'Pieno produktai' => 'pieno produktų',
+        'Duonos gaminiai' => 'duonos gaminių',
+        'Mėsa ir žuvis' => 'mėsos ir žuvies',
+        'Šaldyti produktai' => 'šaldytų produktų',
+        'Bakalėja' => 'bakalėjos',
+        'Vaikų prekės' => 'vaikų prekių',
+        'Saldumynai' => 'saldumynų',
+        'Gėrimai' => 'gėrimų',
+        'Nealkoholiniai gėrimai' => 'nealkoholinių gėrimų',
+        'Alkoholis' => 'alkoholio',
+        'Kosmetika' => 'kosmetikos',
+        'Buitinė chemija' => 'buitinės chemijos',
+        'Namų prekės' => 'namų prekių',
+        'Gyvūnų prekės' => 'gyvūnų prekių',
+        'Augalai' => 'augalų',
+    ];
+
+    // A store's locative case ("Maximoje" — "in/at Maxima") only for the
+    // one store explicitly verified — NOT a full 47-store map. Several of
+    // the other 46 stores are foreign/brand names with no safe, verified
+    // Lithuanian declension (Ikea, Jysk, AVS, Thomas Philipps, ePromo);
+    // guessing a form like "Jyske"/"Ikeoje" risks reading as broken rather
+    // than natural, so every other store instead falls back to plain
+    // nominative + "parduotuvėje" ("Iki" parduotuvėje") in the description,
+    // which is always grammatically safe. Add more entries here only once
+    // each one is actually verified, not guessed.
+    private const STORE_LOCATIVE_LABELS = [
+        'Maxima' => 'Maximoje',
+    ];
+
     // Concrete, hand-written illustrative item-type examples (dative
-    // plural) per root category, e.g. "duonai, bandelėms, kruasanams" for
-    // Duonos gaminiai — used in the store_category meta description so it
-    // names specific kinds of items instead of just repeating the category
-    // name. Explicit product decision over pulling real per-discount
-    // product names from the DB: these are stable, always-representative
-    // examples of what the category contains, not tied to whichever
-    // products happen to be discounted right now. Same "small fixed set,
-    // hand-verified" reasoning as CATEGORY_DATIVE_LABELS.
+    // plural, natural "X, Y ir Z" list form) per root category, e.g.
+    // "duonai, bandelėms ir kruasanams" for Duonos gaminiai — used in the
+    // store_category meta description so it names specific kinds of items
+    // instead of just repeating the category name. Explicit product
+    // decision over pulling real per-discount product names from the DB:
+    // these are stable, always-representative examples of what the
+    // category contains, not tied to whichever products happen to be
+    // discounted right now. Same "small fixed set, hand-verified"
+    // reasoning as CATEGORY_DATIVE_LABELS.
     private const CATEGORY_ITEM_EXAMPLES = [
-        'Vaisiai ir daržovės' => 'vaisiams, daržovėms, žalumynams',
-        'Pieno produktai' => 'pienui, sūriams, jogurtams',
-        'Duonos gaminiai' => 'duonai, bandelėms, kruasanams',
-        'Mėsa ir žuvis' => 'mėsai, žuviai, dešrelėms',
-        'Šaldyti produktai' => 'šaldytoms daržovėms, picoms, ledams',
-        'Bakalėja' => 'makaronams, ryžiams, konservams',
-        'Vaikų prekės' => 'sauskelnėms, maisto mišiniams, žaislams',
-        'Saldumynai' => 'šokoladui, saldainiams, traškučiams',
-        'Gėrimai' => 'kavai, arbatai, sultims',
-        'Nealkoholiniai gėrimai' => 'vandeniui, limonadui, sultims',
-        'Alkoholis' => 'vynui, alui, degtinei',
-        'Kosmetika' => 'šampūnams, kremams, dantų pastoms',
-        'Buitinė chemija' => 'valikliams, skalbikliams, servetėlėms',
-        'Namų prekės' => 'indams, žvakėms, tekstilei',
-        'Gyvūnų prekės' => 'šunų ir kačių maistui, priežiūros priemonėms',
-        'Augalai' => 'gėlėms, trąšoms, vazonams',
+        'Vaisiai ir daržovės' => 'vaisiams, daržovėms ir žalumynams',
+        'Pieno produktai' => 'pienui, sūriams ir jogurtams',
+        'Duonos gaminiai' => 'duonai, bandelėms ir kruasanams',
+        'Mėsa ir žuvis' => 'mėsai, žuviai ir dešrelėms',
+        'Šaldyti produktai' => 'šaldytoms daržovėms, picoms ir ledams',
+        'Bakalėja' => 'makaronams, ryžiams ir konservams',
+        'Vaikų prekės' => 'sauskelnėms, maisto mišiniams ir žaislams',
+        'Saldumynai' => 'šokoladui, saldainiams ir traškučiams',
+        'Gėrimai' => 'kavai, arbatai ir sultims',
+        'Nealkoholiniai gėrimai' => 'vandeniui, limonadui ir sultims',
+        'Alkoholis' => 'vynui, alui ir degtinei',
+        'Kosmetika' => 'šampūnams, kremams ir dantų pastoms',
+        'Buitinė chemija' => 'valikliams, skalbikliams ir servetėlėms',
+        'Namų prekės' => 'indams, žvakėms ir tekstilei',
+        'Gyvūnų prekės' => 'šunų ir kačių maistui bei priežiūros priemonėms',
+        'Augalai' => 'gėlėms, trąšoms ir vazonams',
     ];
 
     // Shared by getTopDiscountCategoriesForStore() and the store_category
@@ -2103,24 +2173,39 @@ class ProductController extends Controller
         return $endAt ? Carbon::parse($endAt)->format('Y-m-d') : null;
     }
 
+    // Prominence-sorted + capped, same as getStoreNamesForProduct() —
+    // the old plain whereIn()->pluck('name') had no ordering or limit at
+    // all, so a category with a dozen stores carrying deals listed all of
+    // them raw (confirmed live: "iš Maxima, Iki, Lidl, Norfa, Rimi, Aibė,
+    // Šilas, Čia, Gulbelė, Kubas, Thomas Philipps ir Promo Cash&Carry").
     private function getStoreNamesForCategory($category)
     {
         $storeIds = Discount::whereHas('product', function ($q) use ($category) {
             $q->where('category_id', $category->id);
         })->distinct()->pluck('store_id');
 
-        $stores = \App\Models\Store::whereIn('id', $storeIds)->pluck('name')->toArray();
+        $names = \App\Models\Store::whereIn('id', $storeIds)
+            ->get(['name', 'slug'])
+            ->sortBy(function ($store) {
+                $rank = array_search($store->slug, self::MAIN_STORE_SLUGS, true);
 
-        if (empty($stores)) {
+                return $rank === false ? 99 : $rank;
+            })
+            ->pluck('name')
+            ->take(4)
+            ->values()
+            ->all();
+
+        if (count($names) === 0) {
             return '';
         }
 
-        if (count($stores) === 1) {
-            return $stores[0];
+        if (count($names) === 1) {
+            return $names[0];
         }
 
-        $lastStore = array_pop($stores);
+        $lastStore = array_pop($names);
 
-        return implode(', ', $stores).' ir '.$lastStore;
+        return implode(', ', $names).' ir '.$lastStore;
     }
 }
