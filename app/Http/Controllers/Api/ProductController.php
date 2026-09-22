@@ -1202,44 +1202,35 @@ class ProductController extends Controller
                 ];
             case 'store_leaflet':
                 $words = $this->getStoreLeafletWords($entity->slug);
-                // "leidinys"/"leidynys" -> "leidiniai"/"leidyniai" is a stem
-                // swap (drop "ys", add "iai"), not a plain suffix append —
-                // same transform as hub.blade.php's own $leafletNounPlural.
+                // "leidinys"/"leidynys" -> "leidiniai"/"leidyniai" (nominative
+                // plural) / "leidinius"/"leidynius" (accusative plural) are
+                // stem swaps (drop "ys", add "iai"/"ius"), not plain suffix
+                // appends — same transform as hub.blade.php's own
+                // $leafletNounPlural, extended here for the accusative form
+                // ("...akcijų leidinius", object of "peržiūrėkite").
                 $leafletNounPlural = substr($words['nominative'], 0, -2).'iai';
+                $leafletNounAccusativePlural = substr($words['nominative'], 0, -2).'ius';
 
-                // Up to 3 currently-valid flyers (not the unreliable is_active
-                // flag — same "expired means valid_to < today" rule as
-                // StoreFlyerTitleBuilder::toListingArray()/ListingPageMetaService
-                // ::buildLeaflets()), newest-started first, so the description
-                // can name what's actually current instead of a generic
-                // date-range sentence.
-                $activeFlyers = $entity->flyers()
+                // The single newest currently-valid flyer (not the unreliable
+                // is_active flag — same "expired means valid_to < today" rule
+                // as StoreFlyerTitleBuilder::toListingArray()/
+                // ListingPageMetaService::buildLeaflets()) — named by its own
+                // real title so the description says what's actually current
+                // instead of a generic date-range sentence.
+                $currentFlyer = $entity->flyers()
                     ->ready()
                     ->where(function ($q) {
                         $q->whereNull('valid_to')->orWhere('valid_to', '>=', now()->startOfDay());
                     })
                     ->orderByDesc('valid_from')
-                    ->limit(3)
-                    ->get();
+                    ->first();
 
-                if ($activeFlyers->isNotEmpty()) {
-                    $flyerLabels = $activeFlyers->map(function ($flyer) {
-                        // Prefer "Nr. X" — shoppers recognize the issue
-                        // number from the real print/PDF leaflet itself —
-                        // over the flyer's own (often long, store-prefixed)
-                        // title/catalog_name, which are only a fallback.
-                        $label = $flyer->issue_number
-                            ? "Nr. {$flyer->issue_number}"
-                            : ($flyer->title ?: $flyer->catalog_name ?: 'naujas leidinys');
+                if ($currentFlyer) {
+                    $currentLabel = $currentFlyer->title
+                        ?: $currentFlyer->catalog_name
+                        ?: ($currentFlyer->issue_number ? "Nr. {$currentFlyer->issue_number}" : 'naujausias leidinys');
 
-                        return $flyer->valid_to
-                            ? "{$label} (iki ".$flyer->valid_to->format('Y.m.d').')'
-                            : $label;
-                    });
-
-                    $metaDescription = "Šiuo metu galioja {$activeFlyers->count()} {$entity->name} "
-                        .\App\Support\LithuanianPlural::leafletWord($activeFlyers->count())
-                        .': '.$flyerLabels->implode(', ').'. Peržiūrėkite visus katalogus.';
+                    $metaDescription = "Dabar galioja „{$currentLabel}“. Peržiūrėkite katalogą ir kitus naujausius „{$entity->name}“ akcijų {$leafletNounAccusativePlural}.";
                 } else {
                     // No currently-valid flyer found at all — fall back to
                     // the previous generic validity-range sentence (same
