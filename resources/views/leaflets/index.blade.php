@@ -66,13 +66,7 @@
 
     <div class="base-container mx-auto flex flex-col gap-5 pb-8 sm:gap-6 sm:pb-10">
         <div class="flex flex-col gap-2">
-            <h1>
-                @if (! empty($seo['leaflet_store_count_label'] ?? null))
-                    Visi akcijų leidiniai – {{ $seo['leaflet_store_count_label'] }}+ parduotuvių
-                @else
-                    Populiariausi akcijų leidiniai
-                @endif
-            </h1>
+            <h1>Naujausi akcijų leidiniai iš visų parduotuvių</h1>
             <p class="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-gray-600 sm:text-base">
                 Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje.
                 Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.

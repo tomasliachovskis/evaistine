@@ -104,16 +104,19 @@ Source: `ProductController::generateSeoData()`'s `store_leaflet` case (`app/Http
 
 ## Leaflets index — `/leidiniai`
 
-Source: `ProductController::generateSeoData()`'s `leaflets_index` case, real store count computed for free in `ProductController::getAllLeaflets()` (no new query — same data the page's own store-chip pill bar already dedupes). Own controller (`LeafletController::index()`) and view (`resources/views/leaflets/index.blade.php`) — H1 was previously a hardcoded literal string.
+Source: `ProductController::generateSeoData()`'s `leaflets_index` case, real store count computed for free in `ProductController::getAllLeaflets()` (no new query — same data the page's own store-chip pill bar already dedupes). Own controller (`LeafletController::index()`) and view (`resources/views/leaflets/index.blade.php`).
 
-- **H1:** `Visi akcijų leidiniai – {storeCount}+ parduotuvių`
-- **Title:** `Akcijų leidiniai – {storeCount}+ parduotuvių savaitės katalogai`
-- **Description:** `Naujausi Maxima, Lidl, Iki, Rimi, Norfa ir kitų {storeCount}+ parduotuvių akcijų leidiniai vienoje vietoje. Peržiūrėkite savaitės pasiūlymus PDF ir nuotraukose.`
-- Guarded: `$storeCount === 0` falls back to the original hardcoded generic copy (verified via direct `generateSeoData()` call) — never renders "0+ parduotuvių".
+**Redesigned 2026-09-22** (again, alongside the hub/show redesign above) — H1 is now plain/static (no store count baked in), title moved the count into a "daugiau nei N" phrase, description names the 5 main stores in quotes instead of a generic "savaitės pasiūlymus PDF ir nuotraukose" line.
 
-**Live example (2026-09-21):**
-- H1: `Visi akcijų leidiniai – 39+ parduotuvių`
-- Title: `Akcijų leidiniai – 39+ parduotuvių savaitės katalogai`
+- **H1:** `Naujausi akcijų leidiniai iš visų parduotuvių` — static, no store count. `leaflets/index.blade.php`'s `<h1>` is now a plain literal instead of a conditional on `$seo['leaflet_store_count_label']` (that key no longer exists).
+- **Title:** `Akcijų leidiniai iš daugiau nei {storeCount} parduotuvių`
+- **Description:** `Peržiūrėkite naujausius „Maxima“, „Lidl“, „Iki“, „Rimi“, „Norfa“ ir kitų parduotuvių akcijų leidinius. Visi aktualūs katalogai vienoje vietoje.` (same for `seo_description`/`meta_description` — this store-name list is hardcoded text, same 5 names + order already used elsewhere on this page's own about blurb, not derived from `MAIN_STORE_SLUGS`'s different order).
+- Guarded: `$storeCount === 0` drops the "daugiau nei N" clause entirely (`Akcijų leidiniai iš visų parduotuvių`) rather than ever rendering "0 parduotuvių". H1/description never depend on `$storeCount` at all.
+
+**Live example (2026-09-22):**
+- H1: `Naujausi akcijų leidiniai iš visų parduotuvių`
+- Title: `Akcijų leidiniai iš daugiau nei 39 parduotuvių`
+- Description: `Peržiūrėkite naujausius „Maxima“, „Lidl“, „Iki“, „Rimi“, „Norfa“ ir kitų parduotuvių akcijų leidinius. Visi aktualūs katalogai vienoje vietoje.`
 
 **Schema.org — leaflet pages (hub, index, single-flyer show):** previously only had `BreadcrumbList`, nothing else, despite real leaflet cover images being available everywhere. Added:
 - **Hub + index:** `ItemList` with each leaflet's real name/URL/cover image, reusing `App\Support\ItemListSchema::build()` (same class used for the `akcijos/*` pages). Hub scopes to non-expired leaflets only (matches the page's own "Galiojantys"/"Pasibaigę" split); index already only ever contains active leaflets at the source query. Verified live: index reports `"numberOfItems": 91` with real images.

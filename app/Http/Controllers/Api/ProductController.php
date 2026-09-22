@@ -1442,26 +1442,20 @@ class ProductController extends Controller
                 // $entity is the real distinct-store count for this case
                 // (passed by getAllLeaflets(), free from data already
                 // fetched — see its own comment). Guarded: fall back to the
-                // old generic copy rather than ever render "0+ parduotuvių".
+                // count-free copy rather than ever render "0 parduotuvių".
                 $storeCount = (int) $entity;
-
-                if ($storeCount > 0) {
-                    return [
-                        'seo_title' => "Visi akcijų leidiniai – {$storeCount}+ parduotuvių",
-                        'seo_description' => "Visų parduotuvių akcijų leidiniai ir katalogai vienoje vietoje – {$storeCount}+ prekybos tinklų, tarp jų Maxima, Lidl, Iki, Rimi, Norfa.",
-                        // Consumed by leaflets/index.blade.php's H1 (that
-                        // view hardcodes its own <h1>, not via seo_title).
-                        'leaflet_store_count_label' => $storeCount,
-                        'meta_title' => "Akcijų leidiniai – {$storeCount}+ parduotuvių savaitės katalogai",
-                        'meta_description' => "Naujausi Maxima, Lidl, Iki, Rimi, Norfa ir kitų {$storeCount}+ parduotuvių akcijų leidiniai vienoje vietoje. Peržiūrėkite savaitės pasiūlymus PDF ir nuotraukose.",
-                    ];
-                }
+                $description = 'Peržiūrėkite naujausius „Maxima“, „Lidl“, „Iki“, „Rimi“, „Norfa“ ir kitų parduotuvių akcijų leidinius. Visi aktualūs katalogai vienoje vietoje.';
 
                 return [
-                    'seo_title' => 'Visi akcijų leidiniai',
-                    'seo_description' => 'Visų parduotuvių akcijų leidiniai ir katalogai vienoje vietoje – Maxima, Lidl, Iki, Rimi, Norfa ir kiti prekybos tinklai.',
-                    'meta_title' => 'Akcijų leidiniai – visų parduotuvių savaitės katalogai',
-                    'meta_description' => 'Naujausi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje. Peržiūrėkite savaitės pasiūlymus PDF ir nuotraukose.',
+                    // H1 is plain/static — no store count in it anymore
+                    // (leaflets/index.blade.php renders this directly, no
+                    // longer needs its own conditional 'leaflet_store_count_label').
+                    'seo_title' => 'Naujausi akcijų leidiniai iš visų parduotuvių',
+                    'seo_description' => $description,
+                    'meta_title' => $storeCount > 0
+                        ? "Akcijų leidiniai iš daugiau nei {$storeCount} parduotuvių"
+                        : 'Akcijų leidiniai iš visų parduotuvių',
+                    'meta_description' => $description,
                 ];
             default:
                 return [
