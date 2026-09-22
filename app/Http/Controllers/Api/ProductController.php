@@ -1053,36 +1053,47 @@ class ProductController extends Controller
 
         switch ($type) {
             case 'store_leaflet':
+                // Leidiniai section has its own root ("Leidiniai" -> /leidiniai)
+                // instead of the generic "Akcijos" home crumb every other case
+                // uses — this section isn't reached via /akcijos at all, and a
+                // visitor on /leidinys/{store} should be able to hop back to
+                // the full leaflets index, not the discount listing.
                 $words = $this->getStoreLeafletWords($entity->slug);
-                $breadcrumbs[] = [
-                    'name' => $entity->name,
-                    'slug' => 'akcijos/'.$entity->slug,
-                    'type' => 'store',
-                ];
-                $breadcrumbs[] = [
-                    'name' => ucfirst($words['nominative']),
-                    'slug' => 'leidinys/'.$entity->slug,
-                    'type' => 'store_leaflet',
+                $leafletNounPlural = substr($words['nominative'], 0, -2).'iai';
+                $breadcrumbs = [
+                    [
+                        'name' => 'Leidiniai',
+                        'slug' => 'leidiniai',
+                        'type' => 'leaflets_index',
+                    ],
+                    [
+                        'name' => $entity->name.' '.$leafletNounPlural,
+                        'slug' => 'leidinys/'.$entity->slug,
+                        'type' => 'store_leaflet',
+                    ],
                 ];
                 break;
             case 'store_flyer_detail':
                 $words = $this->getStoreLeafletWords($entity->slug);
+                $leafletNounPlural = substr($words['nominative'], 0, -2).'iai';
                 $flyerTitle = $secondaryEntity->title
                     ?: app(\App\Services\StoreFlyerTitleBuilder::class)->build($secondaryEntity, $entity);
-                $breadcrumbs[] = [
-                    'name' => $entity->name,
-                    'slug' => 'akcijos/'.$entity->slug,
-                    'type' => 'store',
-                ];
-                $breadcrumbs[] = [
-                    'name' => ucfirst($words['nominative']),
-                    'slug' => 'leidinys/'.$entity->slug,
-                    'type' => 'store_leaflet',
-                ];
-                $breadcrumbs[] = [
-                    'name' => $flyerTitle,
-                    'slug' => 'leidinys/'.$entity->slug.'/'.$secondaryEntity->slug,
-                    'type' => 'store_flyer',
+                $breadcrumbs = [
+                    [
+                        'name' => 'Leidiniai',
+                        'slug' => 'leidiniai',
+                        'type' => 'leaflets_index',
+                    ],
+                    [
+                        'name' => $entity->name.' '.$leafletNounPlural,
+                        'slug' => 'leidinys/'.$entity->slug,
+                        'type' => 'store_leaflet',
+                    ],
+                    [
+                        'name' => $flyerTitle,
+                        'slug' => 'leidinys/'.$entity->slug.'/'.$secondaryEntity->slug,
+                        'type' => 'store_flyer',
+                    ],
                 ];
                 break;
             case 'store':
@@ -1191,6 +1202,10 @@ class ProductController extends Controller
                 ];
             case 'store_leaflet':
                 $words = $this->getStoreLeafletWords($entity->slug);
+                // "leidinys"/"leidynys" -> "leidiniai"/"leidyniai" is a stem
+                // swap (drop "ys", add "iai"), not a plain suffix append —
+                // same transform as hub.blade.php's own $leafletNounPlural.
+                $leafletNounPlural = substr($words['nominative'], 0, -2).'iai';
 
                 // Up to 3 currently-valid flyers (not the unreliable is_active
                 // flag — same "expired means valid_to < today" rule as
@@ -1224,7 +1239,7 @@ class ProductController extends Controller
 
                     $metaDescription = "Šiuo metu galioja {$activeFlyers->count()} {$entity->name} "
                         .\App\Support\LithuanianPlural::leafletWord($activeFlyers->count())
-                        .': '.$flyerLabels->implode(', ').'. Peržiūrėkite visus pasiūlymus.';
+                        .': '.$flyerLabels->implode(', ').'. Peržiūrėkite visus katalogus.';
                 } else {
                     // No currently-valid flyer found at all — fall back to
                     // the previous generic validity-range sentence (same
@@ -1239,11 +1254,9 @@ class ProductController extends Controller
                 return [
                     'seo_title' => $entity->name.' '.$words['nominative'],
                     'seo_description' => $entity->description,
-                    // "katalogai" instead of "leidiniai"/"leidyniai" — no
-                    // Iki-specific spelling quirk for this word, so it's the
-                    // same for every store. No date/issue-number in the
-                    // title at all anymore — see meta_description instead.
-                    'meta_title' => "Visi naujausi {$entity->name} katalogai ".now()->year,
+                    // No date/issue-number in the title anymore — see
+                    // meta_description instead.
+                    'meta_title' => "Naujausi {$entity->name} akcijų {$leafletNounPlural}",
                     'meta_description' => $metaDescription,
                 ];
             case 'store':

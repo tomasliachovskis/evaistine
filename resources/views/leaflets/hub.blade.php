@@ -13,11 +13,10 @@
     // plain suffix append — naively concatenating 'iai' onto the singular
     // produced "leidinysiai" instead of "leidiniai" for every non-iki store.
     $leafletNounPlural = substr($leafletNoun, 0, -2) . 'iai';
-    // Plain "Visi {Store} naujausi leidiniai {currentYear}" — no validity
-    // date in the H1 anymore (real per-leaflet dates now live in the meta
-    // description instead, see ProductController::generateSeoData()'s
-    // 'store_leaflet' case).
-    $pageTitle = 'Visi naujausi ' . $storeName . ' ' . $leafletNounPlural . ' ' . now()->year;
+    // "Visi {Store} akcijų leidiniai" — no validity date or year in the H1
+    // (real per-leaflet dates now live in the meta description instead, see
+    // ProductController::generateSeoData()'s 'store_leaflet' case).
+    $pageTitle = 'Visi ' . $storeName . ' akcijų ' . $leafletNounPlural;
     $seoAboutParagraphs = array_values(array_filter(explode("\n\n", $intro['seo_about'] ?? '')));
     $hasAbout = count($seoAboutParagraphs) > 0 || count($faq) > 0;
     // Only the currently-valid leaflets, not the expired archive below them
