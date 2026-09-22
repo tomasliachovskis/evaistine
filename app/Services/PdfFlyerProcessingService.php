@@ -15,14 +15,28 @@ class PdfFlyerProcessingService
 {
     private ?string $apiKey;
     private ?string $geminiApiKey;
-    private string $geminiApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
+    private string $geminiApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
 
-    // gemini-3.5-flash pricing (confirmed live 2026-09-08) — was hardcoded
-    // to gemini-2.5-flash's $1.25/$5.00 rates, silently wrong (~40% under
-    // on input, ~45% under on output) since switching models. Update these
-    // again if the model string above ever changes.
-    private const GEMINI_INPUT_COST_PER_MILLION = 1.50;
-    private const GEMINI_OUTPUT_COST_PER_MILLION = 9.00;
+    // Switched from gemini-3.5-flash 2026-09-22 — real A/B test (same Lidl
+    // page, same prompt, mediaResolution held constant) showed
+    // gemini-3-flash-preview's bounding boxes are within a few units of
+    // gemini-3.5-flash's (the model that originally fixed the box-cropping
+    // bug that motivated leaving gemini-2.5-flash) at both HIGH and MEDIUM
+    // resolution, for ~67% less cost. gemini-3.5-flash-lite was cheaper
+    // still but kept cropping one product's box short on the same page at
+    // both resolutions — a real quality gap, not a resolution artifact — so
+    // it was rejected. gemini-2.5-flash looked cheap by list price but
+    // silently spent thousands of hidden "thinking" tokens (billed at the
+    // output rate), landing nearly as expensive as gemini-3.5-flash once
+    // that's accounted for.
+    //
+    // gemini-3-flash-preview pricing (confirmed live 2026-09-22 against
+    // ai.google.dev/gemini-api/docs/pricing). Update these again if the
+    // model string above ever changes — this has bitten us silently before
+    // (see git history: this constant was wrong for weeks after the
+    // gemini-2.5-flash -> gemini-3.5-flash switch).
+    private const GEMINI_INPUT_COST_PER_MILLION = 0.50;
+    private const GEMINI_OUTPUT_COST_PER_MILLION = 3.00;
 
     // Testing whether a lower render DPI (fewer pixels — was 300) still
     // gives Gemini enough resolution to read small print/prices accurately,
@@ -582,7 +596,7 @@ class PdfFlyerProcessingService
             $estimatedTotalCost = $estimatedInputCost + $estimatedOutputCost;
 
             Log::channel('flyer')->info('Preparing Gemini API request', [
-                'model' => 'gemini-2.5-flash',
+                'model' => 'gemini-3-flash-preview',
                 'image_url' => $imageUrl,
                 'prompt_length' => strlen($fullPrompt),
                 'image_size' => strlen($imageContent),
@@ -645,7 +659,7 @@ class PdfFlyerProcessingService
 //                            "topP" => 0.95,
                             'maxOutputTokens' => 14000,
                             'responseMimeType' => 'application/json',
-                            'mediaResolution' => 'MEDIA_RESOLUTION_HIGH',
+                            'mediaResolution' => 'MEDIA_RESOLUTION_MEDIUM',
                         ],
                     ];
 
