@@ -255,6 +255,12 @@ class AkcijosController extends Controller
             'showSort' => $showSort,
             'activeStoreSlug' => $activeStoreSlug,
             'activeCategorySlug' => $activeCategorySlug,
+            // Legal age gate (LT: alcohol deals require confirming the
+            // visitor is 20+) — $activeCategorySlug already resolves
+            // correctly for both /akcijos/alkoholiniai-gerimai and
+            // /akcijos/{store}/alkoholiniai-gerimai, so this one check
+            // covers both URL shapes.
+            'requiresAgeVerification' => $activeCategorySlug === 'alkoholiniai-gerimai',
             'sections' => $sections,
             'topOffers' => $topOffers,
             'hubMeta' => $hubMeta,

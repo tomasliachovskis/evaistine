@@ -51,6 +51,12 @@
     :canonical="$canonical"
     :robots="$robots"
 >
+    @if($requiresAgeVerification ?? false)
+        @push('body-end')
+            <x-age-verification-modal />
+        @endpush
+    @endif
+
     @push('head')
         <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @if ($faqSchema)
