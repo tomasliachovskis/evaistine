@@ -82,6 +82,7 @@ function findLeaflets(html) {
                 pdfBuffer,
                 sourcePdfUrl: leaflet.url,
                 filename: `elimart-${filename}`,
+                sourceId: leaflet.url,
             });
         } catch (error) {
             console.error(`Failed to process leaflet "${filename}":`, error.message);

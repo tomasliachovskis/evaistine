@@ -70,6 +70,7 @@ function parseDateRange(text) {
             validTo,
             pdfBuffer,
             filename: `moki-vezi-${issueNumber || 'leidinys'}.pdf`,
+            sourceId: issueNumber || null,
         });
     } catch (error) {
         console.error('Failed to process leaflet:', error.message);

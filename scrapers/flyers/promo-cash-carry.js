@@ -117,6 +117,7 @@ async function ensureJpeg(browser, buffer, url) {
                     validTo: coverInfo?.validTo ?? null,
                     pdfBuffer,
                     filename: `promo-cash-carry-${leaflet.docId}.pdf`,
+                    sourceId: leaflet.docId,
                 });
             } catch (error) {
                 console.error(`Failed to process leaflet "${leaflet.title}" (${leaflet.docId}):`, error.message);

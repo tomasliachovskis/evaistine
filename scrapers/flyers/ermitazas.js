@@ -75,6 +75,7 @@ function parseGuidAndDates(html) {
                 validTo,
                 pdfBuffer,
                 filename: `ermitazas-${parsed.guid}.pdf`,
+                sourceId: parsed.guid,
             });
         } catch (error) {
             console.error(`Failed to process leaflet "${leaflet.title}":`, error.message);

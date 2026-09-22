@@ -77,6 +77,7 @@ function monthRangeFromDocname(docname) {
             validTo,
             pdfBuffer,
             filename: `benu-${docname}.pdf`,
+            sourceId: docname,
         });
     } catch (error) {
         console.error(`Failed to process leaflet ${docname}:`, error.message);

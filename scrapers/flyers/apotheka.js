@@ -66,6 +66,7 @@ const LISTING_URL = 'https://www.apotheka.lt/leidinys';
             validTo,
             pdfBuffer,
             filename: `apotheka-${docId}.pdf`,
+            sourceId: docId,
         });
     } catch (error) {
         console.error(`Failed to process leaflet "${title}":`, error.message);

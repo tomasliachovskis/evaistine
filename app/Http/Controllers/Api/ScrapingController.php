@@ -133,6 +133,15 @@ class ScrapingController extends Controller
             // last on MySQL).
             'valid_from' => 'nullable|date',
             'valid_to' => 'nullable|date',
+            // Stable per-document ID the scraper already resolves from its
+            // source platform (Yumpu/Issuu docId, dcatalog guid, resolved
+            // PDF URL, issue number, ...) — an authoritative dedup key,
+            // since it identifies the same underlying document across
+            // scrape runs regardless of how its title gets reworded. Not
+            // every scraper has one (a handful of single-catalog-page
+            // sites don't), so it stays optional and the title/date match
+            // below remains the fallback for those.
+            'source_id' => 'nullable|string',
             'pdf' => 'required|file|mimetypes:application/pdf|max:61440',
         ]);
 
@@ -168,24 +177,31 @@ class ScrapingController extends Controller
         // string compare would treat that as a "new" title and miss the
         // duplicate exactly like the valid_from/valid_to bug above did.
         $normalizedTitle = isset($validated['title']) ? mb_strtolower(trim($validated['title'])) : null;
+        $sourceId = $validated['source_id'] ?? null;
 
-        $alreadyExists = StoreFlyer::where('store_id', $store->id)
-            ->when(
-                !empty($validated['valid_from']),
-                fn ($query) => $query->whereDate('valid_from', $validated['valid_from']),
-                fn ($query) => $query->whereNull('valid_from')
-            )
-            ->when(
-                !empty($validated['valid_to']),
-                fn ($query) => $query->whereDate('valid_to', $validated['valid_to']),
-                fn ($query) => $query->whereNull('valid_to')
-            )
-            ->when(
-                !empty($normalizedTitle),
-                fn ($query) => $query->whereRaw('LOWER(TRIM(title)) = ?', [$normalizedTitle]),
-                fn ($query) => $query->whereNull('title')
-            )
-            ->exists();
+        // source_id, when the scraper has one, is authoritative on its own
+        // (same document ID = same physical leaflet, regardless of title
+        // wording) — only fall back to the title/date match for the
+        // scrapers with no natural per-document ID.
+        $alreadyExists = $sourceId
+            ? StoreFlyer::where('store_id', $store->id)->where('source_id', $sourceId)->exists()
+            : StoreFlyer::where('store_id', $store->id)
+                ->when(
+                    !empty($validated['valid_from']),
+                    fn ($query) => $query->whereDate('valid_from', $validated['valid_from']),
+                    fn ($query) => $query->whereNull('valid_from')
+                )
+                ->when(
+                    !empty($validated['valid_to']),
+                    fn ($query) => $query->whereDate('valid_to', $validated['valid_to']),
+                    fn ($query) => $query->whereNull('valid_to')
+                )
+                ->when(
+                    !empty($normalizedTitle),
+                    fn ($query) => $query->whereRaw('LOWER(TRIM(title)) = ?', [$normalizedTitle]),
+                    fn ($query) => $query->whereNull('title')
+                )
+                ->exists();
 
         if ($alreadyExists) {
             return response()->json(['skipped' => true, 'reason' => 'duplicate']);
@@ -196,6 +212,7 @@ class ScrapingController extends Controller
             'catalog_name' => $validated['catalog_name'] ?? null,
             'issue_number' => $validated['issue_number'] ?? null,
             'title' => $validated['title'] ?? null,
+            'source_id' => $sourceId,
             'valid_from' => $validated['valid_from'] ?? null,
             'valid_to' => $validated['valid_to'] ?? null,
             'sort_order' => 0,

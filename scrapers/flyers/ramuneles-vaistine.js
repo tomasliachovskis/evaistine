@@ -37,6 +37,7 @@ const LAST_DAY_OF_MONTH = (year, month) => new Date(Date.UTC(year, month, 0)).ge
             pdfBuffer,
             sourcePdfUrl: pdfUrl,
             filename: `ramuneles-vaistine-${pdfPath.split('/').pop()}`,
+            sourceId: pdfPath,
         });
     } catch (error) {
         console.error('Failed to process leaflet:', error.message);

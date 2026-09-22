@@ -110,6 +110,7 @@ function monthRangeFromSlug(url) {
                 validTo,
                 pdfBuffer,
                 filename: `eurokos-${pub.url.split('/').pop()}.pdf`,
+                sourceId: pub.url,
             });
         } catch (error) {
             console.error(`Failed to process "${pub.title}" (${pub.url}):`, error.message);

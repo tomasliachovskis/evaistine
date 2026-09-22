@@ -131,6 +131,7 @@ async function downscaleImages(buffers, { maxWidth = 1000, quality = 0.72 } = {}
             validTo,
             pdfBuffer,
             filename: `avon-${issueNumber || 'katalogas'}.pdf`,
+            sourceId: issueNumber || null,
         });
     } catch (error) {
         console.error('Failed to process leaflet:', error.message);

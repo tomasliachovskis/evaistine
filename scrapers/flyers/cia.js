@@ -126,6 +126,7 @@ async function renderImageToJpeg(browser, imageUrl) {
             validTo: coverInfo?.validTo ?? null,
             pdfBuffer,
             filename: `cia-${issueMatch ? issueMatch[1] : 'leidinys'}.pdf`,
+            sourceId: issueMatch ? issueMatch[1] : null,
         });
     } finally {
         await browser.close();

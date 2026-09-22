@@ -48,6 +48,7 @@ const LISTING_URL = 'https://camelia.lt/akciju-leidinys';
             pdfBuffer,
             sourcePdfUrl: downloadUrl,
             filename: `camelia-${docId}.pdf`,
+            sourceId: docId,
         });
     } catch (error) {
         console.error(`Failed to process leaflet "${title}":`, error.message);

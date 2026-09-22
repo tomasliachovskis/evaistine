@@ -99,6 +99,7 @@ async function fetchLeafletPdf(guid) {
                     validTo,
                     pdfBuffer,
                     filename: `senukai-${guid}.pdf`,
+                    sourceId: guid,
                 });
             } catch (error) {
                 console.error(`Failed to process leaflet "${leaflet.title}":`, error.message);

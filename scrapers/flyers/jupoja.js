@@ -93,6 +93,7 @@ async function collectPageUrls(baseUrl) {
             validTo,
             pdfBuffer,
             filename: `jupoja-${issueMatch ? issueMatch[1] : 'leidinys'}.pdf`,
+            sourceId: issueMatch ? issueMatch[1] : null,
         });
     } catch (error) {
         console.error(`Failed to process leaflet "${title}":`, error.message);

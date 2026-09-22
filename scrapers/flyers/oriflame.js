@@ -75,6 +75,7 @@ const CATALOGUE_OVERVIEW_URL = 'https://api-static.oriflame.com/tenants/lt/appli
             validTo,
             pdfBuffer,
             filename: `oriflame-${code}.pdf`,
+            sourceId: code,
         });
     } catch (error) {
         console.error('Failed to process leaflet:', error.message);

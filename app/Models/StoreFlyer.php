@@ -26,6 +26,7 @@ class StoreFlyer extends Model
         'catalog_name',
         'issue_number',
         'title',
+        'source_id',
         'image_url',
         'thumbnail_url',
         'pdf_url',

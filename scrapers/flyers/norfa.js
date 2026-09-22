@@ -75,6 +75,7 @@ function parseTitle(title) {
                     validTo,
                     pdfBuffer,
                     filename: `norfa-${issueNumber || 'leidinys'}.pdf`,
+                    sourceId: downloadUrl,
                 });
             } catch (error) {
                 console.error(`Failed to process leaflet "${leaflet.title}":`, error.message);

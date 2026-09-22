@@ -68,6 +68,7 @@ function parseDateRange(text) {
             pdfBuffer,
             sourcePdfUrl: pdfUrl,
             filename: `avs-${pdfUrl.split('/').pop()}`,
+            sourceId: pdfUrl,
         });
     } catch (error) {
         console.error('Failed to process leaflet:', error.message);

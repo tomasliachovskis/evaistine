@@ -45,6 +45,7 @@ const HOME_URL = 'https://vynoteka.lt/';
             pdfBuffer,
             sourcePdfUrl: pdfUrl,
             filename: `vynoteka-nr-${issueNumber}.pdf`,
+            sourceId: issueNumber,
         });
     } catch (error) {
         console.error('Failed to process leaflet:', error.message);

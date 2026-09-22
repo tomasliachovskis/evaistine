@@ -169,6 +169,7 @@ async function fetchLeafletPdf(browser, href) {
                     validTo,
                     pdfBuffer,
                     filename: `maxima-${issueMatch ? issueMatch[1] : leaflet.href.replace(/\W+/g, '-')}.pdf`,
+                    sourceId: leaflet.href,
                 });
             } catch (error) {
                 console.error(`Failed to process leaflet "${leaflet.title}":`, error.message);

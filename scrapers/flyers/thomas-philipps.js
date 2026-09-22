@@ -56,6 +56,7 @@ function parseDateRange(text) {
             pdfBuffer,
             sourcePdfUrl: pdfMatch[1],
             filename: `thomas-philipps-${pdfMatch[1].split('/').pop()}`,
+            sourceId: pdfMatch[1],
         });
     } catch (error) {
         console.error('Failed to process leaflet:', error.message);

@@ -62,6 +62,7 @@ const LISTING_URL = 'https://www.eurovaistine.lt/menesio-leidinys';
             validTo: coverInfo?.validTo ?? null,
             pdfBuffer,
             filename: `eurovaistine-${docId}.pdf`,
+            sourceId: docId,
         });
     } catch (error) {
         console.error(`Failed to process leaflet "${title}":`, error.message);

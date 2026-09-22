@@ -193,9 +193,10 @@ export async function extractCoverInfo({ store, imageBuffer, filename = 'cover.j
 }
 
 // Posts one flyer (PDF + metadata) to the backend. The backend enforces both
-// "skip if expired" and "skip if we already have this exact valid_from/
-// valid_to for this store", so scrapers can safely re-submit everything they
-// find on every run without tracking any state of their own.
+// "skip if expired" and "skip if we already have this document" (by
+// source_id when given, else by valid_from/valid_to/title), so scrapers can
+// safely re-submit everything they find on every run without tracking any
+// state of their own.
 export async function submitFlyer({
     store,
     title,
@@ -210,6 +211,13 @@ export async function submitFlyer({
     // by page from this URL). Omit for PDFs already built from page images
     // (imagesToPdf), which are never this large to begin with.
     sourcePdfUrl,
+    // Stable per-document ID from the source platform (Yumpu/Issuu docId,
+    // dcatalog guid, resolved PDF URL, issue number, ...) — the backend uses
+    // this as the primary dedup key instead of title, which can reword
+    // between two scrapes of the same physical leaflet. Omit when the
+    // scraper has no natural per-run ID; the backend falls back to matching
+    // on title/dates for those.
+    sourceId,
 }) {
     // A handful of stores' source PDFs are high-res print masters past the
     // backend's 60MB hard cap (first hit: Elimart, 61MB) — rasterize and
@@ -239,6 +247,7 @@ export async function submitFlyer({
     if (title) form.append('title', title);
     if (catalogName) form.append('catalog_name', catalogName);
     if (issueNumber) form.append('issue_number', String(issueNumber));
+    if (sourceId) form.append('source_id', String(sourceId));
     // Some leaflets have no determinable end date at all (e.g. Lidl's
     // seasonal "Katalogai") — omit the fields entirely rather than send the
     // literal string "null", which would fail the backend's date validation.

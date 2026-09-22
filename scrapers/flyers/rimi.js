@@ -115,6 +115,7 @@ async function fetchLeafletPages(awsUrl, policy, pageCount) {
                     validTo,
                     pdfBuffer,
                     filename: `rimi-${leaflet.href.replace(/\W+/g, '-').replace(/^-+|-+$/g, '')}.pdf`,
+                    sourceId: leaflet.href,
                 });
             } catch (error) {
                 console.error(`Failed to process leaflet "${leaflet.title}" (${leaflet.href}):`, error.message);

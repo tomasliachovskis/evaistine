@@ -63,6 +63,7 @@ function parseDateRange(text) {
                 pdfBuffer,
                 sourcePdfUrl: pdfUrl,
                 filename: `gruste-${pdfMatch[1].split('/').pop()}`,
+                sourceId: pdfUrl,
             });
         } catch (error) {
             console.error(`Failed to process leaflet "${heading}" (${pdfUrl}):`, error.message);

@@ -136,6 +136,7 @@ async function fetchLeafletPdf(browser, slug) {
                     pdfBuffer,
                     sourcePdfUrl: pdfUrl,
                     filename: `lidl-${slug}.pdf`,
+                    sourceId: slug,
                 });
             } catch (error) {
                 console.error(`Failed to process leaflet "${title}" (${slug}):`, error.message);

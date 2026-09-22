@@ -161,6 +161,7 @@ async function fetchLeafletPdf(browser, detailHref) {
                     pdfBuffer,
                     sourcePdfUrl: hero.href,
                     filename: `iki-${hero.href.split('/').pop()}`,
+                    sourceId: hero.href,
                 });
             } catch (error) {
                 console.error(`Failed to process hero leaflet "${hero.title}":`, error.message);
@@ -196,6 +197,7 @@ async function fetchLeafletPdf(browser, detailHref) {
                     validTo,
                     pdfBuffer,
                     filename: `iki-${leaflet.href.replace(/\W+/g, '-').replace(/^-+|-+$/g, '')}.pdf`,
+                    sourceId: leaflet.href,
                 });
             } catch (error) {
                 console.error(`Failed to process leaflet "${leaflet.title}":`, error.message);

@@ -74,6 +74,7 @@ async function screenshotCover(pdfUrl) {
             pdfBuffer,
             sourcePdfUrl: pdfUrl,
             filename: `svaros-prekes-${pdfUrl.split('/').pop()}`,
+            sourceId: pdfUrl,
         });
     } catch (error) {
         console.error('Failed to process leaflet:', error.message);

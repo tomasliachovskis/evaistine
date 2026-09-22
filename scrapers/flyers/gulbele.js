@@ -78,6 +78,7 @@ function parseDateRange(text) {
                 validTo,
                 pdfBuffer,
                 filename: `gulbele-${issueMatch ? issueMatch[1] : 'leidinys'}.pdf`,
+                sourceId: issueMatch ? issueMatch[1] : null,
             });
         } catch (error) {
             console.error(`Failed to process leaflet "${title}":`, error.message);

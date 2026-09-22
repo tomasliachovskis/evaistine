@@ -103,6 +103,7 @@ async function fetchPublitasPages(url) {
                 validTo: coverInfo?.validTo ?? null,
                 pdfBuffer,
                 filename: `officeday-${catalog.href.match(/docs\/([a-zA-Z0-9]+)/)?.[1] || catalog.href.split('/').filter(Boolean).pop()}.pdf`,
+                sourceId: catalog.href,
             });
         } catch (error) {
             console.error(`Failed to process catalog "${catalog.title}" (${catalog.href}):`, error.message);

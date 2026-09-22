@@ -55,6 +55,7 @@ const toDateString = unixSeconds => new Date(unixSeconds * 1000).toISOString().s
                 pdfBuffer,
                 sourcePdfUrl: pdfUrl,
                 filename: `mary-kay-${catalog.id}.pdf`,
+                sourceId: catalog.id,
             });
         } catch (error) {
             console.error(`Failed to process catalog "${catalog.name}":`, error.message);

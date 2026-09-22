@@ -96,6 +96,7 @@ async function collectPageUrls(discountId) {
                 validTo,
                 pdfBuffer,
                 filename: `lankava-${discountId}.pdf`,
+                sourceId: discountId,
             });
         } catch (error) {
             console.error(`Failed to process leaflet "${title}":`, error.message);
