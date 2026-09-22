@@ -12,6 +12,7 @@ class Store extends Model
     protected $fillable = [
         'name',
         'description',
+        'leaflet_description',
         'slug',
         'seo_title',
         'meta_title',

@@ -9,7 +9,7 @@ namespace App\Support;
 // active discounts are dropped entirely, not just pushed to the end.
 class StoreListPriority
 {
-    private const PRIORITY_SLUGS = [
+    public const PRIORITY_SLUGS = [
         'maxima', 'lidl', 'iki', 'rimi', 'norfa',
         'aibe', 'express-market', 'silas', 'cia', 'kubas',
     ];

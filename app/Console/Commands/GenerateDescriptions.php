@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 
 class GenerateDescriptions extends Command
 {
-    protected $signature = 'descriptions:generate {type : store, category, faq, store-faq, or store-category} {--id= : Specific ID to generate description for} {--all : Generate for all stores/categories} {--store-category : Generate top products tables for store+category combinations}';
+    protected $signature = 'descriptions:generate {type : store, category, faq, store-faq, store-leaflet, or store-category} {--id= : Specific ID to generate description for} {--all : Generate for all stores/categories} {--store-category : Generate top products tables for store+category combinations}';
     protected $description = 'Generate descriptions or FAQ for stores and categories using ChatGPT API, or top products tables for store+category combinations';
 
     private DescriptionGenerationService $descriptionService;
@@ -40,6 +40,8 @@ class GenerateDescriptions extends Command
             $this->handleCategoryFaqs($id, $all);
         } elseif ($type === 'store-faq') {
             $this->handleStoreFaqs($id, $all);
+        } elseif ($type === 'store-leaflet') {
+            $this->handleStoreLeaflets($id, $all);
         } elseif ($type === 'store-category') {
             $this->handleStoreCategories($id, $all);
         } else {
@@ -181,6 +183,56 @@ class GenerateDescriptions extends Command
             $this->info('Completed generating FAQ for stores with active discounts.');
         } else {
             $this->error('Please specify --id or --all option.');
+        }
+    }
+
+    private function handleStoreLeaflets(?string $id, bool $all): void
+    {
+        if ($id) {
+            $store = Store::find($id);
+            if (!$store) {
+                $this->error("Store with ID {$id} not found.");
+                return;
+            }
+
+            $this->generateStoreLeafletDescription($store);
+        } elseif ($all) {
+            $stores = Store::whereHas('flyers')->get();
+            $this->info("Generating leidinys hub descriptions for {$stores->count()} stores with flyers...");
+
+            $bar = $this->output->createProgressBar($stores->count());
+            $bar->start();
+
+            foreach ($stores as $store) {
+                $this->generateStoreLeafletDescription($store);
+                $bar->advance();
+                sleep(5);
+            }
+
+            $bar->finish();
+            $this->newLine();
+            $this->info('Completed generating leidinys hub descriptions for stores with flyers.');
+        } else {
+            $this->error('Please specify --id or --all option.');
+        }
+    }
+
+    private function generateStoreLeafletDescription(Store $store): void
+    {
+        $this->info("Generating leidinys hub description for store: {$store->name}");
+
+        try {
+            $description = $this->descriptionService->generateStoreLeafletDescription($store);
+
+            if ($description) {
+                $store->update(['leaflet_description' => $description]);
+                $this->info("✓ Successfully generated leidinys hub description for {$store->name}");
+                $this->line("Description: {$description}");
+            } else {
+                $this->warn("✗ Failed to generate leidinys hub description for {$store->name}");
+            }
+        } catch (\Exception $e) {
+            $this->error("✗ Error generating leidinys hub description for {$store->name}: " . $e->getMessage());
         }
     }
 

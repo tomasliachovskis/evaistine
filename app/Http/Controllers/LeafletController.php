@@ -41,14 +41,11 @@ class LeafletController extends Controller
         $path = "/leidinys/{$store}";
         $breadcrumbs = $this->mapBreadcrumbs($payload['breadcrumbs']);
 
-        $topOffers = json_decode($api->getBestOffersForStore($store)->getContent(), true);
-
         return view('leaflets.hub', [
             'listingMeta' => $payload['listing_meta'],
             'seo' => $payload['seo'],
             'totalOffers' => $payload['total_offers'],
             'storeSlug' => $store,
-            'topOffers' => $topOffers,
             'canonical' => CanonicalUrl::build($path),
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,

@@ -2,7 +2,6 @@
     $intro = $listingMeta['intro'] ?? [];
     $sectionsData = $listingMeta['sections'] ?? [];
     $leaflets = $sectionsData['leaflets'] ?? [];
-    $faq = $sectionsData['faq'] ?? [];
     $storeName = $listingMeta['store_name'] ?? $storeSlug;
     $storeIdForFreshness = \App\Models\Store::where('slug', $storeSlug)->value('id');
     $freshnessLabel = $storeIdForFreshness && ($freshnessDate = \App\Support\ContentFreshness::forStore($storeIdForFreshness))
@@ -17,8 +16,17 @@
     // (real per-leaflet dates now live in the meta description instead, see
     // ProductController::generateSeoData()'s 'store_leaflet' case).
     $pageTitle = 'Visi ' . $storeName . ' akcijų ' . $leafletNounPlural;
-    $seoAboutParagraphs = array_values(array_filter(explode("\n\n", $intro['seo_about'] ?? '')));
-    $hasAbout = count($seoAboutParagraphs) > 0 || count($faq) > 0;
+    $leafletDescription = $listingMeta['leaflet_description'] ?? null;
+    $content = $listingMeta['content'] ?? [];
+    $aboutParagraphs = $content['about']['paragraphs'] ?? [];
+    $aboutHeading = $content['about']['heading'] ?? null;
+    $formatParagraphs = $content['format']['paragraphs'] ?? [];
+    $formatHeading = $content['format']['heading'] ?? null;
+    $tipsParagraphs = $content['tips']['paragraphs'] ?? [];
+    $tipsHeading = $content['tips']['heading'] ?? null;
+    $otherStores = $sectionsData['other_stores'] ?? [];
+    $hasFallbackContent = count($aboutParagraphs) > 0 || count($formatParagraphs) > 0 || count($tipsParagraphs) > 0;
+    $hasAbout = ! empty($leafletDescription) || $hasFallbackContent || count($otherStores) > 0;
     // Only the currently-valid leaflets, not the expired archive below them
     // — an ItemList should represent what's actually available now, same
     // reasoning as excluding expired leaflets from the page's main visual
@@ -99,16 +107,6 @@
             </section>
         @endif
 
-        @if (! empty($topOffers))
-            <x-landing-deals-section
-                id="geriausi-pasiulymai"
-                title="Geriausi savaitės pasiūlymai"
-                :deals="$topOffers"
-                icon="flame"
-                layout="carousel"
-            />
-        @endif
-
         @if (! empty($expiredLeaflets))
             <section class="mt-6">
                 <div class="section-heading-row">
@@ -124,18 +122,54 @@
 
         @if ($hasAbout)
             <section id="apie" class="scroll-mt-24 rounded-xl border border-gray-200 bg-white p-4 sm:p-5" aria-labelledby="store-hub-about-heading">
-                @if (count($seoAboutParagraphs) > 0)
-                    <h2 id="store-hub-about-heading" class="text-base font-extrabold text-gray-900 sm:text-lg">Apie {{ $storeName }} leidinį ir akcijas</h2>
-                    <div class="mt-2 space-y-2">
-                        @foreach ($seoAboutParagraphs as $paragraph)
-                            <p class="text-sm leading-relaxed text-gray-600">{{ $paragraph }}</p>
-                        @endforeach
-                    </div>
+                @if (! empty($leafletDescription))
+                    {{-- The generated HTML supplies its own <h2> section headings
+                         (see DescriptionGenerationService::getStoreLeafletSystemPrompt) —
+                         no separate static heading here, that would just duplicate
+                         the first one and re-create the "wall of text" problem this
+                         structure exists to avoid. --}}
+                    <div id="store-hub-about-heading" class="category-description max-w-none text-sm [&_h2]:text-lg! [&_h2]:sm:text-xl! [&_h2]:font-bold! [&_h2]:leading-tight! [&_h2]:text-gray-900! [&>h2]:mt-6! [&>h2:first-child]:mt-0! [&_p]:text-sm [&_p]:leading-relaxed [&_p]:text-gray-600 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_li]:text-sm [&_li]:leading-relaxed [&_li]:text-gray-600 [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">{!! $leafletDescription !!}</div>
+                @elseif ($hasFallbackContent)
+                    @if (count($aboutParagraphs) > 0)
+                        <h2 id="store-hub-about-heading" class="text-base font-extrabold text-gray-900 sm:text-lg">{{ $aboutHeading ?? ('Apie ' . $storeName) }}</h2>
+                        <div class="mt-2 space-y-2">
+                            @foreach ($aboutParagraphs as $paragraph)
+                                <p class="text-sm leading-relaxed text-gray-600">{{ $paragraph }}</p>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if (count($formatParagraphs) > 0)
+                        <div class="{{ count($aboutParagraphs) > 0 ? 'mt-5' : '' }}">
+                            <h2 class="text-base font-extrabold text-gray-900 sm:text-lg">{{ $formatHeading ?? ($storeName . ' leidinio turinys') }}</h2>
+                            <div class="mt-2 space-y-2">
+                                @foreach ($formatParagraphs as $paragraph)
+                                    <p class="text-sm leading-relaxed text-gray-600">{{ $paragraph }}</p>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    @if (count($tipsParagraphs) > 0)
+                        <div class="{{ (count($aboutParagraphs) > 0 || count($formatParagraphs) > 0) ? 'mt-5' : '' }}">
+                            <h2 class="text-base font-extrabold text-gray-900 sm:text-lg">{{ $tipsHeading ?? ('Kaip skaityti ' . $storeName . ' leidinį') }}</h2>
+                            <div class="mt-2 space-y-2">
+                                @foreach ($tipsParagraphs as $paragraph)
+                                    <p class="text-sm leading-relaxed text-gray-600">{{ $paragraph }}</p>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 @endif
 
-                @if (count($faq) > 0)
-                    <div class="{{ count($seoAboutParagraphs) > 0 ? 'mt-5' : '' }}">
-                        <x-faq-accordion :items="$faq" layout="single" />
+                @if (count($otherStores) > 0)
+                    <div class="{{ (! empty($leafletDescription) || $hasFallbackContent) ? 'mt-5' : '' }}">
+                        <h2 class="text-base font-extrabold text-gray-900 sm:text-lg">Kitos parduotuvės</h2>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            @foreach ($otherStores as $otherStore)
+                                <a href="{{ $otherStore['href'] }}" class="rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:border-gray-300 hover:bg-gray-50">{{ $otherStore['name'] }} leidinys</a>
+                            @endforeach
+                        </div>
                     </div>
                 @endif
             </section>

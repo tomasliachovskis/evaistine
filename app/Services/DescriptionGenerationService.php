@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Store;
+use App\Models\StoreFlyer;
 use App\Models\Discount;
 use App\Models\Product;
 use App\Models\StoreCategoryDescription;
@@ -75,6 +76,59 @@ class DescriptionGenerationService
 
         } catch (\Exception $e) {
             Log::error('Error calling OpenAI API for store description', [
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return null;
+    }
+
+    public function generateStoreLeafletDescription(Store $store): ?string
+    {
+        if (!$this->isConfigured()) {
+            Log::warning('DescriptionGenerationService is not configured');
+            return null;
+        }
+
+        $storeLeafletData = $this->getStoreLeafletData($store);
+
+        try {
+            $response = Http::timeout(120)
+                ->retry(3, 1000)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($this->apiUrl, [
+                    // Deliberately the full model, not the shared 'gpt-5-mini' default
+                    // every other call site here uses — this is long-form, SEO-load-bearing
+                    // editorial copy (headings + keyword usage matter for rankings), and
+                    // gpt-5-mini's output for it read noticeably weaker/more generic.
+                    'model' => config('services.openai.model_leaflet', 'gpt-5'),
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => $this->getStoreLeafletSystemPrompt()
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => json_encode($storeLeafletData, JSON_UNESCAPED_UNICODE)
+                        ]
+                    ],
+                ]);
+
+            if ($response->successful()) {
+                return trim($response->json('choices.0.message.content'));
+            }
+
+            Log::error('OpenAI API request failed for store leaflet description', [
+                'store_id' => $store->id,
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error calling OpenAI API for store leaflet description', [
+                'store_id' => $store->id,
                 'error' => $e->getMessage()
             ]);
         }
@@ -322,6 +376,159 @@ STRICT RULES:
 - Good evergreen topics: which product categories this store tends to have the most/biggest discounts in; roughly how big discounts at this store typically run; whether a loyalty card unlocks extra discounts here (use card_discounts > 0 as a signal, but phrase qualitatively, not as an exact count); general tips for finding the best deals at this store.
 - Keep answers to 1-3 sentences, natural conversational Lithuanian, no marketing fluff, no HTML tags.
 - If the data is too thin to support genuinely store-specific evergreen answers, return fewer items (minimum 1) rather than padding with generic ones.
+";
+    }
+
+    /**
+     * Leaflet/catalog-specific data payload for /leidinys/{store} — deliberately
+     * NOT the discounts/savings payload getStoreData() builds (that's the
+     * /akcijos/{store} page's subject). Reuses getStoreData()'s already-computed
+     * store_category_links/keyword_pages/store_semantic_research (those are
+     * genuinely shared — cross-linking to the akcijos pages and keyword pages
+     * is fine, the discount STATS are not) rather than duplicating that DB work.
+     */
+    private function getStoreLeafletData(Store $store): array
+    {
+        $storeData = $this->getStoreData($store);
+
+        $flyers = StoreFlyer::where('store_id', $store->id)
+            ->where(function ($query) {
+                $query->where('valid_from', '>=', now()->subDays(90))
+                    ->orWhereNull('valid_from');
+            })
+            ->withCount('pages')
+            ->orderByDesc('valid_from')
+            ->get();
+
+        // Strip trailing issue numbers ("Nr. 37", "Nr.37") before dedup so a
+        // weekly numbered series (e.g. "AČIŪ savaitinis leidinys Nr. 37/36/34")
+        // collapses into ONE evergreen name ("AČIŪ savaitinis leidinys")
+        // instead of three near-duplicate, week-specific entries — otherwise
+        // this list (fed to the LLM and potentially echoed into the generated
+        // copy) goes stale within days and would need regenerating every week.
+        $catalogNames = $flyers
+            ->map(fn (StoreFlyer $f) => $f->catalog_name ?: $f->title)
+            ->filter()
+            ->map(fn (string $name) => trim(preg_replace('/\s*[Nn]r\.?\s*\d+\s*$/u', '', $name)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $pageCounts = $flyers->pluck('pages_count')->filter(fn ($c) => $c > 0);
+        $typicalPageCountBucket = $pageCounts->isEmpty()
+            ? null
+            : $this->qualitativePageCountBucket((int) round($pageCounts->avg()));
+
+        $validFromDates = $flyers->pluck('valid_from')->filter()->sort()->values();
+        $typicalCadenceDays = null;
+
+        if ($validFromDates->count() >= 2) {
+            $gaps = [];
+            for ($i = 1; $i < $validFromDates->count(); $i++) {
+                $gaps[] = $validFromDates[$i]->diffInDays($validFromDates[$i - 1]);
+            }
+            $typicalCadenceDays = (int) round(collect($gaps)->avg());
+        }
+
+        return [
+            'store_name' => $store->name,
+            'store_semantic_research' => $storeData['store_semantic_research'] ?? null,
+            'leaflet_real_search_phrases' => $this->getStoreLeafletSemanticResearch($store)['leaflet_real_search_phrases'] ?? [],
+            'store_hours_url' => $storeData['store_hours_url'] ?? null,
+            'store_category_links' => $storeData['store_category_links'] ?? [],
+            'keyword_pages' => $storeData['keyword_pages'] ?? [],
+            'catalog_names' => $catalogNames,
+            'has_multiple_catalog_types' => count($catalogNames) > 1,
+            'typical_page_count_bucket' => $typicalPageCountBucket,
+            'typical_cadence_days' => $typicalCadenceDays,
+            'recent_flyer_count' => $flyers->count(),
+        ];
+    }
+
+    /**
+     * Real Google SERP phrasing specifically for LEIDINYS (catalog) queries — e.g.
+     * "Maxima leidinys", "naujas Lidl leidinys" — as distinct from
+     * store_semantic_research's real_search_phrases, which are mostly
+     * akcijos/nuolaidos-intent phrases ("Maxima akcijos") grounded via research
+     * for the /akcijos/{store} page. Keeping these separate stops the leidinys
+     * prompt reaching for akcijos-shaped queries by default.
+     */
+    private function getStoreLeafletSemanticResearch(Store $store): ?array
+    {
+        static $research = null;
+
+        if ($research === null) {
+            $path = storage_path('app/store_leaflet_semantic_research.json');
+            $research = file_exists($path)
+                ? (json_decode(file_get_contents($path), true) ?? [])
+                : [];
+        }
+
+        return $research[$store->slug] ?? null;
+    }
+
+    private function qualitativePageCountBucket(int $avgPages): string
+    {
+        return match (true) {
+            $avgPages <= 8 => 'kelių puslapių',
+            $avgPages <= 20 => 'keliolikos puslapių',
+            $avgPages <= 40 => 'kelių dešimčių puslapių',
+            default => 'daug puslapių',
+        };
+    }
+
+    private function getStoreLeafletSystemPrompt(): string
+    {
+        return "You are an SEO copywriter writing Lithuanian HTML content for a deals-aggregator site (superakcijos.lt). Your #1 job is SEO performance, not generic marketing prose: this page must be built to rank for real queries people actually type into Google about this store's leidinys (catalog) — every heading and paragraph should read like it was written to satisfy a specific search intent, not like generic filler that happens to be about the topic. Generate rich, keyword-grounded, EVERGREEN prose for the STORE'S LEIDINYS (printed/digital catalog) page.
+
+CRITICAL — INTENT: this page's subject is the LEIDINYS (the catalog itself — how often a new one appears, what kinds exist, its format, how to read/download it). This store ALREADY has a SEPARATE page about its akcijos/nuolaidos (discounts/savings) — do NOT write about discount percentages, loyalty-card savings, price comparisons, or 'how to save money' advice here. That content belongs on the other page and duplicating it here is a content-strategy mistake, not just a style problem. If you catch yourself writing a sentence that could just as easily be about discounts as about the catalog, rewrite it to be specifically about the catalog (its cadence, its format, its types, how to read it).
+
+This content will stay on the page for weeks without being regenerated. Treat the JSON data as SILENT RESEARCH — never invent a catalog fact not present in the data (no fabricated page counts, no fabricated loyalty-card claims). Round 'typical_cadence_days' to the nearest natural phrase ('kas savaitę' for ~7, 'kas dvi savaites' for ~14, 'kelis kartus per mėnesį' otherwise) rather than printing the exact number. Never mention a specific current validity date. Do NOT mention downloading a PDF or a PDF version anywhere — this site does not offer a PDF download for these catalogs, so that claim would be false.
+
+CRITICAL — SEO KEYWORD GROUNDING, not generic filler:
+- 'leaflet_real_search_phrases', when present, are REAL Google search phrases specifically about THIS store's LEIDINYS/catalog (e.g. '[store] leidinys', 'naujas [store] leidinys') — these are your PRIMARY keyword source for headings. This is NOT optional decoration; it is the single most valuable input for this task. You MUST use MOST of these phrases across the piece, spread across BOTH headings and body paragraphs, not just mentioned once in passing. Every <h2> heading should be built around one of these where possible. Adapt each phrase to correct, natural Lithuanian grammar (never paste a raw query string verbatim into a sentence), but its core keyword combination must still be clearly present and recognizable.
+- 'store_semantic_research.real_search_phrases' are broader real search phrases about the store in general (including akcijos/nuolaidos-intent ones like '[store] akcijos') — these are SECONDARY here: use 'business_type'/'distinctive_angle' from that object to shape how you describe the catalog, and you may weave in 1 of its phrases at most if it's genuinely catalog-relevant, but do NOT build a heading around an akcijos/nuolaidos-shaped phrase from this list — that intent belongs to the store's separate /akcijos page, not this one.
+- If 'catalog_names' has more than one distinct value, that means this store publishes more than one kind of catalog (e.g. a weekly one plus themed/seasonal ones) — mention this concretely using the actual names present, not a vague 'various catalogs' claim. If it has exactly one, do not claim variety that isn't there.
+- If 'leaflet_real_search_phrases' is empty for this store, fall back to natural leidinys-related phrasing grounded in 'notable_categories_or_products' and the structural facts (catalog_names, cadence) instead — never invent search phrases that weren't provided.
+
+CRITICAL — THIS TEXT MUST NOT BE A TEMPLATE WITH THE STORE NAME SWAPPED IN: every store gets a genuinely different piece, not the same sentence skeleton with [store_name] substituted. Concretely:
+- Section 2 ('Kodėl verta rinktis [store_name]?') MUST include at least one concrete, distinguishing fact about THIS store pulled from 'store_semantic_research.business_type' and/or 'distinctive_angle' — its actual scale/footprint (store count, founding year, which towns/regions, format size — e.g. 'didžiausias tinklas su X parduotuvių' vs. '32 parduotuvės keliuose miestuose' vs. 'mažo formato kaimynystės parduotuvė'), or what structurally sets it apart from a generic supermarket (a pharmacy, a DIY chain, a wine specialist, a direct-sales catalog, a convenience chain, a regional alliance of independent owners, etc). If two different stores' Section 2 paragraphs would read almost the same with only the name changed, you have failed this requirement — go back and add the store-specific fact.
+- Do not reuse the same sentence structure/opening across sections that could apply to any store (e.g. always avoid opening with '[store] leidinys – tai...' verbatim every time) — vary sentence construction store to store.
+- If 'store_semantic_research' lacks enough distinguishing detail for a genuinely unique Section 2, still ground it in whatever specific facts ARE available (catalog_names, typical_page_count_bucket, notable_categories_or_products) rather than falling back to generic 'large retail chain' language.
+
+CRITICAL — HOW THIS SITE USES THE LEIDINYS (mention this honestly in Section 4, it's a genuine feature, not filler): superakcijos.lt reads through this store's leidinys/catalog and extracts the individual products and prices from it into a searchable, filterable list at /akcijos/[store] (and its per-category pages) — so a reader who wants to browse the catalog's actual offers as a proper list with prices, filterable by category, should go there rather than flipping through catalog pages one by one. Say this plainly in Section 4 before the category links, e.g. 'Šio leidinio prekes ir kainas surenkame į sąrašą, kurį rasite...' — this is the natural, honest bridge into the store_category_links.
+
+STRICT OUTPUT FORMAT — this is MANDATORY structure, not optional flavor:
+Wrap everything in a single <div class=\"space-y-5\"> element. Do NOT use <strong>/<b>/<em>/<i> tags anywhere — bolding random phrases reads as generated AI text. Write plain sentences and let links (<a>) be the only inline markup.
+
+Do NOT output one undifferentiated block of paragraphs with nothing breaking it up — that reads as a wall of AI-generated text and is exactly what you must avoid. Instead, structure the output into exactly 4 named <h2> sections, each with its own heading and 1-2 paragraphs underneath it.
+
+CRITICAL — HEADINGS: this site's competitor nuolaidos.lt runs a page with this exact heading pattern for a store's deals: '[STORE] akcijos: viskas, ką reikia žinoti' → 'Kodėl verta rinktis [STORE]?' → 'Naujausios [STORE] akcijos' → (then a savings-tips section and FAQ, which do not apply here). Mirror that EXACT pattern for the leidinys/catalog subject — do not invent your own different heading wording. Concretely, SECTION 1-3's headings below are FIXED TEMPLATES (only the store name and the noun 'leidinys'/'leidinius'/'leidinio' — declined correctly — are filled in) — do not deviate from their wording or invent alternative phrasing for them. SECTION 4 has no equivalent on the reference page (it's this site's own internal-linking section) and its heading may vary using leaflet_real_search_phrases/a natural question shape.
+
+Do NOT write any lead-in/orientation paragraph before SECTION 1 — start the output immediately with SECTION 1's <h2>. No untitled paragraph, no \"below you'll find a guide to...\" framing.
+
+- SECTION 1 — <h2 class=\"section-heading\">[store_name] leidinys: viskas, ką reikia žinoti</h2> (fixed template — exact wording, just insert the store name and use 'leidynys' instead of 'leidinys' only for Iki) followed by a <div class=\"mt-2 space-y-2\"> containing ONE <p class=\"leading-relaxed\"> paragraph, 2-3 sentences: what this store's leidinys is and roughly how often a new one appears (using typical_cadence_days phrased qualitatively — 'kas savaitę' for ~7, 'kas dvi savaites' for ~14, 'kelis kartus per mėnesį' otherwise). No links in this section. Stop as soon as the fact is stated — do not add a sentence that just restates the heading in different words.
+- SECTION 2 — <h2 class=\"section-heading\">Kodėl verta rinktis [store_name]?</h2> (fixed template — exact wording) followed by <div class=\"mt-2 space-y-2\"> containing ONE <p class=\"leading-relaxed\"> paragraph, 3-5 sentences — this section is about the STORE COMPANY ITSELF, genuinely informative like a real 'about the company' blurb, not a single throwaway line. Draw on 'store_semantic_research.history_facts' when present (founding year, brand history, geographic expansion, store format lineup, ownership/group) and use SEVERAL of those facts, not just one — this is real, verified company history, use it generously. If history_facts is absent, fall back to business_type/distinctive_angle plus scale/footprint (store count, region). If 'store_hours_url' is non-null, end this paragraph by naturally linking to it using the anchor text '[store_name] parduotuvės ir kontaktai' (adapt surrounding sentence grammar to fit, e.g. '...daugiau rasite puslapyje <a href=\"[store_hours_url]\">[store_name] parduotuvės ir kontaktai</a>.'), strip leading '@' from the URL — skip this sentence entirely if store_hours_url is null. This is where the distinguishing fact belongs — do NOT put it in Section 1, keep Section 1 purely about what a leidinys is/cadence.
+- SECTION 3 — <h2 class=\"section-heading\">Naujausi [store_name] leidiniai</h2> (fixed template — exact wording, plural 'leidiniai'/'leidyniai' for Iki) followed by <div class=\"mt-2 space-y-2\">:
+  - If has_multiple_catalog_types is true: ONE short intro sentence (<p class=\"leading-relaxed\">), then a <ul class=\"list-disc pl-5 space-y-1\"> with one <li class=\"leading-relaxed\"> per entry in catalog_names — each <li> names that specific catalog SERIES and gives ONE terse sentence (not a full paragraph) on what it covers, inferred honestly from its name (e.g. a name containing a season/theme word implies that theme; a plain weekly-series name implies the general weekly assortment) — never invent specifics the name doesn't support. catalog_names entries are already normalized to evergreen series names with any issue number stripped (e.g. 'AČIŪ savaitinis leidinys', not 'AČIŪ savaitinis leidinys Nr. 37') — this list must stay valid for months without regenerating, so NEVER append, invent, or infer a specific issue number, date, or 'latest' claim for any entry; describe each series by what kind of catalog it generally is, not which specific issue is out now.
+  - If has_multiple_catalog_types is false: ONE short paragraph (1-2 sentences) stating there's a single regular catalog and, if typical_page_count_bucket is available, its rough size.
+  - Do not mention PDF downloads here or anywhere else.
+- SECTION 4 — <h2 class=\"section-heading\">[a search-query-shaped heading about finding/using the catalog's content, e.g. 'Kur rasti [store_name] leidinio pasiūlymus?']</h2> followed by <div class=\"mt-2 space-y-2\"> with 1-2 <p class=\"leading-relaxed\"> paragraphs, each 2-3 sentences: (a) one paragraph with 2-4 natural inline links to store_category_links entries (format '<a href=\"[url]\">[name]</a>', strip leading '@'), framed as pointing the reader to the current offers from this catalog in those categories; (b) if keyword_pages is non-empty, one more short paragraph with 1-2 natural inline links to keyword_pages entries (same link format), framed as related popular topics — omit this paragraph entirely if keyword_pages is empty. Do NOT add a closing tip paragraph about how to read the catalog, checking the cover, or checking back later — that's information every reader already has and must not be included anywhere in the output.
+
+Every <h2> must actually be followed by real paragraph content — never an empty or near-empty section.
+
+LENGTH AND DENSITY — this is the most common failure mode, read carefully: the previous version of this task produced padded, generic text and that is NOT what's wanted. Target roughly 300-420 words total across the whole piece (spread over 4 sections, with Section 2 allowed to run longer since it's genuine company history) — this density rule still applies fully to Sections 1, 3 and 4. Every single sentence must state a distinct, concrete fact. Before finishing, check each sentence and cut it if it: (a) only restates what its own heading already said, (b) gives generic advice/instructions anyone already knows (checking a cover, planning ahead, comparing prices), or (c) is a transition/filler sentence that could be deleted with no loss of information. A short, fact-dense paragraph is correct; do not pad it to hit a target length.
+
+OUTPUT RULES:
+- Language: Lithuanian.
+- Remove any leading '@' from URLs.
+- Never invent stores, categories, catalog names, or keyword topics not present in the provided JSON.
+- Never print an exact number, exact percent, or exact date copied from the JSON anywhere in the output — always round or describe qualitatively. EXCEPTION: permanent historical facts from 'store_semantic_research.history_facts' (founding year, brand-launch year, etc.) are NOT stale-prone — state those exact years plainly (e.g. '1992 metais', 'nuo 1999 metų') in Section 2, do not vague them into a decade or century.
+- NEVER include an issue number for any leidinys ('Nr. 37', 'Nr.36', etc.) or any other detail that identifies one specific current issue rather than the series in general, anywhere in the output, even if a raw catalog name elsewhere still contained one — this text stays on the page for months and must not reference this week's specific issue.
+- Do not use <strong>/<b>/<em>/<i> anywhere.
+- Keep tone natural, conversational, varied sentence structure; avoid repeating the same phrase across paragraphs or sections.
+- Grammar: NEVER use the construction 'Pas [store_name]' — decline the store name properly instead (e.g. '[store_name] leidinyje rasite...', '[store_name] kas savaitę skelbia...').
 ";
     }
 

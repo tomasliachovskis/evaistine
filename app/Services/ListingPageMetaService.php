@@ -10,6 +10,7 @@ use App\Support\ContentFreshness;
 use App\Support\FoodCategorySlugs;
 use App\Support\FlyerStorage;
 use App\Support\LithuanianDate;
+use App\Support\StoreListPriority;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -49,6 +50,7 @@ class ListingPageMetaService
         $leaflets = $this->buildLeaflets($store);
         $intro = $this->buildStoreIntro($storeName, $store->slug, $validity, count($leaflets));
         $intro['seo_about'] = $this->buildStoreHubSeoAbout($storeName, $store->slug, count($leaflets));
+        $content = $this->buildStoreHubContent($store, count($leaflets));
         $newToday = Discount::query()
             ->where('store_id', $store->id)
             ->whereDate('created_at', Carbon::today())
@@ -82,6 +84,8 @@ class ListingPageMetaService
             'store_name' => $storeName,
             'locations_count' => $store->locations()->active()->count(),
             'intro' => $intro,
+            'content' => $content,
+            'leaflet_description' => $store->leaflet_description,
             'popular_this_week' => $this->mapPopularCategoriesForStore($store->slug, $topCategories),
             'popular_carousel_title' => 'Daugiausia sutaupoma šiandien',
             'popular_carousel_subtitle' => 'Pasirinkite kategoriją ir atraskite geriausias akcijas',
@@ -95,7 +99,6 @@ class ListingPageMetaService
                 'most_saved' => $this->getMostSavedForStore($store),
                 'expiring_soon' => $this->getExpiringDealsForStore($store),
                 'weekend_deals' => $this->getWeekendDealsForStore($store),
-                'faq' => $this->buildStoreLeafletHubFaq($store, $this->getTopCategoriesForStore($store, false)),
                 'other_stores' => $otherStores,
             ],
         ];
@@ -536,7 +539,7 @@ class ListingPageMetaService
             ->map(fn (Store $s) => [
                 'name' => $s->name,
                 'slug' => $s->slug,
-                'href' => "/akcijos/{$s->slug}",
+                'href' => "/leidinys/{$s->slug}",
                 'discounts_count' => $s->discounts_count,
             ])
             ->values()
@@ -902,6 +905,7 @@ class ListingPageMetaService
                 'accusative' => 'leidynį',
                 'nominative' => 'leidynys',
                 'nominative_plural' => 'leidyniai',
+                'genitive' => 'leidynio',
             ];
         }
 
@@ -909,6 +913,7 @@ class ListingPageMetaService
             'accusative' => 'leidinį',
             'nominative' => 'leidinys',
             'nominative_plural' => 'leidiniai',
+            'genitive' => 'leidinio',
         ];
     }
 
@@ -927,41 +932,274 @@ class ListingPageMetaService
         return "{$intro}\n\n{$detail}";
     }
 
-    private function freshnessLabel(?Carbon $date): ?string
-    {
-        return $date ? LithuanianDate::relative($date) : null;
-    }
-
-    private function buildStoreLeafletHubFaq(Store $store, array $topCategories): array
+    // Multiple headed content sections for the leidinys hub (/leidinys/{store}).
+    // Intent here is strictly the LEIDINYS (catalog: cadence, format, pages,
+    // PDF) — NOT akcijos/nuolaidos (discounts), which is the separate
+    // /akcijos/{store} hub's job. Copy must stay about the catalog itself —
+    // how often it's published, what kinds exist, how to read/download it —
+    // not savings/loyalty-card advice, which belongs on the other page.
+    // Priority stores (StoreListPriority::PRIORITY_SLUGS) get hand-written,
+    // factual paragraphs; every other store falls back to a richer
+    // pickVariant()-templated version so pages stay distinct without needing
+    // bespoke copy for all ~40 stores.
+    private function buildStoreHubContent(Store $store, int $activeLeafletCount): array
     {
         $storeName = $store->name;
         $storeSlug = $store->slug;
         $words = $this->getStoreLeafletWords($storeSlug);
-        $listingUrl = $this->siteUrl("/akcijos/{$storeSlug}");
-        $hubLink = $this->faqLink($this->siteUrl("/leidinys/{$storeSlug}"), "{$storeName} leidinio puslapyje");
-        $listingLink = $this->faqLink($listingUrl, "{$storeName} akcijų sąraše");
-        $weeklyAkcijosLink = $this->faqLink($listingUrl, "šią savaitę galiojančias {$storeName} akcijas");
-        $nuolaidosLink = $this->faqLink($listingUrl, "aktualias {$storeName} nuolaidas");
-        $categoryLink = $this->faqCategoryLink($store, null, $topCategories, $listingLink);
+        $leafletNoun = $activeLeafletCount > 1 ? $words['nominative_plural'] : $words['nominative'];
+        $leafletNounSingular = $words['nominative'];
+        $leafletNounAccusative = $words['accusative'];
+        $leafletNounGenitive = $words['genitive'];
+        $isPriority = in_array($storeSlug, StoreListPriority::PRIORITY_SLUGS, true);
+
+        $about = $isPriority ? $this->getPriorityStoreAbout($storeSlug) : [
+            $this->pickVariant($storeSlug . '/about/1', [
+                "{$storeName} {$leafletNounSingular} – tai kiekvieną savaitę atnaujinamas katalogas, kuriame {$storeName} pristato savo naujausią prekių pasiūlymą su galiojimo datomis ir viršelio nuoroda į pilną turinį.",
+                "{$storeName} {$leafletNounSingular} – tai skaitmeninė šio tinklo prekybos leidinio versija, kurią čia atnaujiname kiekvieną kartą, kai pasirodo naujas numeris.",
+                "Šiame puslapyje rasite {$storeName} akcijų {$leafletNoun} – tikrą, savaitinį šio prekybos tinklo katalogą, o ne vien atrinktų prekių sąrašą.",
+            ]),
+            $this->pickVariant($storeSlug . '/about/2', [
+                "Naujas {$storeName} {$leafletNounSingular} skelbiamas reguliariai, o jo viršelyje visada nurodyta, nuo kada iki kada jis galioja – tai patogu žinoti prieš planuojant, kada apsilankyti parduotuvėje.",
+                "{$storeName} paprastai skelbia naują leidinio numerį kas savaitę – ankstesni numeriai lieka pasiekiami puslapio apačioje, pažymėti kaip pasibaigę.",
+                "Kiekvienas {$storeName} {$leafletNounSingular} turi savo unikalų numerį ir galiojimo laikotarpį, nurodytą viršelyje – taip lengva atskirti, kuris leidinys aktualus šiuo metu.",
+            ]),
+            $this->pickVariant($storeSlug . '/about/3', [
+                "Kai kada {$storeName} vienu metu skelbia kelis skirtingus leidinius (pvz. bendrą savaitinį ir siauresnės kategorijos numerį) – visus aktyvius {$leafletNoun} rasite kartu šiame puslapyje.",
+                "{$storeName} {$leafletNounSingular} apima platų prekių spektrą – nuo maisto iki buities ir namų apyvokos prekių, suskirstytą į atskirus puslapius pagal kategorijas.",
+                "SuperAkcijos.lt seka {$storeName} skelbiamus leidinius ir kiekvieną naują numerį pridedame čia iškart, kai jis pasirodo.",
+            ]),
+        ];
+
+        $format = $isPriority ? $this->getPriorityStoreFormat($storeSlug) : [
+            $this->pickVariant($storeSlug . '/format/1', [
+                "{$storeName} {$leafletNounSingular} paprastai apima keliolika ar keliasdešimt puslapių, suskirstytų pagal kategorijas – nuo šviežių maisto produktų iki buities chemijos ir namų apyvokos prekių.",
+                "Kiekviename {$storeName} {$leafletNounSingular} numeryje prekės išdėstytos taip pat, kaip spausdintame ar oficialiame skaitmeniniame kataloge – puslapis po puslapio, pagal kategorijas.",
+            ]),
+            $this->pickVariant($storeSlug . '/format/2', [
+                "Kai turime PDF nuorodą, {$storeName} {$leafletNounSingular} galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Jei prie leidinio yra PDF nuoroda, ją rasite šalia viršelio – patogu atsisiųsti ir peržiūrėti vėliau, be interneto ryšio.",
+            ]),
+            $this->pickVariant($storeSlug . '/format/3', [
+                "Skirtingai nei akcijų sąrašas, kuriame prekės surūšiuotos pagal nuolaidos dydį, {$leafletNounSingular} atkartoja tikrąją numerio puslapių tvarką – todėl patogu naršyti taip, tarsi turėtumėte popierinį leidinį rankose.",
+                "{$storeName} {$leafletNoun} archyvuojami šiame puslapyje – pasibaigę numeriai matomi atskirai, kad būtų aišku, kuris leidinys šiuo metu galiojantis, o kuris jau nebeaktualus.",
+            ]),
+        ];
+
+        $tips = $isPriority ? $this->getPriorityStoreTips($storeSlug) : [
+            $this->pickVariant($storeSlug . '/tips/1', [
+                "Leidinio viršelyje visada nurodytas galiojimo laikotarpis – patikrinkite jį prieš peržiūrėdami puslapius, kad įsitikintumėte, jog žiūrite aktualų, o ne jau pasibaigusį {$leafletNounSingular}.",
+                "Pirmiausia patikrinkite leidinio viršelį – jame nurodytas numeris ir tikslios galiojimo datos padės greitai suprasti, ar leidinys dar aktualus.",
+            ]),
+            $this->pickVariant($storeSlug . '/tips/2', [
+                "Jei domina konkreti kategorija, {$storeName} {$leafletNoun} dažniausiai turi kelis skirtingus numerius vienu metu – peržiūrėkite visus aktyvius leidinius šiame puslapyje, kad nepraleistumėte jus dominančios dalies.",
+                "Kai galioja keli {$storeName} leidiniai vienu metu, patogu peržiūrėti kiekvieną atskirai – taip lengviau rasti, kuriame numeryje yra jus dominanti kategorija.",
+            ]),
+            $this->pickVariant($storeSlug . '/tips/3', [
+                "Tikslias kainas ir nuolaidų dydžius rasite {$storeName} akcijų sąraše – šis puslapis pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą taip, kaip jis pateikiamas oficialiame leidinyje.",
+                "Jei ieškate konkrečios prekės kainos, o ne viso leidinio, patogiau naudotis {$storeName} akcijų sąrašu – ten prekės surūšiuotos pagal nuolaidos dydį.",
+            ]),
+        ];
 
         return [
-            [
-                'question' => "Kur rasti naują {$storeName} leidinį?",
-                'answer' => "Naujausią {$storeName} akcijų {$words['nominative']} rasite {$hubLink} – viršuje matote leidinio viršelį ir galiojimo datas. Visas akcijas su kainomis – {$listingLink}.",
+            'about' => [
+                'heading' => "Apie {$storeName} {$leafletNounAccusative}",
+                'paragraphs' => $about,
             ],
-            [
-                'question' => "Kokios {$storeName} akcijos galioja šią savaitę?",
-                'answer' => "{$storeName} savaitės akcijos paprastai galioja nuo pirmadienio iki sekmadienio. {$weeklyAkcijosLink} rasite su galiojimo datomis ir kainomis.",
+            'format' => [
+                'heading' => "{$storeName} {$leafletNounGenitive} turinys",
+                'paragraphs' => $format,
             ],
-            [
-                'question' => "Ar galima atsisiųsti {$storeName} {$words['accusative']} PDF formatu?",
-                'answer' => "Kai turime PDF nuorodą, ją rasite {$hubLink} prie leidinio viršelio – galite atsisiųsti ir peržiūrėti be interneto.",
-            ],
-            [
-                'question' => "Kaip dažnai atnaujinamos {$storeName} nuolaidos?",
-                'answer' => "{$storeName} akcijos ir nuolaidos SuperAkcijos.lt atnaujinamos kasdien. {$nuolaidosLink} galite peržiūrėti bet kuriuo metu, o populiariausias kategorijas – {$categoryLink}.",
+            'tips' => [
+                'heading' => "Kaip skaityti {$storeName} {$leafletNounAccusative}",
+                'paragraphs' => $tips,
             ],
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getPriorityStoreAbout(string $storeSlug): array
+    {
+        return match ($storeSlug) {
+            'maxima' => [
+                "Maxima leidinys – tai didžiausio Lietuvos prekybos tinklo, veikiančio nuo 1992 metų ir turinčio daugiau nei 200 parduotuvių visoje šalyje, savaitinis prekių katalogas, kuriame pristatomas naujausias tos savaitės asortimentas.",
+                "Kiekvieną savaitę Maxima skelbia naują AČIŪ leidinio numerį, kurio viršelyje visada nurodytos tikslios galiojimo datos – tai leidžia iš anksto žinoti, kada leidinys nustos galioti ir bus pakeistas nauju.",
+                "Be pagrindinio savaitinio leidinio, Maxima retkarčiais išleidžia ir atskirus teminius numerius – pavyzdžiui, švenčių, sezoninių ar namų apyvokos prekių kolekcijas, kurios galioja lygiagrečiai su savaitiniu leidiniu.",
+            ],
+            'lidl' => [
+                "Lidl leidinys – tai Vokietijos kilmės tarptautinio prekybos tinklo, Lietuvoje veikiančio nuo 2016 metų, savaitinis prekių katalogas, kuriame pristatomas naujausias savaitės asortimentas.",
+                "Naujas Lidl leidinio numeris paprastai skelbiamas pirmadieniais, o viršelyje visada nurodytos tikslios galiojimo datos, iki kada konkretus numeris aktualus.",
+                "Lidl dažnai vienu metu skelbia kelis atskirus leidinius – atskirai maisto ir ne maisto prekių, o kartais ir specialius teminius numerius (pvz. sodo, sporto ar namų prekių) – visus aktyvius numerius rasite šiame puslapyje.",
+            ],
+            'iki' => [
+                "Iki leidynys – tai vieno seniausių šiuolaikinių Lietuvos prekybos tinklų, veikiančio nuo 1992 metų, savaitinis prekių katalogas, kuriame pristatomas naujausias savaitės asortimentas.",
+                "Populiariausias Iki savaitinio leidinio pavadinimas yra „Iki savaitėlė“ – naujas numeris skelbiamas kiekvieną savaitę, o viršelyje nurodytos tikslios galiojimo datos.",
+                "Be pagrindinio savaitinio leidinio, Iki kartais skelbia ir atskirus kategorijų ar sezoninius numerius – visus aktyvius leidinius rasite kartu šiame puslapyje.",
+            ],
+            'rimi' => [
+                "Rimi leidinys – tai Baltijos šalyse veikiančios Rimi Baltic grupės savaitinis prekių katalogas, kiekvieną savaitę pristatantis naują numerį su tos savaitės asortimentu.",
+                "Rimi valdo tiek didesnio formato Rimi Hyper, tiek mažesnes Rimi Super parduotuves – jų leidinio turinys gali šiek tiek skirtis priklausomai nuo formato.",
+                "Naujas Rimi leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje visada nurodytos tikslios galiojimo datos.",
+            ],
+            'norfa' => [
+                "Norfa leidinys – tai Lietuvos kapitalo prekybos tinklo, atstovaujamo tiek didžiuosiuose miestuose, tiek mažesniuose miesteliuose ir kaimuose, savaitinis prekių katalogas.",
+                "Naujas Norfa leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje visada nurodytos tikslios galiojimo datos.",
+                "Kadangi Norfa parduotuvių tinklas platus ir apima įvairaus dydžio parduotuves, leidinio turinys paprastai orientuotas į plataus vartojimo prekes, aktualias didžiajai daliai tinklo.",
+            ],
+            'aibe' => [
+                "Aibė leidinys – tai bendras savaitinis katalogas, kurį skelbia po Aibės vardu veikiantis nepriklausomų prekybininkų tinklas, ypač gausiai atstovaujamas mažesniuose miestuose ir kaimo vietovėse.",
+                "Naujas Aibė leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje nurodytos tikslios galiojimo datos.",
+                "Kadangi kiekviena Aibė parduotuvė priklauso skirtingam savininkui, leidinio turinys paprastai galioja didžiojoje dalyje tinklo parduotuvių, bet verta patikrinti konkrečios parduotuvės informaciją vietoje.",
+            ],
+            'express-market' => [
+                "Express Market leidinys – tai UAB Kilminė valdomo kompaktiško formato parduotuvių tinklo savaitinis katalogas, pristatantis naują prekių pasiūlymą kiekvieną savaitę.",
+                "Naujas Express Market leidinio numeris skelbiamas reguliariai, o viršelyje nurodytos tikslios galiojimo datos.",
+                "Kadangi Express Market parduotuvės orientuotos į greitą, patogų apsipirkimą arti namų, jų leidinio turinys paprastai koncentruojasi į kasdienes, dažnai perkamas prekes.",
+            ],
+            'silas' => [
+                "Šilas leidinys – tai Kauno ir Vilniaus regionuose veikiančio, nuo 1992 metų istoriją skaičiuojančio prekybos tinklo savaitinis prekių katalogas.",
+                "Naujas Šilas leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje nurodytos tikslios galiojimo datos.",
+                "Šilas leidinyje ypač daug dėmesio skiriama šviežioms daržovėms, vaisiams, pieno ir mėsos gaminiams – tai atsispindi ir jo turinio struktūroje.",
+            ],
+            'cia' => [
+                "Čia Market leidinys – tai iš Žemaitijos kilusio, nuo 1996 metų veikiančio prekybos tinklo savaitinis katalogas, gausiai atstovaujamas Žemaitijos regione.",
+                "Naujas Čia Market leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje nurodytos tikslios galiojimo datos.",
+                "Čia Market išaugo iš pieno produktų parduotuvių tinklo, todėl jo leidinyje dažnai matoma stipri pieno gaminių dalis šalia įprasto maisto ir buities prekių asortimento.",
+            ],
+            'kubas' => [
+                "Kubas leidinys – tai 2000 metais Šiauliuose įkurto prekybos tinklo, šiandien veikiančio keliuose Lietuvos miestuose, savaitinis prekių katalogas.",
+                "Naujas Kubas leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje nurodytos tikslios galiojimo datos.",
+                "Kubas leidinyje pateikiamos tiek maisto, tiek pramoninių prekių dalys viename numeryje.",
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getPriorityStoreFormat(string $storeSlug): array
+    {
+        return match ($storeSlug) {
+            'maxima' => [
+                "Maxima leidinio turinys paprastai apima kelias dešimtis puslapių, suskirstytų pagal kategorijas – nuo šviežių maisto produktų iki buities chemijos ir namų apyvokos prekių.",
+                "Kai kurie Maxima leidinio numeriai turi ir PDF versiją, kurią galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda, jei ji yra, pateikiama prie leidinio viršelio šiame puslapyje.",
+                "Skirtingai nei akcijų sąrašas, kuriame prekės rūšiuojamos pagal nuolaidos dydį, leidinys atkartoja tikrąją numerio puslapių tvarką – todėl patogu naršyti taip, tarsi turėtumėte popierinį leidinį rankose.",
+            ],
+            'lidl' => [
+                "Lidl leidinio turinys atspindi tinklui būdingą glaustą, kruopščiai atrinktą asortimentą – kiekviename numeryje dažniausiai pristatoma keliasdešimt prekių, suskirstytų pagal kategorijas.",
+                "Kai turime PDF nuorodą, Lidl leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Ne maisto prekių Lidl leidiniai dažnai būna riboto kiekio – juose pristatomos sezoninės ar specialios prekės, kurios gali greitai baigtis parduotuvėse, todėl verta peržiūrėti leidinį iš anksto.",
+            ],
+            'iki' => [
+                "Iki leidinio turinys suskirstytas pagal kategorijas – nuo šviežių maisto produktų, kepyklos gaminių ir mėsos iki buities chemijos bei namų apyvokos prekių.",
+                "Kai turime PDF nuorodą, Iki leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Leidinys atkartoja tikrąją numerio puslapių tvarką, todėl patogu naršyti taip pat, kaip naršytumėte popieriniame ar oficialiame skaitmeniniame kataloge.",
+            ],
+            'rimi' => [
+                "Rimi leidinio turinys suskirstytas pagal kategorijas – nuo šviežių produktų iki buities ir namų apyvokos prekių, dažniausiai apimant keliasdešimt puslapių.",
+                "Kai turime PDF nuorodą, Rimi leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Leidinys atkartoja tikrąją numerio puslapių tvarką, todėl patogu naršyti jį taip, kaip naršytumėte oficialiame Rimi kataloge.",
+            ],
+            'norfa' => [
+                "Norfa leidinio turinys suskirstytas pagal kategorijas – nuo šviežių maisto produktų iki buities chemijos ir namų apyvokos prekių.",
+                "Kai turime PDF nuorodą, Norfa leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Leidinys atkartoja tikrąją numerio puslapių tvarką – patogu naršyti taip pat, kaip naršytumėte oficialiame Norfa kataloge.",
+            ],
+            'aibe' => [
+                "Aibė leidinio turinys apima plataus vartojimo maisto ir buities prekes, suskirstytas pagal kategorijas.",
+                "Kai turime PDF nuorodą, Aibė leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Leidinys atkartoja tikrąją numerio puslapių tvarką – patogu naršyti taip pat, kaip naršytumėte spausdintame ar oficialiame skaitmeniniame kataloge.",
+            ],
+            'express-market' => [
+                "Kadangi Express Market parduotuvės nedidelės, jų leidinys paprastai trumpesnis nei didesnių tinklų – patogu greitai peržiūrėti visą turinį prieš apsilankymą.",
+                "Kai turime PDF nuorodą, Express Market leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Leidinys atkartoja tikrąją numerio puslapių tvarką – patogu naršyti taip pat, kaip naršytumėte oficialiame kataloge.",
+            ],
+            'silas' => [
+                "Šilas leidinio turinys suskirstytas pagal kategorijas, su ypatingu akcentu šviežiems produktams.",
+                "Kai turime PDF nuorodą, Šilas leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Leidinys atkartoja tikrąją numerio puslapių tvarką – patogu naršyti taip pat, kaip naršytumėte oficialiame kataloge.",
+            ],
+            'cia' => [
+                "Čia Market leidinio turinys suskirstytas pagal kategorijas, apimant maisto ir kasdienes buities prekes.",
+                "Kai turime PDF nuorodą, Čia Market leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Leidinys atkartoja tikrąją numerio puslapių tvarką – patogu naršyti taip pat, kaip naršytumėte oficialiame kataloge.",
+            ],
+            'kubas' => [
+                "Kubas leidinio turinys suskirstytas pagal kategorijas – nuo maisto produktų iki pramoninių ir kasdienių buities prekių.",
+                "Kai turime PDF nuorodą, Kubas leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
+                "Leidinys atkartoja tikrąją numerio puslapių tvarką – patogu naršyti taip pat, kaip naršytumėte oficialiame kataloge.",
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getPriorityStoreTips(string $storeSlug): array
+    {
+        return match ($storeSlug) {
+            'maxima' => [
+                "Prieš peržiūrėdami leidinio puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį – taip įsitikinsite, kad žiūrite aktualų, o ne jau pasibaigusį numerį.",
+                "Jei šiuo metu galioja keli Maxima leidiniai vienu metu (pvz. savaitinis ir teminis), abu rasite šiame puslapyje atskirai – patogu palyginti, kuriame yra jus dominanti prekių kategorija.",
+                "Norėdami sužinoti tikslias kainas ir nuolaidų dydžius, o ne tik peržiūrėti leidinio puslapius, apsilankykite Maxima akcijų sąraše – ten prekės surūšiuotos pagal nuolaidos dydį su tiksliomis kainomis.",
+            ],
+            'lidl' => [
+                "Prieš peržiūrėdami leidinio puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
+                "Jei ieškote konkrečios kategorijos, patikrinkite, ar šiuo metu galioja atskiras maisto ar ne maisto prekių Lidl leidinys – jie dažnai skelbiami lygiagrečiai.",
+                "Tikslias kainas ir nuolaidų dydžius rasite Lidl akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą tos savaitės pasiūlymą taip, kaip jis pateikiamas oficialiame kataloge.",
+            ],
+            'iki' => [
+                "Prieš peržiūrėdami puslapius, patikrinkite leidinio viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
+                "Jei šiuo metu galioja keli Iki leidiniai vienu metu, abu rasite šiame puslapyje atskirai – patogu palyginti, kuriame yra jus dominanti kategorija.",
+                "Tikslias kainas ir nuolaidų dydžius rasite Iki akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą taip, kaip jis pateikiamas oficialiame numeryje.",
+            ],
+            'rimi' => [
+                "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį ir įsitikinkite, kad leidinys atitinka jums artimiausios parduotuvės formatą (Rimi Hyper ar Rimi Super).",
+                "Jei ieškote konkrečios kategorijos, patogu naršyti leidinį puslapis po puslapio – jis atkartoja spausdinto numerio struktūrą.",
+                "Tikslias kainas ir nuolaidų dydžius rasite Rimi akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
+            ],
+            'norfa' => [
+                "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
+                "Kadangi Norfa parduotuvės skiriasi dydžiu, verta patikrinti, ar leidinyje esanti prekė tikrai pasiekiama jums artimiausioje parduotuvėje.",
+                "Tikslias kainas ir nuolaidų dydžius rasite Norfa akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
+            ],
+            'aibe' => [
+                "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
+                "Kadangi Aibė vienija atskirus savininkus, verta patikrinti, ar konkreti prekė ir kaina galioja jūsų artimiausioje Aibė parduotuvėje.",
+                "Tikslias kainas ir nuolaidų dydžius rasite Aibė akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
+            ],
+            'express-market' => [
+                "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
+                "Kadangi leidinys trumpesnis, jį galima peržiūrėti per kelias minutes prieš trumpą apsipirkimą pakeliui namo.",
+                "Tikslias kainas ir nuolaidų dydžius rasite Express Market akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
+            ],
+            'silas' => [
+                "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
+                "Kadangi Šilas veikia tik Kauno ir Vilniaus regionuose, patogu iš anksto patikrinti, ar leidinio prekės pasiekiamos jums artimiausioje parduotuvėje.",
+                "Tikslias kainas ir nuolaidų dydžius rasite Šilas akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
+            ],
+            'cia' => [
+                "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
+                "Čia Market leidinys ypač aktualus Žemaitijos regiono gyventojams – jei gyvenate šioje Lietuvos dalyje, verta reguliariai sekti naują numerį.",
+                "Tikslias kainas ir nuolaidų dydžius rasite Čia Market akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
+            ],
+            'kubas' => [
+                "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
+                "Kubas parduotuvės išsibarsčiusios keliuose miestuose – patogu iš anksto patikrinti, ar leidinio prekės pasiekiamos jums artimiausioje parduotuvėje.",
+                "Tikslias kainas ir nuolaidų dydžius rasite Kubas akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu, ne tik maisto skiltį.",
+            ],
+            default => [],
+        };
+    }
+
+    private function freshnessLabel(?Carbon $date): ?string
+    {
+        return $date ? LithuanianDate::relative($date) : null;
     }
 
     private function buildStoreFaq(Store $store, ?Category $currentCategory, array $topCategories): array
