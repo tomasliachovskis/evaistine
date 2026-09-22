@@ -17,7 +17,7 @@
     // date in the H1 anymore (real per-leaflet dates now live in the meta
     // description instead, see ProductController::generateSeoData()'s
     // 'store_leaflet' case).
-    $pageTitle = 'Visi ' . $storeName . ' naujausi ' . $leafletNounPlural . ' ' . now()->year;
+    $pageTitle = 'Visi naujausi ' . $storeName . ' ' . $leafletNounPlural . ' ' . now()->year;
     $seoAboutParagraphs = array_values(array_filter(explode("\n\n", $intro['seo_about'] ?? '')));
     $hasAbout = count($seoAboutParagraphs) > 0 || count($faq) > 0;
     // Only the currently-valid leaflets, not the expired archive below them

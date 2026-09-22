@@ -1243,7 +1243,7 @@ class ProductController extends Controller
                     // Iki-specific spelling quirk for this word, so it's the
                     // same for every store. No date/issue-number in the
                     // title at all anymore — see meta_description instead.
-                    'meta_title' => "Visi {$entity->name} naujausi katalogai ".now()->year,
+                    'meta_title' => "Visi naujausi {$entity->name} katalogai ".now()->year,
                     'meta_description' => $metaDescription,
                 ];
             case 'store':
