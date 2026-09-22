@@ -1,5 +1,5 @@
 import https from 'https';
-import { fetchBuffer, submitFlyer } from './_shared.js';
+import { fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // avs.lt/akcijos/ is plain server-rendered HTML (no Puppeteer needed) with a
 // single current leaflet: a direct PDF link whose own filename and link
@@ -43,13 +43,21 @@ function parseDateRange(text) {
     }
 
     const [, pdfUrl, linkText] = linkMatch;
-    const { validFrom, validTo } = parseDateRange(linkText);
-    if (!validFrom) {
-        console.log('No date range found in link text — submitting without dates');
-    }
+    let { validFrom, validTo } = parseDateRange(linkText);
 
     try {
         const pdfBuffer = await fetchBuffer(pdfUrl);
+
+        if (!validFrom) {
+            const coverImage = await renderFirstPdfPageToJpeg(pdfUrl);
+            const coverInfo = await extractCoverInfo({ store: 'AVS', imageBuffer: coverImage, filename: 'avs-cover.jpg' });
+            if (coverInfo?.validFrom) {
+                validFrom = coverInfo.validFrom;
+                validTo = coverInfo.validTo;
+            } else {
+                console.log('No date range found in link text or cover OCR — submitting without dates');
+            }
+        }
 
         await submitFlyer({
             store: 'AVS',

@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep } from './_shared.js';
+import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep, extractCoverInfo } from './_shared.js';
 
 const LIST_URL = 'https://www.maxima.lt/leidiniai';
 
@@ -128,7 +128,7 @@ async function fetchLeafletPdf(browser, href) {
             buffers.push(buffer);
         }
 
-        return imagesToPdf(buffers);
+        return { buffers, pdfBuffer: await imagesToPdf(buffers) };
     } finally {
         await detailPage.close();
     }
@@ -145,11 +145,21 @@ async function fetchLeafletPdf(browser, href) {
         console.log(`Found ${leaflets.length} leaflet(s) on ${LIST_URL}`);
 
         for (const leaflet of leaflets) {
-            const { validFrom, validTo } = parseDateRange(leaflet.date);
+            let { validFrom, validTo } = parseDateRange(leaflet.date);
             const issueMatch = leaflet.title.match(/Nr\.\s*(\d+)/i);
 
             try {
-                const pdfBuffer = await fetchLeafletPdf(browser, leaflet.href);
+                const { buffers, pdfBuffer } = await fetchLeafletPdf(browser, leaflet.href);
+
+                if (!validFrom) {
+                    const coverInfo = await extractCoverInfo({ store: 'Maxima', imageBuffer: buffers[0], filename: 'maxima-cover.jpg' });
+                    if (coverInfo?.validFrom) {
+                        validFrom = coverInfo.validFrom;
+                        validTo = coverInfo.validTo;
+                    } else {
+                        console.log(`No date range for "${leaflet.title}" (site text or cover OCR) — submitting without dates`);
+                    }
+                }
 
                 await submitFlyer({
                     store: 'Maxima',

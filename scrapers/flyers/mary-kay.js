@@ -1,4 +1,4 @@
-import { fetchBuffer, submitFlyer } from './_shared.js';
+import { fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // marykay.lt's "Interaktyvus katalogas" page embeds a Google-App-Engine-
 // hosted viewer (mkecatalog.appspot.com) that itself just reads a static
@@ -27,13 +27,24 @@ const toDateString = unixSeconds => new Date(unixSeconds * 1000).toISOString().s
         }
 
         const pdfUrl = STORAGE_BASE + catalog.fileUrl.split('/').map(encodeURIComponent).join('/');
-        const validFrom = catalog.startDate ? toDateString(catalog.startDate) : null;
-        const validTo = catalog.endDate ? toDateString(catalog.endDate) : null;
+        let validFrom = catalog.startDate ? toDateString(catalog.startDate) : null;
+        let validTo = catalog.endDate ? toDateString(catalog.endDate) : null;
 
         console.log(`Found "${catalog.name}" (${pdfUrl}), valid ${validFrom} - ${validTo}`);
 
         try {
             const pdfBuffer = await fetchBuffer(pdfUrl);
+
+            if (!validFrom) {
+                const coverImage = await renderFirstPdfPageToJpeg(pdfUrl);
+                const coverInfo = await extractCoverInfo({ store: 'Mary Kay', imageBuffer: coverImage, filename: 'mary-kay-cover.jpg' });
+                if (coverInfo?.validFrom) {
+                    validFrom = coverInfo.validFrom;
+                    validTo = coverInfo.validTo;
+                } else {
+                    console.log(`No startDate/endDate for "${catalog.name}" and no dates via cover OCR — submitting without dates`);
+                }
+            }
 
             await submitFlyer({
                 store: 'Mary Kay',

@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // lankava.lt/akcijos is plain server-rendered HTML (OpenCart) with one
 // current monthly leaflet as one `.sales_grid .item` block: a title
@@ -60,11 +60,7 @@ async function collectPageUrls(discountId) {
 
         const title = titleMatch[1].trim();
         const discountId = discountIdMatch[1];
-        const { validFrom, validTo } = textMatch ? parseDateRange(textMatch[1]) : { validFrom: null, validTo: null };
-
-        if (!validFrom) {
-            console.log(`No date range parsed for "${title}" — submitting without dates`);
-        }
+        let { validFrom, validTo } = textMatch ? parseDateRange(textMatch[1]) : { validFrom: null, validTo: null };
 
         try {
             const imageUrls = await collectPageUrls(discountId);
@@ -78,6 +74,16 @@ async function collectPageUrls(discountId) {
             const buffers = [];
             for (const url of imageUrls) {
                 buffers.push(await fetchBuffer(url));
+            }
+
+            if (!validFrom) {
+                const coverInfo = await extractCoverInfo({ store: 'Lankava', imageBuffer: buffers[0], filename: 'lankava-cover.jpg' });
+                if (coverInfo?.validFrom) {
+                    validFrom = coverInfo.validFrom;
+                    validTo = coverInfo.validTo;
+                } else {
+                    console.log(`No date range parsed for "${title}" (page text or cover OCR) — submitting without dates`);
+                }
             }
 
             const pdfBuffer = await imagesToPdf(buffers);

@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // jupoja.lt and jsm.lt ("Jupojos statybinės medžiagos") share the same
 // nopCommerce install — the leaflet listing lives at
@@ -45,11 +45,8 @@ async function collectPageUrls(baseUrl) {
     const block = brochureMatch[0];
     const titleMatch = block.match(/<h2>([^<]+)/);
     const title = titleMatch ? titleMatch[1].replace(/\s+/g, ' ').trim() : 'Jupoja pasiūlymų leidinys';
-    const validTo = parseEndDate(block);
-
-    if (!validTo) {
-        console.log('No end date found in listing heading — submitting without dates');
-    }
+    let validFrom = null;
+    let validTo = parseEndDate(block);
 
     const viewerHtml = await (await fetch(VIEWER_URL)).text();
     const pdfMatch = viewerHtml.match(/"PDFFile"\s*:\s*"(docs\/[^"?]+\.pdf)/);
@@ -74,6 +71,16 @@ async function collectPageUrls(baseUrl) {
             buffers.push(await fetchBuffer(url));
         }
 
+        if (!validTo) {
+            const coverInfo = await extractCoverInfo({ store: 'Jupoja', imageBuffer: buffers[0], filename: 'jupoja-cover.jpg' });
+            if (coverInfo?.validFrom) {
+                validFrom = coverInfo.validFrom;
+                validTo = coverInfo.validTo;
+            } else {
+                console.log('No end date in listing heading or cover OCR — submitting without dates');
+            }
+        }
+
         const pdfBuffer = await imagesToPdf(buffers);
         const issueMatch = title.match(/Nr\.?\s*(\d+)/i);
 
@@ -82,7 +89,7 @@ async function collectPageUrls(baseUrl) {
             title,
             catalogName: 'Jupoja',
             issueNumber: issueMatch ? issueMatch[1] : null,
-            validFrom: null,
+            validFrom,
             validTo,
             pdfBuffer,
             filename: `jupoja-${issueMatch ? issueMatch[1] : 'leidinys'}.pdf`,

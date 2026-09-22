@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // avon.lt closed its online shop ("MES UŽDARĖME AVON INTERNETINĘ
 // PARDUOTUVĘ...") and now only sells through its digital catalog, linked
@@ -87,8 +87,8 @@ async function downscaleImages(buffers, { maxWidth = 1000, quality = 0.72 } = {}
         return;
     }
 
-    const validFrom = parseDate(template.campaignDate?.start);
-    const validTo = parseDate(template.campaignDate?.end);
+    let validFrom = parseDate(template.campaignDate?.start);
+    let validTo = parseDate(template.campaignDate?.end);
     const issueNumber = template.orderCampaignNr || null;
 
     console.log(`Found "${brochure.name}" (${issueNumber}), ${pagesNumber} pages, valid ${validFrom} - ${validTo}`);
@@ -106,6 +106,16 @@ async function downscaleImages(buffers, { maxWidth = 1000, quality = 0.72 } = {}
     if (buffers.length === 0) {
         console.log('No pages downloaded — aborting');
         return;
+    }
+
+    if (!validFrom) {
+        const coverInfo = await extractCoverInfo({ store: 'Avon', imageBuffer: buffers[0], filename: 'avon-cover.jpg' });
+        if (coverInfo?.validFrom) {
+            validFrom = coverInfo.validFrom;
+            validTo = coverInfo.validTo;
+        } else {
+            console.log('No campaignDate in main_brochure config or cover OCR — submitting without dates');
+        }
     }
 
     try {

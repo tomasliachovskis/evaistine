@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, isValidJpeg, submitFlyer, sleep } from './_shared.js';
+import { launchBrowser, fetchBuffer, imagesToPdf, isValidJpeg, submitFlyer, sleep, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // Iki's /leidiniai/ listing is plain server-rendered HTML with two distinct
 // sections: a "hero" block above the grid holding the current main weekly
@@ -115,7 +115,7 @@ async function fetchLeafletPdf(browser, detailHref) {
 
         if (buffers.length === 0) throw new Error('No page images fetched');
 
-        return imagesToPdf(buffers);
+        return { buffers, pdfBuffer: await imagesToPdf(buffers) };
     } finally {
         await detailPage.close();
     }
@@ -133,13 +133,23 @@ async function fetchLeafletPdf(browser, detailHref) {
         console.log(`Found hero leaflet: ${hero ? hero.title : 'none'}; ${leaflets.length} grid leaflet(s) on ${LISTING_URL}`);
 
         if (hero?.href && hero.title) {
-            const { validFrom, validTo } = parseDateRange(hero.dateText);
-            if (!hero.dateText) console.log(`No date range for hero leaflet "${hero.title}" — submitting without dates`);
+            let { validFrom, validTo } = parseDateRange(hero.dateText);
 
             const issueMatch = hero.title.match(/Nr\.\s*(\d+)/i);
 
             try {
                 const pdfBuffer = await fetchBuffer(hero.href);
+
+                if (!validFrom) {
+                    const coverImage = await renderFirstPdfPageToJpeg(hero.href);
+                    const coverInfo = await extractCoverInfo({ store: 'Iki', imageBuffer: coverImage, filename: 'iki-hero-cover.jpg' });
+                    if (coverInfo?.validFrom) {
+                        validFrom = coverInfo.validFrom;
+                        validTo = coverInfo.validTo;
+                    } else {
+                        console.log(`No date range for hero leaflet "${hero.title}" (site text or cover OCR) — submitting without dates`);
+                    }
+                }
 
                 await submitFlyer({
                     store: 'Iki',
@@ -163,13 +173,20 @@ async function fetchLeafletPdf(browser, detailHref) {
                 continue;
             }
 
-            const { validFrom, validTo } = parseDateRange(leaflet.dateText);
-            if (!leaflet.dateText) {
-                console.log(`No date range for "${leaflet.title}" — submitting without dates`);
-            }
+            let { validFrom, validTo } = parseDateRange(leaflet.dateText);
 
             try {
-                const pdfBuffer = await fetchLeafletPdf(browser, leaflet.href);
+                const { buffers, pdfBuffer } = await fetchLeafletPdf(browser, leaflet.href);
+
+                if (!validFrom) {
+                    const coverInfo = await extractCoverInfo({ store: 'Iki', imageBuffer: buffers[0], filename: 'iki-cover.jpg' });
+                    if (coverInfo?.validFrom) {
+                        validFrom = coverInfo.validFrom;
+                        validTo = coverInfo.validTo;
+                    } else {
+                        console.log(`No date range for "${leaflet.title}" (site text or cover OCR) — submitting without dates`);
+                    }
+                }
 
                 await submitFlyer({
                     store: 'Iki',

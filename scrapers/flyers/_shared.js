@@ -138,6 +138,33 @@ export async function compressPdfByRasterizing(pdfUrl, pdfBuffer, { quality = 80
     }
 }
 
+// Screenshots just page 1 of a real, directly-downloadable PDF (same
+// Chrome-viewer-race handling as compressPdfByRasterizing above, just for
+// one page) — used to get a cover image for extractCoverInfo() when a
+// scraper never builds its leaflet from a per-page image array to begin
+// with (it just fetches one whole PDF file), so there's no buffers[0]
+// already lying around.
+export async function renderFirstPdfPageToJpeg(pdfUrl, { quality = 80, viewport = { width: 1200, height: 1600, deviceScaleFactor: 2 } } = {}) {
+    const browser = await launchBrowser();
+
+    try {
+        const page = await browser.newPage();
+        await page.setViewport(viewport);
+        await page.goto(`${pdfUrl}#page=1&toolbar=0&navpanes=0&scrollbar=0`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await sleep(6000);
+
+        let screenshot = await page.screenshot({ type: 'jpeg', quality });
+        if (screenshotIsLikelyBlank(screenshot, { quality })) {
+            await sleep(6000);
+            screenshot = await page.screenshot({ type: 'jpeg', quality });
+        }
+
+        return screenshot;
+    } finally {
+        await browser.close();
+    }
+}
+
 // Asks the backend's Gemini-backed cover-page OCR for a title/valid_from/
 // valid_to when a leaflet's listing/detail page gives no date any other way
 // (e.g. Aibė's cover-only "Kainos galioja ..." text, with nothing in the

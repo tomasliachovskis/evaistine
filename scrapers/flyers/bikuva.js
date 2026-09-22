@@ -1,4 +1,4 @@
-import { fetchBuffer, submitFlyer } from './_shared.js';
+import { fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // bikuva.lt/info/23-leidiniai embeds a self-hosted PrestaShop "dFlip"
 // flipbook module (`_df_book` div with a `source="/modules/lpsflipbook/
@@ -52,14 +52,21 @@ function parseMonthRange(text) {
 
     const pdfUrl = new URL(sourceMatch[1], LISTING_URL).toString();
     const title = titleMatch ? titleMatch[1] : '';
-    const { validFrom, validTo } = parseMonthRange(title);
-
-    if (!validFrom) {
-        console.log(`Could not parse a month range from "${title}" — submitting without dates`);
-    }
+    let { validFrom, validTo } = parseMonthRange(title);
 
     try {
         const pdfBuffer = await fetchBuffer(pdfUrl);
+
+        if (!validFrom) {
+            const coverImage = await renderFirstPdfPageToJpeg(pdfUrl);
+            const coverInfo = await extractCoverInfo({ store: 'Bikuva', imageBuffer: coverImage, filename: 'bikuva-cover.jpg' });
+            if (coverInfo?.validFrom) {
+                validFrom = coverInfo.validFrom;
+                validTo = coverInfo.validTo;
+            } else {
+                console.log(`Could not parse a month range from "${title}" or cover OCR — submitting without dates`);
+            }
+        }
 
         await submitFlyer({
             store: 'Bikuva',

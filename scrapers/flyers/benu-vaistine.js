@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // benu.lt/benu-menesio-leidinys is plain server-rendered HTML embedding an
 // Issuu flipbook (`e.issuu.com/embed.html?d={docname}&u={username}`) — a
@@ -49,15 +49,22 @@ function monthRangeFromDocname(docname) {
         return;
     }
 
-    const { validFrom, validTo } = monthRangeFromDocname(docname);
-    if (!validFrom) {
-        console.log('No year-month in docname — submitting without dates');
-    }
+    let { validFrom, validTo } = monthRangeFromDocname(docname);
 
     try {
         const buffers = [];
         for (let n = 1; n <= pages.length; n++) {
             buffers.push(await fetchBuffer(`https://image.isu.pub/${revisionId}-${publicationId}/jpg/page_${n}.jpg`));
+        }
+
+        if (!validFrom) {
+            const coverInfo = await extractCoverInfo({ store: 'Benu vaistinė', imageBuffer: buffers[0], filename: 'benu-cover.jpg' });
+            if (coverInfo?.validFrom) {
+                validFrom = coverInfo.validFrom;
+                validTo = coverInfo.validTo;
+            } else {
+                console.log('No year-month in docname or cover OCR — submitting without dates');
+            }
         }
 
         const pdfBuffer = await imagesToPdf(buffers);

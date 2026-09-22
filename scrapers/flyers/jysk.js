@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // jysk.lt links out to a dedicated katalogai.jysk.lt subdomain hosting a
 // single current iPaper flipbook (same platform as Rimi's weekly leaflet —
@@ -38,15 +38,22 @@ function parseDateRange(html) {
     const awsUrl = unescape(awsUrlMatch[1]);
     const policy = unescape(policyMatch[1]);
 
-    const { validFrom, validTo } = parseDateRange(html);
-    if (!validFrom) {
-        console.log('No date range found — submitting without dates');
-    }
+    let { validFrom, validTo } = parseDateRange(html);
 
     try {
         const buffers = [];
         for (let n = 1; n <= pageCount; n++) {
             buffers.push(await fetchBuffer(`${awsUrl}Pages/${n}/Zoom.jpg?${policy}`));
+        }
+
+        if (!validFrom) {
+            const coverInfo = await extractCoverInfo({ store: 'Jysk', imageBuffer: buffers[0], filename: 'jysk-cover.jpg' });
+            if (coverInfo?.validFrom) {
+                validFrom = coverInfo.validFrom;
+                validTo = coverInfo.validTo;
+            } else {
+                console.log('No date range found in page text or cover OCR — submitting without dates');
+            }
         }
 
         const pdfBuffer = await imagesToPdf(buffers);

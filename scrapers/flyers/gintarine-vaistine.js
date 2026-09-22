@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep } from './_shared.js';
+import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep, extractCoverInfo } from './_shared.js';
 
 // gintarine.lt/leidiniai lists a single current leaflet as a direct link to
 // an Issuu embed (`e.issuu.com/embed.html?d={docname}&u={username}`) — same
@@ -47,7 +47,7 @@ async function fetchLeafletPdf(browser, embedUrl) {
 
     if (buffers.length === 0) throw new Error('No page images fetched');
 
-    return imagesToPdf(buffers);
+    return { buffers, pdfBuffer: await imagesToPdf(buffers) };
 }
 
 (async () => {
@@ -66,14 +66,19 @@ async function fetchLeafletPdf(browser, embedUrl) {
         console.log(`Found leaflet "${leaflet.title}" at ${leaflet.href}`);
 
         try {
-            const pdfBuffer = await fetchLeafletPdf(browser, leaflet.href);
+            const { buffers, pdfBuffer } = await fetchLeafletPdf(browser, leaflet.href);
+
+            const coverInfo = await extractCoverInfo({ store: 'Gintarinė vaistinė', imageBuffer: buffers[0], filename: 'gintarine-vaistine-cover.jpg' });
+            if (!coverInfo?.validFrom) {
+                console.log('No dates found via cover OCR — submitting without dates');
+            }
 
             await submitFlyer({
                 store: 'Gintarinė vaistinė',
                 title: leaflet.title,
                 catalogName: 'Gintarinė vaistinė',
-                validFrom: null,
-                validTo: null,
+                validFrom: coverInfo?.validFrom ?? null,
+                validTo: coverInfo?.validTo ?? null,
                 pdfBuffer,
                 filename: 'gintarine-vaistine-leidinys.pdf',
             });

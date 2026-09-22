@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // gulbele.lt/leidiniai (separate from the discount scraper's
 // /sumazinta-kaina target) is plain server-rendered HTML: a card per
@@ -46,10 +46,7 @@ function parseDateRange(text) {
             continue;
         }
 
-        const { validFrom, validTo } = dateMatch ? parseDateRange(dateMatch[1]) : { validFrom: null, validTo: null };
-        if (!validFrom) {
-            console.log(`No date range parsed for "${title}" — submitting without dates`);
-        }
+        let { validFrom, validTo } = dateMatch ? parseDateRange(dateMatch[1]) : { validFrom: null, validTo: null };
 
         console.log(`Found leaflet "${title}" with ${imageUrls.length} page(s)`);
 
@@ -57,6 +54,16 @@ function parseDateRange(text) {
             const buffers = [];
             for (const url of imageUrls) {
                 buffers.push(await fetchBuffer(BASE_URL + url));
+            }
+
+            if (!validFrom) {
+                const coverInfo = await extractCoverInfo({ store: 'Gulbelė', imageBuffer: buffers[0], filename: 'gulbele-cover.jpg' });
+                if (coverInfo?.validFrom) {
+                    validFrom = coverInfo.validFrom;
+                    validTo = coverInfo.validTo;
+                } else {
+                    console.log(`No date range parsed for "${title}" (card text or cover OCR) — submitting without dates`);
+                }
             }
 
             const pdfBuffer = await imagesToPdf(buffers);

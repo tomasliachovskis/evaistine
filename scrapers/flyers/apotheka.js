@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // apotheka.lt/leidinys is plain server-rendered HTML (no trailing slash —
 // the trailing-slash variant 301-redirects and comes back empty) embedding
@@ -32,11 +32,8 @@ const LISTING_URL = 'https://www.apotheka.lt/leidinys';
     const doc = await (await fetch(`https://www.yumpu.com/lt/document/json/${docId}`)).json();
     const { title, base_path: basePath, pages, validity } = doc.document;
 
-    const validFrom = validity?.from ? validity.from.slice(0, 10) : null;
-    const validTo = validity?.until ? validity.until.slice(0, 10) : null;
-    if (!validFrom) {
-        console.log('No validity range in Yumpu document JSON — submitting without dates');
-    }
+    let validFrom = validity?.from ? validity.from.slice(0, 10) : null;
+    let validTo = validity?.until ? validity.until.slice(0, 10) : null;
 
     if (!pages?.length) {
         console.log('No pages found for', title);
@@ -47,6 +44,16 @@ const LISTING_URL = 'https://www.apotheka.lt/leidinys';
         const buffers = [];
         for (const page of pages) {
             buffers.push(await fetchBuffer(basePath + page.images.large + '?' + page.qss.large));
+        }
+
+        if (!validFrom) {
+            const coverInfo = await extractCoverInfo({ store: 'Apotheka', imageBuffer: buffers[0], filename: 'apotheka-cover.jpg' });
+            if (coverInfo?.validFrom) {
+                validFrom = coverInfo.validFrom;
+                validTo = coverInfo.validTo;
+            } else {
+                console.log('No validity range in Yumpu document JSON or cover OCR — submitting without dates');
+            }
         }
 
         const pdfBuffer = await imagesToPdf(buffers);

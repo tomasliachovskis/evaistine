@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // lt.oriflame.com's own frontend calls a plain JSON API
 // (api-static.oriflame.com) for everything — no Puppeteer needed anywhere.
@@ -31,8 +31,8 @@ const CATALOGUE_OVERVIEW_URL = 'https://api-static.oriflame.com/tenants/lt/appli
         return;
     }
 
-    const validFrom = current.Valid?.From?.slice(0, 10) ?? null;
-    const validTo = current.Valid?.To?.slice(0, 10) ?? null;
+    let validFrom = current.Valid?.From?.slice(0, 10) ?? null;
+    let validTo = current.Valid?.To?.slice(0, 10) ?? null;
     const title = `Oriflame ${current.Title}`;
 
     console.log(`Found "${title}" (code ${code}), valid ${validFrom} - ${validTo}`);
@@ -51,6 +51,16 @@ const CATALOGUE_OVERVIEW_URL = 'https://api-static.oriflame.com/tenants/lt/appli
     if (buffers.length === 0) {
         console.log('No pages downloaded — aborting');
         return;
+    }
+
+    if (!validFrom) {
+        const coverInfo = await extractCoverInfo({ store: 'Oriflame', imageBuffer: buffers[0], filename: 'oriflame-cover.jpg' });
+        if (coverInfo?.validFrom) {
+            validFrom = coverInfo.validFrom;
+            validTo = coverInfo.validTo;
+        } else {
+            console.log('No Valid.From/To in catalogue overview or cover OCR — submitting without dates');
+        }
     }
 
     try {

@@ -1,4 +1,4 @@
-import { fetchBuffer, submitFlyer } from './_shared.js';
+import { fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // expressmarket.lt/akcijos/ is plain server-rendered WordPress HTML with a
 // single current leaflet: a direct PDF download link (`download` anchor,
@@ -25,14 +25,21 @@ function parseDateRange(text) {
     }
 
     const dateMatch = html.match(/Pasiūlymai galioja:<br\s*\/?>\s*([^<]+)/);
-    const { validFrom, validTo } = dateMatch ? parseDateRange(dateMatch[1]) : { validFrom: null, validTo: null };
-
-    if (!validFrom) {
-        console.log('No date range found — submitting without dates');
-    }
+    let { validFrom, validTo } = dateMatch ? parseDateRange(dateMatch[1]) : { validFrom: null, validTo: null };
 
     try {
         const pdfBuffer = await fetchBuffer(pdfMatch[1]);
+
+        if (!validFrom) {
+            const coverImage = await renderFirstPdfPageToJpeg(pdfMatch[1]);
+            const coverInfo = await extractCoverInfo({ store: 'Express Market', imageBuffer: coverImage, filename: 'express-market-cover.jpg' });
+            if (coverInfo?.validFrom) {
+                validFrom = coverInfo.validFrom;
+                validTo = coverInfo.validTo;
+            } else {
+                console.log('No date range found on page or via cover OCR — submitting without dates');
+            }
+        }
 
         await submitFlyer({
             store: 'Express Market',

@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // mokivezi.lt/leidiniai is plain server-rendered HTML embedding a single
 // Publitas-hosted flipbook (view.publitas.com/{account}/{slug}/). Publitas
@@ -41,14 +41,21 @@ function parseDateRange(text) {
         return;
     }
 
-    const { issueNumber, validFrom, validTo } = parseDateRange(allPages[0].text || '');
-    if (!validFrom) {
-        console.log('No date range found in page 1 text — submitting without dates');
-    }
+    let { issueNumber, validFrom, validTo } = parseDateRange(allPages[0].text || '');
 
     const buffers = [];
     for (const page of allPages) {
         buffers.push(await fetchBuffer(`https://view.publitas.com${page.images.at1600}`));
+    }
+
+    if (!validFrom) {
+        const coverInfo = await extractCoverInfo({ store: 'Moki Veži', imageBuffer: buffers[0], filename: 'moki-vezi-cover.jpg' });
+        if (coverInfo?.validFrom) {
+            validFrom = coverInfo.validFrom;
+            validTo = coverInfo.validTo;
+        } else {
+            console.log('No date range found in page 1 text or cover OCR — submitting without dates');
+        }
     }
 
     try {

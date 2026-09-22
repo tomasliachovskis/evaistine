@@ -1,4 +1,4 @@
-import { fetchBuffer, submitFlyer } from './_shared.js';
+import { fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // gruste.lt/leidiniai is plain server-rendered HTML listing several
 // concurrent publications (a main weekly leidinys plus themed ones like
@@ -38,14 +38,21 @@ function parseDateRange(text) {
 
         const heading = headingMatch[1].trim();
         const pdfUrl = BASE_URL + pdfMatch[1];
-        const { validFrom, validTo } = parseDateRange(heading);
-
-        if (!validFrom) {
-            console.log(`No date range parsed from heading "${heading}" — submitting without dates`);
-        }
+        let { validFrom, validTo } = parseDateRange(heading);
 
         try {
             const pdfBuffer = await fetchBuffer(pdfUrl);
+
+            if (!validFrom) {
+                const coverImage = await renderFirstPdfPageToJpeg(pdfUrl);
+                const coverInfo = await extractCoverInfo({ store: 'Grustė', imageBuffer: coverImage, filename: 'gruste-cover.jpg' });
+                if (coverInfo?.validFrom) {
+                    validFrom = coverInfo.validFrom;
+                    validTo = coverInfo.validTo;
+                } else {
+                    console.log(`No date range parsed from heading "${heading}" or cover OCR — submitting without dates`);
+                }
+            }
 
             await submitFlyer({
                 store: 'Grustė',

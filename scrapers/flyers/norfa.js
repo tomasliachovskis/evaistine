@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, submitFlyer } from './_shared.js';
+import { launchBrowser, fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // Norfa's /lt/leidiniai/ page is plain server-rendered HTML with a real,
 // unauthenticated, static PDF download link — no JS rendering is actually
@@ -43,17 +43,28 @@ function parseTitle(title) {
         console.log(`Found ${leaflets.length} leaflet(s) on ${LISTING_URL}`);
 
         for (const leaflet of leaflets) {
-            if (!leaflet.href || !leaflet.duration || !leaflet.title) {
+            if (!leaflet.href || !leaflet.title) {
                 console.log('Skipping leaflet with missing data:', leaflet);
                 continue;
             }
 
-            const { validFrom, validTo } = parseDuration(leaflet.duration);
+            let { validFrom, validTo } = leaflet.duration ? parseDuration(leaflet.duration) : { validFrom: null, validTo: null };
             const { catalogName, issueNumber } = parseTitle(leaflet.title);
             const downloadUrl = new URL(leaflet.href, LISTING_URL).toString();
 
             try {
                 const pdfBuffer = await fetchBuffer(downloadUrl);
+
+                if (!validFrom) {
+                    const coverImage = await renderFirstPdfPageToJpeg(downloadUrl);
+                    const coverInfo = await extractCoverInfo({ store: 'Norfa', imageBuffer: coverImage, filename: 'norfa-cover.jpg' });
+                    if (coverInfo?.validFrom) {
+                        validFrom = coverInfo.validFrom;
+                        validTo = coverInfo.validTo;
+                    } else {
+                        console.log(`No duration text or cover OCR dates for "${leaflet.title}" — submitting without dates`);
+                    }
+                }
 
                 await submitFlyer({
                     store: 'Norfa',

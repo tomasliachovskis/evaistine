@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // ermitazas.lt/leidiniai is a Next.js SSR page (plain fetch works, no
 // Puppeteer needed) listing leaflet cards, each linking to a detail page
@@ -19,9 +19,16 @@ async function findLeaflets(html) {
 
 function parseGuidAndDates(html) {
     const guidMatch = html.match(/"id":"([0-9a-f-]{36})","dateTo":"(\d{4}-\d{2}-\d{2})[^"]*","dateFrom":"(\d{4}-\d{2}-\d{2})/);
-    if (!guidMatch) return null;
+    if (guidMatch) {
+        return { guid: guidMatch[1], validTo: guidMatch[2], validFrom: guidMatch[3] };
+    }
 
-    return { guid: guidMatch[1], validTo: guidMatch[2], validFrom: guidMatch[3] };
+    // Dates missing from this leaflet's own JSON (themed catalog?) — still
+    // grab the guid alone so cover OCR can be tried before giving up.
+    const guidOnlyMatch = html.match(/"id":"([0-9a-f-]{36})"/);
+    if (!guidOnlyMatch) return null;
+
+    return { guid: guidOnlyMatch[1], validTo: null, validFrom: null };
 }
 
 (async () => {
@@ -47,14 +54,25 @@ function parseGuidAndDates(html) {
                 buffers.push(await fetchBuffer(`https://dc-docs.dcatalog.com/Ermitazas/Ermitazas/${parsed.guid}/ZPage_${n}.jpg`));
             }
 
+            let { validFrom, validTo } = parsed;
+            if (!validFrom) {
+                const coverInfo = await extractCoverInfo({ store: 'Ermitažas', imageBuffer: buffers[0], filename: 'ermitazas-cover.jpg' });
+                if (coverInfo?.validFrom) {
+                    validFrom = coverInfo.validFrom;
+                    validTo = coverInfo.validTo;
+                } else {
+                    console.log(`No dates in page JSON or cover OCR for "${leaflet.title}" — submitting without dates`);
+                }
+            }
+
             const pdfBuffer = await imagesToPdf(buffers);
 
             await submitFlyer({
                 store: 'Ermitažas',
                 title: leaflet.title,
                 catalogName: 'Ermitažas',
-                validFrom: parsed.validFrom,
-                validTo: parsed.validTo,
+                validFrom,
+                validTo,
                 pdfBuffer,
                 filename: `ermitazas-${parsed.guid}.pdf`,
             });

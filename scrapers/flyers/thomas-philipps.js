@@ -1,4 +1,4 @@
-import { fetchBuffer, submitFlyer } from './_shared.js';
+import { fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // thomas-philipps.lt/leidinys is plain server-rendered HTML with a single
 // current weekly leaflet, a real direct PDF link, and validity dates as
@@ -31,14 +31,21 @@ function parseDateRange(text) {
     }
 
     const dateMatch = html.match(/Savaitės pasiūlymai<br\s*\/?>\s*([^<]+)/);
-    const { validFrom, validTo } = dateMatch ? parseDateRange(dateMatch[1]) : { validFrom: null, validTo: null };
-
-    if (!validFrom) {
-        console.log('No date range found — submitting without dates');
-    }
+    let { validFrom, validTo } = dateMatch ? parseDateRange(dateMatch[1]) : { validFrom: null, validTo: null };
 
     try {
         const pdfBuffer = await fetchBuffer(pdfMatch[1]);
+
+        if (!validFrom) {
+            const coverImage = await renderFirstPdfPageToJpeg(pdfMatch[1]);
+            const coverInfo = await extractCoverInfo({ store: 'Thomas Philipps', imageBuffer: coverImage, filename: 'thomas-philipps-cover.jpg' });
+            if (coverInfo?.validFrom) {
+                validFrom = coverInfo.validFrom;
+                validTo = coverInfo.validTo;
+            } else {
+                console.log('No date range found on page or via cover OCR — submitting without dates');
+            }
+        }
 
         await submitFlyer({
             store: 'Thomas Philipps',

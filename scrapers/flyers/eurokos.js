@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // eurokos.lt/leidiniai/ is a Magento PageBuilder page whose CMS content
 // (including the publication embeds) is only injected client-side via JS —
@@ -83,14 +83,21 @@ function monthRangeFromSlug(url) {
                 continue;
             }
 
-            const { validFrom, validTo } = monthRangeFromSlug(pub.url);
-            if (!validFrom) {
-                console.log(`No year-month in slug for "${pub.title}" — submitting without dates`);
-            }
+            let { validFrom, validTo } = monthRangeFromSlug(pub.url);
 
             const buffers = [];
             for (const page of allPages) {
                 buffers.push(await fetchBuffer(`https://view.publitas.com${page.images.at1600}`));
+            }
+
+            if (!validFrom) {
+                const coverInfo = await extractCoverInfo({ store: 'Eurokos', imageBuffer: buffers[0], filename: 'eurokos-cover.jpg' });
+                if (coverInfo?.validFrom) {
+                    validFrom = coverInfo.validFrom;
+                    validTo = coverInfo.validTo;
+                } else {
+                    console.log(`No year-month in slug or cover OCR for "${pub.title}" — submitting without dates`);
+                }
             }
 
             const pdfBuffer = await imagesToPdf(buffers);

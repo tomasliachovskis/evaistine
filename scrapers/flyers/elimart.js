@@ -1,4 +1,4 @@
-import { fetchBuffer, submitFlyer } from './_shared.js';
+import { fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // elimart.lt/leidiniai is plain server-rendered HTML — a long archive of
 // every past leaflet's direct PDF link, each with a preceding heading
@@ -23,7 +23,14 @@ function findLeaflets(html) {
             : '';
 
         const dateMatch = heading.match(dateRe);
-        if (!dateMatch) continue;
+
+        if (!dateMatch) {
+            // No date in the heading (themed catalog?) — still collect it,
+            // cover OCR gets a chance to find a date below before this is
+            // given up on entirely.
+            leaflets.push({ url: match[1], validFrom: null, validTo: null });
+            continue;
+        }
 
         const [, fy, fm, fd, ty, tm, td] = dateMatch;
         leaflets.push({
@@ -41,7 +48,11 @@ function findLeaflets(html) {
     const today = new Date().toISOString().slice(0, 10);
     // The backend would skip expired ones anyway, but filtering here avoids
     // downloading dozens of long-past PDFs from this archive on every run.
-    const leaflets = findLeaflets(html).filter(l => l.validTo >= today);
+    // A leaflet with no date at all (validTo null) is kept — undated ones
+    // are rare in this archive and worth a cover-OCR attempt rather than
+    // silently dropping them (null >= today is false in JS, so this needs
+    // its own clause instead of just the plain comparison).
+    const leaflets = findLeaflets(html).filter(l => l.validTo === null || l.validTo >= today);
     console.log(`Found ${leaflets.length} non-expired leaflet(s) on ${LISTING_URL}`);
 
     for (const leaflet of leaflets) {
@@ -50,12 +61,24 @@ function findLeaflets(html) {
         try {
             const pdfBuffer = await fetchBuffer(leaflet.url);
 
+            let { validFrom, validTo } = leaflet;
+            if (!validFrom) {
+                const coverImage = await renderFirstPdfPageToJpeg(leaflet.url);
+                const coverInfo = await extractCoverInfo({ store: 'Elimart', imageBuffer: coverImage, filename: 'elimart-cover.jpg' });
+                if (coverInfo?.validFrom) {
+                    validFrom = coverInfo.validFrom;
+                    validTo = coverInfo.validTo;
+                } else {
+                    console.log(`No date in heading or cover OCR for "${filename}" — submitting without dates`);
+                }
+            }
+
             await submitFlyer({
                 store: 'Elimart',
                 title: 'Elimart Tau leidinys',
                 catalogName: 'Elimart',
-                validFrom: leaflet.validFrom,
-                validTo: leaflet.validTo,
+                validFrom,
+                validTo,
                 pdfBuffer,
                 sourcePdfUrl: leaflet.url,
                 filename: `elimart-${filename}`,

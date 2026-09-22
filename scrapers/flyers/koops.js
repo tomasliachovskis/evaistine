@@ -1,4 +1,4 @@
-import { fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // koopsmazmena.lt is the real domain behind the "Koops" store name (the
 // site never calls itself "Koops" anywhere in its own markup — confirmed
@@ -33,16 +33,23 @@ function parseDateRange(html) {
         return;
     }
 
-    const { validFrom, validTo } = parseDateRange(html);
-    if (!validFrom) {
-        console.log('No date range found — submitting without dates');
-    }
+    let { validFrom, validTo } = parseDateRange(html);
 
     console.log(`Found ${imageUrls.length} page(s)`);
 
     const buffers = [];
     for (const url of imageUrls) {
         buffers.push(await fetchBuffer(url));
+    }
+
+    if (!validFrom) {
+        const coverInfo = await extractCoverInfo({ store: 'Koops', imageBuffer: buffers[0], filename: 'koops-cover.jpg' });
+        if (coverInfo?.validFrom) {
+            validFrom = coverInfo.validFrom;
+            validTo = coverInfo.validTo;
+        } else {
+            console.log('No date range found in page text or cover OCR — submitting without dates');
+        }
     }
 
     try {

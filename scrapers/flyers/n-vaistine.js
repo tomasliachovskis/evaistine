@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, submitFlyer } from './_shared.js';
+import { launchBrowser, fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } from './_shared.js';
 
 // nvaistine.lt/leidiniai/ (branded "Norfos vaistinės" in its own copy —
 // N vaistinė's real chain name — same platform template as
@@ -55,12 +55,19 @@ function parseDateRange(text) {
         await browser.close();
     }
 
-    if (!validFrom) {
-        console.log('No date range found — submitting without dates');
-    }
-
     try {
         const pdfBuffer = await fetchBuffer(downloadUrl);
+
+        if (!validFrom) {
+            const coverImage = await renderFirstPdfPageToJpeg(downloadUrl);
+            const coverInfo = await extractCoverInfo({ store: 'N vaistinė', imageBuffer: coverImage, filename: 'n-vaistine-cover.jpg' });
+            if (coverInfo?.validFrom) {
+                validFrom = coverInfo.validFrom;
+                validTo = coverInfo.validTo;
+            } else {
+                console.log('No date range found on page or via cover OCR — submitting without dates');
+            }
+        }
 
         await submitFlyer({
             store: 'N vaistinė',

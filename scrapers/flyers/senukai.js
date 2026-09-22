@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep } from './_shared.js';
+import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep, extractCoverInfo } from './_shared.js';
 
 // senukai.lt/leidiniai lists every active physical-store leaflet as a card,
 // each embedding a dcatalog.com flipbook (either a raw
@@ -54,7 +54,7 @@ async function fetchLeafletPdf(guid) {
 
     if (buffers.length === 0) throw new Error('No page images fetched');
 
-    return imagesToPdf(buffers);
+    return { buffers, pdfBuffer: await imagesToPdf(buffers) };
 }
 
 (async () => {
@@ -73,22 +73,30 @@ async function fetchLeafletPdf(guid) {
                 continue;
             }
 
-            if (!leaflet.validTo) {
-                console.log(`No end date for "${leaflet.title}" — submitting without dates`);
-            }
-
             try {
                 const guid = await resolveGuid(browser, leaflet.iframeSrc);
                 if (!guid) throw new Error('Could not resolve dcatalog guid');
 
-                const pdfBuffer = await fetchLeafletPdf(guid);
+                const { buffers, pdfBuffer } = await fetchLeafletPdf(guid);
+
+                let validFrom = null;
+                let validTo = leaflet.validTo;
+                if (!validTo) {
+                    const coverInfo = await extractCoverInfo({ store: 'Senukai', imageBuffer: buffers[0], filename: 'senukai-cover.jpg' });
+                    if (coverInfo?.validFrom) {
+                        validFrom = coverInfo.validFrom;
+                        validTo = coverInfo.validTo;
+                    } else {
+                        console.log(`No end date for "${leaflet.title}" (card text or cover OCR) — submitting without dates`);
+                    }
+                }
 
                 await submitFlyer({
                     store: 'Senukai',
                     title: leaflet.title,
                     catalogName: 'Senukai',
-                    validFrom: null,
-                    validTo: leaflet.validTo,
+                    validFrom,
+                    validTo,
                     pdfBuffer,
                     filename: `senukai-${guid}.pdf`,
                 });
