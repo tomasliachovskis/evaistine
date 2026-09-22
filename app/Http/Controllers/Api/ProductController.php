@@ -1190,32 +1190,61 @@ class ProductController extends Controller
                         : "Palyginkite {$categoryGenitive} pasiūlymus iš {$storeNames}. {$countLabel}+ prekių šią savaitę!",
                 ];
             case 'store_leaflet':
-                $validity = $this->resolveStoreValidity($entity);
                 $words = $this->getStoreLeafletWords($entity->slug);
-                $validFromDot = Carbon::parse($validity['valid_from'])->format('Y.m.d');
-                $validToDot = Carbon::parse($validity['valid_to'])->format('Y.m.d');
-                // "{store} leidinys – naujas savaitės leidinys" used to say
-                // "leidinys" twice — drop the redundant first one, and
-                // trade the "galioja {range}" clause for the flyer's own
-                // issue number where we have one (a store's shoppers
-                // recognize "Nr.37" from the print/PDF leaflet itself; not
-                // every store numbers its flyers, so this only applies when
-                // issue_number is actually set).
-                $flyer = $entity->latestActiveFlyer();
-                $issueLabel = $flyer && $flyer->issue_number ? ", Nr.{$flyer->issue_number}" : '';
+
+                // Up to 3 currently-valid flyers (not the unreliable is_active
+                // flag — same "expired means valid_to < today" rule as
+                // StoreFlyerTitleBuilder::toListingArray()/ListingPageMetaService
+                // ::buildLeaflets()), newest-started first, so the description
+                // can name what's actually current instead of a generic
+                // date-range sentence.
+                $activeFlyers = $entity->flyers()
+                    ->ready()
+                    ->where(function ($q) {
+                        $q->whereNull('valid_to')->orWhere('valid_to', '>=', now()->startOfDay());
+                    })
+                    ->orderByDesc('valid_from')
+                    ->limit(3)
+                    ->get();
+
+                if ($activeFlyers->isNotEmpty()) {
+                    $flyerLabels = $activeFlyers->map(function ($flyer) {
+                        // Prefer "Nr. X" — shoppers recognize the issue
+                        // number from the real print/PDF leaflet itself —
+                        // over the flyer's own (often long, store-prefixed)
+                        // title/catalog_name, which are only a fallback.
+                        $label = $flyer->issue_number
+                            ? "Nr. {$flyer->issue_number}"
+                            : ($flyer->title ?: $flyer->catalog_name ?: 'naujas leidinys');
+
+                        return $flyer->valid_to
+                            ? "{$label} (iki ".$flyer->valid_to->format('Y.m.d').')'
+                            : $label;
+                    });
+
+                    $metaDescription = "Šiuo metu galioja {$activeFlyers->count()} {$entity->name} "
+                        .\App\Support\LithuanianPlural::leafletWord($activeFlyers->count())
+                        .': '.$flyerLabels->implode(', ').'. Peržiūrėkite visus pasiūlymus.';
+                } else {
+                    // No currently-valid flyer found at all — fall back to
+                    // the previous generic validity-range sentence (same
+                    // source resolveStoreValidity() already used for the
+                    // old title/description).
+                    $validity = $this->resolveStoreValidity($entity);
+                    $validFromDot = Carbon::parse($validity['valid_from'])->format('Y.m.d');
+                    $validToDot = Carbon::parse($validity['valid_to'])->format('Y.m.d');
+                    $metaDescription = "Naujas {$entity->name} {$words['nominative']} galioja nuo {$validFromDot} iki {$validToDot}.";
+                }
 
                 return [
                     'seo_title' => $entity->name.' '.$words['nominative'],
                     'seo_description' => $entity->description,
-                    // Consumed by leaflets/hub.blade.php to append the real
-                    // end date to its blade-computed H1 (that view builds
-                    // its own $pageTitle, not via AkcijosController).
-                    'leaflet_valid_to_label' => $validToDot,
-                    // SXO audit finding (never fixed until now): every
-                    // competitor title includes the FULL validity range —
-                    // this only had the start date.
-                    'meta_title' => "{$entity->name} naujas savaitės {$words['nominative']}{$issueLabel} {$validFromDot}–{$validToDot}",
-                    'meta_description' => "Naujas {$entity->name} {$words['nominative']} galioja nuo {$validFromDot} iki {$validToDot}.",
+                    // "katalogai" instead of "leidiniai"/"leidyniai" — no
+                    // Iki-specific spelling quirk for this word, so it's the
+                    // same for every store. No date/issue-number in the
+                    // title at all anymore — see meta_description instead.
+                    'meta_title' => "Visi {$entity->name} naujausi katalogai ".now()->year,
+                    'meta_description' => $metaDescription,
                 ];
             case 'store':
                 // limit=2: title/H1 only ever use the first (best) category

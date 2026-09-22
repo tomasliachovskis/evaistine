@@ -82,14 +82,17 @@ Source: `App\Services\KeywordPageDynamicMetaService`. This page type already had
 
 Source: `ProductController::generateSeoData()`'s `store_leaflet` case (`app/Http/Controllers/Api/ProductController.php`). This page has its own controller (`App\Http\Controllers\LeafletController::hub()`) and its own view (`resources/views/leaflets/hub.blade.php`) — H1 is computed inline in the blade file, not via `AkcijosController`.
 
-- **H1:** `{Store} naujausi leidiniai – galioja iki {validTo}` (`leidyniai` for Iki) — plural noun kept (this page is an archive of current+expired leaflets, not just one issue), real end date appended since nothing else near the H1 shows it (`<x-leaflet-quick-links>` already shows the real offer count, so that's not repeated).
-- **Title:** `{Store} naujas savaitės {leidinys/leidynys}{, Nr.N} {validFrom}–{validTo}` — added the missing end date (previously only had the start date; every competitor checked in the original research included the full range).
-- **Description:** unchanged (already had the full real date range).
-- Guarded: if a store has no resolvable validity, H1 falls back to the plain `{Store} naujausi leidiniai` with no date clause.
+**Redesigned 2026-09-22** — dropped date-fragile H1/title in favor of a plain evergreen shape, moved the real per-leaflet validity info into the description instead (where it can name more than one leaflet at once).
 
-**Live example (Maxima, 2026-09-21 — note: local dev flyer data is stale, shows an already-past date range):**
-- H1: `Maxima naujausi leidiniai – galioja iki 2026.09.14`
-- Title: `Maxima naujas savaitės leidinys, Nr.37 2026.09.08–2026.09.14`
+- **H1:** `Visi {Store} naujausi leidiniai {currentYear}` (`leidyniai` for Iki) — no validity date anymore; `{currentYear}` is the real current calendar year (`now()->year`), not derived from any flyer.
+- **Title (`meta_title`):** `Visi {Store} naujausi katalogai {currentYear}` — same shape as the H1, `katalogai` instead of `leidiniai`/`leidyniai` (this word has no Iki-specific spelling quirk, so it's the same for every store). No date or issue number in the title at all now.
+- **Description (`meta_description`):** names up to 3 currently-valid flyers (not the unreliable `is_active` flag — same "expired means `valid_to` < today" rule as `StoreFlyerTitleBuilder::toListingArray()`), newest-started first. Each is labeled `Nr. {issue_number}` when the flyer has one (shoppers recognize this from the real print/PDF leaflet), else its own `title`/`catalog_name`, each with `(iki {validTo})` appended when known: `Šiuo metu galioja {N} {Store} {leidinys/leidiniai/leidinių}: {label1}, {label2}, .... Peržiūrėkite visus pasiūlymus.`
+- Guarded: if a store has no currently-valid flyer at all, description falls back to the previous generic sentence (`Naujas {Store} {leidinys/leidynys} galioja nuo {validFrom} iki {validTo}.`, from `resolveStoreValidity()`). H1/title never fall back — they carry no per-flyer data to lose.
+
+**Live examples (2026-09-22):**
+- Rimi (3 active flyers) — H1: `Visi Rimi naujausi leidiniai 2026` · Title: `Visi Rimi naujausi katalogai 2026` · Description: `Šiuo metu galioja 3 Rimi leidiniai: 2025 m. Lietuvos vyno čempionate apdovanotų vynų katalogas, Nr. 17, Nr. 18. Peržiūrėkite visus pasiūlymus.`
+- Maxima (1 active flyer) — H1: `Visi Maxima naujausi leidiniai 2026` · Title: `Visi Maxima naujausi katalogai 2026` · Description: `Šiuo metu galioja 1 Maxima leidinys: Švaros mugė (iki 2026.09.23). Peržiūrėkite visus pasiūlymus.`
+- Iki (Iki-only plural spelling) — H1: `Visi Iki naujausi leidyniai 2026` · Title: `Visi Iki naujausi katalogai 2026` · Description: `Šiuo metu galioja 1 Iki leidinys: IKI apdovanotų vynų ir šampanų kolekcija 2025. Peržiūrėkite visus pasiūlymus.`
 
 ---
 
