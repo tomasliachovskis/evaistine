@@ -8,8 +8,9 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
 
 // One digest email per user per price-watch:notify run, listing every
-// favorited product that got a new Discount since they were last notified
-// (see PriceWatchNotification — the anti-join that decides what's "new").
+// favorited product currently on an active Discount that hasn't been
+// emailed to this user in the last 5 days (see NotifyPriceWatchers'
+// RENOTIFY_COOLDOWN_DAYS / PriceWatchNotification).
 class PriceWatchDiscountMail extends Mailable
 {
     use Queueable, SerializesModels;
