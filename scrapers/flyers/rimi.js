@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer } from './_shared.js';
+import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
 
 // The store page only lists leaflet tiles; each links out to a separate
 // leidiniai.rimi.lt/{year}/{section}/{slug}/ detail page that embeds an
@@ -57,14 +57,18 @@ function parseDateRange(title) {
     };
 }
 
-async function fetchLeafletPdf(awsUrl, policy, pageCount) {
+// Returns the raw per-page JPEG buffers alongside the assembled PDF —
+// callers need buffers[0] (the cover page) for extractCoverInfo() when the
+// title itself carries no date (themed catalogs like "Grožio prekių
+// katalogas" — see parseDateRange()'s comment above).
+async function fetchLeafletPages(awsUrl, policy, pageCount) {
     const buffers = [];
 
     for (let n = 1; n <= pageCount; n++) {
         buffers.push(await fetchBuffer(`${awsUrl}Pages/${n}/Zoom.jpg?${policy}`));
     }
 
-    return imagesToPdf(buffers);
+    return { buffers, pdfBuffer: await imagesToPdf(buffers) };
 }
 
 (async () => {
@@ -82,13 +86,25 @@ async function fetchLeafletPdf(awsUrl, policy, pageCount) {
 
             try {
                 const { title, pageCount, awsUrl, policy } = await fetchLeafletData(leaflet.href);
-                const { validFrom, validTo } = parseDateRange(title);
+                let { validFrom, validTo } = parseDateRange(title);
+
+                const { buffers, pdfBuffer } = await fetchLeafletPages(awsUrl, policy, pageCount);
+
+                // Weekly leaflets carry the date in the title itself; themed
+                // catalogs (Grožio prekių katalogas, Helovynas, etc.) don't —
+                // fall back to the backend's Gemini cover-OCR on page 1, same
+                // pattern as aibe.js/camelia.js/etc.
                 if (!validFrom) {
-                    console.log(`No date range for "${title}" — submitting without dates`);
+                    const coverInfo = await extractCoverInfo({ store: 'Rimi', imageBuffer: buffers[0], filename: 'rimi-cover.jpg' });
+                    if (coverInfo?.validFrom) {
+                        validFrom = coverInfo.validFrom;
+                        validTo = coverInfo.validTo;
+                    } else {
+                        console.log(`No date range for "${title}" (title or cover OCR) — submitting without dates`);
+                    }
                 }
 
                 const issueMatch = title.match(/Nr\.\s*(\d+)/i);
-                const pdfBuffer = await fetchLeafletPdf(awsUrl, policy, pageCount);
 
                 await submitFlyer({
                     store: 'Rimi',

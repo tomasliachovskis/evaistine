@@ -27,55 +27,24 @@ class StoreFlyerDiscountProcessingService
             return;
         }
 
-        if (!$flyer->pdf_url || !$flyer->store) {
-            $this->emit($output, 'warn', "Flyer #{$flyer->id} has no PDF or store, skipping.");
-
-            return;
-        }
-
-        $relativePath = FlyerStorage::urlToStoragePath($flyer->pdf_url);
-        $pdfPath = $relativePath ? Storage::disk('public')->path($relativePath) : null;
-
-        if (!$pdfPath || !file_exists($pdfPath)) {
-            $this->emit($output, 'error', "Flyer #{$flyer->id}: PDF file not found on disk ({$flyer->pdf_url}).");
-
-            return;
-        }
-
-        // Themed/campaign catalogs (e.g. Rimi's "Grožio prekių katalogas")
-        // never carry a date on the store's own listing page at all (see
-        // scrapers/flyers/rimi.js's parseDateRange() comment) — they're
-        // submitted with valid_to null. We still always want the date if
-        // it's printed on the leaflet itself, so a cheap page-1-only peek
-        // (no discounts saved) discovers it before deciding whether the
-        // full (all-pages, per-page Gemini calls) discount extraction is
-        // actually worth running — two separate questions: "what's the
-        // date" (always attempted) vs. "should we extract discounts"
-        // (only once a real, non-expired valid_to is known).
-        if ($flyer->valid_to === null) {
-            $discovered = $this->processingService->peekValidityDates($pdfPath, $flyer->store);
-
-            if (!empty($discovered['start_at']) && !empty($discovered['end_at'])) {
-                $flyer->update([
-                    'valid_from' => $discovered['start_at'],
-                    'valid_to' => $discovered['end_at'],
-                ]);
-                $flyer->refresh();
-                $this->emit($output, 'info', "Flyer #{$flyer->id}: discovered validity dates from page 1 ({$discovered['start_at']} to {$discovered['end_at']}).");
-            } else {
-                $this->emit($output, 'line', "Flyer #{$flyer->id}: page 1 peek found no validity dates.");
-            }
-        }
-
-        // A KNOWN valid_to in the past (or today — lte(), not lt(), by
-        // explicit request) means we're certain this leaflet is stale (or,
-        // after the peek above, still genuinely unknown) — skip the full
-        // extraction rather than burn a Gemini call per page on something
-        // that isn't going to produce live discounts anyway.
+        // Unlike StoreFlyerTitleBuilder::toListingArray()'s own status
+        // check (where a null valid_to is treated as always-valid, since
+        // that's just display text), a missing valid_to here means we
+        // don't actually know this leaflet's validity window at all —
+        // explicit choice: this service must never call Gemini itself to
+        // go find the date. Date discovery for a leaflet with no date on
+        // the store's own listing page happens up front, in the SCRAPER,
+        // via the backend's dedicated cover-OCR endpoint (extractCoverInfo()
+        // in scrapers/flyers/_shared.js, POST /api/scrapers/extract-flyer-info,
+        // App\Services\FlyerCoverInfoExtractor) — by the time a flyer row
+        // exists at all, its valid_to is either a real date or genuinely
+        // unknown even after a dedicated OCR attempt, and this service must
+        // never receive a flyer where that hasn't already been decided. Do
+        // NOT special-case null here again. lte(), not lt(): valid_to ==
+        // today is also skipped, by explicit request — only a valid_to
+        // strictly after today is processed.
         if ($flyer->valid_to === null || $flyer->valid_to->lte(Carbon::today())) {
-            $reason = $flyer->valid_to === null
-                ? 'no valid_to set (page 1 peek found no date either)'
-                : "expired or expires today, valid_to {$flyer->valid_to->toDateString()}";
+            $reason = $flyer->valid_to === null ? 'no valid_to set' : "expired or expires today, valid_to {$flyer->valid_to->toDateString()}";
             $this->emit($output, 'line', "Flyer #{$flyer->id} skipping discount extraction ({$reason}).");
 
             // discounts_processed_at stays null (nothing was actually
@@ -91,6 +60,21 @@ class StoreFlyerDiscountProcessingService
                     'skipped_at' => now()->toDateTimeString(),
                 ],
             ]);
+
+            return;
+        }
+
+        if (!$flyer->pdf_url || !$flyer->store) {
+            $this->emit($output, 'warn', "Flyer #{$flyer->id} has no PDF or store, skipping.");
+
+            return;
+        }
+
+        $relativePath = FlyerStorage::urlToStoragePath($flyer->pdf_url);
+        $pdfPath = $relativePath ? Storage::disk('public')->path($relativePath) : null;
+
+        if (!$pdfPath || !file_exists($pdfPath)) {
+            $this->emit($output, 'error', "Flyer #{$flyer->id}: PDF file not found on disk ({$flyer->pdf_url}).");
 
             return;
         }
