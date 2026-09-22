@@ -1523,7 +1523,10 @@ class ProductController extends Controller
                 'seo' => [
                     'seo_title' => $title,
                     'seo_description' => "{$title} – {$storeModel->name} akcijų leidinys.",
-                    'meta_title' => "{$title}{$dateRangeLabel}",
+                    // meta_title only: "nuolaidų katalogas" instead of "nuolaidų
+                    // leidinys" — explicit product decision, H1/seo_title/
+                    // description keep "leidinys" unchanged.
+                    'meta_title' => str_replace('nuolaidų leidinys', 'nuolaidų katalogas', $title).$dateRangeLabel,
                     'meta_description' => "{$descriptionTitle} – {$storeModel->name} leidinys, {$pagesCount} psl.{$validityClause}. Peržiūrėkite visus akcijų puslapius.",
                 ],
                 'total_offers' => Discount::where('store_id', $storeModel->id)->count(),

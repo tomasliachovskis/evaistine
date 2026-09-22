@@ -106,6 +106,23 @@ class Kernel extends ConsoleKernel
             ->dailyAt('04:00')
             ->withoutOverlapping(60);
 
+        // discounts:archive-expired deletes Discount rows via
+        // Discount::withoutEvents() (same pattern as discounts:process), so
+        // it never bumps CacheVersion('discounts') itself. Without this
+        // step, every cache keyed on that version (getDiscounts() per
+        // store/category, getStoreLeafletHub()/getStoreLeaflet()'s
+        // total_offers, page_html) still resolves to its pre-archive
+        // version and just serves whatever's already cached under it —
+        // so cache:warm below would re-warm stale counts instead of
+        // recomputing them fresh, and the correct data would only ever
+        // surface lazily, whenever something else happens to bump the
+        // version later. Runs right after archive-expired, well before
+        // keywords:map-products/deal-pool:refresh/cache:warm, so the whole
+        // nightly chain reads and (re)caches genuinely post-archive data.
+        $schedule->command('cache:clear-discounts')
+            ->dailyAt('04:05')
+            ->withoutOverlapping(30);
+
         // deal-pool:refresh's own keyword-teaser step (KeywordPageService::
         // refreshHomeTeasers() -> buildIndexBackedTeaserDeals()) reads
         // keyword_page_products to pick each keyword page's candidate

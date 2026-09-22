@@ -64,9 +64,4 @@ return [
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
         'redirect' => env('FACEBOOK_REDIRECT_URI', '/auth/facebook/callback'),
     ],
-
-    'frontend' => [
-        'revalidate_url' => env('FRONTEND_REVALIDATE_URL', 'https://superakcijos.lt/api/revalidate'),
-        'revalidate_secret' => env('REVALIDATE_SECRET'),
-    ],
 ];

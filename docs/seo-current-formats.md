@@ -119,13 +119,13 @@ Source: `ProductController::getStoreLeaflet()` (`app/Http/Controllers/Api/Produc
 **Real bug fixed**: `build()` unconditionally appended `" Nr.{issue_number}"` even when the flyer's own scraped title already stated that same issue number, producing a live double-number title (`"...Nr. 34 Nr.34"`) — confirmed systemic (every issue-numbered flyer whose scraped title states its own "Nr. X" was affected, across multiple stores). Fixed by skipping the append when the scraped title already contains `Nr.`/`Nr. ` + that number (case/spacing-insensitive). Since `build()` is shared, this also fixed the same duplication on the leaflet hub's and leaflets index's card titles, and resolved an inconsistency where this page's breadcrumb (a different code path, never affected) showed the correct un-duplicated title while the H1 right below it showed the broken one.
 
 - **H1:** the shared flyer title (bug-fixed), e.g. `Naujas {Store} nuolaidų leidinys - {scraped title}` — wording changed from `"Naujas {Store} leidinys - ..."` to `"Naujas {Store} nuolaidų leidinys - ..."`. No injected date — the page already shows the real validity range as body text directly under the H1.
-- **Title:** same as H1 + real date range appended — `{H1 text} – {validFrom}–{validTo}` (previously had no date at all when the flyer had its own scraped title, which is the common case).
-- **Description:** leads with **"Naujausias"** instead of "Naujas" (description-only wording), adds the real per-flyer page count and date range — `Naujausias {Store} nuolaidų leidinys - {scraped title} – {Store} leidinys, {N} psl., galioja {validFrom}–{validTo}. Peržiūrėkite visus akcijų puslapius.`
+- **Title (`meta_title`, `<title>` tag):** same as H1 with **"nuolaidų leidinys" swapped to "nuolaidų katalogas"**, plus real date range appended — `{H1 text, "leidinys"→"katalogas"} – {validFrom}–{validTo}` (previously had no date at all when the flyer had its own scraped title, which is the common case). This swap is `meta_title`-only (a plain `str_replace` in `ProductController::getStoreLeaflet()`) — `seo_title` (used for the H1 and breadcrumbs/shared card titles via `StoreFlyerTitleBuilder`) still says "leidinys".
+- **Description:** unchanged wording, still says "leidinys" throughout — leads with **"Naujausias"** instead of "Naujas" (description-only wording), adds the real per-flyer page count and date range — `Naujausias {Store} nuolaidų leidinys - {scraped title} – {Store} leidinys, {N} psl., galioja {validFrom}–{validTo}. Peržiūrėkite visus akcijų puslapius.`
 - Guarded: a flyer with no resolvable validity dates gets no date clause in title/description (rather than a broken empty range).
 
 **Live example (Maxima, flyer Nr.34, 2026-09-21 — note: local dev flyer data is stale):**
 - H1: `Naujas Maxima nuolaidų leidinys - AČIŪ savaitinis leidinys Nr. 34`
-- Title: `Naujas Maxima nuolaidų leidinys - AČIŪ savaitinis leidinys Nr. 34 – 2026.08.18–2026.08.24`
+- Title: `Naujas Maxima nuolaidų katalogas - AČIŪ savaitinis leidinys Nr. 34 – 2026.08.18–2026.08.24`
 - Description: `Naujausias Maxima nuolaidų leidinys - AČIŪ savaitinis leidinys Nr. 34 – Maxima leidinys, 48 psl., galioja 2026.08.18–2026.08.24. Peržiūrėkite visus akcijų puslapius.`
 
 ---

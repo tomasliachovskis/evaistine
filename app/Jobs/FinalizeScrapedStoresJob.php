@@ -15,7 +15,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
@@ -74,8 +73,8 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
             }
         }
 
-        // Everything below (global cleanup/reindex, cache bump+rewarm,
-        // frontend revalidate) is pure waste if every store in this batch
+        // Everything below (global cleanup/reindex, cache bump+rewarm)
+        // is pure waste if every store in this batch
         // got skipped (processStore() returns false — its pending rows
         // vanished before its turn came up) — nothing actually changed in
         // the DB, so there's nothing for any of this to pick up. Guard the
@@ -115,6 +114,24 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         // no longer warmed here — discounts:process (called per store in
         // processStore() above) already refreshes App\Services\DealPoolRefresher's
         // curated_deals rows for whichever store(s) it actually touched.
+        //
+        // TECHNICAL DEBT (2026-09-22): cache:clear-discounts bumps the
+        // single global CacheVersion('discounts') group, and every warm*
+        // call below re-warms ALL stores/categories/store+category pairs/
+        // guest HTML pages — not just whichever store(s) this batch
+        // actually processed. Batching multiple ready stores into one
+        // dispatch (see class docblock) only helps when they happen to
+        // finish scraping within the same 5-min tick; in practice stores
+        // usually go quiet at different times, so this full clear+rewarm
+        // routinely fires several times a day for a single store's worth of
+        // new data. Only warmPopularProductsCache() below is actually
+        // scoped ($touchedProductSlugs). If this becomes a real cost/perf
+        // problem, look at scoping CacheVersion itself per store/category
+        // (or at least scoping warmStoreCaches/warmCategoryCaches/
+        // warmGuestHtmlCaches to the stores/categories this batch touched,
+        // same idea as $touchedProductSlugs) instead of a single flat
+        // 'discounts' group. Not fixed now — no evidence yet that it's
+        // actually slow/expensive enough to justify the added complexity.
         $cacheWarmingService = app(CacheWarmingService::class);
         $cacheWarmingService->warmStoreCaches();
         $cacheWarmingService->warmCategoryCaches();
@@ -123,8 +140,6 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         $cacheWarmingService->warmFavoritesCache();
         $cacheWarmingService->warmPopularProductsCache($touchedProductSlugs);
         $cacheWarmingService->warmGuestHtmlCaches();
-
-        $this->revalidateFrontend();
     }
 
     // Returns whether this store actually had pending work processed
@@ -219,35 +234,6 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
             // A failure still means the store had real, attempted work —
             // the batch-wide cleanup below is still worth running.
             return true;
-        }
-    }
-
-    // The Next.js frontend (superakcijos.lt) shares this backend's database
-    // but has its own ISR/data-provider cache — bumping cache:clear-discounts
-    // here only affects this Laravel app, not the frontend's cache. This is
-    // the same lightweight webhook deploy.sh calls after a deploy
-    // (POST /api/revalidate), just triggered here too so the live site picks
-    // up changes from this per-store pipeline without waiting for a deploy.
-    private function revalidateFrontend(): void
-    {
-        $secret = config('services.frontend.revalidate_secret');
-
-        if (! $secret) {
-            Log::info('FinalizeScrapedStoresJob: REVALIDATE_SECRET not configured, skipping frontend revalidation.');
-
-            return;
-        }
-
-        try {
-            $response = Http::timeout(10)
-                ->withToken($secret)
-                ->post(config('services.frontend.revalidate_url'));
-
-            if (! $response->successful()) {
-                Log::warning("FinalizeScrapedStoresJob: frontend revalidation returned {$response->status()}.");
-            }
-        } catch (\Throwable $e) {
-            Log::warning("FinalizeScrapedStoresJob: frontend revalidation request failed: {$e->getMessage()}");
         }
     }
 }

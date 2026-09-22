@@ -6,10 +6,21 @@ use App\Models\DiscountTemp;
 use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
 
+// QUARANTINED — confirmed 2026-09-22 not called anywhere: not in
+// Kernel.php's schedule, no deploy/supervisor config, no other
+// command/job. The real production pipeline is scrapers:run --all +
+// discounts:dispatch-store-processing -> FinalizeScrapedStoresJob, which
+// (unlike this command) already runs cache:clear-discounts + a full
+// cache:warm after every batch. Don't add steps here expecting them to run
+// in production; fix FinalizeScrapedStoresJob instead. Kept around only in
+// case someone still runs it manually — do not wire it into the scheduler
+// without first reconciling it with the incremental pipeline (this command
+// processes ALL configured stores in one blocking run, no per-store
+// quiet-period/dedup logic).
 class ProcessScrapingFlow extends Command
 {
     protected $signature = 'scraping:process-all {--skip-deploy : Skip deployment step}';
-    protected $description = 'Process complete product scraping flow';
+    protected $description = '[QUARANTINED, unused in production] Process complete product scraping flow';
 
     private array $expectedStores = ['Rimi', 'Lidl', 'Iki', 'Maxima', 'Norfa', 'Gulbelė', 'Vynoteka', 'Thomas Philipps'];
     private array $scrapers = [

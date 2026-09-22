@@ -86,7 +86,19 @@
         </a>
     </div>
 
-    {{-- Bottom sheets, ported from mobile-bottom-sheet.tsx --}}
+    {{-- Bottom sheets, ported from mobile-bottom-sheet.tsx.
+
+         x-teleport to <body>: <nav> above is `fixed` + `will-change-transform`,
+         which makes it its own stacking context — same trap already hit and
+         documented in site-header.blade.php's menuOpen/categoriesNavOpen
+         modals. Without teleporting, these sheets' z-[9999] is only ranked
+         against <nav>'s own children, capped at <nav>'s z-40 in the page's
+         real stacking order — so any page-level z-[60] sticky bar (e.g.
+         <x-leaflet-quick-links> on /leidinys/{store}) paints on top of the
+         sheet instead of under it. Confirmed live 2026-09-22 on
+         /leidinys/aibe. Teleporting escapes <nav>'s stacking context
+         entirely, same fix as the header. --}}
+    <template x-teleport="body">
     <div x-show="categoriesOpen" x-cloak class="fixed inset-0 z-[9999] sm:hidden">
         <button type="button" class="absolute inset-0 cursor-pointer bg-black/55" aria-label="Uždaryti" @click="categoriesOpen = false"></button>
         <div
@@ -119,7 +131,9 @@
             </div>
         </div>
     </div>
+    </template>
 
+    <template x-teleport="body">
     <div x-show="storesOpen" x-cloak class="fixed inset-0 z-[9999] sm:hidden">
         <button type="button" class="absolute inset-0 cursor-pointer bg-black/55" aria-label="Uždaryti" @click="storesOpen = false"></button>
         <div
@@ -138,9 +152,32 @@
             <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3 max-h-[calc(82vh-68px)]">
                 <div class="grid grid-cols-2 gap-2">
                     @forelse ($stores as $store)
-                        <a href="/akcijos/{{ $store['slug'] }}" class="flex flex-col items-center justify-center gap-2 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
+                        @php
+                            $discountsCount = $store['discounts_count'] ?? 0;
+                            $leafletsCount = $store['leaflets_count'] ?? 0;
+                        @endphp
+                        @continue($discountsCount === 0 && $leafletsCount === 0)
+                        <a href="/akcijos/{{ $store['slug'] }}" class="flex flex-col items-start gap-2 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
                             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="lg" />
-                            <span class="text-sm font-bold tabular-nums text-gray-700">{{ number_format($store['discounts_count'] ?? 0, 0, ',', ' ') }}</span>
+                            {{-- Both rows always render (one `invisible` when its count is 0)
+                                 instead of being conditionally omitted — every card in the grid
+                                 then reserves the same height regardless of whether a store has
+                                 leaflets, so rows don't jump around as the grid lays out. --}}
+                            <div class="flex flex-col items-start gap-0.5">
+                                <span class="inline-flex items-center gap-1 text-sm font-bold tabular-nums text-gray-700 {{ $discountsCount > 0 ? '' : 'invisible' }}">
+                                    {{-- x-app-icon's own default class is 'size-5' — since it's merged
+                                         AFTER whatever class we pass, a plain smaller size-* class here
+                                         loses the cascade (Tailwind emits size-3.5's rule before size-5's,
+                                         so size-5 wins despite coming first in the class list). The !
+                                         important modifier is the only way to actually shrink it. --}}
+                                    <x-app-icon name="tag" class="!size-3.5 shrink-0 text-gray-400" />
+                                    {{ \App\Support\LithuanianPlural::formatCount($discountsCount) }} {{ \App\Support\LithuanianPlural::discountWord($discountsCount) }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold tabular-nums text-gray-500 {{ $leafletsCount > 0 ? '' : 'invisible' }}">
+                                    <x-app-icon name="bookmark" class="!size-3.5 shrink-0 text-gray-400" />
+                                    {{ \App\Support\LithuanianPlural::formatCount($leafletsCount) }} {{ \App\Support\LithuanianPlural::leafletWord($leafletsCount) }}
+                                </span>
+                            </div>
                         </a>
                     @empty
                         <p class="text-sm text-gray-500">Parduotuvės bus rodomos čia.</p>
@@ -149,4 +186,5 @@
             </div>
         </div>
     </div>
+    </template>
 </nav>
