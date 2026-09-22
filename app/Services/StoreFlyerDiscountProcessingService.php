@@ -27,22 +27,55 @@ class StoreFlyerDiscountProcessingService
             return;
         }
 
+        if (!$flyer->pdf_url || !$flyer->store) {
+            $this->emit($output, 'warn', "Flyer #{$flyer->id} has no PDF or store, skipping.");
+
+            return;
+        }
+
+        $relativePath = FlyerStorage::urlToStoragePath($flyer->pdf_url);
+        $pdfPath = $relativePath ? Storage::disk('public')->path($relativePath) : null;
+
+        if (!$pdfPath || !file_exists($pdfPath)) {
+            $this->emit($output, 'error', "Flyer #{$flyer->id}: PDF file not found on disk ({$flyer->pdf_url}).");
+
+            return;
+        }
+
+        // Themed/campaign catalogs (e.g. Rimi's "Grožio prekių katalogas")
+        // never carry a date on the store's own listing page at all (see
+        // scrapers/flyers/rimi.js's parseDateRange() comment) — they're
+        // submitted with valid_to null. We still always want the date if
+        // it's printed on the leaflet itself, so a cheap page-1-only peek
+        // (no discounts saved) discovers it before deciding whether the
+        // full (all-pages, per-page Gemini calls) discount extraction is
+        // actually worth running — two separate questions: "what's the
+        // date" (always attempted) vs. "should we extract discounts"
+        // (only once a real, non-expired valid_to is known).
+        if ($flyer->valid_to === null) {
+            $discovered = $this->processingService->peekValidityDates($pdfPath, $flyer->store);
+
+            if (!empty($discovered['start_at']) && !empty($discovered['end_at'])) {
+                $flyer->update([
+                    'valid_from' => $discovered['start_at'],
+                    'valid_to' => $discovered['end_at'],
+                ]);
+                $flyer->refresh();
+                $this->emit($output, 'info', "Flyer #{$flyer->id}: discovered validity dates from page 1 ({$discovered['start_at']} to {$discovered['end_at']}).");
+            } else {
+                $this->emit($output, 'line', "Flyer #{$flyer->id}: page 1 peek found no validity dates.");
+            }
+        }
+
         // A KNOWN valid_to in the past (or today — lte(), not lt(), by
-        // explicit request) means we're certain this leaflet is stale, so
-        // skip it rather than burn a Gemini call on something we already
-        // know is dead. A NULL valid_to is a different case — themed/
-        // campaign catalogs (e.g. Rimi's "Grožio prekių katalogas") never
-        // carry a date on the store's own listing page at all (see
-        // scrapers/flyers/rimi.js's parseDateRange() comment), so requiring
-        // a known valid_to before ever attempting extraction meant these
-        // flyers could never be processed — nothing would ever fill in the
-        // date that would unblock them. Gemini's own prompt already asks it
-        // to "Extract validity dates if visible" whenever $validityDates is
-        // null (see getUserPrompt()), so a null valid_to now goes through
-        // and lets Gemini try to find the date on the page itself, instead
-        // of being skipped outright.
-        if ($flyer->valid_to !== null && $flyer->valid_to->lte(Carbon::today())) {
-            $reason = "expired or expires today, valid_to {$flyer->valid_to->toDateString()}";
+        // explicit request) means we're certain this leaflet is stale (or,
+        // after the peek above, still genuinely unknown) — skip the full
+        // extraction rather than burn a Gemini call per page on something
+        // that isn't going to produce live discounts anyway.
+        if ($flyer->valid_to === null || $flyer->valid_to->lte(Carbon::today())) {
+            $reason = $flyer->valid_to === null
+                ? 'no valid_to set (page 1 peek found no date either)'
+                : "expired or expires today, valid_to {$flyer->valid_to->toDateString()}";
             $this->emit($output, 'line', "Flyer #{$flyer->id} skipping discount extraction ({$reason}).");
 
             // discounts_processed_at stays null (nothing was actually
@@ -58,21 +91,6 @@ class StoreFlyerDiscountProcessingService
                     'skipped_at' => now()->toDateTimeString(),
                 ],
             ]);
-
-            return;
-        }
-
-        if (!$flyer->pdf_url || !$flyer->store) {
-            $this->emit($output, 'warn', "Flyer #{$flyer->id} has no PDF or store, skipping.");
-
-            return;
-        }
-
-        $relativePath = FlyerStorage::urlToStoragePath($flyer->pdf_url);
-        $pdfPath = $relativePath ? Storage::disk('public')->path($relativePath) : null;
-
-        if (!$pdfPath || !file_exists($pdfPath)) {
-            $this->emit($output, 'error', "Flyer #{$flyer->id}: PDF file not found on disk ({$flyer->pdf_url}).");
 
             return;
         }
@@ -102,22 +120,6 @@ class StoreFlyerDiscountProcessingService
 
         try {
             $result = $this->processingService->processPdf($pdfPath, $flyer->store, $targetPages, $seedValidityDates);
-
-            // Backfill the flyer's OWN valid_from/valid_to from whatever
-            // Gemini found on the page — nothing else ever writes these
-            // columns for a flyer that started with no date (the scraper
-            // submitted it without one, see scrapers/flyers/rimi.js), so
-            // without this, extraction could fully succeed and still leave
-            // the leidinys page's own H1/title/description validity blank
-            // forever. Only fills in what's currently missing — never
-            // overwrites a real date the scraper already provided.
-            if ($flyer->valid_to === null && !empty($result['validity_dates']['start_at']) && !empty($result['validity_dates']['end_at'])) {
-                $flyer->update([
-                    'valid_from' => $flyer->valid_from ?? $result['validity_dates']['start_at'],
-                    'valid_to' => $result['validity_dates']['end_at'],
-                ]);
-                $this->emit($output, 'info', "Flyer #{$flyer->id}: backfilled validity dates from Gemini extraction ({$result['validity_dates']['start_at']} to {$result['validity_dates']['end_at']}).");
-            }
 
             if ($result['success']) {
                 $this->emit($output, 'info', "OK — extracted: {$result['total_extracted']}, saved: {$result['count']}");

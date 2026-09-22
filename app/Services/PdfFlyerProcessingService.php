@@ -98,6 +98,42 @@ class PdfFlyerProcessingService
     }
 
     /**
+     * Cheap page-1-only peek to discover a flyer's validity window before
+     * committing to a full (all-pages, per-page Gemini calls) discount
+     * extraction — used by StoreFlyerDiscountProcessingService when a
+     * flyer's own valid_to is unknown (themed/campaign catalogs never
+     * carry a date on the store's own listing page, see
+     * scrapers/flyers/rimi.js's parseDateRange() comment). Deliberately
+     * never calls saveToDiscountTemp() — whatever discounts this happens
+     * to find on page 1 are discarded, since the caller hasn't yet decided
+     * whether this leaflet is even worth extracting discounts from.
+     */
+    public function peekValidityDates(string $pdfPath, Store $store): ?array
+    {
+        if (!$this->isGeminiConfigured() || !file_exists($pdfPath)) {
+            return null;
+        }
+
+        $processId = uniqid('peek_' . time() . '_', true);
+
+        try {
+            $images = $this->convertPdfToImages($pdfPath, $processId, [1]);
+        } catch (\Exception $e) {
+            Log::channel('flyer')->warning('peekValidityDates: failed to convert page 1', ['pdf' => $pdfPath, 'error' => $e->getMessage()]);
+
+            return null;
+        }
+
+        if (empty($images)) {
+            return null;
+        }
+
+        $result = $this->extractDiscountsFromImageGemini($images[0]['processed_url'], $store, null, $images[0]['page_number']);
+
+        return $result['validity_dates'] ?? null;
+    }
+
+    /**
      * @param  array<int>|null  $targetPages  Specific 1-based page numbers to
      *   process (e.g. a retry of just the pages that failed last time);
      *   null processes every page in the PDF.
