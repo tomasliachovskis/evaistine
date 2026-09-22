@@ -61,11 +61,22 @@ class ProcessStoreFlyerDiscounts extends Command
         }
 
         if ($this->option('pending')) {
+            // A KNOWN valid_to in the past is excluded (we're certain the
+            // leaflet is dead); a NULL valid_to is included — themed/
+            // campaign catalogs never carry a date on the store's own
+            // listing page at all (see scrapers/flyers/rimi.js), so
+            // requiring a known valid_to before ever queueing them meant
+            // they could never be processed. StoreFlyerDiscountProcessingService
+            // ::process() itself now lets Gemini try to find the date on
+            // the page when valid_to is null, instead of skipping outright
+            // — this query just needs to stop filtering those rows out
+            // before they ever reach that service.
             $query = StoreFlyer::query()
                 ->whereNotNull('pdf_url')
                 ->whereNull('discounts_processed_at')
-                ->whereNotNull('valid_to')
-                ->where('valid_to', '>', now()->startOfDay())
+                ->where(function ($q) {
+                    $q->whereNull('valid_to')->orWhere('valid_to', '>', now()->startOfDay());
+                })
                 ->whereHas('store', fn ($q) => $q->where('extract_discounts_from_flyer', true));
 
             // Without this, flipping a store's extract_discounts_from_flyer

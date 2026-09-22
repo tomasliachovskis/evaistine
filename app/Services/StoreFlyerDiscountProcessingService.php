@@ -27,16 +27,22 @@ class StoreFlyerDiscountProcessingService
             return;
         }
 
-        // Unlike StoreFlyerTitleBuilder::toListingArray()'s own status
-        // check (where a null valid_to is treated as always-valid, since
-        // that's just display text), a missing valid_to here means we
-        // don't actually know this leaflet's validity window at all —
-        // explicit choice: don't burn a Gemini call on it rather than
-        // assume it's still current. lte(), not lt(): valid_to == today is
-        // also skipped, by explicit request — only a valid_to strictly
-        // after today is processed.
-        if ($flyer->valid_to === null || $flyer->valid_to->lte(Carbon::today())) {
-            $reason = $flyer->valid_to === null ? 'no valid_to set' : "expired or expires today, valid_to {$flyer->valid_to->toDateString()}";
+        // A KNOWN valid_to in the past (or today — lte(), not lt(), by
+        // explicit request) means we're certain this leaflet is stale, so
+        // skip it rather than burn a Gemini call on something we already
+        // know is dead. A NULL valid_to is a different case — themed/
+        // campaign catalogs (e.g. Rimi's "Grožio prekių katalogas") never
+        // carry a date on the store's own listing page at all (see
+        // scrapers/flyers/rimi.js's parseDateRange() comment), so requiring
+        // a known valid_to before ever attempting extraction meant these
+        // flyers could never be processed — nothing would ever fill in the
+        // date that would unblock them. Gemini's own prompt already asks it
+        // to "Extract validity dates if visible" whenever $validityDates is
+        // null (see getUserPrompt()), so a null valid_to now goes through
+        // and lets Gemini try to find the date on the page itself, instead
+        // of being skipped outright.
+        if ($flyer->valid_to !== null && $flyer->valid_to->lte(Carbon::today())) {
+            $reason = "expired or expires today, valid_to {$flyer->valid_to->toDateString()}";
             $this->emit($output, 'line', "Flyer #{$flyer->id} skipping discount extraction ({$reason}).");
 
             // discounts_processed_at stays null (nothing was actually
@@ -96,6 +102,22 @@ class StoreFlyerDiscountProcessingService
 
         try {
             $result = $this->processingService->processPdf($pdfPath, $flyer->store, $targetPages, $seedValidityDates);
+
+            // Backfill the flyer's OWN valid_from/valid_to from whatever
+            // Gemini found on the page — nothing else ever writes these
+            // columns for a flyer that started with no date (the scraper
+            // submitted it without one, see scrapers/flyers/rimi.js), so
+            // without this, extraction could fully succeed and still leave
+            // the leidinys page's own H1/title/description validity blank
+            // forever. Only fills in what's currently missing — never
+            // overwrites a real date the scraper already provided.
+            if ($flyer->valid_to === null && !empty($result['validity_dates']['start_at']) && !empty($result['validity_dates']['end_at'])) {
+                $flyer->update([
+                    'valid_from' => $flyer->valid_from ?? $result['validity_dates']['start_at'],
+                    'valid_to' => $result['validity_dates']['end_at'],
+                ]);
+                $this->emit($output, 'info', "Flyer #{$flyer->id}: backfilled validity dates from Gemini extraction ({$result['validity_dates']['start_at']} to {$result['validity_dates']['end_at']}).");
+            }
 
             if ($result['success']) {
                 $this->emit($output, 'info', "OK — extracted: {$result['total_extracted']}, saved: {$result['count']}");
