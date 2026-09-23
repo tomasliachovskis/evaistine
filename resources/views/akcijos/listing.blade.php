@@ -23,7 +23,13 @@
     // it's already the same category the breadcrumb above shows — dropping
     // the whole section duplicates nothing.
     $tips = $isKeyword ? ($listingMeta['tips'] ?? []) : [];
-    $relatedPages = $isKeyword ? ($listingMeta['related_pages'] ?? []) : [];
+    // No live offers: KeywordPageService returns alternative_pages (close
+    // keyword pages that DO have offers right now) for the empty-state
+    // block instead of the grid — the regular "Susijusios akcijos" list is
+    // hidden then, it would mostly repeat the same pages.
+    $noOffers = $isKeyword && !empty($listingMeta['no_offers']);
+    $alternativePages = $noOffers ? ($listingMeta['alternative_pages'] ?? []) : [];
+    $relatedPages = $isKeyword && ! $noOffers ? ($listingMeta['related_pages'] ?? []) : [];
     // Keyword pages store real admin-authored HTML (intro_html) in
     // intro.seo_about. Store/category/store_category have their own
     // real admin-authored HTML too, just under a different existing key —
@@ -205,7 +211,24 @@
             </div>
         @endif
 
-        @if ($isKeyword)
+        @if ($noOffers)
+            {{-- No live offers for this keyword right now — the page stays
+                 200/indexable (a 404 here cost the URL its rankings every
+                 time offers ran out for a week), with a plain notice and
+                 links to close keyword pages that have offers today. Same
+                 notice box as the store+category $fallbackOtherStores case
+                 below. --}}
+            <div class="mt-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 sm:p-5">
+                <p>
+                    Šiuo metu {{ $listingMeta['keyword_grammar']['genitive'] ?? mb_strtolower($pageTitle) }} akcijų nėra. Naujos akcijos atsiranda kas savaitę{{ !empty($alternativePages) ? ' — kol kas pažiūrėkite panašius pasiūlymus:' : '.' }}
+                </p>
+                @if (!empty($alternativePages))
+                    <div class="mt-4">
+                        @include('components.partials.related-keyword-links', ['links' => $alternativePages])
+                    </div>
+                @endif
+            </div>
+        @elseif ($isKeyword)
             {{-- Mockup shows this grid under its own heading + total count,
                  not dropped in bare — real genitive grammar already computed
                  for the store-comparison heading above, reused here too. --}}
@@ -226,7 +249,9 @@
                 : '';
         @endphp
 
-        @if ($fallbackOtherStores)
+        @if ($noOffers)
+            {{-- Empty-state notice above replaces the grid. --}}
+        @elseif ($fallbackOtherStores)
             {{-- This store+category combination has no current offers of its
                  own — rather than an empty grid (or noindex, which would
                  throw away real long-tail SEO value for this exact
@@ -399,16 +424,7 @@
                         <div class="section-heading-row">
                             <h2 class="section-heading">Susijusios akcijos</h2>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                            @foreach ($relatedPages as $related)
-                                <a href="{{ $related['href'] }}" class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:border-green/40">
-                                    @if ($related['emoji'])
-                                        <span class="shrink-0 text-lg" aria-hidden="true">{{ $related['emoji'] }}</span>
-                                    @endif
-                                    <span class="truncate">{{ $related['label'] }}</span>
-                                </a>
-                            @endforeach
-                        </div>
+                        @include('components.partials.related-keyword-links', ['links' => $relatedPages])
                     </div>
                 @endif
 

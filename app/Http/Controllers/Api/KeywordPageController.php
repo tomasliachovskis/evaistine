@@ -31,7 +31,10 @@ class KeywordPageController extends Controller
 
     public function show(Request $request, string $slug)
     {
+        // Unpublished drafts stay a real 404 — only published pages get the
+        // always-200 empty state (see KeywordPageService::buildListingResponse()).
         $page = KeywordPage::query()
+            ->published()
             ->where('slug', $slug)
             ->firstOrFail();
 

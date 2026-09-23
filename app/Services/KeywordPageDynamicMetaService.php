@@ -37,8 +37,16 @@ class KeywordPageDynamicMetaService
         $maxLabel = $this->formatPrice($maxPrice);
         $storeHashtags = $this->buildStoreHashtags($discounts);
 
-        $metaTitle = $this->buildMetaTitle($titleKeywordDative, $minLabel, $matchingTotal);
-        $metaDescription = $this->buildMetaDescription($keyword, $minLabel, $maxLabel, $matchingTotal, $storeHashtags);
+        // No live offers (the page still renders, with links to related
+        // keyword pages) — a "| 0 pasiūlymų" title would read as broken in
+        // search results, so drop the count/price instead.
+        if ($matchingTotal === 0) {
+            $metaTitle = "{$titleKeywordDative} – kainos ir akcijos";
+            $metaDescription = "{$keyword}: šiuo metu aktyvių akcijų nėra. Naujos akcijos atsiranda kas savaitę – palyginkite panašių prekių pasiūlymus.";
+        } else {
+            $metaTitle = $this->buildMetaTitle($titleKeywordDative, $minLabel, $matchingTotal);
+            $metaDescription = $this->buildMetaDescription($keyword, $minLabel, $maxLabel, $matchingTotal, $storeHashtags);
+        }
 
         return [
             'seo_title' => $this->heading($page),

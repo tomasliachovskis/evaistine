@@ -195,25 +195,27 @@ class KeywordPageService
 
     public function buildListingResponse(KeywordPage $page, array $filters): array
     {
+        // No live offers used to abort(404) here — but offers come and go
+        // weekly, so an indexed, sitemap-listed keyword URL kept flipping
+        // between 200 and 404, burning its rankings each time. The page now
+        // always renders (200, indexable): an empty-state notice plus links
+        // to close keyword pages that do have offers right now
+        // (alternative_pages), and it recovers on its own once offers return.
         $matchingTotal = $this->countMatchingOffers($page);
-
-        if ($matchingTotal < $page->min_active_offers) {
-            abort(404);
+        $allDiscounts = $matchingTotal >= $page->min_active_offers
+            ? $this->collectMatchingDiscountsCollection($page)
+            : collect();
+        $noOffers = $allDiscounts->isEmpty();
+        if ($noOffers) {
+            $matchingTotal = 0;
         }
 
-        $allDiscounts = $this->collectMatchingDiscountsCollection($page);
-
-        if ($allDiscounts->isEmpty()) {
-            abort(404);
-        }
-
+        // A filter (?store=, ?card=...) narrowing to nothing just renders an
+        // empty grid — those URLs are noindex anyway, and a 404 here also
+        // broke the Livewire filter request.
         $filtered = $this->applyCollectionFilters($allDiscounts, $filters);
         $sorted = $this->sortDiscounts($filtered, (string) ($filters['order'] ?? 'popular'));
         $filteredTotal = $sorted->count();
-
-        if ($filteredTotal === 0) {
-            abort(404);
-        }
 
         $pageNumber = max(1, (int) ($filters['page'] ?? 1));
         $pageItems = $sorted
@@ -229,6 +231,8 @@ class KeywordPageService
         );
 
         $listingMeta = $this->buildListingMeta($page, $allDiscounts, $matchingTotal);
+        $listingMeta['no_offers'] = $noOffers;
+        $listingMeta['alternative_pages'] = $noOffers ? $this->buildAlternativePages($page) : [];
 
         return [
             'data' => $this->formatter->format($paginator),
@@ -1408,16 +1412,7 @@ class KeywordPageService
                 ->published()
                 ->whereIn('slug', $slugs)
                 ->get()
-                ->map(fn (KeywordPage $related) => [
-                    // grammar_dative (e.g. "varškei", "kavai") reads better as
-                    // a standalone chip label than the h1-minus-"akcija"
-                    // approach used before ("Bulvės akcija" -> "Bulvės",
-                    // wrong case for some declensions) — every published page
-                    // has this field populated.
-                    'label' => $this->capitalizeFirst($related->grammar_dative ?: $related->title),
-                    'href' => "/akcijos/{$related->slug}",
-                    'emoji' => $related->emoji,
-                ])
+                ->map(fn (KeywordPage $related) => $this->mapRelatedPageChip($related))
                 ->values()
                 ->all();
         }
@@ -1435,6 +1430,62 @@ class KeywordPageService
             return [];
         }
 
+        return $this->categorySiblingsQuery($page, $categorySlugs)
+            ->orderByDesc('matching_offers_count')
+            ->limit(8)
+            ->get(['slug', 'title', 'grammar_dative', 'emoji'])
+            ->map(fn (KeywordPage $related) => $this->mapRelatedPageChip($related))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Where to send a visitor when this keyword page has no live offers:
+     * close keyword pages that have offers right now, filled in order from
+     * curated related_slugs, then category siblings (same sources as
+     * buildRelatedPages()), then the site-wide popular list — each tier only
+     * tops up what the previous one left (e.g. "karpis" has one curated
+     * related page with no offers, so its fish/meat siblings fill the rest).
+     */
+    private function buildAlternativePages(KeywordPage $page, int $limit = 6): array
+    {
+        $columns = ['id', 'slug', 'title', 'grammar_dative', 'emoji', 'matching_offers_count'];
+        $relatedSlugs = (array) ($page->related_slugs ?? []);
+        $categorySlugs = (array) ($page->category_slugs ?? []);
+
+        $tiers = array_filter([
+            !empty($relatedSlugs) ? fn () => KeywordPage::query()->published()->whereIn('slug', $relatedSlugs) : null,
+            !empty($categorySlugs) ? fn () => $this->categorySiblingsQuery($page, $categorySlugs) : null,
+            fn () => KeywordPage::query()->published()->where('is_chip', true),
+        ]);
+
+        $picked = collect();
+        foreach ($tiers as $tier) {
+            if ($picked->count() >= $limit) {
+                break;
+            }
+
+            $picked = $picked->concat(
+                $tier()
+                    ->where('matching_offers_count', '>', 0)
+                    ->where('id', '!=', $page->id)
+                    ->whereNotIn('id', $picked->pluck('id'))
+                    ->orderByDesc('matching_offers_count')
+                    ->limit($limit - $picked->count())
+                    ->get($columns)
+            );
+        }
+
+        return $picked
+            ->map(fn (KeywordPage $related) => $this->mapRelatedPageChip($related) + [
+                'matching_offers_count' => (int) $related->matching_offers_count,
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function categorySiblingsQuery(KeywordPage $page, array $categorySlugs)
+    {
         return KeywordPage::query()
             ->published()
             ->where('id', '!=', $page->id)
@@ -1442,17 +1493,20 @@ class KeywordPageService
                 foreach ($categorySlugs as $slug) {
                     $query->orWhereJsonContains('category_slugs', $slug);
                 }
-            })
-            ->orderByDesc('matching_offers_count')
-            ->limit(8)
-            ->get(['slug', 'title', 'grammar_dative', 'emoji'])
-            ->map(fn (KeywordPage $related) => [
-                'label' => $this->capitalizeFirst($related->grammar_dative ?: $related->title),
-                'href' => "/akcijos/{$related->slug}",
-                'emoji' => $related->emoji,
-            ])
-            ->values()
-            ->all();
+            });
+    }
+
+    private function mapRelatedPageChip(KeywordPage $related): array
+    {
+        return [
+            // grammar_dative (e.g. "varškei", "kavai") reads better as a
+            // standalone chip label than the h1-minus-"akcija" approach used
+            // before ("Bulvės akcija" -> "Bulvės", wrong case for some
+            // declensions) — every published page has this field populated.
+            'label' => $this->capitalizeFirst($related->grammar_dative ?: $related->title),
+            'href' => "/akcijos/{$related->slug}",
+            'emoji' => $related->emoji,
+        ];
     }
 
     private function buildLeafletsForDiscounts(Collection $discounts): array

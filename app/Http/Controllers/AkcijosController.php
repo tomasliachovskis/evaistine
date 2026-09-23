@@ -78,7 +78,7 @@ class AkcijosController extends Controller
             return $this->renderProduct($request, $api, $slug1, $slug2);
         }
 
-        if (KeywordPage::where('slug', $slug1)->exists()) {
+        if (KeywordPage::published()->where('slug', $slug1)->exists()) {
             return $this->renderKeyword($request, $keywordApi, $slug1);
         }
 
