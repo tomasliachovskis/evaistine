@@ -9,10 +9,11 @@
     // one leaflet makes the store active (leaflet-only stores like Avon,
     // Apotheka read as inactive otherwise).
     $isActive = $hasOffers || $leafletsCount > 0;
-    // Leaflet-only stores (no discount extraction) have no offers page —
-    // /akcijos/{slug} just 301s to their leaflet hub, so link there directly.
+    // Links to the offers page only when there are offers to see there —
+    // leaflet-only stores (their /akcijos URL 301s to the leaflet hub) and
+    // stores with 0 offers right now link their leaflet hub instead.
     // Missing key (older cached payload) keeps the offers link.
-    $showsDiscountsPage = $store['shows_discounts_page'] ?? true;
+    $showsDiscountsPage = ($store['shows_discounts_page'] ?? true) && $hasOffers;
     $storeHref = $showsDiscountsPage ? "/akcijos/{$store['slug']}" : "/leidinys/{$store['slug']}";
     $widthClass = $layout === 'slider'
         ? 'w-[calc((100%-0.75rem)/2.2)] min-w-[calc((100%-0.75rem)/2.2)] max-w-[calc((100%-0.75rem)/2.2)] shrink-0 grow-0 basis-[calc((100%-0.75rem)/2.2)] sm:w-[200px] sm:min-w-[200px] sm:max-w-none sm:basis-auto lg:w-[210px]'
@@ -30,13 +31,12 @@
         </div>
         <div class="mt-2 flex min-w-0 flex-col gap-0.5 sm:mt-2.5">
             <p class="mb-1 whitespace-nowrap text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
-            <p class="truncate text-center text-sm leading-snug text-gray-600">
-                @if ($hasOffers)
+            {{-- No offers: no "Nėra akcijų" line, the leaflet count below is all it shows. --}}
+            @if ($hasOffers)
+                <p class="truncate text-center text-sm leading-snug text-gray-600">
                     {{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::discountWord($store['discounts_count']) }}
-                @else
-                    Nėra akcijų
-                @endif
-            </p>
+                </p>
+            @endif
             @if ($leafletsCount > 0)
                 <p class="truncate text-center text-sm leading-snug text-gray-500">
                     {{ $leafletsCount }} {{ LithuanianPlural::leafletWord($leafletsCount) }}
@@ -52,13 +52,12 @@
         </div>
         <div class="mt-2 flex min-w-0 flex-col gap-0.5 sm:mt-2.5">
             <p class="mb-1 line-clamp-2 text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
-            <p class="truncate text-center text-sm leading-snug text-gray-600">
-                @if ($hasOffers)
+            {{-- No offers: no "Nėra akcijų" line, the leaflet count below is all it shows. --}}
+            @if ($hasOffers)
+                <p class="truncate text-center text-sm leading-snug text-gray-600">
                     {{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::discountWord($store['discounts_count']) }}
-                @else
-                    Nėra akcijų
-                @endif
-            </p>
+                </p>
+            @endif
             @if ($leafletsCount > 0)
                 <p class="truncate text-center text-sm leading-snug text-gray-500">
                     {{ $leafletsCount }} {{ LithuanianPlural::leafletWord($leafletsCount) }}

@@ -11,8 +11,14 @@
     // Senukai...) are real stores too, their cards link to /leidinys/{slug}.
     // Stores with an offers page (extract_discounts_from_flyer) first, then
     // the rest — each group simply by id, no offer/leaflet-count ranking.
+    // Inactive stores (no offer and no leaflet — the dimmed cards, same rule
+    // as <x-store-card>) always go last.
     $sortedStores = collect($stores)
-        ->sortBy(fn ($s) => [($s['shows_discounts_page'] ?? true) ? 0 : 1, $s['id']])
+        ->sortBy(fn ($s) => [
+            ($s['discounts_count'] ?? 0) > 0 || ($s['leaflets_count'] ?? 0) > 0 ? 0 : 1,
+            ($s['shows_discounts_page'] ?? true) ? 0 : 1,
+            $s['id'],
+        ])
         ->values();
 
     $withLocations = $sortedStores->filter(fn ($s) => in_array($s['slug'], $storesWithLocations, true));
