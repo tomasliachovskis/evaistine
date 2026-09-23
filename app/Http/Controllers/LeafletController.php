@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Api\ProductController;
+use App\Models\Store;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -46,6 +47,7 @@ class LeafletController extends Controller
             'seo' => $payload['seo'],
             'totalOffers' => $payload['total_offers'],
             'storeSlug' => $store,
+            'showsDiscountsPage' => (bool) Store::where('slug', $store)->value('extract_discounts_from_flyer'),
             'canonical' => CanonicalUrl::build($path),
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
@@ -70,6 +72,7 @@ class LeafletController extends Controller
             'seo' => $payload['seo'],
             'totalOffers' => $payload['total_offers'],
             'storeSlug' => $store,
+            'showsDiscountsPage' => (bool) Store::where('slug', $store)->value('extract_discounts_from_flyer'),
             'canonical' => CanonicalUrl::build($path),
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,

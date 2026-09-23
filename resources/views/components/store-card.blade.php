@@ -5,6 +5,11 @@
 
     $hasOffers = ($store['discounts_count'] ?? 0) > 0;
     $leafletsCount = $store['leaflets_count'] ?? 0;
+    // Leaflet-only stores (no discount extraction) have no offers page —
+    // /akcijos/{slug} just 301s to their leaflet hub, so link there directly.
+    // Missing key (older cached payload) keeps the offers link.
+    $showsDiscountsPage = $store['shows_discounts_page'] ?? true;
+    $storeHref = $showsDiscountsPage ? "/akcijos/{$store['slug']}" : "/leidinys/{$store['slug']}";
     $widthClass = $layout === 'slider'
         ? 'w-[calc((100%-0.75rem)/2.2)] min-w-[calc((100%-0.75rem)/2.2)] max-w-[calc((100%-0.75rem)/2.2)] shrink-0 grow-0 basis-[calc((100%-0.75rem)/2.2)] sm:w-[200px] sm:min-w-[200px] sm:max-w-none sm:basis-auto lg:w-[210px]'
         : '';
@@ -15,7 +20,7 @@
          card look as the /parduotuves grid card below (logo, bold name,
          count as plain text), just narrower and without the "Žiūrėti
          akcijas" CTA since the whole tile is already clickable. --}}
-    <a href="/akcijos/{{ $store['slug'] }}" class="flex w-28 shrink-0 snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:w-32 sm:p-3 {{ !$hasOffers ? 'opacity-75' : '' }}">
+    <a href="{{ $storeHref }}" class="flex w-28 shrink-0 snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:w-32 sm:p-3 {{ !$hasOffers ? 'opacity-75' : '' }}">
         <div class="flex h-14 items-center justify-center sm:h-16">
             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="md" />
         </div>
@@ -37,7 +42,7 @@
     </a>
 @else
     {{-- Ported from discount/src/components/stores/store-card.tsx (slider layout, view-only actions). --}}
-    <a href="/akcijos/{{ $store['slug'] }}" class="group flex snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:p-3 {{ $widthClass }} {{ !$hasOffers ? 'opacity-75' : '' }}">
+    <a href="{{ $storeHref }}" class="group flex snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:p-3 {{ $widthClass }} {{ !$hasOffers ? 'opacity-75' : '' }}">
         <div class="flex h-[72px] items-center justify-center sm:h-[80px]">
             <x-store-logo :slug="$store['slug']" size="lg" />
         </div>
@@ -57,7 +62,7 @@
             @endif
         </div>
         <span class="mt-3 inline-flex h-8 w-full items-center justify-center rounded-lg border border-green bg-white px-2 text-sm font-bold text-green transition-colors group-hover:bg-green/5 group-hover:text-dark-green sm:mt-3.5 sm:h-9">
-            Žiūrėti akcijas
+            {{ $showsDiscountsPage ? 'Žiūrėti akcijas' : 'Žiūrėti leidinius' }}
         </span>
     </a>
 @endif

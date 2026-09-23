@@ -1,4 +1,4 @@
-@props(['storeSlug', 'storeName', 'totalOffers', 'showLeafletsLink' => false, 'leafletsCount' => null, 'compact' => false])
+@props(['storeSlug', 'storeName', 'totalOffers', 'showLeafletsLink' => false, 'leafletsCount' => null, 'compact' => false, 'showsDiscountsPage' => true])
 
 @php
     // "leidinys" -> "leidiniai" is a stem swap (drop "ys", add "iai"), not a
@@ -39,8 +39,11 @@
             <span class="truncate">{{ $storeName }} {{ $leafletNounPlural }}{{ $leafletsCount !== null ? ' (' . number_format($leafletsCount, 0, ',', ' ') . ')' : '' }}</span>
         </a>
     @endif
-    <a href="/akcijos/{{ $storeSlug }}" data-ga-event="filter_select" data-ga-item="akcijos:{{ $storeSlug }}" data-ga-source="leaflet_quick_links" class="{{ $linkClass }}">
-        <x-app-icon name="tag" class="{{ $iconSizeClass }}" />
-        <span class="truncate">{{ $storeName }} akcijos ({{ number_format($totalOffers, 0, ',', ' ') }})</span>
-    </a>
+    {{-- Leaflet-only stores have no offers page (/akcijos/{slug} 301s back here). --}}
+    @if ($showsDiscountsPage)
+        <a href="/akcijos/{{ $storeSlug }}" data-ga-event="filter_select" data-ga-item="akcijos:{{ $storeSlug }}" data-ga-source="leaflet_quick_links" class="{{ $linkClass }}">
+            <x-app-icon name="tag" class="{{ $iconSizeClass }}" />
+            <span class="truncate">{{ $storeName }} akcijos ({{ number_format($totalOffers, 0, ',', ' ') }})</span>
+        </a>
+    @endif
 </div>

@@ -157,7 +157,8 @@
                             $leafletsCount = $store['leaflets_count'] ?? 0;
                         @endphp
                         @continue($discountsCount === 0 && $leafletsCount === 0)
-                        <a href="/akcijos/{{ $store['slug'] }}" class="flex flex-col items-start gap-2 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
+                        {{-- Leaflet-only stores: link their leaflet hub directly (their /akcijos URL 301s there). --}}
+                        <a href="{{ ($store['shows_discounts_page'] ?? true) ? '/akcijos/' . $store['slug'] : '/leidinys/' . $store['slug'] }}" class="flex flex-col items-start gap-2 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
                             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="lg" />
                             {{-- Both rows always render (one `invisible` when its count is 0)
                                  instead of being conditionally omitted — every card in the grid

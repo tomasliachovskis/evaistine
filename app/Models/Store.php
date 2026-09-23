@@ -27,6 +27,17 @@ class Store extends Model
         'extract_discounts_from_flyer' => 'boolean',
     ];
 
+    /**
+     * Whether /akcijos/{slug} is a real offers page for this store. Stores
+     * without discount extraction only have leaflets — their /akcijos URL
+     * 301s to /leidinys/{slug} (AkcijosController::show()) and every link
+     * to it should point at the leaflet hub instead.
+     */
+    public function showsDiscountsPage(): bool
+    {
+        return (bool) $this->extract_discounts_from_flyer;
+    }
+
     public function products()
     {
         return $this->hasMany(Product::class);

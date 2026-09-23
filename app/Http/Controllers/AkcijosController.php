@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\KeywordPageController;
 use App\Http\Controllers\Api\ProductController;
 use App\Models\Category;
 use App\Models\KeywordPage;
+use App\Models\Store;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
 use App\Support\FaqSchema;
@@ -13,12 +14,12 @@ use App\Support\ItemListSchema;
 use App\Support\PageHtmlCache;
 use App\Support\ProductPageMeta;
 use App\Support\ProductSchema;
-use App\Support\StoreDisplayMeta;
 use App\Support\ContentFreshness;
 use App\Support\LithuanianDate;
 use App\Services\HomePageMetaService;
 use App\Support\CacheVersion;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
@@ -70,23 +71,40 @@ class AkcijosController extends Controller
 
     public function show(Request $request, ProductController $api, KeywordPageController $keywordApi, string $slug1, ?string $slug2 = null)
     {
+        // A store's own flag decides whether it has an offers page, not
+        // config/stores.php — leaflet-only stores (Jysk, Senukai, Avon...)
+        // used to 404 here while the site itself linked to them.
+        if ($slug2 === null && KeywordPage::published()->where('slug', $slug1)->exists()) {
+            return $this->renderKeyword($request, $keywordApi, $slug1);
+        }
+
+        $store = Store::where('slug', $slug1)->first();
+        if ($store && ! $store->showsDiscountsPage()) {
+            return $this->redirectToLeafletHub($store->slug);
+        }
+
         if ($slug2 !== null) {
-            if (StoreDisplayMeta::isStoreSlug($slug1)) {
+            if ($store) {
                 return $this->renderDiscountsListing($request, $api, $slug1, $slug2);
             }
 
             return $this->renderProduct($request, $api, $slug1, $slug2);
         }
 
-        if (KeywordPage::published()->where('slug', $slug1)->exists()) {
-            return $this->renderKeyword($request, $keywordApi, $slug1);
-        }
-
-        if (StoreDisplayMeta::isStoreSlug($slug1) || Category::where('slug', $slug1)->exists()) {
+        if ($store || Category::where('slug', $slug1)->exists()) {
             return $this->renderDiscountsListing($request, $api, $slug1, null);
         }
 
         abort(404);
+    }
+
+    // Permanent for search engines, but capped at a day in browsers — a
+    // bare 301 is cached forever, so turning a store's discount extraction
+    // on later would never reach returning visitors.
+    private function redirectToLeafletHub(string $storeSlug): RedirectResponse
+    {
+        return redirect("/leidinys/{$storeSlug}", 301)
+            ->header('Cache-Control', 'public, max-age=86400');
     }
 
     public function searchForm()
@@ -151,7 +169,7 @@ class AkcijosController extends Controller
         // CategoryCarouselsLayout's, so no separate view is needed.
         $sections = [];
         $topOffers = [];
-        if (StoreDisplayMeta::isStoreSlug($storeOrCategory) && $category === null && ! $request->query('category')) {
+        if ($category === null && ! $request->query('category') && Store::where('slug', $storeOrCategory)->exists()) {
             $sections = json_decode($api->getBestDiscountsByCategoryForStore($storeOrCategory)->getContent(), true);
             $topOffers = json_decode($api->getBestOffersForStore($storeOrCategory)->getContent(), true);
         }

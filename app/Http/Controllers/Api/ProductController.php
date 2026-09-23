@@ -466,7 +466,7 @@ class ProductController extends Controller
         $cacheKey = 'stores_'.CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () {
-            $stores = \App\Models\Store::select('id', 'name', 'slug')
+            $stores = \App\Models\Store::select('id', 'name', 'slug', 'extract_discounts_from_flyer')
                 ->withCount([
                     'discounts' => function ($query) {
                         $query->select(\DB::raw('count(distinct discounts.id)'));
@@ -522,7 +522,7 @@ class ProductController extends Controller
         $cacheKey = "stores_for_category_{$category->id}_".CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($category) {
-            $stores = \App\Models\Store::select('id', 'name', 'slug')
+            $stores = \App\Models\Store::select('id', 'name', 'slug', 'extract_discounts_from_flyer')
                 ->withCount([
                     'discounts' => function ($query) use ($category) {
                         $query->select(\DB::raw('count(distinct discounts.id)'))
@@ -558,7 +558,7 @@ class ProductController extends Controller
         $payload = Cache::remember($cacheKey, 3600, function () use ($page) {
             $productIds = \App\Models\KeywordPageProduct::where('keyword_page_id', $page->id)->pluck('product_id');
 
-            $stores = \App\Models\Store::select('id', 'name', 'slug')
+            $stores = \App\Models\Store::select('id', 'name', 'slug', 'extract_discounts_from_flyer')
                 ->withCount([
                     'discounts' => function ($query) use ($productIds) {
                         $query->select(\DB::raw('count(distinct discounts.id)'))
@@ -1598,14 +1598,27 @@ class ProductController extends Controller
 
     public function getSitemap()
     {
-        $cacheKey = 'sitemap_entries_v7_'.CacheVersion::suffix(['sitemap']);
+        $cacheKey = 'sitemap_entries_v8_'.CacheVersion::suffix(['sitemap']);
 
         return Cache::remember($cacheKey, 3600, function () {
             $freshness = $this->pageFreshnessService->build();
             $defaultLastmod = Carbon::parse($freshness['updated_at'])->format('Y-m-d');
 
+            // Leaflet-only stores' /akcijos URL 301s to their leaflet hub —
+            // never list a redirecting URL.
             $stores = \App\Models\Store::query()
+                ->where('extract_discounts_from_flyer', true)
                 ->whereHas('discounts')
+                ->pluck('slug')
+                ->all();
+
+            // Every store with a live leaflet has a /leidinys/{slug} hub,
+            // with or without its own offers — reusing $stores here left
+            // leaflet-only stores' hubs (Jysk, Senukai...) out entirely.
+            $leafletStores = \App\Models\Store::query()
+                ->whereHas('flyers', fn ($q) => $q
+                    ->where('is_active', true)
+                    ->where('processing_status', \App\Models\StoreFlyer::STATUS_READY))
                 ->pluck('slug')
                 ->all();
 
@@ -1669,7 +1682,7 @@ class ProductController extends Controller
                 'lastmod' => $defaultLastmod,
                 'store_location_slugs' => $storeLocationSlugs,
                 'stores' => $stores,
-                'leaflet_stores' => $stores,
+                'leaflet_stores' => $leafletStores,
                 'leaflets' => $leafletEntries,
                 'categories' => $categories,
                 'products_total' => $productsTotal,

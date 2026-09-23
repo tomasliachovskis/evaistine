@@ -253,7 +253,7 @@
                     </div>
                 @endif
 
-                <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" :show-leaflets-link="true" :leaflets-count="$listingMeta['leaflets_count'] ?? 0" :compact="true" />
+                <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" :shows-discounts-page="$showsDiscountsPage" :show-leaflets-link="true" :leaflets-count="$listingMeta['leaflets_count'] ?? 0" :compact="true" />
 
                 <div class="section-card">
                     <h2 class="section-heading mb-3">Kiti {{ $storeName }} leidiniai</h2>
@@ -273,10 +273,12 @@
                     @endif
                 </div>
 
-                <a href="/akcijos/{{ $storeSlug }}" class="section-link">
-                    Visos {{ $storeName }} akcijos
-                    <x-app-icon name="chevron-right" class="size-3.5" />
-                </a>
+                @if ($showsDiscountsPage)
+                    <a href="/akcijos/{{ $storeSlug }}" class="section-link">
+                        Visos {{ $storeName }} akcijos
+                        <x-app-icon name="chevron-right" class="size-3.5" />
+                    </a>
+                @endif
             </aside>
         </div>
     </main>

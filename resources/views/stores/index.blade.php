@@ -7,7 +7,13 @@
         'elimart', 'ermitazas', 'eurokos', 'eurovaistine', 'gintarine-vaistine', 'jupoja', 'jysk',
         'moki-vezi', 'pepco', 'senukai'];
 
-    $sortedStores = collect(\App\Support\StoreListPriority::sort($stores));
+    // Every store, not just those with offers — leaflet-only stores (Jysk,
+    // Senukai...) are real stores too, their cards link to /leidinys/{slug}.
+    // Stores with an offers page (extract_discounts_from_flyer) first, then
+    // the rest — each group simply by id, no offer/leaflet-count ranking.
+    $sortedStores = collect($stores)
+        ->sortBy(fn ($s) => [($s['shows_discounts_page'] ?? true) ? 0 : 1, $s['id']])
+        ->values();
 
     $withLocations = $sortedStores->filter(fn ($s) => in_array($s['slug'], $storesWithLocations, true));
 @endphp

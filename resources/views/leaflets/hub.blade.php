@@ -83,7 +83,7 @@
              the viewport for the rest of the (much taller) page —
              confirmed live 2026-09-17. Needs to be a direct child of this
              full-page-height column instead. --}}
-        <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" />
+        <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" :shows-discounts-page="$showsDiscountsPage" />
 
         @php
             // Split rather than just re-sort: an SEO audit flagged expired

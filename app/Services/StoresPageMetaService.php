@@ -75,6 +75,7 @@ class StoresPageMetaService
                 'slug' => $store->slug,
                 'discounts_count' => $store->discounts_count ?? 0,
                 'leaflets_count' => (int) ($leafletCounts[$store->id] ?? 0),
+                'shows_discounts_page' => $store->showsDiscountsPage(),
                 'max_discount_percent' => $maxDiscount,
                 'best_offer' => $bestOffer,
             ];

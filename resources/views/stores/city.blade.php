@@ -46,11 +46,12 @@
                     </div>
                 @endforeach
 
+                {{-- Leaflet-only stores link their leaflet hub (their /akcijos URL 301s there). --}}
                 <a
-                    href="/akcijos/{{ $store->slug }}"
+                    href="{{ $store->showsDiscountsPage() ? '/akcijos/' . $store->slug : '/leidinys/' . $store->slug }}"
                     class="inline-flex w-fit items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 hover:border-green hover:text-green"
                 >
-                    Žiūrėti {{ $store->name }} akcijas
+                    Žiūrėti {{ $store->name }} {{ $store->showsDiscountsPage() ? 'akcijas' : 'leidinius' }}
                 </a>
             </div>
 
