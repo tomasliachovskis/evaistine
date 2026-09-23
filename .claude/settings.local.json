@@ -17,7 +17,8 @@
       "Bash(node *)",
       "Bash(sail npm *)",
       "Bash(sail artisan *)",
-      "Bash(curl -s http://localhost/)"
+      "Bash(curl -s http://localhost/)",
+      "Bash(rtk grep *)"
     ]
   }
 }
