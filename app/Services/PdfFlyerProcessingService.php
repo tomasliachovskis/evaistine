@@ -919,9 +919,15 @@ class PdfFlyerProcessingService
 
         $content = trim($content);
 
-        $content = $this->fixTruncatedJson($content);
+        // Only repair what doesn't already parse — the repair heuristics
+        // below used to run on every response and could mangle valid JSON
+        // (see fixTruncatedJson()).
+        json_decode($content);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $content;
+        }
 
-        return $content;
+        return $this->fixTruncatedJson($content);
     }
 
     private function fixTruncatedJson(string $json): string
@@ -932,11 +938,17 @@ class PdfFlyerProcessingService
             $json = preg_replace('/,\s*$/', '', $json);
         }
 
+        // Scanned front to back: an escape (\") only makes sense in reading
+        // order. This used to scan backwards, where the backslash is seen
+        // AFTER the quote it escapes — every escaped quote (e.g. an inch
+        // mark, "Ekrano dydis 2,4\"") flipped the in-string state and the
+        // whole response got cut down to `{"}`. Deterministic, so the page
+        // failed on every retry forever (Lidl flyer #155, 2026-09-23).
         $inString = false;
         $escapeNext = false;
-        $lastQuotePos = -1;
+        $open = [];
 
-        for ($i = strlen($json) - 1; $i >= 0; $i--) {
+        for ($i = 0, $len = strlen($json); $i < $len; $i++) {
             $char = $json[$i];
 
             if ($escapeNext) {
@@ -944,36 +956,34 @@ class PdfFlyerProcessingService
                 continue;
             }
 
-            if ($char === '\\') {
-                $escapeNext = true;
+            if ($inString) {
+                if ($char === '\\') {
+                    $escapeNext = true;
+                } elseif ($char === '"') {
+                    $inString = false;
+                }
                 continue;
             }
 
             if ($char === '"') {
-                if (!$inString) {
-                    $lastQuotePos = $i;
-                    $inString = true;
-                } else {
-                    $inString = false;
-                }
+                $inString = true;
+            } elseif ($char === '{' || $char === '[') {
+                $open[] = $char;
+            } elseif ($char === '}' || $char === ']') {
+                array_pop($open);
             }
         }
 
-        if ($inString && $lastQuotePos >= 0) {
-            $json = substr($json, 0, $lastQuotePos + 1);
-        } elseif ($inString) {
+        // Cut off mid-string: close that string, drop a dangling comma, then
+        // close whatever is still open in reverse order (a plain count of
+        // braces vs brackets closed them in the wrong order).
+        if ($inString) {
             $json .= '"';
         }
+        $json = preg_replace('/,\s*$/', '', $json);
 
-        $openBraces = substr_count($json, '{') - substr_count($json, '}');
-        $openBrackets = substr_count($json, '[') - substr_count($json, ']');
-
-        if ($openBrackets > 0) {
-            $json .= str_repeat(']', $openBrackets);
-        }
-
-        if ($openBraces > 0) {
-            $json .= str_repeat('}', $openBraces);
+        foreach (array_reverse($open) as $bracket) {
+            $json .= $bracket === '{' ? '}' : ']';
         }
 
         return $json;

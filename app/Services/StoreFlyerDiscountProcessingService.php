@@ -109,21 +109,35 @@ class StoreFlyerDiscountProcessingService
                 $this->emit($output, 'info', "OK — extracted: {$result['total_extracted']}, saved: {$result['count']}");
 
                 if (!empty($result['partial'])) {
+                    $lastErrorMessage = reset($result['failed_pages']) ?: null;
+                    // Quota/spending-cap failures aren't this flyer's fault —
+                    // those keep retrying; anything else gives up at the limit.
+                    $isQuotaExceeded = PdfFlyerProcessingService::isQuotaExceededReason($lastErrorMessage);
+                    $giveUp = $attempt >= self::MAX_RETRY_ATTEMPTS && ! $isQuotaExceeded;
+
                     if ($attempt >= self::MAX_RETRY_ATTEMPTS) {
                         Log::channel('flyer')->error('Store flyer discounts still incomplete after many retries — needs manual attention', [
                             'store_flyer_id' => $flyer->id,
                             'attempts' => $attempt,
                             'failed_pages' => $result['failed_pages'],
                         ]);
-                        $this->emit($output, 'error', "Flyer #{$flyer->id} STILL INCOMPLETE after {$attempt} attempts — needs manual attention.");
+                        $this->emit($output, 'error', "Flyer #{$flyer->id} STILL INCOMPLETE after {$attempt} attempts — " . ($giveUp ? 'giving up, needs manual attention.' : 'quota exceeded, will keep retrying.'));
                     } else {
                         $this->emit($output, 'warn', "Flyer #{$flyer->id} INCOMPLETE, will retry (attempt {$attempt}).");
                     }
 
-                    $lastErrorMessage = reset($result['failed_pages']) ?: null;
-
                     $flyer->update([
+                        // Give up after MAX_RETRY_ATTEMPTS: marking it processed
+                        // drops it from --pending. Before, the limit only logged
+                        // an error and kept retrying every 15 min forever —
+                        // found live 2026-09-23: Lidl #155 on attempt 168, one
+                        // page Gemini never returns valid JSON for, ~9-12
+                        // Gemini calls/hour around the clock. What the other
+                        // pages extracted is already saved; retry_state keeps
+                        // the failed pages for a manual look.
+                        'discounts_processed_at' => $giveUp ? now() : null,
                         'discounts_retry_state' => [
+                            'gave_up' => $giveUp,
                             'failed_pages' => array_keys($result['failed_pages']),
                             // One representative reason string (e.g. "HTTP
                             // 429: Your project has exceeded its monthly
@@ -132,7 +146,7 @@ class StoreFlyerDiscountProcessingService
                             // to tell what's wrong without grepping
                             // storage/logs/flyer-*.log by hand.
                             'last_error_message' => $lastErrorMessage,
-                            'is_quota_exceeded' => PdfFlyerProcessingService::isQuotaExceededReason($lastErrorMessage),
+                            'is_quota_exceeded' => $isQuotaExceeded,
                             'validity_dates' => $result['validity_dates'] ?? null,
                             'attempts' => $attempt,
                             'last_attempted_at' => now()->toDateTimeString(),
@@ -148,12 +162,26 @@ class StoreFlyerDiscountProcessingService
             } else {
                 $this->emit($output, 'error', "Flyer #{$flyer->id} failed: {$result['message']}");
                 $lastErrorMessage = !empty($result['failed_pages']) ? reset($result['failed_pages']) : ($result['message'] ?? null);
+                // A quota/spending-cap failure isn't this flyer's fault —
+                // keep retrying those; anything else gives up at the limit
+                // like the partial case above.
+                $isQuotaExceeded = PdfFlyerProcessingService::isQuotaExceededReason($lastErrorMessage);
+                $giveUp = $attempt >= self::MAX_RETRY_ATTEMPTS && ! $isQuotaExceeded;
+                if ($giveUp) {
+                    Log::channel('flyer')->error('Store flyer discount extraction failed after max retries — giving up, needs manual attention', [
+                        'store_flyer_id' => $flyer->id,
+                        'attempts' => $attempt,
+                        'message' => $lastErrorMessage,
+                    ]);
+                }
 
                 $flyer->update([
+                    'discounts_processed_at' => $giveUp ? now() : null,
                     'discounts_retry_state' => [
+                        'gave_up' => $giveUp,
                         'failed_pages' => array_keys($result['failed_pages'] ?? []) ?: $targetPages,
                         'last_error_message' => $lastErrorMessage,
-                        'is_quota_exceeded' => PdfFlyerProcessingService::isQuotaExceededReason($lastErrorMessage),
+                        'is_quota_exceeded' => $isQuotaExceeded,
                         'validity_dates' => $result['validity_dates'] ?? $seedValidityDates,
                         'attempts' => $attempt,
                         'last_attempted_at' => now()->toDateTimeString(),
