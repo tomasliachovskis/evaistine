@@ -188,11 +188,9 @@ class Kernel extends ConsoleKernel
         // lunch break with the whole day ahead to act; evening catches
         // whatever changed since then before it's time to plan tomorrow's
         // shopping — rather than one digest a day risking a half-expired
-        // discount by the time someone's next near a store. Its own rate
-        // limiting (hard daily cap + 48h "nothing new" cooldown, see
-        // NotifyPriceWatchers) still caps it at one real email per user per
-        // day even with two scheduled runs — the second run is only useful
-        // when the 09:00 run found nothing to send.
+        // discount by the time someone's next near a store. A product is
+        // only re-sent when its price dropped (or after 7 days, see
+        // NotifyPriceWatchers), so the second run doesn't repeat the first.
         $schedule->command('price-watch:notify')
             ->twiceDaily(9, 17)
             ->withoutOverlapping(30)

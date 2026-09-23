@@ -14,13 +14,17 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
 // Emails a user about a favorited (= "sekama", tracked via <x-favorite-button>/
-// price-watch-modal) product's active Discount. No per-user rate limit
-// (no daily cap, no "wait N hours between emails") — the only throttle is
-// per product: a product already emailed to this user within the last 5
-// days is skipped, everything else pending goes out. So a run that's late
-// or skipped just catches up next time, and the same product won't spam the
-// user more than once per 5-day window regardless of how often this command
-// runs.
+// price-watch-modal) product's active Discount. Decided per product and
+// price, not per Discount row: a product is emailed when it was never
+// emailed to this user, when its cheapest current price is LOWER than the
+// last price emailed (every run it keeps dropping), or when the last email
+// about it is older than RENOTIFY_AFTER_DAYS (an offer coming back weeks
+// later is news again). Same or higher price inside that window is skipped.
+//
+// Not keyed on discount_id: Rimi/Maxima re-create most Discount rows (new
+// id) on nearly every scrape — 99% / 55% of their rows were under 2 days old
+// when checked 2026-09-23 — so "never re-send the same discount_id" would
+// re-email the same offer almost daily.
 //
 // Deliberately independent of discounts:process's own timing (that pipeline
 // runs Discount::create inside withoutEvents(), so no model event fires here
@@ -38,12 +42,9 @@ class NotifyPriceWatchers extends Command
     // arrives, not an immediate login action.
     private const MAGIC_LINK_TTL_DAYS = 14;
 
-    // Per-product re-notify window: a product (by product_id, regardless of
-    // which store's Discount row triggers it) already emailed to this user
-    // within the last 5 days is skipped; otherwise it's sent every run it's
-    // still on sale. Replaces the old per-user daily-cap/48h-cooldown
-    // scheme.
-    private const RENOTIFY_COOLDOWN_DAYS = 5;
+    // A product last emailed longer ago than this is emailed again even at
+    // the same price — see the class comment.
+    private const RENOTIFY_AFTER_DAYS = 7;
 
     public function handle(): int
     {
@@ -51,7 +52,7 @@ class NotifyPriceWatchers extends Command
 
         // (user_id, discount_id) pairs for every favorited product currently
         // on an active Discount — no longer filtered by notification history
-        // at the query level; the per-product 5-day cooldown below decides
+        // at the query level; the per-product price check below decides
         // what actually gets sent. discounts:archive-expired only runs as
         // part of whichever store's own processing job just touched it (see
         // FinalizeScrapedStoresJob) — not a standalone sweep — so an
@@ -114,23 +115,36 @@ class NotifyPriceWatchers extends Command
             // (one per store selling it) — show the product once, with every
             // store's offer listed underneath (cheapest first), not once per
             // store. Every discount in the group still gets a
-            // price_watch_notifications row below so they all share the same
-            // "last emailed" timestamp for the cooldown check next run.
+            // price_watch_notifications row below, all stamped with the
+            // group's cheapest price as notified_price.
             $productGroups = $discounts->groupBy('product_id')
                 ->map(fn ($group) => $group->sortBy('discounted_price')->values())
                 ->values();
 
-            // Products already emailed to this user within the cooldown
-            // window are dropped — everything else goes out regardless of
-            // whether the price actually changed since last time.
-            $recentlyNotifiedProductIds = PriceWatchNotification::where('user_id', $userId)
+            // Latest email per product for this user (all rows of one send
+            // share sent_at and notified_price, so any row at the max
+            // sent_at carries that send's price).
+            $lastNotified = PriceWatchNotification::where('user_id', $userId)
                 ->whereIn('product_id', $productGroups->map(fn ($g) => $g->first()->product_id))
-                ->where('sent_at', '>=', now()->subDays(self::RENOTIFY_COOLDOWN_DAYS))
-                ->pluck('product_id')
-                ->unique();
+                ->orderByDesc('sent_at')
+                ->get(['product_id', 'notified_price', 'sent_at'])
+                ->unique('product_id')
+                ->keyBy('product_id');
 
             $productGroups = $productGroups
-                ->reject(fn ($group) => $recentlyNotifiedProductIds->contains($group->first()->product_id))
+                ->filter(function ($group) use ($lastNotified) {
+                    $last = $lastNotified->get($group->first()->product_id);
+
+                    if ($last === null || $last->sent_at < now()->subDays(self::RENOTIFY_AFTER_DAYS)) {
+                        return true;
+                    }
+
+                    // Rows from before notified_price was recorded have no
+                    // price to compare against — only the RENOTIFY_AFTER_DAYS rule
+                    // re-sends those, never a guess.
+                    return $last->notified_price !== null
+                        && round((float) $group->first()->discounted_price, 2) < round((float) $last->notified_price, 2);
+                })
                 ->values();
 
             if ($productGroups->isEmpty()) {
@@ -172,14 +186,12 @@ class NotifyPriceWatchers extends Command
             });
 
             try {
-                Mail::to($user->email)->send(new PriceWatchDiscountMail($productGroups, $favoritesUrl, $totalSavings, $unsubscribeUrl));
-
                 $now = now();
                 // Every underlying discount in a product's group is stamped
                 // with the same sent_at/notified_price (that group's cheapest
-                // price, not each store's own) — the cooldown check above
-                // only needs sent_at, but notified_price is kept for record.
-                $rowsToInsert = $productGroups->flatMap(function ($group) use ($user, $now) {
+                // price, not each store's own) — the next run compares its
+                // price against this notified_price.
+                $rowsToRecord = $productGroups->flatMap(function ($group) use ($user, $now) {
                     $cheapestPrice = $group->first()->discounted_price;
 
                     return $group->map(fn ($d) => [
@@ -191,10 +203,24 @@ class NotifyPriceWatchers extends Command
                     ]);
                 })->all();
 
-                PriceWatchNotification::insert($rowsToInsert);
+                // Record first, send second, one transaction: a failed send
+                // rolls the rows back, and a failed write can never happen
+                // after the email already went out. It used to send first
+                // and then insert() — once the 5-day cooldown started
+                // re-sending the same discount, insert() hit the
+                // (user_id, discount_id) unique key, the whole batch failed,
+                // nothing was recorded, and those users got the same email
+                // every run, twice a day (found live 2026-09-23). upsert()
+                // refreshes sent_at/notified_price on an already-notified
+                // discount instead.
+                DB::transaction(function () use ($rowsToRecord, $user, $productGroups, $favoritesUrl, $totalSavings, $unsubscribeUrl) {
+                    PriceWatchNotification::upsert($rowsToRecord, ['user_id', 'discount_id'], ['product_id', 'notified_price', 'sent_at']);
+
+                    Mail::to($user->email)->send(new PriceWatchDiscountMail($productGroups, $favoritesUrl, $totalSavings, $unsubscribeUrl));
+                });
 
                 $sent++;
-                $this->line("Emailed {$user->email}: {$productGroups->count()} product(s) (" . count($rowsToInsert) . ' underlying discount(s) marked notified)');
+                $this->line("Emailed {$user->email}: {$productGroups->count()} product(s) (" . count($rowsToRecord) . ' underlying discount(s) marked notified)');
             } catch (\Throwable $e) {
                 $failed++;
                 Log::warning('NotifyPriceWatchers: failed to send digest', [
@@ -206,7 +232,7 @@ class NotifyPriceWatchers extends Command
         }
 
         if (!$dryRun) {
-            $this->info("Done: {$sent} email(s) sent, {$failed} failed, {$skipped} user(s) with nothing outside the cooldown window.");
+            $this->info("Done: {$sent} email(s) sent, {$failed} failed, {$skipped} user(s) with no new or cheaper price.");
         }
 
         return 0;
