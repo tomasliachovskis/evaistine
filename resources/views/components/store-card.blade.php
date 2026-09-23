@@ -5,6 +5,10 @@
 
     $hasOffers = ($store['discounts_count'] ?? 0) > 0;
     $leafletsCount = $store['leaflets_count'] ?? 0;
+    // Dimmed only when there's truly nothing to see — at least one offer or
+    // one leaflet makes the store active (leaflet-only stores like Avon,
+    // Apotheka read as inactive otherwise).
+    $isActive = $hasOffers || $leafletsCount > 0;
     // Leaflet-only stores (no discount extraction) have no offers page —
     // /akcijos/{slug} just 301s to their leaflet hub, so link there directly.
     // Missing key (older cached payload) keeps the offers link.
@@ -20,7 +24,7 @@
          card look as the /parduotuves grid card below (logo, bold name,
          count as plain text), just narrower and without the "Žiūrėti
          akcijas" CTA since the whole tile is already clickable. --}}
-    <a href="{{ $storeHref }}" class="flex w-28 shrink-0 snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:w-32 sm:p-3 {{ !$hasOffers ? 'opacity-75' : '' }}">
+    <a href="{{ $storeHref }}" class="flex w-28 shrink-0 snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:w-32 sm:p-3 {{ !$isActive ? 'opacity-75' : '' }}">
         <div class="flex h-14 items-center justify-center sm:h-16">
             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="md" />
         </div>
@@ -42,7 +46,7 @@
     </a>
 @else
     {{-- Ported from discount/src/components/stores/store-card.tsx (slider layout, view-only actions). --}}
-    <a href="{{ $storeHref }}" class="group flex snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:p-3 {{ $widthClass }} {{ !$hasOffers ? 'opacity-75' : '' }}">
+    <a href="{{ $storeHref }}" class="group flex snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:p-3 {{ $widthClass }} {{ !$isActive ? 'opacity-75' : '' }}">
         <div class="flex h-[72px] items-center justify-center sm:h-[80px]">
             <x-store-logo :slug="$store['slug']" size="lg" />
         </div>
