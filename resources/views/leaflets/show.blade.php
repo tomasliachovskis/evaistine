@@ -84,11 +84,44 @@
                             });
                         });
                         window.addEventListener('resize', () => this.sizeViewer());
+                        // Pseudo-fullscreen (see toggleFullscreen) doesn't get
+                        // the browser's own scroll lock, so lock the page
+                        // behind the fixed overlay ourselves.
+                        this.$watch('fullscreen', (on) => {
+                            document.documentElement.classList.toggle('overflow-hidden', on);
+                            if (!on) this.$nextTick(() => this.sizeViewer());
+                        });
+                    },
+                    // iPhone Safari has no element Fullscreen API at all
+                    // (requestFullscreen/webkitRequestFullscreen are both
+                    // undefined — only <video> can go fullscreen there), so
+                    // the button silently did nothing on iPhones (reported
+                    // 2026-09-23, iPhone 11 Pro). Fall back to a CSS-only
+                    // fixed overlay whenever the real API is missing or
+                    // rejects.
+                    toggleFullscreen() {
+                        if (this.fullscreen) {
+                            if (document.fullscreenElement) document.exitFullscreen();
+                            else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+                            else this.fullscreen = false;
+                            return;
+                        }
+                        const el = this.$refs.viewerFrame;
+                        const request = el.requestFullscreen || el.webkitRequestFullscreen;
+                        if (request) {
+                            try {
+                                const result = request.call(el);
+                                if (result && result.catch) result.catch(() => { this.fullscreen = true; });
+                                return;
+                            } catch (e) {}
+                        }
+                        this.fullscreen = true;
                     },
                 }"
                 @keydown.window="
                     if ($event.key === 'ArrowRight') currentPage = Math.min(totalPages, currentPage + 1);
                     if ($event.key === 'ArrowLeft') currentPage = Math.max(1, currentPage - 1);
+                    if ($event.key === 'Escape' && fullscreen && !document.fullscreenElement && !document.webkitFullscreenElement) fullscreen = false;
                 "
                 @fullscreenchange.window="fullscreen = !!document.fullscreenElement"
                 @webkitfullscreenchange.window="fullscreen = !!document.webkitFullscreenElement"
@@ -99,8 +132,11 @@
                     <div
                         x-ref="viewerFrame"
                         class="relative flex h-[75vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
-                        :style="viewerHeight && !fullscreen ? `height: ${viewerHeight}px` : ''"
-                        :class="fullscreen && 'fixed inset-0 z-[9999] h-auto rounded-none border-none bg-black/95 p-4'"
+                        :style="fullscreen ? 'height: 100dvh' : (viewerHeight ? `height: ${viewerHeight}px` : '')"
+                        {{-- Important modifiers: the static 'relative' otherwise
+                             wins over 'fixed' in the compiled CSS order, so the
+                             pseudo-fullscreen overlay never left the page flow. --}}
+                        :class="fullscreen && 'fixed! inset-0 z-[9999] rounded-none! border-none! bg-black/95! p-4'"
                         @touchstart="touchStartX = $event.touches[0].clientX"
                         @touchend="
                             if (touchStartX === null) return;
@@ -154,14 +190,7 @@
                         </button>
                         <button
                             type="button"
-                            @click="
-                                if (fullscreen) {
-                                    (document.exitFullscreen && document.exitFullscreen()) || (document.webkitExitFullscreen && document.webkitExitFullscreen());
-                                } else {
-                                    const el = $refs.viewerFrame;
-                                    (el.requestFullscreen && el.requestFullscreen()) || (el.webkitRequestFullscreen && el.webkitRequestFullscreen());
-                                }
-                            "
+                            @click="toggleFullscreen()"
                             :aria-label="fullscreen ? 'Uždaryti pilną ekraną' : 'Pilnas ekranas'"
                             class="absolute right-2 top-2 flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
                         >

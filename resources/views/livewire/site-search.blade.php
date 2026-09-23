@@ -11,6 +11,13 @@
             <span class="truncate text-gray-400">Ieškoti parduotuvių, leidinių, prekių...</span>
         </button>
 
+        {{-- Teleported to <body>: <header> is `fixed` + `z-50`, its own
+             stacking context, so this overlay's z-index was capped there
+             and a page's z-[60] sticky filter bar (e.g. /leidiniai store
+             chips) rendered on top of it. Same fix as site-header's
+             Kategorijos modal/mobile menu, via Livewire's @teleport so the
+             wire: bindings inside keep working. --}}
+        @teleport('body')
         <div x-show="$wire.open" x-cloak class="fixed inset-0 z-[100] hidden sm:block">
             <button type="button" class="absolute inset-0 bg-black/55" aria-label="Uždaryti paiešką" wire:click="$set('open', false)"></button>
             <div class="relative bg-white shadow-xl">
@@ -43,6 +50,7 @@
                 </div>
             </div>
         </div>
+        @endteleport
     </div>
 @else
     {{-- Mobile: icon-only trigger opening a bottom sheet (mobileProductToolbar
@@ -52,6 +60,9 @@
             <x-app-icon name="search" class="size-5" />
         </button>
 
+        {{-- Teleported for the same header stacking-context reason as the
+             desktop overlay above. --}}
+        @teleport('body')
         <div x-show="$wire.open" x-cloak class="fixed inset-0 z-[9999] sm:hidden">
             <button type="button" class="absolute inset-0 bg-black/55" aria-label="Uždaryti" wire:click="$set('open', false)"></button>
             <div
@@ -92,5 +103,6 @@
                 </div>
             </div>
         </div>
+        @endteleport
     </div>
 @endif
