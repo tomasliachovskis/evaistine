@@ -38,6 +38,10 @@ class PdfFlyerProcessingService
     private const GEMINI_INPUT_COST_PER_MILLION = 0.50;
     private const GEMINI_OUTPUT_COST_PER_MILLION = 3.00;
 
+    // Stores whose flyers print a Food Service / Cash&Carry, Su PVM / Be PVM
+    // price table per product — see getUserPrompt().
+    private const VAT_PRICE_TABLE_STORES = ['epromo', 'promo-cash-carry'];
+
     // Testing whether a lower render DPI (fewer pixels — was 300) still
     // gives Gemini enough resolution to read small print/prices accurately,
     // while cutting rasterization + JPEG encode + GD preprocessing time
@@ -1176,6 +1180,19 @@ Return ONLY valid JSON. No explanations. No markdown.
             $prompt .= "Validity dates already known: {$validityDates['start_at']} to {$validityDates['end_at']}. If you see different validity dates on this page, replace them with the visible ones. ";
         } else {
             $prompt .= "Extract validity dates if visible. ";
+        }
+
+        // Wholesale flyers print a price table per product (Food Service /
+        // Cash&Carry, each "Su PVM" / "Be PVM") — without this, Gemini 3
+        // picked the without-VAT price (~17% below what a shopper pays) and
+        // its boxes stopped short of the last price column. Store-scoped on
+        // purpose: other stores' flyers have no such table, and a VAT rule
+        // there could only confuse the model.
+        if (in_array($store->slug, self::VAT_PRICE_TABLE_STORES, true)) {
+            $prompt .= "This store's flyer prints a price table per product with columns \"Su PVM\" (with VAT) and \"Be PVM\" (without VAT), for the channels \"Food Service\" and \"Cash&Carry\". "
+                . "For dp and op ALWAYS use the Cash&Carry \"Su PVM\" price. NEVER use any \"Be PVM\" price. "
+                . "If the Cash&Carry \"Su PVM\" cell is empty or \"-\", use the Food Service \"Su PVM\" price from the same row instead. "
+                . "The box must include the whole price table, reaching past its last column. ";
         }
 
         $prompt .= "Extract all visible discounts from this flyer page. Only extract what you can see — use null for anything unclear. ";
