@@ -33,7 +33,6 @@ const CATEGORY_PATHS = [
     'namu-apyvoka-ir-buitis/buitine-chemija/buitines-valymo-prieziuros-priemones/kilimu-valikliai',
     'namu-apyvoka-ir-buitis/buitine-chemija/buitines-valymo-prieziuros-priemones/grindu-valymo-priemones',
     'namu-apyvoka-ir-buitis/buitine-chemija/buitines-valymo-prieziuros-priemones/universalus-ivairiu-pavirsiu-valikliai',
-    'namu-apyvoka-ir-buitis/buitine-chemija/parazitu-naikinimo-priemones/chemines-parazitu-naikinimo-priemones',
     'namu-apyvoka-ir-buitis/valymo-reikmenys/kempines-sluostes-sveistukai-valymas/indu-valymo-kempineles-reikmenys',
     'namu-apyvoka-ir-buitis/valymo-reikmenys/kempines-sluostes-sveistukai-valymas/metaliniai-ir-plastikiniai-sveistukai-indams-valymas',
     'namu-apyvoka-ir-buitis/valymo-reikmenys/kempines-sluostes-sveistukai-valymas/sluostes-valymas',
