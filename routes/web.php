@@ -67,6 +67,11 @@ Route::get('/akcijos/{slug1}/{slug2?}', [AkcijosController::class, 'show']);
 
 Route::get('/parduotuves', [StoreController::class, 'index']);
 Route::get('/parduotuves/{slug}/{city?}', [StoreController::class, 'show']);
+// Per-address location pages (e.g. /parduotuves/iki/kelme/birutes-g-7) no
+// longer exist — the city page lists every address, so send them there.
+Route::get('/parduotuves/{slug}/{city}/{address}', function (string $slug, string $city) {
+    return redirect("/parduotuves/{$slug}/{$city}", 301);
+})->where('address', '.*');
 
 Route::get('/leidiniai', [LeafletController::class, 'index']);
 Route::get('/leidinys/{store}/{flyerSlug}', [LeafletController::class, 'show']);
