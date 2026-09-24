@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Stores\Schemas;
 
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
 class StoreForm
@@ -25,6 +26,12 @@ class StoreForm
                     ->helperText('Parduotuvės puslapis, kuriame skelbiamas naujausias leidinys/PDF – iš čia jį parsisiųsti ir įkelti per "Leidiniai".')
                     ->url()
                     ->maxLength(500),
+                Toggle::make('show_discounts_page')
+                    ->label('Rodyti akcijų puslapį')
+                    ->helperText('Įjungus /akcijos/{slug} rodo šios parduotuvės prekes. Išjungus – nukreipia į leidinių puslapį.'),
+                Toggle::make('extract_discounts_from_flyer')
+                    ->label('Ištraukti nuolaidas iš leidinių (Gemini)')
+                    ->helperText('Nuolaidas ištraukia iš leidinio PDF. Nereikia parduotuvėms, turinčioms savo e. parduotuvės scraperį.'),
             ]);
     }
 }

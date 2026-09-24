@@ -15,7 +15,7 @@
     // / favorites store cards, instead of a raw discounts_count sort.
     $footerStores = Cache::remember("footer_stores_{$footerCacheSuffix}", 1800, fn () => \App\Support\StoreListPriority::sort(
         Store::query()
-            ->where('extract_discounts_from_flyer', true)
+            ->where('show_discounts_page', true)
             ->withCount('discounts')
             ->having('discounts_count', '>', 0)
             ->get()

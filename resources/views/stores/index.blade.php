@@ -9,7 +9,7 @@
 
     // Every store, not just those with offers — leaflet-only stores (Jysk,
     // Senukai...) are real stores too, their cards link to /leidinys/{slug}.
-    // Stores with an offers page (extract_discounts_from_flyer) first, then
+    // Stores with an offers page (show_discounts_page) first, then
     // the rest — each group simply by id, no offer/leaflet-count ranking.
     // Inactive stores (no offer and no leaflet — the dimmed cards, same rule
     // as <x-store-card>) always go last.

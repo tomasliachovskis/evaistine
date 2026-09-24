@@ -466,7 +466,7 @@ class ProductController extends Controller
         $cacheKey = 'stores_'.CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () {
-            $stores = \App\Models\Store::select('id', 'name', 'slug', 'extract_discounts_from_flyer')
+            $stores = \App\Models\Store::select('id', 'name', 'slug', 'show_discounts_page')
                 ->withCount([
                     'discounts' => function ($query) {
                         $query->select(\DB::raw('count(distinct discounts.id)'));
@@ -522,7 +522,7 @@ class ProductController extends Controller
         $cacheKey = "stores_for_category_{$category->id}_".CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($category) {
-            $stores = \App\Models\Store::select('id', 'name', 'slug', 'extract_discounts_from_flyer')
+            $stores = \App\Models\Store::select('id', 'name', 'slug', 'show_discounts_page')
                 ->withCount([
                     'discounts' => function ($query) use ($category) {
                         $query->select(\DB::raw('count(distinct discounts.id)'))
@@ -558,7 +558,7 @@ class ProductController extends Controller
         $payload = Cache::remember($cacheKey, 3600, function () use ($page) {
             $productIds = \App\Models\KeywordPageProduct::where('keyword_page_id', $page->id)->pluck('product_id');
 
-            $stores = \App\Models\Store::select('id', 'name', 'slug', 'extract_discounts_from_flyer')
+            $stores = \App\Models\Store::select('id', 'name', 'slug', 'show_discounts_page')
                 ->withCount([
                     'discounts' => function ($query) use ($productIds) {
                         $query->select(\DB::raw('count(distinct discounts.id)'))
@@ -1607,7 +1607,7 @@ class ProductController extends Controller
             // Leaflet-only stores' /akcijos URL 301s to their leaflet hub —
             // never list a redirecting URL.
             $stores = \App\Models\Store::query()
-                ->where('extract_discounts_from_flyer', true)
+                ->where('show_discounts_page', true)
                 ->whereHas('discounts')
                 ->pluck('slug')
                 ->all();

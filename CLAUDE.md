@@ -64,7 +64,7 @@ Based on onboarding Gulbelė, Vynoteka, and Thomas Philipps. Do these in order �
 
 ### 4b. Make the store's `/akcijos/{slug}` page visible
 
-`/akcijos/{slug}` 301-redirects to `/leidinys/{slug}` unless `stores.extract_discounts_from_flyer` is true (`Store::showsDiscountsPage()`). The same flag also opts the store's flyers into Gemini discount extraction (`flyers:process-discounts`). A store with a new e-shop scraper therefore shows no discounts page until the flag is flipped, and flipping it also starts flyer extraction for that store. The browser caches that 301 for a day, so verify with `curl` or a fresh query string.
+`/akcijos/{slug}` 301-redirects to `/leidinys/{slug}` unless `stores.show_discounts_page` is true (`Store::showsDiscountsPage()`; every "akcijos vs leidiniai" link, the footer store list and the sitemap read the same column). Turn it on for a new e-shop scraper store (Filament → Parduotuvės → "Rodyti akcijų puslapį", or in the store's onboarding migration). It's separate from `extract_discounts_from_flyer`, which only opts the store's flyer PDFs into Gemini discount extraction (`flyers:process-discounts`). Leave that off for stores with their own e-shop scraper. The browser caches the 301 for a day, so verify with `curl` or a fresh query string.
 
 ### 5. Store logo (this repo only)
 

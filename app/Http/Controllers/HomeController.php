@@ -37,7 +37,7 @@ class HomeController extends Controller
         // mirrored here via ProductController::getStores()'s same formatter.
         $storesCacheKey = 'home_stores_'.CacheVersion::suffix(['discounts']);
         $stores = Cache::remember($storesCacheKey, 1800, function () {
-            $stores = Store::select('id', 'name', 'slug', 'extract_discounts_from_flyer')
+            $stores = Store::select('id', 'name', 'slug', 'show_discounts_page')
                 ->withCount(['discounts' => fn ($query) => $query->select(\DB::raw('count(distinct discounts.id)'))])
                 ->get();
 

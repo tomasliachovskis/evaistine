@@ -20,22 +20,28 @@ class Store extends Model
         'faq',
         'flyer_source_url',
         'extract_discounts_from_flyer',
+        'show_discounts_page',
     ];
 
     protected $casts = [
         'faq' => 'array',
         'extract_discounts_from_flyer' => 'boolean',
+        'show_discounts_page' => 'boolean',
     ];
 
     /**
      * Whether /akcijos/{slug} is a real offers page for this store. Stores
-     * without discount extraction only have leaflets — their /akcijos URL
-     * 301s to /leidinys/{slug} (AkcijosController::show()) and every link
-     * to it should point at the leaflet hub instead.
+     * without one only have leaflets — their /akcijos URL 301s to
+     * /leidinys/{slug} (AkcijosController::show()) and every link to it
+     * should point at the leaflet hub instead.
+     *
+     * Deliberately separate from extract_discounts_from_flyer (Gemini
+     * extraction from the flyer PDF): a store with its own e-shop scraper
+     * shows an offers page without having its flyers extracted too.
      */
     public function showsDiscountsPage(): bool
     {
-        return (bool) $this->extract_discounts_from_flyer;
+        return (bool) $this->show_discounts_page;
     }
 
     public function products()

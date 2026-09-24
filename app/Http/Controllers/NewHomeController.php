@@ -49,7 +49,7 @@ class NewHomeController extends Controller
             'new_home_stores_'.CacheVersion::suffix(['discounts']),
             1800,
             function () {
-                $stores = Store::select('id', 'name', 'slug', 'extract_discounts_from_flyer')
+                $stores = Store::select('id', 'name', 'slug', 'show_discounts_page')
                     ->withCount(['discounts' => fn ($query) => $query->select(\DB::raw('count(distinct discounts.id)'))])
                     ->get();
 
