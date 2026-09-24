@@ -391,6 +391,26 @@ class ProcessDiscounts extends Command
             $product->save();
         }
 
+        // A dead hotlink (products:cache-images couldn't download it) gets
+        // replaced by whatever image a fresh scrape brings, and the failure
+        // flag is cleared so the next cache-images run retries it right away
+        // instead of waiting out the 3-day backoff. Same URL is skipped (it
+        // would only undo the backoff), and so is one of our own URLs
+        // (flyer crop / already cached) — only an external hotlink is
+        // something cache-images can pick up.
+        if (
+            !$product->wasRecentlyCreated
+            && $product->image_cache_failed_at !== null
+            && !empty($tempDiscount->image_url)
+            && $tempDiscount->image_url !== $product->image_url
+            && str_starts_with($tempDiscount->image_url, 'http')
+            && !str_starts_with($tempDiscount->image_url, rtrim(config('app.url'), '/') . '/')
+        ) {
+            $product->image_url = $tempDiscount->image_url;
+            $product->image_cache_failed_at = null;
+            $product->save();
+        }
+
         if ($this->discountExists($product->id, $store->id, $startAt, $endAt)) {
             return true;
         }
