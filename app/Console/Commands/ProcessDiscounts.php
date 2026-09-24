@@ -27,6 +27,7 @@ use App\Rules\StoreRules\SilasRules;
 use App\Rules\StoreRules\ThomasPhilippsRules;
 use App\Rules\StoreRules\VynotekaRules;
 use App\Services\DealPoolRefresher;
+use App\Support\EnergyDrinkCategory;
 use App\Support\NormalizesDiscountDates;
 use App\Support\ProductPackSizeExtractor;
 use Illuminate\Console\Command;
@@ -330,6 +331,9 @@ class ProcessDiscounts extends Command
         }
 
         $categoryId = $this->resolveCategoryId($tempDiscount, $store);
+        if (is_int($categoryId)) {
+            $categoryId = EnergyDrinkCategory::apply($categoryId, $tempDiscount->name);
+        }
         if ($categoryId === false || $categoryId === null) {
             CategoryMapper::firstOrCreate(
                 ['store_category' => $tempDiscount->category],
