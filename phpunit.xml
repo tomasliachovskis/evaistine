@@ -40,6 +40,13 @@
         <server name="DB_PORT" value="3306"/>
         <server name="DB_DATABASE" value="laravel_test"/>
         <server name="MAIL_MAILER" value="array"/>
+        <!--
+            Nothing listens here, so every Meilisearch call fails instantly
+            and falls back the same way it does when the index is down.
+            Discount model events would otherwise push test rows into the
+            real dev index, and search/similar-products would read from it.
+        -->
+        <server name="MEILISEARCH_HOST" value="http://127.0.0.1:1"/>
         <server name="QUEUE_CONNECTION" value="sync"/>
         <server name="SESSION_DRIVER" value="array"/>
         <server name="TELESCOPE_ENABLED" value="false"/>
