@@ -1327,7 +1327,7 @@ class KeywordPageService
 
         $genitive = $page->grammar_genitive ?: $keywordLower;
 
-        return ucfirst($genitive) . ' akcijos šiuo metu galioja pagrindinėse parduotuvėse: '
+        return mb_ucfirst($genitive) . ' akcijos: '
             . implode('; ', $parts) . '. Palyginkite ir rinkitės pigiausią variantą.';
     }
 
