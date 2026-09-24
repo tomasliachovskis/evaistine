@@ -4,6 +4,8 @@ namespace Tests\Feature\Seo;
 
 use App\Models\Discount;
 use App\Models\Store;
+use App\Models\StoreFlyer;
+use App\Models\StoreFlyerPage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Seo\Concerns\InspectsSeoHead;
 use Tests\TestCase;
@@ -146,6 +148,61 @@ class StructuredDataTest extends TestCase
         $this->assertSame('akcijos/paieska/pienas', end($breadcrumbs)['slug']);
     }
 
+    public function test_leaflet_hub_has_breadcrumb_and_item_list_of_current_leaflets(): void
+    {
+        ['store' => $store, 'flyer' => $flyer] = $this->seedLeaflet();
+        $expired = $this->createFlyer($store, 'seo-senas-leidinys', now()->subWeeks(3), now()->subWeeks(2));
+
+        $response = $this->get("/leidinys/{$store->slug}");
+
+        $this->assertIndexable($response, "/leidinys/{$store->slug}");
+
+        $breadcrumbs = $this->jsonLdOfType($response, 'BreadcrumbList');
+        $this->assertCount(1, $breadcrumbs);
+        $items = $breadcrumbs[0]['itemListElement'];
+        $this->assertSame([url('/leidiniai'), url("/leidinys/{$store->slug}")], array_column($items, 'item'));
+
+        $lists = $this->jsonLdOfType($response, 'ItemList');
+        $this->assertCount(1, $lists);
+        $urls = array_column($lists[0]['itemListElement'], 'url');
+        $this->assertContains(url("/leidinys/{$store->slug}/{$flyer->slug}"), $urls);
+        // Only currently valid leaflets, not the expired archive.
+        $this->assertNotContains(url("/leidinys/{$store->slug}/{$expired->slug}"), $urls);
+    }
+
+    public function test_leaflet_page_has_breadcrumb_and_cover_image(): void
+    {
+        ['store' => $store, 'flyer' => $flyer] = $this->seedLeaflet();
+        $path = "/leidinys/{$store->slug}/{$flyer->slug}";
+
+        $response = $this->get($path);
+
+        $this->assertIndexable($response, $path);
+
+        $breadcrumbs = $this->jsonLdOfType($response, 'BreadcrumbList');
+        $this->assertCount(1, $breadcrumbs);
+        $this->assertSame(
+            [url('/leidiniai'), url("/leidinys/{$store->slug}"), url($path)],
+            array_column($breadcrumbs[0]['itemListElement'], 'item')
+        );
+
+        $images = $this->jsonLdOfType($response, 'ImageObject');
+        $this->assertCount(1, $images);
+        $this->assertStringEndsWith('/storage/flyers/pages/seo/page-1.webp', $images[0]['contentUrl']);
+        $this->assertNotEmpty($images[0]['name']);
+        $this->assertTrue($images[0]['representativeOfPage']);
+    }
+
+    public function test_inactive_or_unprocessed_leaflet_is_404(): void
+    {
+        ['store' => $store] = $this->seedLeaflet();
+        $this->createFlyer($store, 'seo-isjungtas', now()->subDay(), now()->addWeek(), ['is_active' => false]);
+        $this->createFlyer($store, 'seo-neapdorotas', now()->subDay(), now()->addWeek(), ['processing_status' => StoreFlyer::STATUS_PENDING]);
+
+        $this->get("/leidinys/{$store->slug}/seo-isjungtas")->assertNotFound();
+        $this->get("/leidinys/{$store->slug}/seo-neapdorotas")->assertNotFound();
+    }
+
     public function test_homepage_has_organization_and_site_search(): void
     {
         $this->seedListing();
@@ -169,5 +226,41 @@ class StructuredDataTest extends TestCase
 
         $this->assertSame([], $this->jsonLdOfType($response, 'Organization'));
         $this->assertSame([], $this->jsonLdOfType($response, 'WebSite'));
+    }
+
+    /**
+     * A leaflet-only store with one current, processed leaflet.
+     */
+    private function seedLeaflet(): array
+    {
+        $store = Store::factory()->create(['name' => 'Seo Leidiniai', 'slug' => 'seo-leidiniai']);
+        $flyer = $this->createFlyer($store, 'seo-savaites-leidinys', now()->subDay(), now()->addWeek());
+
+        return compact('store', 'flyer');
+    }
+
+    private function createFlyer(Store $store, string $slug, $validFrom, $validTo, array $attributes = []): StoreFlyer
+    {
+        $flyer = StoreFlyer::create(array_merge([
+            'store_id' => $store->id,
+            'slug' => $slug,
+            'title' => 'Savaitės leidinys',
+            'image_url' => '/storage/flyers/pages/seo/page-1.webp',
+            'valid_from' => $validFrom,
+            'valid_to' => $validTo,
+            'is_active' => true,
+            'processing_status' => StoreFlyer::STATUS_READY,
+        ], $attributes));
+
+        foreach ([1, 2] as $pageNumber) {
+            StoreFlyerPage::create([
+                'store_flyer_id' => $flyer->id,
+                'page_number' => $pageNumber,
+                'sort_order' => $pageNumber,
+                'image_url' => "/storage/flyers/pages/seo/page-{$pageNumber}.webp",
+            ]);
+        }
+
+        return $flyer;
     }
 }
