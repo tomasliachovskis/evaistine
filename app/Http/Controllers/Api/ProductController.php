@@ -1142,6 +1142,7 @@ class ProductController extends Controller
                     'slug' => 'akcijos/paieska/'.$entity,
                     'type' => 'search',
                 ];
+                break;
             case 'all_discounts':
                 $breadcrumbs[] = [
                     'name' => 'Visos akcijos',

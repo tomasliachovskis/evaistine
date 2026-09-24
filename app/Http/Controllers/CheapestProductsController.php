@@ -50,7 +50,7 @@ class CheapestProductsController extends Controller
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
             'groups' => $groups,
-            'freshnessLabel' => LithuanianDate::relative(ContentFreshness::forAll()),
+            'freshnessLabel' => ($freshnessDate = ContentFreshness::forAll()) ? LithuanianDate::relative($freshnessDate) : null,
         ]);
     }
 }
