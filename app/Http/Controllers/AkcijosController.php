@@ -71,6 +71,10 @@ class AkcijosController extends Controller
 
     public function show(Request $request, ProductController $api, KeywordPageController $keywordApi, string $slug1, ?string $slug2 = null)
     {
+        if ($redirect = $this->redirectToAsciiSlugs($request, $slug1, $slug2)) {
+            return $redirect;
+        }
+
         // A store's own flag decides whether it has an offers page, not
         // config/stores.php — leaflet-only stores (Jysk, Senukai, Avon...)
         // used to 404 here while the site itself linked to them.
@@ -96,6 +100,32 @@ class AkcijosController extends Controller
         }
 
         abort(404);
+    }
+
+    // Slug columns use utf8mb4_unicode_ci, so `uzkandžiai` or `IKI` match the
+    // real `uzkandziai`/`iki` rows and would render a 200 duplicate whose
+    // canonical is built from the requested path — Google reported
+    // /akcijos/iki/saldumynai-ir-uzkandžiai as "Google chose different
+    // canonical than user". Every real slug is lowercase ASCII, so 301 any
+    // other spelling to it.
+    private function redirectToAsciiSlugs(Request $request, string $slug1, ?string $slug2): ?RedirectResponse
+    {
+        $slugs = array_filter([$slug1, $slug2], fn ($slug) => $slug !== null);
+        $normalized = array_map(fn ($slug) => Str::lower(Str::ascii($slug, 'lt')), $slugs);
+
+        if ($normalized === $slugs) {
+            return null;
+        }
+
+        foreach ($normalized as $slug) {
+            if (! preg_match('/^[a-z0-9_-]+$/', $slug)) {
+                return null;
+            }
+        }
+
+        $query = $request->getQueryString();
+
+        return redirect()->to('/akcijos/'.implode('/', $normalized).($query ? "?{$query}" : ''), 301);
     }
 
     // Permanent for search engines, but capped at a day in browsers — a
