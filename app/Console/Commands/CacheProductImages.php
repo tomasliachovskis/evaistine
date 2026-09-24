@@ -95,7 +95,12 @@ class CacheProductImages extends Command
             $q->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay());
         });
 
-        $products = $activeDiscountProductIds($baseQuery())->limit($limit)->get();
+        // Newest first within each tier: a freshly onboarded store's
+        // products (e.g. ~2.4k Ermitažas products at once) are the ones
+        // shoppers are just starting to see, and without an explicit order
+        // MySQL walks the primary key from the oldest id — so new products
+        // waited behind the whole older backlog.
+        $products = $activeDiscountProductIds($baseQuery())->orderByDesc('id')->limit($limit)->get();
 
         if ($products->count() < $limit) {
             $remaining = $limit - $products->count();
@@ -105,6 +110,7 @@ class CacheProductImages extends Command
                     $q->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay());
                 })
                 ->whereNotIn('id', $fillIds)
+                ->orderByDesc('id')
                 ->limit($remaining)
                 ->get();
             $products = $products->concat($fill);
