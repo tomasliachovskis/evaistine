@@ -972,13 +972,6 @@ class KeywordPageService
         $leaflets = $this->buildLeafletsForDiscounts($displayedDiscounts);
         $description = strip_tags($page->intro_html ?? '');
 
-        // Newest created_at among the discounts actually fetched for this
-        // page — an approximation (the very newest matching discount site-
-        // wide could in theory sit outside this fetch), but real data from
-        // what's already loaded, not a new query bolted onto the
-        // Meilisearch/fallback dual-path search this service already does.
-        $newestDiscount = $displayedDiscounts->max('created_at');
-
         return [
             'type' => 'keyword',
             'keyword_slug' => $page->slug,
@@ -1023,7 +1016,9 @@ class KeywordPageService
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
                 'updated_at' => $freshness['updated_at'],
-                'freshness_label' => $newestDiscount ? LithuanianDate::relative(Carbon::parse($newestDiscount)) : null,
+                // The keyword page row's own updated_at, per explicit product
+                // decision — not the newest matching discount's created_at.
+                'freshness_label' => $page->updated_at ? LithuanianDate::relative($page->updated_at) : null,
                 'quick_stats' => $stats,
             ],
             'tips' => $page->tips ?? [],
