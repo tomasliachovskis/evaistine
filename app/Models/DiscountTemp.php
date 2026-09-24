@@ -27,6 +27,7 @@ class DiscountTemp extends Model
         'end_at',
         'info',
         'brand',
+        'ean',
         'processed',
         'box',
         'page_image_path',

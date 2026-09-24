@@ -22,7 +22,7 @@ class ProcessScrapingFlow extends Command
     protected $signature = 'scraping:process-all {--skip-deploy : Skip deployment step}';
     protected $description = '[QUARANTINED, unused in production] Process complete product scraping flow';
 
-    private array $expectedStores = ['Rimi', 'Lidl', 'Iki', 'Maxima', 'Norfa', 'Gulbelė', 'Vynoteka', 'Thomas Philipps'];
+    private array $expectedStores = ['Rimi', 'Lidl', 'Iki', 'Maxima', 'Norfa', 'Gulbelė', 'Vynoteka', 'Thomas Philipps', 'Ermitažas'];
     private array $scrapers = [
         'rimi.js',
         'lidl.js',
@@ -32,6 +32,7 @@ class ProcessScrapingFlow extends Command
         'gulbele.js',
         'vynoteka.js',
         'thomas-philipps.js',
+        'ermitazas.js',
     ];
 
     public function handle()

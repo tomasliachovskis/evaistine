@@ -12,6 +12,7 @@ use App\Models\Store;
 use App\Rules\StoreRules\AibeRules;
 use App\Rules\StoreRules\CiaRules;
 use App\Rules\StoreRules\EpromoRules;
+use App\Rules\StoreRules\ErmitazasRules;
 use App\Rules\StoreRules\PromoCashCarryRules;
 use App\Rules\StoreRules\ExpressMarketRules;
 use App\Rules\StoreRules\GrusteRules;
@@ -68,6 +69,9 @@ class ProcessDiscounts extends Command
 
     /** @var array<int, Product> */
     private array $productsById = [];
+
+    /** @var array<string, Product|null> ean => product (null = known miss) */
+    private array $productsByEan = [];
 
     /** @var array<string, bool> */
     private array $existingDiscountCache = [];
@@ -347,8 +351,14 @@ class ProcessDiscounts extends Command
         $productSlug = $this->generateProductSlug($normalizedProductName, $tempDiscount->brand, $store->name);
 
         $mappingProductId = $this->productMappingsByName[$normalizedProductName] ?? null;
+        $ean = static::normalizeEan($tempDiscount->ean);
+        $eanProduct = $ean !== null ? $this->findProductByEan($ean) : null;
 
-        if ($mappingProductId) {
+        // A barcode match beats name matching: it's the same physical SKU
+        // even when two stores word the product name differently.
+        if ($eanProduct) {
+            $product = $eanProduct;
+        } elseif ($mappingProductId) {
             $product = $this->findProductById($mappingProductId);
             if (!$product) {
                 unset($this->productMappingsByName[$normalizedProductName]);
@@ -356,6 +366,12 @@ class ProcessDiscounts extends Command
             }
         } else {
             $product = $this->findOrCreateProduct($normalizedProductName, $productSlug, $tempDiscount, $categoryId);
+        }
+
+        if ($ean !== null && empty($product->ean)) {
+            $product->ean = $ean;
+            $product->save();
+            $this->productsByEan[$ean] = $product;
         }
 
         $isFlyerSource = !empty($tempDiscount->box) && !empty($tempDiscount->page_image_path);
@@ -503,6 +519,45 @@ class ProcessDiscounts extends Command
         }
 
         return $product;
+    }
+
+    private function findProductByEan(string $ean): ?Product
+    {
+        if (array_key_exists($ean, $this->productsByEan)) {
+            return $this->productsByEan[$ean];
+        }
+
+        $product = Product::where('ean', $ean)->orderBy('id')->first();
+        $this->productsByEan[$ean] = $product;
+
+        if ($product) {
+            $this->productsById[$product->id] = $product;
+            $this->productsBySlug[$product->slug] = $product;
+        }
+
+        return $product;
+    }
+
+    /**
+     * Only a real retail barcode (EAN-8, UPC-A, EAN-13, GTIN-14, digits
+     * only) is a cross-store identifier. Anything else is store-internal and
+     * must not be used for matching: a suffixed multipack code like
+     * "4779017040533BLK" (stripping the suffix would wrongly match the
+     * single bottle) or an in-store EAN-13 with GS1 prefix 20–29.
+     */
+    public static function normalizeEan(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        if (!preg_match('/^(\d{8}|\d{12,14})$/', $value) || (int) $value === 0) {
+            return null;
+        }
+
+        if (strlen($value) === 13 && $value[0] === '2') {
+            return null;
+        }
+
+        return $value;
     }
 
     private function findOrCreateProduct(
@@ -834,6 +889,8 @@ class ProcessDiscounts extends Command
                 return new EpromoRules($tempDiscount);
             case 'Promo Cash&Carry':
                 return new PromoCashCarryRules($tempDiscount);
+            case 'Ermitažas':
+                return new ErmitazasRules($tempDiscount);
             default:
                 throw new \Exception("No rules found for store: {$storeName}");
         }

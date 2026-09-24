@@ -11,4 +11,5 @@ return [
     'Vynoteka' => 'vynoteka.js',
     'Thomas Philipps' => 'thomas-philipps.js',
     'Rimi' => 'rimi.js',
+    'Ermitažas' => 'ermitazas.js',
 ];
