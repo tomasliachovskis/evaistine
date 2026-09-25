@@ -193,6 +193,24 @@ class StructuredDataTest extends TestCase
         $this->assertTrue($images[0]['representativeOfPage']);
     }
 
+    public function test_leaflet_page_title_leads_with_bare_store_name(): void
+    {
+        $store = Store::factory()->create(['name' => 'Seo Leidiniai', 'slug' => 'seo-leidiniai']);
+        $this->createFlyer($store, 'seo-ne-maisto', '2026-09-21', '2026-09-27', [
+            'title' => 'NE MAISTO PREKIŲ PASIŪLYMAI',
+            'issue_number' => 39,
+        ]);
+
+        $response = $this->get("/leidinys/{$store->slug}/seo-ne-maisto");
+
+        $this->assertSame(
+            'Seo Leidiniai NE MAISTO PREKIŲ PASIŪLYMAI Nr.39 – 2026.09.21–2026.09.27 | SuperAkcijos.lt',
+            $this->seoHead($response)['title']
+        );
+        // H1 keeps the builder's own wording.
+        $response->assertSee('Naujas Seo Leidiniai nuolaidų leidinys - NE MAISTO PREKIŲ PASIŪLYMAI Nr.39', false);
+    }
+
     public function test_inactive_or_unprocessed_leaflet_is_404(): void
     {
         ['store' => $store] = $this->seedLeaflet();
