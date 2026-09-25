@@ -15,6 +15,18 @@ class PriceWatchDiscountMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    // GA attribution: email clients mostly send no referrer, so without
+    // these every click from this email lands in GA as Direct / (none).
+    // utm_content tells a product-row click apart from the favorites CTA.
+    public const UTM = ['utm_source' => 'price_watch', 'utm_medium' => 'email', 'utm_campaign' => 'price_drop'];
+
+    public static function trackedUrl(string $url, string $content): string
+    {
+        $query = http_build_query(self::UTM + ['utm_content' => $content]);
+
+        return $url.(str_contains($url, '?') ? '&' : '?').$query;
+    }
+
     // $productGroups: Collection<Collection<Discount>> — one inner collection
     // per distinct product, its Discounts sorted cheapest-first (product/
     // store eager-loaded), so a product on sale at several stores at once

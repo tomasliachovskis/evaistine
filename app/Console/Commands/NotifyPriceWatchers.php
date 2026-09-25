@@ -165,7 +165,9 @@ class NotifyPriceWatchers extends Command
                 'email' => $user->email,
                 'token' => str()->random(64),
                 'expires_at' => now()->addDays(self::MAGIC_LINK_TTL_DAYS),
-                'redirect_to' => '/favorites',
+                // UTM goes on the redirect target, not the token URL —
+                // verifyMagicLink() redirects before GA ever loads.
+                'redirect_to' => PriceWatchDiscountMail::trackedUrl('/favorites', 'favorites_cta'),
             ]);
             $favoritesUrl = url("/auth/magic-link/{$magicLink->token}");
 

@@ -112,6 +112,14 @@ class AuthController extends Controller
         $link = MagicLoginLink::where('token', $token)->first();
 
         if (! $link || ! $link->isValid()) {
+            // Already logged in (e.g. a second click on the same single-use
+            // price-watch email button): the link has nothing left to do, so
+            // go where it was headed instead of opening the login modal.
+            // redirect_to is always an internal path we set ourselves.
+            if (Auth::check()) {
+                return redirect($link?->redirect_to ?: '/favorites');
+            }
+
             return redirect('/?login=1&magic_link_expired=1');
         }
 

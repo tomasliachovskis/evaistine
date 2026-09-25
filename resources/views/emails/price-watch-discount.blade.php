@@ -48,7 +48,7 @@
                         $cheapest = $group->first();
                         $product = $cheapest->product;
                         $roundedPercent = $cheapest->discount_percent !== null ? round($cheapest->discount_percent) : null;
-                        $productUrl = 'https://superakcijos.lt/akcijos/' . ($product->category?->slug ?? '') . '/' . $product->slug;
+                        $productUrl = \App\Mail\PriceWatchDiscountMail::trackedUrl('https://superakcijos.lt/akcijos/' . ($product->category?->slug ?? '') . '/' . $product->slug, 'product');
                     @endphp
                     <tr>
                         <td style="padding:0 32px 20px;">
