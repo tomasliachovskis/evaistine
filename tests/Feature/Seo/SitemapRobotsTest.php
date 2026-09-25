@@ -66,6 +66,7 @@ class SitemapRobotsTest extends TestCase
 
         $this->assertContains(self::ORIGIN.'/', $locs);
         $this->assertContains(self::ORIGIN.'/akcijos', $locs);
+        $this->assertContains(self::ORIGIN.'/pigiausios-prekes', $locs);
         $this->assertContains(self::ORIGIN."/akcijos/{$seed['store']->slug}", $locs);
         $this->assertContains(self::ORIGIN."/akcijos/{$seed['category']->slug}", $locs);
         $this->assertContains(self::ORIGIN.'/akcijos/seo-publikuotas', $locs);
