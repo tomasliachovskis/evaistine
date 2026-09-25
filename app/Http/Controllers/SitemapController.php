@@ -77,6 +77,7 @@ class SitemapController extends Controller
         $urls = [
             ['loc' => CanonicalUrl::build('/'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '1.0'],
             ['loc' => CanonicalUrl::build('/akcijos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.9'],
+            ['loc' => CanonicalUrl::build('/pigiausios-prekes'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'],
             ['loc' => CanonicalUrl::build('/parduotuves'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'],
             ['loc' => CanonicalUrl::build('/naujienos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'],
             ['loc' => CanonicalUrl::build('/apie'), 'lastmod' => $defaultLastmod, 'changefreq' => 'monthly', 'priority' => '0.4'],

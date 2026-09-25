@@ -134,14 +134,14 @@ class HeadTagsTest extends TestCase
         $this->assertNoindex($response);
     }
 
-    public function test_cheapest_products_page_is_noindex(): void
+    public function test_cheapest_products_page_is_indexable(): void
     {
         // Deliberately no seeded discounts: the page used to 500 when there
         // was no freshness date to show.
         $response = $this->get('/pigiausios-prekes');
 
         $response->assertOk();
-        $this->assertNoindex($response);
+        $this->assertSame('index, follow', $this->seoHead($response)['robots']);
     }
 
     public function test_not_found_page_is_noindex(): void
