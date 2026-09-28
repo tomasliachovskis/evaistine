@@ -74,13 +74,17 @@ rsync -avz --no-perms --no-owner --no-group -e "ssh $SSH_OPTS" \
 # scans the filesystem regardless of git state, a deleted command kept
 # working as a live, callable artisan command on prod for two full
 # deploys after being deleted locally (confirmed live 2026-09-20,
-# RemoveDuplicateActiveDiscounts.php). Scoped to just app/, not the whole
-# project, to keep this new deletion power narrow — no need for it in
-# resources/public/scrapers/etc. yet, and app/ has no excludes to worry
-# about replicating here (checked: none of the excludes above fall under
-# app/).
+# RemoveDuplicateActiveDiscounts.php). Scoped to app/ and resources/, not
+# the whole project, to keep this deletion power narrow — neither has any
+# excludes to worry about replicating here (checked: none of the excludes
+# above fall under them). resources/ added 2026-09-28: deleted Blade views
+# and JS kept piling up on the server (a dry run found 8, e.g. a removed
+# content-freshness component and the retired price-index view) — harmless
+# while unreferenced, but confusing when debugging on prod.
 rsync -avz --no-perms --no-owner --no-group --delete -e "ssh $SSH_OPTS" \
   app/ "$SERVER:$REMOTE_DIR/app/"
+rsync -avz --no-perms --no-owner --no-group --delete -e "ssh $SSH_OPTS" \
+  resources/ "$SERVER:$REMOTE_DIR/resources/"
 
 # Run Laravel commands on the server
 ssh $SSH_OPTS $SERVER << 'EOF'
