@@ -71,12 +71,22 @@
                 Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje.
                 Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.
             </p>
-            <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 sm:text-sm">
-                <span>{{ $activeLeafletsCount }} galiojantys katalogai</span>
-                @if ($freshnessLabel)
-                    <x-content-freshness :label="$freshnessLabel" />
-                @endif
-            </p>
+            @php
+                $leafletCount = (int) $activeLeafletsCount;
+                $leafletWord = \App\Support\LithuanianPlural::leafletWord($leafletCount);
+                // Adjective agrees with the noun form: 1 galiojantis leidinys,
+                // 2-9 galiojantys leidiniai, else galiojančių leidinių.
+                $leafletAdjective = match ($leafletWord) {
+                    'leidinys' => 'galiojantis',
+                    'leidiniai' => 'galiojantys',
+                    default => 'galiojančių',
+                };
+            @endphp
+            <x-hero-stats
+                class="mt-1"
+                :stats="$leafletCount > 0 ? [['icon' => 'newspaper', 'pill' => $leafletCount . ' ' . $leafletAdjective . ' ' . $leafletWord]] : []"
+                :freshness="$freshnessLabel"
+            />
         </div>
 
         {{-- Same sticky pill-bar language as discount-filters.blade.php's

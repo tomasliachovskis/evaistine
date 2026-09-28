@@ -14,12 +14,13 @@
          visible without clicking anything. --}}
     <div class="base-container mx-auto flex flex-col gap-4 py-2 pb-10 text-lg sm:gap-12">
 
-        <x-type-hero
-            title="Pigiausios prekės parduotuvėse"
-            subtitle="Kelių kasdienių prekių kainos didžiausiuose prekybos tinkluose — kiekvienos prekės kaina matoma iš karto, jokių papildomų paspaudimų."
-        >
-            <x-content-freshness :label="$freshnessLabel" />
-        </x-type-hero>
+        <div class="flex flex-col gap-2">
+            <x-type-hero
+                title="Pigiausios prekės parduotuvėse"
+                subtitle="Kelių kasdienių prekių kainos didžiausiuose prekybos tinkluose — kiekvienos prekės kaina matoma iš karto, jokių papildomų paspaudimų."
+            />
+            <x-hero-stats :freshness="$freshnessLabel" />
+        </div>
 
         @if (empty($groups))
             <div class="rounded-lg border border-gray-200 bg-white p-6 text-center text-[0.9em] text-gray-600">

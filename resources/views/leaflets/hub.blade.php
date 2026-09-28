@@ -65,14 +65,11 @@
             <x-type-hero
                 :title="$pageTitle"
             >
-                @if ($freshnessLabel)
-                    <x-content-freshness :label="$freshnessLabel" />
-                @endif
-
                 <x-slot:cta>
                     <x-store-subscribe-button />
                 </x-slot:cta>
             </x-type-hero>
+            <x-hero-stats :freshness="$freshnessLabel" />
         </div>
 
         {{-- Deliberately NOT nested inside the hero wrapper div above —

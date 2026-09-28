@@ -23,14 +23,8 @@
         @if ($subtitle)
             <p class="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-gray-600 sm:text-base {{ $hideSubtitleOnMobile ? 'hidden sm:block' : '' }}">{{ $subtitle }}</p>
         @endif
-        @if ($slot->isNotEmpty())
-            {{-- Vertical-bar separator before every stat but the first, at
-                 every width (previously sm+ only — explicit product decision
-                 to show it on mobile too). --}}
-            <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-600 sm:gap-x-4 sm:text-sm [&>*:not(:first-child)]:before:mr-2 [&>*:not(:first-child)]:before:text-gray-300 [&>*:not(:first-child)]:before:content-['|']">
-                {{ $slot }}
-            </p>
-        @endif
+        {{-- Stats/freshness render outside this component, as
+             <x-hero-stats> right after it. --}}
     </div>
 
     @isset($cta)

@@ -10,6 +10,7 @@ use App\Support\ContentFreshness;
 use App\Support\FoodCategorySlugs;
 use App\Support\FlyerStorage;
 use App\Support\LithuanianDate;
+use App\Support\LithuanianPlural;
 use App\Support\StoreListPriority;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -150,10 +151,15 @@ class ListingPageMetaService
                 ]),
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
-                'quick_stats' => [
-                    ['label' => 'Aktyvios akcijos', 'value' => (string) $totalOffers],
-                    ['label' => 'Parduotuvių', 'value' => (string) count($storeComparison)],
-                ],
+                // 'pill' + 'icon' feed <x-hero-stats>; max discount comes from
+                // the already-loaded per-store comparison, no extra query.
+                'quick_stats' => array_values(array_filter([
+                    ($categoryMaxDiscount = (int) collect($storeComparison)->max('max_discount_percent')) > 0
+                        ? ['label' => 'Nuolaidos iki', 'value' => "-{$categoryMaxDiscount}%", 'icon' => 'percent', 'pill' => "nuolaidos iki -{$categoryMaxDiscount}%", 'mobile_first' => true]
+                        : null,
+                    ['label' => 'Aktyvios akcijos', 'value' => (string) $totalOffers, 'icon' => 'tag', 'pill' => LithuanianPlural::formatCount($totalOffers) . ' ' . LithuanianPlural::offerWord($totalOffers)],
+                    ['label' => 'Parduotuvių', 'value' => (string) count($storeComparison), 'icon' => 'store', 'pill' => count($storeComparison) . ' ' . LithuanianPlural::storeWord(count($storeComparison))],
+                ])),
                 'freshness_label' => $this->freshnessLabel(ContentFreshness::forCategory($category->id)),
             ],
             'sections' => [

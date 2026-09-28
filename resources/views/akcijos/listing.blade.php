@@ -106,44 +106,32 @@
                     :subtitle="$listingMeta['intro']['description'] ?? null"
                     :hide-subtitle-on-mobile="true"
                 >
-                    @if ($headerType === 'store')
-                        {{-- <x-store-nav-tabs> (Leidiniai/Akcijos/Kategorijos
-                             tab pills) was removed 2026-09-16 — the shared
-                             filter bar below now covers store/category
-                             switching and the leaflets link, so this line is
-                             the only place the real offer count and
-                             freshness date still need to show. --}}
-                        @php $storeTotalOffers = $listingMeta['total_offers'] ?? $total; @endphp
-                        @if ($storeTotalOffers > 0)
-                            <span>{{ number_format($storeTotalOffers, 0, ',', ' ') }} akcijos</span>
-                        @endif
-                        @if (!empty($listingMeta['intro']['freshness_label']))
-                            <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
-                        @endif
-                    @elseif ($headerType === 'store_category')
-                        @if ($total > 0)
-                            <span>{{ number_format($total, 0, ',', ' ') }} akcijos</span>
-                        @endif
-                        @if (!empty($listingMeta['intro']['freshness_label']))
-                            <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
-                        @endif
-                    @else
-                        @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
-                            @if ($stat['label'] !== 'Parduotuvių')
-                                <span>{{ $stat['value'] }} {{ mb_strtolower($stat['label']) }}</span>
-                            @endif
-                        @endforeach
-                        @if (!empty($listingMeta['intro']['freshness_label']))
-                            <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
-                        @endif
-                    @endif
-
                     @if ($isStoreHeader)
                         <x-slot:cta>
                             <x-store-subscribe-button />
                         </x-slot:cta>
                     @endif
                 </x-type-hero>
+
+                @php
+                    // Store / store+category: the real offer count (the
+                    // store-wide total on a store page — its grid shows
+                    // curated carousels, not every offer). Category: its
+                    // quick_stats (store count deliberately left out).
+                    $richHeroOffers = $headerType === 'store'
+                        ? (int) ($listingMeta['total_offers'] ?? $total)
+                        : (int) $total;
+                    $richHeroStats = $headerType === 'category'
+                        ? array_values(array_filter(
+                            $listingMeta['intro']['quick_stats'] ?? [],
+                            fn ($stat) => ($stat['label'] ?? '') !== 'Parduotuvių',
+                        ))
+                        : ($richHeroOffers > 0 ? [[
+                            'icon' => 'tag',
+                            'pill' => \App\Support\LithuanianPlural::formatCount($richHeroOffers) . ' ' . \App\Support\LithuanianPlural::offerWord($richHeroOffers),
+                        ]] : []);
+                @endphp
+                <x-hero-stats :stats="$richHeroStats" :freshness="$listingMeta['intro']['freshness_label'] ?? null" />
 
                 @if ($headerType === 'category')
                     <x-keyword-chips-row :pages="$listingMeta['keyword_pages'] ?? []" />
@@ -175,43 +163,7 @@
                         </x-slot:icon>
                     @endunless
                 </x-type-hero>
-                @if (!empty($listingMeta['intro']['quick_stats']))
-                    @php
-                        // Price + max discount lead — the two facts that
-                        // decide whether to keep scrolling.
-                        $heroStatsMobile = collect($listingMeta['intro']['quick_stats'])->sortBy(fn ($stat) => empty($stat['mobile_first']) ? 1 : 0)->values();
-                    @endphp
-                    <div>
-                        {{-- One compact pill row at every width (~30px), so
-                             products stay near the top of the screen. Scrolls
-                             sideways on a phone instead of wrapping; wraps on
-                             sm+, where it always fits anyway. --}}
-                        <ul class="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:gap-2 sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
-                            @foreach ($heroStatsMobile as $stat)
-                                <li class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-800 sm:px-3 sm:text-sm">
-                                    <x-app-icon :name="$stat['icon'] ?? 'tag'" class="size-3.5 text-dark-green sm:size-4" />
-                                    {{ $stat['pill'] ?? $stat['text'] }}
-                                </li>
-                            @endforeach
-                            @if (!empty($listingMeta['intro']['freshness_label']))
-                                {{-- Same type as the pills, no chip: on sm+ it
-                                     sits at the end of the row. --}}
-                                <li class="hidden shrink-0 items-center gap-1.5 whitespace-nowrap px-1 py-1 text-sm font-semibold text-gray-500 sm:flex">
-                                    <x-app-icon name="clock" class="size-4" />
-                                    {{ $listingMeta['intro']['freshness_label'] }}
-                                </li>
-                            @endif
-                        </ul>
-                        @if (!empty($listingMeta['intro']['freshness_label']))
-                            {{-- Mobile: own line, since the end of the
-                                 sideways-scrolling row would be off-screen. --}}
-                            <p class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-500 sm:hidden">
-                                <x-app-icon name="clock" class="size-3.5" />
-                                {{ $listingMeta['intro']['freshness_label'] }}
-                            </p>
-                        @endif
-                    </div>
-                @endif
+                <x-hero-stats :stats="$listingMeta['intro']['quick_stats'] ?? []" :freshness="$listingMeta['intro']['freshness_label'] ?? null" />
             </div>
         @else
             {{-- The plain /akcijos hub has no listing_meta pipeline at all
@@ -225,14 +177,17 @@
                     <h1>{{ $pageTitle }}</h1>
                 </div>
                 @if ($hubMeta)
-                    <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
-                        @if (!empty($hubMeta['total_deals_label']) && !empty($hubMeta['active_store_count']))
-                            <span>{{ $hubMeta['total_deals_label'] }} aktyvios akcijos iš {{ $hubMeta['active_store_count'] }} parduotuvių.</span>
-                        @endif
-                        @if (!empty($hubMeta['freshness_label']))
-                            <x-content-freshness :label="$hubMeta['freshness_label']" />
-                        @endif
-                    </p>
+                    @php
+                        // total_deals_label is pre-formatted ("12 345") by
+                        // HomePageMetaService; digits only for the plural.
+                        $hubDeals = (int) preg_replace('/\D/', '', (string) ($hubMeta['total_deals_label'] ?? ''));
+                        $hubStores = (int) ($hubMeta['active_store_count'] ?? 0);
+                        $hubStats = array_values(array_filter([
+                            $hubDeals > 0 ? ['icon' => 'tag', 'pill' => $hubMeta['total_deals_label'] . ' ' . \App\Support\LithuanianPlural::offerWord($hubDeals)] : null,
+                            $hubStores > 0 ? ['icon' => 'store', 'pill' => $hubStores . ' ' . \App\Support\LithuanianPlural::storeWord($hubStores)] : null,
+                        ]));
+                    @endphp
+                    <x-hero-stats class="mt-1" :stats="$hubStats" :freshness="$hubMeta['freshness_label'] ?? null" />
                 @endif
             </div>
         @endif
