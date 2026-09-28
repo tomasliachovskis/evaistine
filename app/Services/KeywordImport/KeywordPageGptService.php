@@ -113,8 +113,7 @@ SKIP (skip: true) jei: tik parduotuvės pavadinimas (IKI akcija), lojalumas, mie
 
 Jei kurk puslapį:
 - intro_html: 1–2 natūralūs <p> paragrafai lietuviškai. Naudok secondary keywords, brands ir dalį store_keyword_variants natūraliai – BE keyword stuffing
-- tips: 2–4 patarimai (icon emoji, title, text)
-- faq: 3–5 unikalūs klausimai, atsakymai naudingi vartotojui
+- tips: 2–4 patarimai (title, text)
 - search_terms: 8–15 Meilisearch termų (stiebai, variantai; be žodžio „akcija“)
 - category_slugs: tiksliai 1 iš available_category_slugs – pagrindinė kategorija, kurioje realiai parduodamas produktas (pvz. citrinos → vaisiai-ir-darzoves, NE gerimai-kava-arbata)
 - exclude_terms: netinkami match žodžiai. NIEKADA neįtrauk: akcija, akcijos, nuolaida, iki, maxima, lidl
@@ -139,8 +138,7 @@ JSON formatas:
   "category_slugs": ["..."],
   "exclude_terms": [],
   "intro_html": "<p>...</p>",
-  "tips": [{"icon": "🧱", "title": "...", "text": "..."}],
-  "faq": [{"question": "...", "answer": "..."}],
+  "tips": [{"title": "...", "text": "..."}],
   "related_slugs": []
 }
 
@@ -191,7 +189,6 @@ PROMPT;
             'exclude_terms' => $this->sanitizeExcludeTerms((array) ($parsed['exclude_terms'] ?? [])),
             'intro_html' => (string) ($parsed['intro_html'] ?? ''),
             'tips' => array_values((array) ($parsed['tips'] ?? [])),
-            'faq' => array_values((array) ($parsed['faq'] ?? [])),
             'related_slugs' => array_values(array_filter((array) ($parsed['related_slugs'] ?? []))),
             'min_active_offers' => 1,
             'is_published' => false,

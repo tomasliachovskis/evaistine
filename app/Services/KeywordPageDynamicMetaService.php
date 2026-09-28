@@ -80,7 +80,13 @@ class KeywordPageDynamicMetaService
             return '';
         }
 
-        return $this->capitalizeKeyword($title) . ' akcijos ir nuolaidos šią savaitę';
+        // Genitive ("Grietinės akcijos…", "Lavazzos akcijos…") — the
+        // nominative ("Grietinė akcijos…") isn't grammatical Lithuanian.
+        // Every published page has grammar_genitive (240/240, 2026-09-26);
+        // the title stays as a fallback for a half-authored draft.
+        $genitive = trim((string) $page->grammar_genitive);
+
+        return $this->capitalizeKeyword($genitive !== '' ? $genitive : $title) . ' akcijos ir nuolaidos šią savaitę';
     }
 
     private function buildMetaTitle(string $keyword, ?string $minPrice, int $count): string

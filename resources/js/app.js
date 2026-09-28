@@ -81,7 +81,11 @@ document.addEventListener('alpine:init', () => {
         // sentinel has genuinely scrolled into view. loadMoreCallCount above
         // is still a hard backstop against any future runaway loop.
         init() {
-            if (this.page >= this.lastPage || !this.$refs.sentinel) {
+            // config.manual: a "Rodyti daugiau" button calls loadMore()
+            // instead of the auto-loading sentinel — used on listing pages,
+            // where the price table/FAQ/related links sit below the grid and
+            // were unreachable while it kept growing under the reader.
+            if (config.manual || this.page >= this.lastPage || !this.$refs.sentinel) {
                 return;
             }
 
@@ -161,7 +165,7 @@ document.addEventListener('alpine:init', () => {
 
                 if (this.page >= this.lastPage) {
                     this.observer?.disconnect();
-                } else if (this.$refs.sentinel) {
+                } else if (!config.manual && this.$refs.sentinel) {
                     // A single loaded page can be short enough that the
                     // sentinel is still on-screen right after insertion (huge
                     // viewport, small per-page count) — IntersectionObserver

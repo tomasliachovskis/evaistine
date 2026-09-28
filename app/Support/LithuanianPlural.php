@@ -67,6 +67,37 @@ class LithuanianPlural
         return 'leidinių';
     }
 
+    public static function storeWord(int $count): string
+    {
+        $lastDigit = $count % 10;
+        $lastTwoDigits = $count % 100;
+
+        if ($lastTwoDigits >= 11 && $lastTwoDigits <= 19) {
+            return 'parduotuvių';
+        }
+
+        if ($lastDigit === 1) {
+            return 'parduotuvė';
+        }
+
+        if ($lastDigit >= 2 && $lastDigit <= 9) {
+            return 'parduotuvės';
+        }
+
+        return 'parduotuvių';
+    }
+
+    // "aktyvus pasiūlymas" / "aktyvūs pasiūlymai" / "aktyvių pasiūlymų" —
+    // the adjective agrees with offerWord()'s form.
+    public static function activeOfferPhrase(int $count): string
+    {
+        return match (self::offerWord($count)) {
+            'pasiūlymas' => 'aktyvus pasiūlymas',
+            'pasiūlymai' => 'aktyvūs pasiūlymai',
+            default => 'aktyvių pasiūlymų',
+        };
+    }
+
     public static function formatCount(int $count): string
     {
         return str_replace(',', ' ', number_format($count));

@@ -12,6 +12,7 @@ use App\Models\Store;
 use App\Support\CacheVersion;
 use App\Support\FoodCategorySlugs;
 use App\Support\LithuanianDate;
+use App\Support\LithuanianPlural;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -274,7 +275,7 @@ class KeywordPageService
      * the 'keywords' CacheVersion group, already bumped both by the mapping
      * command and by every keyword-page admin save.
      *
-     * @return list<array{label: string, href: string, emoji: ?string}>
+     * @return list<array{label: string, href: string, matching_offers_count: int}>
      */
     public function relatedPagesForProduct(?int $productId): array
     {
@@ -282,7 +283,7 @@ class KeywordPageService
             return [];
         }
 
-        $cacheKey = 'kw_related_product_' . $productId . '_' . CacheVersion::suffix(['keywords']);
+        $cacheKey = 'kw_related_product_v2_' . $productId . '_' . CacheVersion::suffix(['keywords']);
 
         return Cache::remember($cacheKey, 3600, function () use ($productId) {
             return KeywordPageProduct::where('product_id', $productId)
@@ -291,11 +292,7 @@ class KeywordPageService
                 ->take(4)
                 ->get()
                 ->filter(fn (KeywordPageProduct $row) => $row->keywordPage !== null)
-                ->map(fn (KeywordPageProduct $row) => [
-                    'label' => $this->capitalizeFirst($row->keywordPage->grammar_dative ?: $row->keywordPage->title),
-                    'href' => "/akcijos/{$row->keywordPage->slug}",
-                    'emoji' => $row->keywordPage->emoji,
-                ])
+                ->map(fn (KeywordPageProduct $row) => $this->mapRelatedPageChip($row->keywordPage))
                 ->values()
                 ->all();
         });
@@ -967,7 +964,13 @@ class KeywordPageService
         // count(summary_rows) — summary_rows/leading_deals are capped at 8
         // for display, which used to under-report "Parduotuvių" on any
         // keyword covering more than 8 stores.
-        $stats = $this->buildQuickStats($matchingTotal, $storeComparison['answer']['store_count'] ?? count($storeComparison['summary_rows']), $cheapestPrice);
+        $stats = $this->buildQuickStats(
+            $matchingTotal,
+            $storeComparison['answer']['store_count'] ?? count($storeComparison['summary_rows']),
+            $cheapestPrice,
+            $storeComparison['summary_rows'][0]['name'] ?? null,
+            $storeComparison['answer']['max_discount_percent'] ?? null,
+        );
         $relatedPages = $this->buildRelatedPages($page);
         $leaflets = $this->buildLeafletsForDiscounts($displayedDiscounts);
         $description = strip_tags($page->intro_html ?? '');
@@ -1016,9 +1019,14 @@ class KeywordPageService
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
                 'updated_at' => $freshness['updated_at'],
-                // The keyword page row's own updated_at, per explicit product
-                // decision — not the newest matching discount's created_at.
-                'freshness_label' => $page->updated_at ? LithuanianDate::relative($page->updated_at) : null,
+                // Newest matching offer's updated_at — when this page's
+                // prices last actually changed. Replaced the keyword page
+                // row's own updated_at (last admin edit, often weeks old
+                // while prices change daily) per product decision
+                // 2026-09-26. Falls back to the row's date with no offers.
+                'freshness_label' => ($freshAt = $storeComparison['latest_updated_at'] ?? $displayedDiscounts->max('updated_at') ?? $page->updated_at)
+                    ? LithuanianDate::relative(Carbon::parse($freshAt))
+                    : null,
                 'quick_stats' => $stats,
             ],
             'tips' => $page->tips ?? [],
@@ -1035,9 +1043,103 @@ class KeywordPageService
                     'updated_at' => Carbon::now()->format('Y-m-d'),
                 ],
                 'leaflets' => $leaflets,
-                'faq' => $page->faq ?? [],
+                'faq' => $this->buildKeywordFaq($page, $storeComparison, $matchingTotal),
             ],
         ];
+    }
+
+    /**
+     * Price-intent FAQ built from this request's live store comparison. It
+     * replaces the page's own GPT-written Q&As (keyword_pages.faq, written
+     * once at import), which are general-knowledge questions ("Ar galima
+     * kiaušinius užšaldyti?") that don't match the page's buying intent and
+     * never change. These answer what a "{keyword} kaina/akcija" searcher
+     * actually asks, with real, week-fresh prices. No live offers means no
+     * FAQ at all (the static ones are no longer rendered anywhere, per
+     * explicit product decision; the column is kept). No extra queries:
+     * reuses $storeComparison.
+     *
+     * @return list<array{question: string, answer: string}>
+     */
+    private function buildKeywordFaq(KeywordPage $page, array $storeComparison, int $matchingTotal): array
+    {
+        $answer = $storeComparison['answer'] ?? null;
+        $table = $storeComparison['store_price_table'] ?? [];
+
+        if (!$answer || $table === []) {
+            return [];
+        }
+
+        $keyword = $this->faqKeywordNoun($page);
+        $genitive = $page->grammar_genitive ?: $keyword;
+        $price = fn (float $value) => number_format($value, 2, ',', ' ') . ' €';
+        $storeCount = (int) $answer['store_count'];
+        $storesPhrase = $storeCount . ' ' . (LithuanianPlural::offerWord($storeCount) === 'pasiūlymas' ? 'parduotuvėje' : 'parduotuvėse');
+        $offersPhrase = $matchingTotal . ' ' . LithuanianPlural::offerWord($matchingTotal);
+
+        $byPrice = collect($table)->sortBy('min_price')->values();
+        $faq = [];
+
+        $priceAnswer = "Šiuo metu {$keyword} akcijose kainuoja nuo {$price($answer['price'])} ({$answer['store_name']})";
+        if ($byPrice->count() > 1) {
+            $priceAnswer .= '. Pigiausi kiekvienos parduotuvės pasiūlymai svyruoja nuo '
+                . $price($byPrice->first()['min_price']) . ' iki ' . $price($byPrice->last()['min_price']);
+        }
+        $faq[] = [
+            'question' => "Kiek šiandien kainuoja {$keyword}?",
+            'answer' => $priceAnswer . ". Iš viso galioja {$offersPhrase} {$storesPhrase}.",
+        ];
+
+        if ($byPrice->count() > 1) {
+            $top = $byPrice->take(3)
+                ->map(fn (array $row) => "{$row['store_name']} — {$price($row['min_price'])} ({$row['product_name']})")
+                ->implode('; ');
+            $faq[] = [
+                'question' => "Kur šią savaitę pigiausi {$genitive} pasiūlymai?",
+                'answer' => "Pigiausiai šią savaitę: {$top}.",
+            ];
+        }
+
+        $mainChains = collect($table)
+            ->filter(fn (array $row) => in_array($row['store_name'], self::PRIORITY_STORE_NAMES, true))
+            ->values();
+        if ($mainChains->isNotEmpty()) {
+            $names = $mainChains->pluck('store_name')->all();
+            $namesPhrase = count($names) > 1
+                ? implode(', ', array_slice($names, 0, -1)) . ' ir ' . end($names)
+                : $names[0];
+            $faq[] = [
+                'question' => "Kiek kainuoja {$keyword} {$namesPhrase} parduotuvėse?",
+                'answer' => $mainChains
+                    ->map(fn (array $row) => "{$row['store_name']}: nuo {$price($row['min_price'])}")
+                    ->implode('; ') . '.',
+            ];
+        }
+
+        if (!empty($answer['max_discount_percent'])) {
+            $faq[] = [
+                'question' => 'Kokia didžiausia ' . $genitive . ' nuolaida dabar?',
+                'answer' => "Didžiausia šiuo metu galiojanti nuolaida — -{$answer['max_discount_percent']}% prekei {$answer['max_discount_product']} ({$answer['max_discount_store']}).",
+            ];
+        }
+
+        return $faq;
+    }
+
+    /**
+     * The keyword as it reads mid-sentence: lowercased ("Kiaušiniai" ->
+     * "kiaušiniai"), except a proper noun keeps its capitalization
+     * ("Lavazza", not "lavazza"). grammar_genitive is stored lowercase for
+     * common nouns and capitalized for brands ("Lavazzos", "Pauligo"), so
+     * it's the signal — page brands[] often lists sub-lines, not the brand.
+     */
+    private function faqKeywordNoun(KeywordPage $page): string
+    {
+        $title = trim((string) $page->title);
+        $genitive = (string) $page->grammar_genitive;
+        $isProperNoun = $genitive !== '' && mb_substr($genitive, 0, 1) !== mb_strtolower(mb_substr($genitive, 0, 1));
+
+        return $isProperNoun ? $title : mb_strtolower($title);
     }
 
     /**
@@ -1068,23 +1170,62 @@ class KeywordPageService
      * kept simple since the store_price_chips row already carries the
      * per-store detail.
      */
-    private function buildQuickStats(int $matchingTotal, int $storeCount, ?float $cheapestPrice): array
+    /**
+     * Hero stat row. Each stat carries a ready-made 'text' with Lithuanian
+     * numeral agreement ("20 aktyvių pasiūlymų", "9 parduotuvės") — the old
+     * fixed labels read "20 aktyvūs pasiūlymai" / "9 parduotuvių". label/
+     * value stay for any consumer that reads them separately.
+     */
+    private function buildQuickStats(int $matchingTotal, int $storeCount, ?float $cheapestPrice, ?string $cheapestStoreName = null, ?int $maxDiscountPercent = null): array
     {
         if ($matchingTotal <= 0) {
             return [];
         }
 
+        // 'pill' + 'icon' feed the keyword hero's compact stat row
+        // (price/discount first via 'mobile_first'); 'text' is the same fact
+        // as a fuller inline phrase.
         $stats = [
-            ['label' => 'Aktyvūs pasiūlymai', 'value' => (string) $matchingTotal],
-            ['label' => 'Parduotuvių', 'value' => (string) $storeCount],
+            [
+                'label' => 'Aktyvūs pasiūlymai',
+                'value' => LithuanianPlural::formatCount($matchingTotal),
+                'icon' => 'tag',
+                'text' => $matchingTotal . ' ' . LithuanianPlural::activeOfferPhrase($matchingTotal),
+                'pill' => LithuanianPlural::formatCount($matchingTotal) . ' ' . LithuanianPlural::offerWord($matchingTotal),
+            ],
+            [
+                'label' => 'Parduotuvių',
+                'value' => (string) $storeCount,
+                'icon' => 'store',
+                'text' => $storeCount . ' ' . LithuanianPlural::storeWord($storeCount),
+                'pill' => $storeCount . ' ' . LithuanianPlural::storeWord($storeCount),
+            ],
         ];
 
         if ($cheapestPrice !== null && $cheapestPrice > 0) {
-            // Label comes BEFORE the value here ("Kaina nuo 0,33 €"), unlike
-            // the other two stats above (value then label, "155 aktyvūs
-            // pasiūlymai") — 'label_first' tells the view to flip the order
-            // for this one instead of misreading as "0,33 € kaina nuo".
-            $stats[] = ['label' => 'Kaina nuo', 'value' => number_format($cheapestPrice, 2, ',', ' ') . ' €', 'label_first' => true];
+            $priceLabel = number_format($cheapestPrice, 2, ',', ' ') . ' €';
+            // Names the store with the cheapest offer — the one fact a
+            // shopper wants from "kaina nuo X".
+            $stats[] = [
+                'label' => 'Kaina nuo',
+                'value' => $priceLabel,
+                'label_first' => true,
+                'icon' => 'euro',
+                'text' => 'kaina nuo ' . $priceLabel . ($cheapestStoreName ? " ({$cheapestStoreName})" : ''),
+                'pill' => 'kaina nuo ' . $priceLabel . ($cheapestStoreName ? " · {$cheapestStoreName}" : ''),
+                'mobile_first' => true,
+            ];
+        }
+
+        if ($maxDiscountPercent !== null && $maxDiscountPercent > 0) {
+            $stats[] = [
+                'label' => 'Nuolaidos iki',
+                'value' => "-{$maxDiscountPercent}%",
+                'icon' => 'percent',
+                'text' => "nuolaidos iki -{$maxDiscountPercent}%",
+                'pill' => "nuolaidos iki -{$maxDiscountPercent}%",
+                'mobile_first' => true,
+            ];
         }
 
         return $stats;
@@ -1126,14 +1267,14 @@ class KeywordPageService
      * explicit product decision); these are meant to lead the main results
      * grid instead, same card as every other product in it.
      *
-     * @return array{leading_deals: array, summary_rows: array, brand_summary: array, store_price_table: array}
+     * @return array{leading_deals: array, summary_rows: array, brand_summary: array, store_price_table: array, answer: ?array, latest_updated_at: mixed}
      */
     private function buildStoreComparisonForPage(KeywordPage $page, int $matchingTotal, int $limit = 8): array
     {
         $discounts = $this->collectMatchingDiscountsForComparison($page, $matchingTotal);
 
         if ($discounts->isEmpty()) {
-            return ['leading_deals' => [], 'summary_rows' => [], 'brand_summary' => [], 'store_price_table' => [], 'answer' => null];
+            return ['leading_deals' => [], 'summary_rows' => [], 'brand_summary' => [], 'store_price_table' => [], 'answer' => null, 'latest_updated_at' => null];
         }
 
         $cheapestPerStoreAll = $discounts->groupBy('store_id')
@@ -1165,6 +1306,9 @@ class KeywordPageService
                 ->all(),
             'brand_summary' => $this->buildBrandSummary($discounts),
             'store_price_table' => $this->buildStorePriceTable($discounts),
+            // Newest offer across every matching discount (not just the
+            // first grid page) — the hero's "Atnaujinta" date.
+            'latest_updated_at' => $discounts->max('updated_at'),
             // The single cheapest offer across every store — the direct
             // "kur šiandien pigiausia X" answer, shown above everything else.
             // Also carries this week's biggest single discount (same
@@ -1428,7 +1572,7 @@ class KeywordPageService
         return $this->categorySiblingsQuery($page, $categorySlugs)
             ->orderByDesc('matching_offers_count')
             ->limit(8)
-            ->get(['slug', 'title', 'grammar_dative', 'emoji'])
+            ->get(['slug', 'title', 'grammar_genitive', 'matching_offers_count'])
             ->map(fn (KeywordPage $related) => $this->mapRelatedPageChip($related))
             ->values()
             ->all();
@@ -1444,7 +1588,7 @@ class KeywordPageService
      */
     private function buildAlternativePages(KeywordPage $page, int $limit = 6): array
     {
-        $columns = ['id', 'slug', 'title', 'grammar_dative', 'emoji', 'matching_offers_count'];
+        $columns = ['id', 'slug', 'title', 'grammar_genitive', 'matching_offers_count'];
         $relatedSlugs = (array) ($page->related_slugs ?? []);
         $categorySlugs = (array) ($page->category_slugs ?? []);
 
@@ -1472,9 +1616,7 @@ class KeywordPageService
         }
 
         return $picked
-            ->map(fn (KeywordPage $related) => $this->mapRelatedPageChip($related) + [
-                'matching_offers_count' => (int) $related->matching_offers_count,
-            ])
+            ->map(fn (KeywordPage $related) => $this->mapRelatedPageChip($related))
             ->values()
             ->all();
     }
@@ -1494,13 +1636,17 @@ class KeywordPageService
     private function mapRelatedPageChip(KeywordPage $related): array
     {
         return [
-            // grammar_dative (e.g. "varškei", "kavai") reads better as a
-            // standalone chip label than the h1-minus-"akcija" approach used
-            // before ("Bulvės akcija" -> "Bulvės", wrong case for some
-            // declensions) — every published page has this field populated.
-            'label' => $this->capitalizeFirst($related->grammar_dative ?: $related->title),
+            // "{genitive} akcijos" (e.g. "Lavazzos akcijos", "Tirpios kavos
+            // akcijos") — a real query-shaped anchor for the target page,
+            // same phrasing as its own "Visos {genitive} akcijos" heading.
+            // Replaced the bare dative ("Lavazzai", "Pauligui"), which read
+            // oddly as a standalone link. Every published page has
+            // grammar_genitive populated (240/240 as of 2026-09-26).
+            'label' => $related->grammar_genitive
+                ? $this->capitalizeFirst($related->grammar_genitive) . ' akcijos'
+                : $related->title,
             'href' => "/akcijos/{$related->slug}",
-            'emoji' => $related->emoji,
+            'matching_offers_count' => (int) $related->matching_offers_count,
         ];
     }
 
@@ -1669,7 +1815,8 @@ class KeywordPageService
         }
 
         $breadcrumbs[] = [
-            'name' => $this->dynamicMetaService->heading($page),
+            // Just the keyword ("Grietinė"), not the whole H1 repeated.
+            'name' => $this->capitalizeFirst(trim((string) $page->title)),
             'slug' => 'akcijos/' . $page->slug,
             'type' => 'keyword',
         ];

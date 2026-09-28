@@ -47,11 +47,11 @@ class KeywordPageForm
                     ->maxLength(255)
                     ->disabled()
                     ->dehydrated(false)
-                    ->helperText('Runtime: {title} akcijos ir nuolaidos šią savaitę')
+                    ->helperText('Runtime: {grammar_genitive} akcijos ir nuolaidos šią savaitę')
                     ->columnSpanFull(),
                 TagsInput::make('primary_keywords')
                     ->label('Primary keywords (top 3 exact)')
-                    ->helperText('Nebenaudojama H1 / meta – H1 = {title} akcijos ir nuolaidos šią savaitę')
+                    ->helperText('Nebenaudojama H1 / meta – H1 = {grammar_genitive} akcijos ir nuolaidos šią savaitę')
                     ->columnSpanFull(),
                 TagsInput::make('brands')
                     ->label('Prekės ženklai / linijos')

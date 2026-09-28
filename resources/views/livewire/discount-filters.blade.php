@@ -11,7 +11,10 @@
     // $activeCategoryName exist, so it also counts a URL-fixed facet, not
     // just a checkbox pick — see the comment there.
     $orderOptions = [
-        'popular' => 'Populiariausi',
+        // Keyword pages' 'popular' is really Meilisearch relevance order
+        // (KeywordPageService::sortDiscounts() leaves it untouched), not
+        // popularity — labelled honestly there. Same URL value either way.
+        'popular' => $mode === 'keyword' ? 'Tinkamiausi' : 'Populiariausi',
         'price_min' => 'Mažiausia kaina',
         'price_max' => 'Didžiausia kaina',
         'price_discount_max' => 'Didž. nuolaida (€)',
@@ -458,6 +461,7 @@
                         'total' => (int) ($pagination['total'] ?? count($displayDeals)),
                         'wireId' => $this->getId(),
                         'gaSource' => 'listing',
+                        'manual' => true,
                         'params' => [
                             'mode' => $mode,
                             'primary_slug' => $primarySlug,
@@ -494,22 +498,35 @@
                     </div>
 
                     @if ($current < $last)
-                        {{-- Infinite scroll: this empty div is the
-                             IntersectionObserver target (see listingLoadMore
-                             in app.js) — no click needed, loadMore() fires
-                             automatically as it nears the viewport. The
-                             spinner only shows while a fetch is in flight. --}}
-                        <div x-ref="sentinel" class="mt-6 flex justify-center py-4">
-                            <span x-show="loading" x-cloak class="inline-flex items-center gap-2 text-sm font-medium text-gray-500">
-                                <svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M12 3a9 9 0 1 0 9 9" /></svg>
-                                Kraunama...
-                            </span>
-                            {{-- Real user pagination is the auto-loading sentinel above;
-                                 this plain href exists only so a crawler following actual
-                                 links (not just the sitemap) can reach page
-                                 {{ $current + 1 }} onward. Visually hidden, not part of
-                                 the tab order. --}}
-                            <a href="?page={{ $current + 1 }}" rel="next" class="sr-only" tabindex="-1" aria-hidden="true">Kitas puslapis</a>
+                        {{-- "Rodyti daugiau" button, not infinite scroll: the
+                             price table, related links and FAQ below the grid
+                             stay reachable instead of being pushed down by
+                             every auto-loaded page. A real <a href="?page=N"
+                             rel="next"> so crawlers follow it too; JS loads
+                             the next page in place (listingLoadMore). --}}
+                        <div class="mt-6 flex flex-col items-center gap-3" x-show="page < lastPage">
+                            <div class="flex w-full max-w-xs flex-col items-center gap-1.5">
+                                <p class="text-sm text-gray-600">
+                                    Parodyta <span class="font-bold tabular-nums text-gray-900" x-text="shown">{{ count($displayDeals) }}</span>
+                                    iš <span class="font-bold tabular-nums text-gray-900">{{ number_format((int) ($pagination['total'] ?? count($displayDeals)), 0, ',', ' ') }}</span>
+                                </p>
+                                <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200">
+                                    <div class="h-full rounded-full bg-green transition-[width] duration-300" :style="`width: ${Math.min(100, Math.round(shown / total * 100))}%`" style="width: {{ min(100, (int) round(count($displayDeals) / max(1, (int) ($pagination['total'] ?? 1)) * 100)) }}%"></div>
+                                </div>
+                            </div>
+                            <a
+                                href="?page={{ $current + 1 }}"
+                                :href="`?page=${page + 1}`"
+                                rel="next"
+                                @click.prevent="loadMore()"
+                                :aria-busy="loading"
+                                class="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-green bg-white px-8 text-base font-bold text-green shadow-sm transition-colors hover:bg-green-soft hover:text-dark-green active:bg-green-soft sm:w-auto sm:min-w-72"
+                                :class="loading && 'pointer-events-none opacity-70'"
+                            >
+                                <svg x-show="loading" x-cloak class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M12 3a9 9 0 1 0 9 9" /></svg>
+                                <span x-text="loading ? 'Kraunama...' : 'Rodyti daugiau'">Rodyti daugiau</span>
+                                <x-app-icon name="chevron-down" class="size-4" x-show="!loading" />
+                            </a>
                         </div>
                     @endif
                 </div>

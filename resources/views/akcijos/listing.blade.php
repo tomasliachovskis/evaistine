@@ -169,23 +169,49 @@
                     :icon-src="$heroCategorySlug ? '/assets/categories/'.$heroCategorySlug.'.svg' : null"
                     :hide-subtitle-on-mobile="true"
                 >
-                    @foreach ($listingMeta['intro']['quick_stats'] ?? [] as $stat)
-                        @if (!empty($stat['label_first']))
-                            <span>{{ mb_strtolower($stat['label']) }} {{ $stat['value'] }}</span>
-                        @else
-                            <span>{{ $stat['value'] }} {{ mb_strtolower($stat['label']) }}</span>
-                        @endif
-                    @endforeach
-                    @if (!empty($listingMeta['intro']['freshness_label']))
-                        <x-content-freshness :label="$listingMeta['intro']['freshness_label']" />
-                    @endif
-
                     @unless ($heroCategorySlug)
                         <x-slot:icon>
                             <x-app-icon name="flame" class="size-7" />
                         </x-slot:icon>
                     @endunless
                 </x-type-hero>
+                @if (!empty($listingMeta['intro']['quick_stats']))
+                    @php
+                        // Price + max discount lead — the two facts that
+                        // decide whether to keep scrolling.
+                        $heroStatsMobile = collect($listingMeta['intro']['quick_stats'])->sortBy(fn ($stat) => empty($stat['mobile_first']) ? 1 : 0)->values();
+                    @endphp
+                    <div>
+                        {{-- One compact pill row at every width (~30px), so
+                             products stay near the top of the screen. Scrolls
+                             sideways on a phone instead of wrapping; wraps on
+                             sm+, where it always fits anyway. --}}
+                        <ul class="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:gap-2 sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+                            @foreach ($heroStatsMobile as $stat)
+                                <li class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-800 sm:px-3 sm:text-sm">
+                                    <x-app-icon :name="$stat['icon'] ?? 'tag'" class="size-3.5 text-dark-green sm:size-4" />
+                                    {{ $stat['pill'] ?? $stat['text'] }}
+                                </li>
+                            @endforeach
+                            @if (!empty($listingMeta['intro']['freshness_label']))
+                                {{-- Same type as the pills, no chip: on sm+ it
+                                     sits at the end of the row. --}}
+                                <li class="hidden shrink-0 items-center gap-1.5 whitespace-nowrap px-1 py-1 text-sm font-semibold text-gray-500 sm:flex">
+                                    <x-app-icon name="clock" class="size-4" />
+                                    {{ $listingMeta['intro']['freshness_label'] }}
+                                </li>
+                            @endif
+                        </ul>
+                        @if (!empty($listingMeta['intro']['freshness_label']))
+                            {{-- Mobile: own line, since the end of the
+                                 sideways-scrolling row would be off-screen. --}}
+                            <p class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-500 sm:hidden">
+                                <x-app-icon name="clock" class="size-3.5" />
+                                {{ $listingMeta['intro']['freshness_label'] }}
+                            </p>
+                        @endif
+                    </div>
+                @endif
             </div>
         @else
             {{-- The plain /akcijos hub has no listing_meta pipeline at all
@@ -227,13 +253,6 @@
                         @include('components.partials.related-keyword-links', ['links' => $alternativePages])
                     </div>
                 @endif
-            </div>
-        @elseif ($isKeyword)
-            {{-- Mockup shows this grid under its own heading + total count,
-                 not dropped in bare — real genitive grammar already computed
-                 for the store-comparison heading above, reused here too. --}}
-            <div class="mt-6 flex items-center justify-between gap-2">
-                <h2 class="text-base font-bold leading-tight text-gray-900 sm:text-lg">Visos {{ $listingMeta['keyword_grammar']['genitive'] ?? '' }} akcijos</h2>
             </div>
         @endif
 
@@ -316,98 +335,101 @@
 
         @if ($hasBottomBlocks)
             <section class="section-card mt-10 w-full divide-y divide-gray-200">
-                @if (!empty($listingMeta['intro']['cheapest_answer']))
-                    {{-- Direct "kur šiandien pigiausia X" answer — the single
-                         cheapest offer across every store, front and center
-                         above the brand breakdown, not something a reader has
-                         to piece together from a list themselves. --}}
-                    @php $answer = $listingMeta['intro']['cheapest_answer']; @endphp
+                @if (!empty($listingMeta['intro']['cheapest_answer']) || $hasStorePriceTable)
+                    {{-- One price block: the direct "kur šiandien pigiausia X"
+                         answer as a single sentence, then the per-store table.
+                         The table guarantees a row for every main chain
+                         (Maxima/Norfa/Lidl/Iki/Rimi) even when its cheapest
+                         match has no brand; the cheapest row is highlighted
+                         instead of repeated in a separate box above. --}}
                     <div class="py-6 first:pt-0 last:pb-0">
                         <h2 class="section-heading mb-3">
                             Kur šiandien pigiausia {{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }}?
                         </h2>
-                        <div class="flex flex-wrap items-center gap-4 rounded-xl border border-green-soft-border bg-green-soft px-4 py-3">
-                            <x-store-logo :slug="$answer['store_slug']" :name="$answer['store_name']" size="sm" />
-                            <div class="min-w-0 flex-1">
-                                <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Pigiausia dabar</p>
-                                <p class="truncate font-bold text-gray-900">{{ $answer['product_name'] }} — {{ $answer['store_name'] }}</p>
-                            </div>
-                            <span class="text-2xl font-extrabold tabular-nums text-dark-green">{{ number_format($answer['price'], 2, ',', ' ') }}&nbsp;€</span>
-                        </div>
-                        <p class="mt-3 text-sm leading-relaxed text-gray-600">
-                            Šiuo metu pigiausia {{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }} —
-                            <span class="font-bold text-gray-900">{{ $answer['product_name'] }}</span>
-                            parduotuvėje <span class="font-bold text-gray-900">{{ $answer['store_name'] }}</span>,
-                            už <span class="font-bold text-dark-green">{{ number_format($answer['price'], 2, ',', ' ') }}&nbsp;€</span>
-                            (iš {{ $answer['store_offers_count'] }} galiojančių pasiūlymų šioje parduotuvėje).
-                            Iš viso „{{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }}" akcijos šiuo metu galioja
-                            <span class="font-bold text-gray-900">{{ $answer['store_count'] }} {{ \App\Support\LithuanianPlural::offerWord($answer['store_count']) === 'pasiūlymas' ? 'parduotuvėje' : 'parduotuvėse' }}</span>,
-                            su <span class="font-bold text-gray-900">{{ number_format($listingMeta['intro']['total_matching_offers'] ?? 0, 0, ',', ' ') }} pasiūlymais</span>.
-                            @if (!empty($answer['max_discount_percent']))
-                                Didžiausia savaitės nuolaida —
-                                <span class="font-bold text-[#c0392b]">-{{ $answer['max_discount_percent'] }}%</span>
-                                prekei <span class="font-bold text-gray-900">{{ $answer['max_discount_product'] }}</span>
-                                ({{ $answer['max_discount_store'] }}).
-                            @endif
-                        </p>
-                    </div>
-                @endif
-
-                @if ($hasStorePriceTable)
-                    {{-- Per-store "cheapest right now" — guarantees a row for
-                         every main chain (Maxima/Norfa/Lidl/Iki/Rimi) even
-                         when its cheapest match has no brand or a low-volume
-                         one, still names the real brand/product per row. --}}
-                    <div class="py-6 first:pt-0 last:pb-0">
-                        <div class="section-heading-row">
-                            <h2 class="section-heading">Kainos pagal parduotuvę</h2>
-                        </div>
-                        <div class="overflow-x-auto rounded-xl border border-gray-200">
-                            <table class="w-full min-w-[560px] text-left text-sm">
-                                <thead>
-                                    <tr class="bg-green text-white">
-                                        <th class="p-3 font-bold">Parduotuvė</th>
-                                        <th class="p-3 font-bold">Pigiausia prekė</th>
-                                        <th class="p-3 font-bold">Mažiausia kaina</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    @foreach ($listingMeta['intro']['store_price_table'] as $row)
-                                        <tr class="odd:bg-white even:bg-gray-50 hover:bg-green-soft/60">
-                                            <td class="p-3">
-                                                <span class="font-bold text-gray-900">{{ $row['store_name'] }}</span>
-                                            </td>
-                                            <td class="p-3">
-                                                <a href="{{ $row['product_href'] }}" class="flex min-w-0 items-center gap-3">
-                                                    <span class="relative size-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
-                                                        @if ($row['product_image_url'])
-                                                            <img src="{{ $row['product_image_url'] }}" alt="{{ $row['product_name'] }}" loading="lazy" class="h-full w-full object-contain p-1">
-                                                        @endif
-                                                    </span>
-                                                    <span class="min-w-0">
-                                                        @if ($row['brand'])
-                                                            <span class="block truncate font-bold text-gray-900">{{ $row['brand'] }}</span>
-                                                        @endif
-                                                        <span class="block truncate text-xs text-gray-500">{{ $row['product_name'] }}</span>
-                                                    </span>
-                                                </a>
-                                            </td>
-                                            <td class="p-3">
-                                                <span class="block font-bold tabular-nums text-gray-900">{{ number_format($row['min_price'], 2, ',', ' ') }}&nbsp;€</span>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        @if (!empty($listingMeta['intro']['store_keyword_sentence']))
-                            {{-- The one place a literal "{store} + keyword + akcija"
-                                 phrase pairing appears in visible text — targets
-                                 store+keyword long-tail queries (e.g. "norfa kava
-                                 akcija") the table/chips alone don't. --}}
-                            <p class="mt-3 rounded-xl border border-green-soft-border bg-green-soft px-4 py-3 text-sm leading-relaxed text-gray-700">
-                                {{ $listingMeta['intro']['store_keyword_sentence'] }}
+                        @if (!empty($listingMeta['intro']['cheapest_answer']))
+                            @php $answer = $listingMeta['intro']['cheapest_answer']; @endphp
+                            <p class="text-sm leading-relaxed text-gray-600">
+                                Šiuo metu pigiausia {{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }} —
+                                <span class="font-bold text-gray-900">{{ $answer['product_name'] }}</span>
+                                parduotuvėje <span class="font-bold text-gray-900">{{ $answer['store_name'] }}</span>,
+                                už <span class="font-bold text-dark-green">{{ number_format($answer['price'], 2, ',', ' ') }}&nbsp;€</span>@if ($answer['store_offers_count'] > 1)
+                                    (iš {{ $answer['store_offers_count'] }} galiojančių pasiūlymų šioje parduotuvėje)@endif.
+                                Iš viso „{{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }}" akcijos šiuo metu galioja
+                                <span class="font-bold text-gray-900">{{ $answer['store_count'] }} {{ \App\Support\LithuanianPlural::offerWord($answer['store_count']) === 'pasiūlymas' ? 'parduotuvėje' : 'parduotuvėse' }}</span>,
+                                su <span class="font-bold text-gray-900">{{ number_format($listingMeta['intro']['total_matching_offers'] ?? 0, 0, ',', ' ') }} pasiūlymais</span>.
+                                @if (!empty($answer['max_discount_percent']))
+                                    Didžiausia savaitės nuolaida —
+                                    <span class="font-bold text-[#c0392b]">-{{ $answer['max_discount_percent'] }}%</span>
+                                    prekei <span class="font-bold text-gray-900">{{ $answer['max_discount_product'] }}</span>
+                                    ({{ $answer['max_discount_store'] }}).
+                                @endif
                             </p>
+                        @endif
+
+                        @if ($hasStorePriceTable)
+                            @php
+                                $storePriceRows = $listingMeta['intro']['store_price_table'];
+                                $cheapestStorePrice = min(array_column($storePriceRows, 'min_price'));
+                            @endphp
+                            {{-- No min-width/horizontal scroll: the price column
+                                 must stay visible on a phone — it's what the
+                                 table is for. Product name truncates instead. --}}
+                            <div class="mt-4 overflow-hidden rounded-xl border border-gray-200">
+                                <table class="w-full table-fixed text-left text-sm">
+                                    <caption class="sr-only">{{ mb_convert_case(mb_substr($listingMeta['keyword_grammar']['genitive'] ?? '', 0, 1), MB_CASE_UPPER, 'UTF-8') . mb_substr($listingMeta['keyword_grammar']['genitive'] ?? '', 1) }} kainos pagal parduotuvę</caption>
+                                    <thead class="bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-500">
+                                        <tr>
+                                            <th scope="col" class="w-24 p-3 sm:w-40">Parduotuvė</th>
+                                            <th scope="col" class="p-3">Pigiausia prekė</th>
+                                            <th scope="col" class="w-20 p-3 text-right sm:w-24">Kaina</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        @foreach ($storePriceRows as $row)
+                                            @php $isCheapestRow = $row['min_price'] <= $cheapestStorePrice; @endphp
+                                            <tr class="{{ $isCheapestRow ? 'bg-green-soft' : 'bg-white' }}">
+                                                <td class="p-3">
+                                                    <span class="flex flex-col items-start gap-1">
+                                                        <x-store-logo :slug="$row['store_slug']" :name="$row['store_name']" size="sm" />
+                                                        <span class="text-xs font-semibold leading-tight text-gray-600">{{ $row['store_name'] }}</span>
+                                                    </span>
+                                                </td>
+                                                <td class="p-3">
+                                                    <a href="{{ $row['product_href'] }}" class="flex min-w-0 items-center gap-3">
+                                                        <span class="relative hidden size-10 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white sm:block">
+                                                            @if ($row['product_image_url'])
+                                                                <img src="{{ $row['product_image_url'] }}" alt="{{ $row['product_name'] }}" loading="lazy" class="h-full w-full object-contain p-1">
+                                                            @endif
+                                                        </span>
+                                                        <span class="min-w-0">
+                                                            @if ($row['brand'])
+                                                                <span class="block truncate font-bold text-gray-900">{{ $row['brand'] }}</span>
+                                                            @endif
+                                                            <span class="line-clamp-2 text-sm sm:line-clamp-1 {{ $row['brand'] ? 'text-gray-600' : 'font-semibold text-gray-900' }}">{{ $row['product_name'] }}</span>
+                                                        </span>
+                                                    </a>
+                                                </td>
+                                                <td class="p-3 text-right">
+                                                    <span class="block font-bold tabular-nums {{ $isCheapestRow ? 'text-dark-green' : 'text-gray-900' }}">{{ number_format($row['min_price'], 2, ',', ' ') }}&nbsp;€</span>
+                                                    @if ($isCheapestRow)
+                                                        <span class="block text-xs font-bold text-dark-green">Pigiausia</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            @if (!empty($listingMeta['intro']['store_keyword_sentence']))
+                                {{-- The one place a literal "{store} + keyword + akcija"
+                                     phrase pairing appears in visible text — targets
+                                     store+keyword long-tail queries (e.g. "norfa kava
+                                     akcija") the table alone doesn't. Plain text, not
+                                     a highlighted box: it restates the table. --}}
+                                <p class="mt-3 text-sm leading-relaxed text-gray-600">
+                                    {{ $listingMeta['intro']['store_keyword_sentence'] }}
+                                </p>
+                            @endif
                         @endif
                     </div>
                 @endif
@@ -428,7 +450,14 @@
                     </div>
                 @endif
 
-                @if ($seoAboutHtml)
+                @if (!empty($faqItems))
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <h2 class="section-heading mb-4">Dažniausiai užduodami klausimai</h2>
+                        <x-faq-accordion :items="$faqItems" />
+                    </div>
+                @endif
+
+                @if ($seoAboutHtml || !empty($tips))
                     <div class="py-6 first:pt-0 last:pb-0">
                         {{-- Heading only for keyword pages ("Apie {kava} kainas ir
                              akcijas") — kept OUTSIDE the .prose wrapper below since
@@ -442,41 +471,32 @@
                         @if ($isKeyword)
                             <h2 class="section-heading mb-3">{{ $aboutHeading }}</h2>
                         @endif
-                        {{-- [&>*:first-child]:mt-0: this admin-authored HTML
-                             (Store::description/Category::description) already
-                             ships its own explicitly-styled heading (text-2xl/3xl
-                             etc) — Tailwind Typography's default ~2em top margin
-                             on that h2 wasn't being zeroed by its own first-child
-                             reset here, leaving a large gap above it. --}}
-                        <div class="category-description max-w-none text-sm prose prose-sm [&>p]:mb-4 [&>p:last-child]:mb-0 [&_:first-child]:mt-0! [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
-                            {!! $seoAboutHtml !!}
-                        </div>
-                    </div>
-                @endif
-
-                @if (!empty($tips))
-                    <div class="py-6 first:pt-0 last:pb-0">
-                        <h2 class="section-heading mb-3">Patarimai pirkėjams</h2>
-                        <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            @foreach ($tips as $tip)
-                                <li class="flex gap-3 rounded-lg border border-gray-100 bg-gray-50/80 p-3.5 sm:p-4">
-                                    @if (!empty($tip['icon']))
-                                        <span class="text-xl leading-none" aria-hidden="true">{{ $tip['icon'] }}</span>
-                                    @endif
-                                    <div>
-                                        <p class="font-semibold text-gray-900">{{ $tip['title'] }}</p>
-                                        <p class="mt-1 text-sm leading-relaxed text-gray-600">{{ $tip['text'] }}</p>
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
-                @if (!empty($faqItems))
-                    <div class="py-6 first:pt-0 last:pb-0">
-                        <h2 class="section-heading mb-4">Dažniausiai užduodami klausimai</h2>
-                        <x-faq-accordion :items="$faqItems" />
+                        @if ($seoAboutHtml)
+                            {{-- [&>*:first-child]:mt-0: this admin-authored HTML
+                                 (Store::description/Category::description) already
+                                 ships its own explicitly-styled heading (text-2xl/3xl
+                                 etc) — Tailwind Typography's default ~2em top margin
+                                 on that h2 wasn't being zeroed by its own first-child
+                                 reset here, leaving a large gap above it. --}}
+                            <div class="category-description max-w-none text-sm prose prose-sm [&>p]:mb-4 [&>p:last-child]:mb-0 [&_:first-child]:mt-0! [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
+                                {!! $seoAboutHtml !!}
+                            </div>
+                        @endif
+                        @if (!empty($tips))
+                            {{-- Buying tips folded into the "Apie" block as a plain
+                                 list (was its own section of bordered cards). The
+                                 GPT-generated tips[].icon emoji is deliberately not
+                                 rendered — no emoji in UI. --}}
+                            <h3 class="mt-5 mb-2 text-base font-bold text-gray-900">Patarimai pirkėjams</h3>
+                            <ul class="space-y-2.5">
+                                @foreach ($tips as $tip)
+                                    <li class="flex gap-2.5 text-sm leading-relaxed">
+                                        <x-app-icon name="check" class="mt-0.5 size-4 shrink-0 text-green" />
+                                        <p class="text-gray-600"><span class="font-semibold text-gray-900">{{ $tip['title'] }}{{ preg_match('/[.!?:]$/u', $tip['title']) ? '' : '.' }}</span> {{ $tip['text'] }}</p>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
                     </div>
                 @endif
             </section>

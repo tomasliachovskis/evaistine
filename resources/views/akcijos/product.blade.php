@@ -498,16 +498,7 @@ use App\Support\ProductPageMeta;
             <section id="related-akcijos" class="border-t border-gray-200 bg-white py-6 sm:py-8">
                 <div class="base-container">
                     <h2 class="mb-3 text-lg font-bold text-gray-900">Susijusios akcijos</h2>
-                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        @foreach ($relatedKeywordPages as $related)
-                            <a href="{{ $related['href'] }}" class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-semibold text-gray-800 transition-colors hover:border-green/40">
-                                @if ($related['emoji'])
-                                    <span class="shrink-0 text-lg" aria-hidden="true">{{ $related['emoji'] }}</span>
-                                @endif
-                                <span class="truncate">{{ $related['label'] }}</span>
-                            </a>
-                        @endforeach
-                    </div>
+                    @include('components.partials.related-keyword-links', ['links' => $relatedKeywordPages])
                 </div>
             </section>
         @endif
