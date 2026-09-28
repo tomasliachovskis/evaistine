@@ -27,6 +27,7 @@ class ListingPageMetaService
         private PageFreshnessService $freshnessService,
         private StoreFlyerTitleBuilder $flyerTitleBuilder,
         private KeywordPageService $keywordPageService,
+        private DiscountResponseFormatter $formatter,
     ) {
     }
 
@@ -115,7 +116,7 @@ class ListingPageMetaService
             'type' => 'store',
             'store_slug' => $store->slug,
             'store_name' => $store->name,
-            'total_offers' => Discount::where('store_id', $store->id)->count(),
+            'total_offers' => $totalOffers = Discount::where('store_id', $store->id)->count(),
             'leaflets_count' => $leafletsCount,
             'locations_count' => $store->locations()->active()->count(),
             'intro' => $intro,
@@ -123,8 +124,12 @@ class ListingPageMetaService
             'sections' => [
                 'top_categories' => $this->getTopCategoriesForStore($store),
                 'featured_category' => $this->getFeaturedFoodCategoryForStore($store),
-                'available_categories' => $this->getAllCategoriesWithCountsForStore($store),
-                'faq' => $store->faq ?? [],
+                'available_categories' => $availableCategories = $this->getAllCategoriesWithCountsForStore($store),
+                'other_stores' => $this->getOtherStores($store->id),
+                'faq' => [
+                    ...$this->buildLiveStoreFaq($store, $totalOffers, $availableCategories, $leafletsCount),
+                    ...array_values((array) ($store->faq ?? [])),
+                ],
             ],
         ];
     }
@@ -167,7 +172,10 @@ class ListingPageMetaService
                 'top_brands' => $this->getTopBrandsForCategory($category),
                 'weekly_deals' => $this->getWeeklyDealsForCategory($category, $categorySlug),
                 'seasonal_modules' => $this->getSeasonalModules($categorySlug),
-                'faq' => $this->buildCategoryFaq($category),
+                'faq' => [
+                    ...$this->buildLiveCategoryFaq($categoryName, $storeComparison, $totalOffers, $stats['top_discounted_products'] ?? []),
+                    ...$this->buildCategoryFaq($category),
+                ],
             ],
         ];
     }
@@ -506,7 +514,8 @@ class ListingPageMetaService
             ->select(
                 'categories.name',
                 'categories.slug',
-                DB::raw('COUNT(discounts.id) as offers_count')
+                DB::raw('COUNT(discounts.id) as offers_count'),
+                DB::raw('MAX(discounts.discount_percent) as max_discount_percent')
             )
             ->groupBy('categories.id', 'categories.name', 'categories.slug')
             ->orderByDesc('offers_count')
@@ -517,6 +526,7 @@ class ListingPageMetaService
                 'name' => trim($row->name),
                 'slug' => $row->slug,
                 'offers_count' => (int) $row->offers_count,
+                'max_discount_percent' => (int) round($row->max_discount_percent ?? 0),
             ];
         })->values()->all();
     }
@@ -546,6 +556,11 @@ class ListingPageMetaService
                 'name' => $s->name,
                 'slug' => $s->slug,
                 'href' => "/leidinys/{$s->slug}",
+                // Where a listing page should send a visitor: the store's
+                // akcijos page when it has one, else its leaflets (the
+                // akcijos URL just 301s there).
+                'listing_href' => $s->showsDiscountsPage() ? "/akcijos/{$s->slug}" : "/leidinys/{$s->slug}",
+                'has_discounts_page' => $s->showsDiscountsPage(),
                 'discounts_count' => $s->discounts_count,
             ])
             ->values()
@@ -561,20 +576,26 @@ class ListingPageMetaService
             ->select(
                 'stores.name as store',
                 'stores.slug as store_slug',
+                'stores.show_discounts_page',
                 DB::raw('COUNT(discounts.id) as offers_count'),
                 DB::raw('MAX(discounts.discount_percent) as max_discount_percent'),
                 DB::raw('ROUND(AVG(discounts.discount_percent), 0) as avg_discount_percent')
             )
-            ->groupBy('stores.id', 'stores.name', 'stores.slug')
+            ->groupBy('stores.id', 'stores.name', 'stores.slug', 'stores.show_discounts_page')
             ->orderByDesc('offers_count')
-            ->limit(8)
+            // No limit: at most one row per store (~47), and the real store
+            // count (quick_stats, FAQ) needs all of them — the old limit(8)
+            // under-reported "N parduotuvių". Display slices its own top 8.
             ->get();
 
         return $rows->map(function ($row) use ($category) {
             return [
                 'store' => $row->store,
                 'store_slug' => $row->store_slug,
-                'href' => "/akcijos/{$row->store_slug}/{$category->slug}",
+                // store+category page only exists with show_discounts_page;
+                // otherwise that URL 301s to the leaflets page, so link
+                // there directly.
+                'href' => $row->show_discounts_page ? "/akcijos/{$row->store_slug}/{$category->slug}" : "/leidinys/{$row->store_slug}",
                 'offers_count' => (int) $row->offers_count,
                 'max_discount_percent' => (int) round($row->max_discount_percent ?? 0),
                 'avg_discount_percent' => (int) round($row->avg_discount_percent ?? 0),
@@ -610,17 +631,26 @@ class ListingPageMetaService
     private function getTopDiscountedProductsForCategory(Category $category): array
     {
         return Discount::query()
-            ->with(['product', 'store'])
+            ->with(['product.category', 'store'])
             ->whereHas('product', fn ($q) => $q->where('category_id', $category->id))
             ->whereNotNull('discount_percent')
             ->orderByDesc('discount_percent')
             ->limit(5)
             ->get()
-            ->map(fn (Discount $d) => [
-                'name' => $d->product->name,
-                'store' => $d->store->name,
-                'discount_percent' => (int) round($d->discount_percent),
-            ])
+            ->map(function (Discount $d) {
+                $formatted = $this->formatter->formatListDiscount($d);
+
+                return [
+                    'name' => $d->product->name,
+                    'store' => $d->store->name,
+                    'store_slug' => $d->store->slug,
+                    'discount_percent' => (int) round($d->discount_percent),
+                    'price' => (float) $d->discounted_price,
+                    'original_price' => (float) $d->original_price,
+                    'image_url' => $formatted['product']['image_url'] ?? null,
+                    'href' => '/akcijos/' . $formatted['product']['full_slug'],
+                ];
+            })
             ->values()
             ->all();
     }
@@ -1280,6 +1310,100 @@ class ListingPageMetaService
     private function siteUrl(string $path): string
     {
         return 'https://superakcijos.lt' . $path;
+    }
+
+    /**
+     * Live Q&A from data this page already loaded — answers what a
+     * "{kategorija} akcijos" searcher asks, with this week's real numbers,
+     * ahead of the category's own static admin FAQ. Phrased around the
+     * category's name in quotes ("kategorijoje „Pieno produktai…“") so no
+     * declension map is needed. Answers are rendered as HTML
+     * (<x-faq-accordion>), so every dynamic string is escaped.
+     *
+     * @return list<array{question: string, answer: string}>
+     */
+    private function buildLiveCategoryFaq(string $categoryName, array $storeComparison, int $totalOffers, array $topDiscounted): array
+    {
+        if ($totalOffers <= 0 || $storeComparison === []) {
+            return [];
+        }
+
+        $name = '„' . e($categoryName) . '“';
+        $storeCount = count($storeComparison);
+        $offersPhrase = fn (int $n) => LithuanianPlural::formatCount($n) . ' ' . LithuanianPlural::offerWord($n);
+        $faq = [];
+
+        $top = collect($storeComparison)->take(3)
+            ->map(fn (array $row) => e($row['store']) . ' (' . $offersPhrase($row['offers_count']) . ')')
+            ->values()->all();
+        $faq[] = [
+            'question' => "Kurioje parduotuvėje daugiausia akcijų kategorijoje {$name}?",
+            'answer' => 'Daugiausia pasiūlymų šiuo metu turi ' . array_shift($top)
+                . ($top !== [] ? ', toliau ' . implode(' ir ', $top) : '') . '.',
+        ];
+
+        if (!empty($topDiscounted[0])) {
+            $best = $topDiscounted[0];
+            $faq[] = [
+                'question' => "Kokia didžiausia nuolaida kategorijoje {$name} dabar?",
+                'answer' => "Didžiausia šiuo metu galiojanti nuolaida — -{$best['discount_percent']}% prekei "
+                    . e($best['name']) . ' (' . e($best['store']) . ').',
+            ];
+        }
+
+        $faq[] = [
+            'question' => "Kiek akcijų yra kategorijoje {$name}?",
+            'answer' => 'Šiuo metu galioja ' . $offersPhrase($totalOffers) . ' '
+                . $storeCount . ' ' . (LithuanianPlural::storeWord($storeCount) === 'parduotuvė' ? 'parduotuvėje' : 'parduotuvėse') . '.',
+        ];
+
+        return $faq;
+    }
+
+    /**
+     * Same idea as buildLiveCategoryFaq(), for a store's own page. Store
+     * names stay undeclined (nominative subject / "{Store} parduotuvėje"),
+     * since most are foreign brand names with no safe Lithuanian case.
+     *
+     * @return list<array{question: string, answer: string}>
+     */
+    private function buildLiveStoreFaq(Store $store, int $totalOffers, array $categories, int $leafletsCount): array
+    {
+        $storeName = e($store->name);
+        $faq = [];
+
+        if ($totalOffers > 0) {
+            $topCategories = collect($categories)->take(3)
+                ->map(fn (array $row) => e($row['name']) . ' (' . LithuanianPlural::formatCount($row['offers_count']) . ')')
+                // "; " — some category names contain commas themselves.
+                ->implode('; ');
+            $faq[] = [
+                'question' => "Kiek akcijų šiuo metu turi {$storeName}?",
+                // "parduotuvėje galioja N pasiūlymai" (nominative) instead of
+                // "turi N pasiūlymus", which would need an accusative form.
+                'answer' => "{$storeName} parduotuvėje šiuo metu galioja " . LithuanianPlural::formatCount($totalOffers) . ' ' . LithuanianPlural::offerWord($totalOffers) . '.'
+                    . ($topCategories !== '' ? " Daugiausia jų kategorijose: {$topCategories}." : ''),
+            ];
+
+            $maxRow = collect($categories)->sortByDesc('max_discount_percent')->first();
+            if ($maxRow && ($maxRow['max_discount_percent'] ?? 0) > 0) {
+                $faq[] = [
+                    'question' => "Kokios didžiausios nuolaidos {$storeName} parduotuvėje?",
+                    'answer' => "Didžiausia šiuo metu galiojanti nuolaida — -{$maxRow['max_discount_percent']}%, kategorijoje „" . e($maxRow['name']) . '“.',
+                ];
+            }
+        }
+
+        if ($leafletsCount > 0) {
+            $leafletWord = LithuanianPlural::leafletWord($leafletsCount);
+            $faq[] = [
+                'question' => "Ar {$storeName} turi galiojantį leidinį?",
+                'answer' => "Taip — šiuo metu galioja {$leafletsCount} {$leafletWord}. Visus rasite puslapyje "
+                    . '<a href="/leidinys/' . e($store->slug) . '">' . $storeName . ' leidiniai</a>.',
+            ];
+        }
+
+        return $faq;
     }
 
     private function buildCategoryFaq(Category $category): array

@@ -129,7 +129,7 @@ class KeywordPageService
             ->where('is_chip', true)
             ->orderByDesc('matching_offers_count')
             ->orderBy('title')
-            ->get(['slug', 'title', 'h1', 'emoji', 'matching_offers_count', 'category_slugs'])
+            ->get(['slug', 'title', 'h1', 'emoji', 'grammar_genitive', 'matching_offers_count', 'category_slugs'])
             ->filter(function (KeywordPage $page) use ($listingSlugs) {
                 $primary = $this->categoryResolver->resolvePrimaryListingCategorySlugs(
                     (array) ($page->category_slugs ?? []),
@@ -180,6 +180,11 @@ class KeywordPageService
             'emoji' => $page->emoji ?: '🏷️',
             'href' => "/akcijos/{$page->slug}",
             'matching_offers_count' => (int) ($page->matching_offers_count ?? 0),
+            // "{Genitive} akcijos" link label, when the caller selected
+            // grammar_genitive (listPublishedPagesForCategory() does).
+            'link_label' => ($genitive = trim((string) ($page->getAttributes()['grammar_genitive'] ?? ''))) !== ''
+                ? $this->capitalizeFirst($genitive) . ' akcijos'
+                : $page->title,
         ];
     }
 
@@ -1080,7 +1085,10 @@ class KeywordPageService
         $byPrice = collect($table)->sortBy('min_price')->values();
         $faq = [];
 
-        $priceAnswer = "Šiuo metu {$keyword} akcijose kainuoja nuo {$price($answer['price'])} ({$answer['store_name']})";
+        // Answers render as HTML (<x-faq-accordion> {!! !!}) and product/
+        // store names are scraped text, so escape them there; questions are
+        // escaped by the accordion itself.
+        $priceAnswer = 'Šiuo metu ' . e($keyword) . " akcijose kainuoja nuo {$price($answer['price'])} (" . e($answer['store_name']) . ')';
         if ($byPrice->count() > 1) {
             $priceAnswer .= '. Pigiausi kiekvienos parduotuvės pasiūlymai svyruoja nuo '
                 . $price($byPrice->first()['min_price']) . ' iki ' . $price($byPrice->last()['min_price']);
@@ -1092,7 +1100,7 @@ class KeywordPageService
 
         if ($byPrice->count() > 1) {
             $top = $byPrice->take(3)
-                ->map(fn (array $row) => "{$row['store_name']} — {$price($row['min_price'])} ({$row['product_name']})")
+                ->map(fn (array $row) => e($row['store_name']) . " — {$price($row['min_price'])} (" . e($row['product_name']) . ')')
                 ->implode('; ');
             $faq[] = [
                 'question' => "Kur šią savaitę pigiausi {$genitive} pasiūlymai?",
@@ -1111,7 +1119,7 @@ class KeywordPageService
             $faq[] = [
                 'question' => "Kiek kainuoja {$keyword} {$namesPhrase} parduotuvėse?",
                 'answer' => $mainChains
-                    ->map(fn (array $row) => "{$row['store_name']}: nuo {$price($row['min_price'])}")
+                    ->map(fn (array $row) => e($row['store_name']) . ": nuo {$price($row['min_price'])}")
                     ->implode('; ') . '.',
             ];
         }
@@ -1119,7 +1127,7 @@ class KeywordPageService
         if (!empty($answer['max_discount_percent'])) {
             $faq[] = [
                 'question' => 'Kokia didžiausia ' . $genitive . ' nuolaida dabar?',
-                'answer' => "Didžiausia šiuo metu galiojanti nuolaida — -{$answer['max_discount_percent']}% prekei {$answer['max_discount_product']} ({$answer['max_discount_store']}).",
+                'answer' => "Didžiausia šiuo metu galiojanti nuolaida — -{$answer['max_discount_percent']}% prekei " . e($answer['max_discount_product']) . ' (' . e($answer['max_discount_store']) . ').',
             ];
         }
 

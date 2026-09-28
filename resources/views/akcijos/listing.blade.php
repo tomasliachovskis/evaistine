@@ -282,7 +282,34 @@
             // entirely (found live: Norfa's cheapest "kava" match has no
             // brand, so Norfa never made the old top-8-by-offer-count list).
             $hasStorePriceTable = !empty($listingMeta['intro']['store_price_table']);
-            $hasBottomBlocks = $hasStorePriceTable || !empty($relatedPages) || $seoAboutHtml || !empty($tips) || !empty($faqItems);
+            // Category / store pages: blocks built from data ListingPageMetaService
+            // already loads (store comparison, top deals, per-category counts).
+            $categoryStoreRows = $headerType === 'category'
+                ? array_slice($listingMeta['sections']['category_stats']['store_comparison'] ?? [], 0, 8)
+                : [];
+            $categoryTopDeals = $headerType === 'category'
+                ? ($listingMeta['sections']['category_stats']['top_discounted_products'] ?? [])
+                : [];
+            $categoryKeywordLinks = $headerType === 'category'
+                ? array_map(fn ($page) => [
+                    'label' => $page['link_label'] ?? $page['title'],
+                    'href' => $page['href'],
+                    'matching_offers_count' => $page['matching_offers_count'] ?? 0,
+                ], array_slice($listingMeta['keyword_pages'] ?? [], 0, 8))
+                : [];
+            $storeCategoryRows = $headerType === 'store'
+                ? array_slice($listingMeta['sections']['available_categories'] ?? [], 0, 10)
+                : [];
+            $storeLeafletsCount = $headerType === 'store' ? (int) ($listingMeta['leaflets_count'] ?? 0) : 0;
+            $otherStoreLinks = $headerType === 'store'
+                ? array_map(fn ($store) => [
+                    'label' => $store['name'] . (!empty($store['has_discounts_page']) ? ' akcijos' : ' leidiniai'),
+                    'href' => $store['listing_href'] ?? $store['href'],
+                    'matching_offers_count' => $store['discounts_count'] ?? 0,
+                ], $listingMeta['sections']['other_stores'] ?? [])
+                : [];
+            $hasBottomBlocks = $hasStorePriceTable || !empty($relatedPages) || $seoAboutHtml || !empty($tips) || !empty($faqItems)
+                || $categoryStoreRows || $categoryTopDeals || $categoryKeywordLinks || $storeCategoryRows || $storeLeafletsCount || $otherStoreLinks;
             $aboutHeading = $isKeyword
                 ? 'Apie ' . mb_strtolower($listingMeta['keyword_grammar']['genitive'] ?? $pageTitle) . ' kainas ir akcijas'
                 : 'Apie šias akcijas';
@@ -405,10 +432,142 @@
                     </div>
                 @endif
 
+                @if ($categoryStoreRows)
+                    {{-- Which store has the most/best deals in this category —
+                         each row links to that store's own category page
+                         (or its leaflets, when it has no akcijos page). --}}
+                    @php $categoryGenitive = $seo['category_genitive_label'] ?? mb_strtolower($listingMeta['category_name'] ?? ''); @endphp
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <h2 class="section-heading mb-3">Kurioje parduotuvėje daugiausia {{ $categoryGenitive }} akcijų?</h2>
+                        <div class="overflow-hidden rounded-xl border border-gray-200">
+                            <table class="w-full table-fixed text-left text-sm">
+                                <caption class="sr-only">{{ $listingMeta['category_name'] ?? '' }} akcijos pagal parduotuvę</caption>
+                                <thead class="bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-500">
+                                    <tr>
+                                        <th scope="col" class="p-3">Parduotuvė</th>
+                                        <th scope="col" class="w-[4.5rem] py-3 pr-3 text-right sm:w-32 sm:p-3">Pasiūlymai</th>
+                                        <th scope="col" class="w-[4.5rem] py-3 pr-3 text-right sm:w-32 sm:p-3"><span class="sm:hidden">Iki</span><span class="hidden sm:inline">Nuolaidos iki</span></th>
+                                        <th scope="col" class="hidden w-32 p-3 text-right sm:table-cell">Vid. nuolaida</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @foreach ($categoryStoreRows as $row)
+                                        <tr class="{{ $loop->first ? 'bg-green-soft' : 'bg-white' }}">
+                                            <td class="p-3">
+                                                <a href="{{ $row['href'] }}" class="flex min-w-0 items-center gap-2.5 font-bold text-gray-900 hover:text-green">
+                                                    <x-store-logo :slug="$row['store_slug']" :name="$row['store']" size="xs" class="shrink-0" />
+                                                    <span class="min-w-0 break-words leading-snug">{{ $row['store'] }}</span>
+                                                </a>
+                                            </td>
+                                            <td class="py-3 pr-3 text-right font-bold tabular-nums text-gray-900 sm:p-3">{{ \App\Support\LithuanianPlural::formatCount($row['offers_count']) }}</td>
+                                            <td class="py-3 pr-3 text-right font-bold tabular-nums text-gray-900 sm:p-3">{{ $row['max_discount_percent'] > 0 ? '-' . $row['max_discount_percent'] . '%' : '—' }}</td>
+                                            <td class="hidden p-3 text-right tabular-nums text-gray-600 sm:table-cell">{{ $row['avg_discount_percent'] > 0 ? '-' . $row['avg_discount_percent'] . '%' : '—' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($categoryTopDeals)
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <h2 class="section-heading mb-3">Didžiausios nuolaidos šią savaitę</h2>
+                        <ul class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
+                            @foreach ($categoryTopDeals as $deal)
+                                <li>
+                                    <a href="{{ $deal['href'] }}" class="flex items-center gap-3 p-3 transition-colors hover:bg-green-soft/60">
+                                        <span class="relative size-12 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                            @if (!empty($deal['image_url']))
+                                                <img src="{{ $deal['image_url'] }}" alt="{{ $deal['name'] }}" loading="lazy" class="h-full w-full object-contain p-1">
+                                            @endif
+                                        </span>
+                                        <span class="min-w-0 flex-1">
+                                            <span class="line-clamp-2 text-sm font-semibold text-gray-900 sm:line-clamp-1">{{ $deal['name'] }}</span>
+                                            <span class="block text-xs text-gray-500">{{ $deal['store'] }}</span>
+                                        </span>
+                                        <span class="shrink-0 text-right">
+                                            <span class="block font-bold tabular-nums text-gray-900">{{ number_format($deal['price'], 2, ',', ' ') }}&nbsp;€</span>
+                                            <span class="block text-xs font-bold text-dark-green">-{{ $deal['discount_percent'] }}%</span>
+                                        </span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                @if ($categoryKeywordLinks)
+                    {{-- Crawlable exact-anchor links to this category's keyword
+                         pages at the end of the page — same set as the chips
+                         under the hero, as real "{X} akcijos" anchors. --}}
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <h2 class="section-heading mb-3">Populiarios paieškos</h2>
+                        @include('components.partials.related-keyword-links', ['links' => $categoryKeywordLinks])
+                    </div>
+                @endif
+
+                @if ($storeCategoryRows)
+                    {{-- What's on sale at this store, by category — each row
+                         links to the store+category page, which otherwise
+                         has almost no internal links pointing at it. --}}
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <h2 class="section-heading mb-3">{{ $listingMeta['store_name'] }} akcijos pagal kategoriją</h2>
+                        <div class="overflow-hidden rounded-xl border border-gray-200">
+                            <table class="w-full table-fixed text-left text-sm">
+                                <caption class="sr-only">{{ $listingMeta['store_name'] }} akcijos pagal kategoriją</caption>
+                                <thead class="bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-500">
+                                    <tr>
+                                        <th scope="col" class="p-3">Kategorija</th>
+                                        <th scope="col" class="w-[4.5rem] py-3 pr-3 text-right sm:w-32 sm:p-3">Pasiūlymai</th>
+                                        <th scope="col" class="w-[4.5rem] py-3 pr-3 text-right sm:w-32 sm:p-3"><span class="sm:hidden">Iki</span><span class="hidden sm:inline">Nuolaidos iki</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @foreach ($storeCategoryRows as $row)
+                                        <tr class="bg-white">
+                                            <td class="p-3">
+                                                <a href="/akcijos/{{ $listingMeta['store_slug'] }}/{{ $row['slug'] }}" class="flex min-w-0 items-center gap-2.5 font-semibold text-gray-900 hover:text-green">
+                                                    <img src="/assets/categories/{{ $row['slug'] }}.svg" alt="" class="size-6 shrink-0 object-contain" onerror="this.style.visibility='hidden'">
+                                                    <span class="min-w-0 leading-snug">{{ $row['name'] }}</span>
+                                                </a>
+                                            </td>
+                                            <td class="py-3 pr-3 text-right font-bold tabular-nums text-gray-900 sm:p-3">{{ \App\Support\LithuanianPlural::formatCount($row['offers_count']) }}</td>
+                                            <td class="py-3 pr-3 text-right font-bold tabular-nums text-gray-900 sm:p-3">{{ ($row['max_discount_percent'] ?? 0) > 0 ? '-' . $row['max_discount_percent'] . '%' : '—' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($storeLeafletsCount > 0)
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <a href="/leidinys/{{ $listingMeta['store_slug'] }}" class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-green/40">
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-green-soft text-dark-green">
+                                <x-app-icon name="newspaper" class="size-5" />
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block font-bold text-gray-900">{{ $listingMeta['store_name'] }} leidiniai</span>
+                                <span class="block text-sm text-gray-600">Šiuo metu galioja {{ $storeLeafletsCount }} {{ \App\Support\LithuanianPlural::leafletWord($storeLeafletsCount) }}</span>
+                            </span>
+                            <x-app-icon name="chevron-right" class="size-5 shrink-0 text-gray-400" />
+                        </a>
+                    </div>
+                @endif
+
                 @if (!empty($faqItems))
                     <div class="py-6 first:pt-0 last:pb-0">
                         <h2 class="section-heading mb-4">Dažniausiai užduodami klausimai</h2>
                         <x-faq-accordion :items="$faqItems" />
+                    </div>
+                @endif
+
+                @if ($otherStoreLinks)
+                    <div class="py-6 first:pt-0 last:pb-0">
+                        <h2 class="section-heading mb-3">Kitos parduotuvės</h2>
+                        @include('components.partials.related-keyword-links', ['links' => $otherStoreLinks])
                     </div>
                 @endif
 
