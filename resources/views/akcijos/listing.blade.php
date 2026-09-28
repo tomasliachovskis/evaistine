@@ -134,7 +134,7 @@
                 <x-hero-stats :stats="$richHeroStats" :freshness="$listingMeta['intro']['freshness_label'] ?? null" />
 
                 @if ($headerType === 'category')
-                    <x-keyword-chips-row :pages="$listingMeta['keyword_pages'] ?? []" />
+                    <x-keyword-chips-row :pages="$listingMeta['keyword_pages'] ?? []" title="Populiarios prekės" />
                 @endif
             </div>
         @elseif ($isKeyword)
