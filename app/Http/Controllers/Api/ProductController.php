@@ -658,6 +658,7 @@ class ProductController extends Controller
                     SearchResult::create([
                         'query' => $query,
                         'ip_address' => request()->ip(),
+                        'country_code' => $this->searchCountryCode(),
                         'total_results' => $searchResults['total'],
                     ]);
                 } catch (\Exception $e) {
@@ -674,6 +675,7 @@ class ProductController extends Controller
                     SearchResult::create([
                         'query' => $query,
                         'ip_address' => request()->ip(),
+                        'country_code' => $this->searchCountryCode(),
                         'total_results' => 0,
                     ]);
                 } catch (\Exception $saveException) {
@@ -1619,6 +1621,18 @@ class ProductController extends Controller
                 select 1 from discount_histories where discount_histories.product_id = products.id
                     and discount_histories.end_at >= ?
             )', [now(), $staleCutoff]);
+    }
+
+    /**
+     * Searcher's country for search_results, from Cloudflare's CF-IPCountry
+     * header (2-letter ISO code). "XX" is Cloudflare's "unknown"; "T1" (Tor)
+     * is kept. No header (local/dev, or not via Cloudflare) → null.
+     */
+    private function searchCountryCode(): ?string
+    {
+        $code = strtoupper(trim((string) request()->header('CF-IPCountry', '')));
+
+        return preg_match('/^[A-Z0-9]{2}$/', $code) && $code !== 'XX' ? $code : null;
     }
 
     public function getSitemap()

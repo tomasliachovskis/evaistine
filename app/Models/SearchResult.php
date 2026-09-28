@@ -12,6 +12,7 @@ class SearchResult extends Model
     protected $fillable = [
         'query',
         'ip_address',
+        'country_code',
         'total_results',
     ];
 
