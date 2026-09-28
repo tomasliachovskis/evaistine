@@ -35,7 +35,7 @@ class KeywordPageDynamicMetaService
 
         $minLabel = $this->formatPrice($minPrice);
         $maxLabel = $this->formatPrice($maxPrice);
-        $storeHashtags = $this->buildStoreHashtags($discounts);
+        $storeList = $this->buildStoreList($discounts);
 
         // No live offers (the page still renders, with links to related
         // keyword pages) — a "| 0 pasiūlymų" title would read as broken in
@@ -45,7 +45,7 @@ class KeywordPageDynamicMetaService
             $metaDescription = "{$keyword}: šiuo metu aktyvių akcijų nėra. Naujos akcijos atsiranda kas savaitę – palyginkite panašių prekių pasiūlymus.";
         } else {
             $metaTitle = $this->buildMetaTitle($titleKeywordDative, $minLabel, $matchingTotal);
-            $metaDescription = $this->buildMetaDescription($keyword, $minLabel, $maxLabel, $matchingTotal, $storeHashtags);
+            $metaDescription = $this->buildMetaDescription($keyword, $minLabel, $maxLabel, $matchingTotal, $storeList);
         }
 
         return [
@@ -105,7 +105,7 @@ class KeywordPageDynamicMetaService
         ?string $minPrice,
         ?string $maxPrice,
         int $count,
-        string $storeHashtags,
+        string $storeList,
     ): string {
         $parts = ["Ieškai pigiau? {$keyword}"];
 
@@ -117,8 +117,8 @@ class KeywordPageDynamicMetaService
 
         $parts[] = ". {$count} " . LithuanianPlural::offerWord($count);
 
-        if ($storeHashtags !== '') {
-            $parts[] = ": {$storeHashtags}";
+        if ($storeList !== '') {
+            $parts[] = " – {$storeList}";
         }
 
         return implode('', $parts);
@@ -127,7 +127,7 @@ class KeywordPageDynamicMetaService
     /**
      * @param  Collection<int, Discount>  $discounts
      */
-    private function buildStoreHashtags(Collection $discounts): string
+    private function buildStoreList(Collection $discounts): string
     {
         $names = $discounts
             ->filter(fn (Discount $d) => $d->store !== null)
@@ -137,12 +137,17 @@ class KeywordPageDynamicMetaService
 
                 return $rank === false ? 99 : $rank;
             })
-            ->take(5)
-            ->map(fn (Discount $d) => '#' . mb_strtoupper(preg_replace('/\s+/', '', $d->store->name)))
-            ->values()
-            ->all();
+            ->map(fn (Discount $d) => $d->store->name)
+            ->values();
 
-        return implode(' ', $names);
+        // Plain "Maxima, Norfa, Lidl ir kt." — the old "#MAXIMA #NORFA
+        // #PROMOCASH&CARRY" hashtags read as spam in a search snippet.
+        $shown = $names->take(4)->all();
+        if ($shown === []) {
+            return '';
+        }
+
+        return implode(', ', $shown) . ($names->count() > 4 ? ' ir kt.' : '');
     }
 
     private function formatPrice(mixed $price): ?string

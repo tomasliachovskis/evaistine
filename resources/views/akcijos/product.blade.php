@@ -135,6 +135,7 @@ use App\Support\ProductPageMeta;
     :description="$seo['meta_description'] ?? null"
     :canonical="$canonical"
     :robots="$robots"
+    :og-image="$product['image_url'] ?? null"
 >
     @push('head')
         <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>

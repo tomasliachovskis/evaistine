@@ -40,7 +40,7 @@ class CheapestProductsController extends Controller
         ])->filter(fn (array $group) => !empty($group['items']))->values()->all();
 
         return view('pigiausios-prekes.show', [
-            'title' => 'Pigiausios prekės parduotuvėse – SuperAkcijos.lt',
+            'title' => 'Pigiausios prekės parduotuvėse',
             'description' => 'Kiekvieną savaitę sekame kasdienių prekių kainas didžiausiuose prekybos tinkluose ir parodome, kur šiuo metu pigiausia apsipirkti.',
             'canonical' => CanonicalUrl::build($path),
             'robots' => null,

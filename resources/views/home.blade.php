@@ -1,14 +1,4 @@
 <x-layouts.app :title="$title" :description="$description" :canonical="$canonical">
-    @push('head')
-        <meta property="og:title" content="{{ $title }}">
-        <meta property="og:description" content="{{ $description }}">
-        <meta property="og:type" content="website">
-        <meta property="og:url" content="{{ $canonical }}">
-        <meta property="og:image" content="https://superakcijos.lt/assets/logo.svg">
-        <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="{{ $title }}">
-        <meta name="twitter:description" content="{{ $description }}">
-    @endpush
 
     {{-- Ported from discount/src/components/landing/landing-home-page.tsx. --}}
 

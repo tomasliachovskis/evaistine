@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BlogPost;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
+use App\Support\NewsArticleSchema;
 use Illuminate\Http\Request;
 
 class BlogController extends Controller
@@ -45,10 +46,16 @@ class BlogController extends Controller
             ['name' => $post->title, 'href' => "/naujienos/{$post->slug}"],
         ];
 
+        $canonical = CanonicalUrl::build("/naujienos/{$slug}");
+        $description = $post->meta_description ?: ($post->excerpt(155) ?? '');
+
         return view('blog.show', [
             'title' => $post->meta_title ?: $post->title,
-            'description' => $post->meta_description ?: '',
-            'canonical' => CanonicalUrl::build("/naujienos/{$slug}"),
+            'description' => $description,
+            'canonical' => $canonical,
+            'articleSchema' => NewsArticleSchema::build($post, $canonical, $description),
+            'ogImage' => $post->imageUrl(),
+            'ogType' => 'article',
             'post' => $post,
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),

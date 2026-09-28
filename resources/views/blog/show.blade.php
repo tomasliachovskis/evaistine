@@ -1,7 +1,10 @@
-<x-layouts.app :title="$title" :description="$description" :canonical="$canonical">
+<x-layouts.app :title="$title" :description="$description" :canonical="$canonical" :og-image="$ogImage" :og-type="$ogType">
     @push('head')
         <script type="application/ld+json">
             {!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+        </script>
+        <script type="application/ld+json">
+            {!! json_encode($articleSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
         </script>
     @endpush
 

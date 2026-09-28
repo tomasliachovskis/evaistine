@@ -14,11 +14,44 @@
             $pageTitle .= ' | SuperAkcijos.lt';
         }
     @endphp
+    @php
+        // Google cuts snippets at ~155-160 chars — trim at a word boundary
+        // here once instead of in every controller's description builder.
+        $metaDescription = trim((string) ($description ?? '')) !== ''
+            ? $description
+            : 'Akcijos ir nuolaidos iš Maxima, Lidl, Iki, Rimi ir kitų tinklų vienoje vietoje. Peržiūrėkite šviežiausius savaitės pasiūlymus.';
+        if (mb_strlen($metaDescription) > 158) {
+            $metaDescription = rtrim(mb_substr($metaDescription, 0, 155));
+            $metaDescription = rtrim(preg_replace('/\s+\S*$/u', '', $metaDescription), " \t.,;:–-") . '…';
+        }
+        $canonicalUrl = $canonical ?? url()->current();
+        // Open Graph needs an absolute image URL; product/flyer/article
+        // pages pass their own ($ogImage), everything else the site image.
+        $ogImageUrl = $ogImage ?? null;
+        if ($ogImageUrl && str_starts_with($ogImageUrl, '/')) {
+            $ogImageUrl = \App\Support\CanonicalUrl::origin() . $ogImageUrl;
+        }
+        $ogImageUrl = $ogImageUrl ?: \App\Support\CanonicalUrl::origin() . '/assets/logo.svg';
+    @endphp
     <title>{{ $pageTitle }}</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="32x32">
-    <meta name="description" content="{{ $description ?? 'Akcijos ir nuolaidos iš Maxima, Lidl, Iki, Rimi ir kitų tinklų vienoje vietoje. Peržiūrėkite šviežiausius savaitės pasiūlymus.' }}">
-    <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
+    <meta name="description" content="{{ $metaDescription }}">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
     <meta name="robots" content="{{ $robots ?? 'index, follow' }}">
+
+    {{-- Open Graph / Twitter: share previews (Facebook, Messenger, Viber,
+         X). Were missing on every page (audit 2026-09-28). --}}
+    <meta property="og:site_name" content="SuperAkcijos.lt">
+    <meta property="og:locale" content="lt_LT">
+    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
+    <meta property="og:title" content="{{ $pageTitle }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $ogImageUrl }}">
+    <meta name="twitter:card" content="{{ ($ogImage ?? null) ? 'summary_large_image' : 'summary' }}">
+    <meta name="twitter:title" content="{{ $pageTitle }}">
+    <meta name="twitter:description" content="{{ $metaDescription }}">
+    <meta name="twitter:image" content="{{ $ogImageUrl }}">
 
     @if (request()->is('/'))
         {{-- SEO audit finding: was emitted on every single page — Google

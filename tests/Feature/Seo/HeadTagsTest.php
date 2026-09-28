@@ -151,4 +151,27 @@ class HeadTagsTest extends TestCase
         $response->assertNotFound();
         $this->assertNoindex($response);
     }
+
+    public function test_pages_carry_open_graph_tags_matching_the_canonical(): void
+    {
+        $seed = $this->seedListing();
+        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+
+        $html = $this->get($path)->assertOk()->getContent();
+
+        $this->assertStringContainsString('<meta property="og:url" content="'.self::ORIGIN.$path.'">', $html);
+        $this->assertStringContainsString('<meta property="og:title"', $html);
+        // Product pages share their own product photo, not the site logo.
+        $this->assertStringContainsString('<meta property="og:image" content="https://cdn.example.com/seo-pienas.jpg">', $html);
+        $this->assertStringContainsString('<meta name="twitter:card" content="summary_large_image">', $html);
+    }
+
+    public function test_meta_description_is_trimmed_to_snippet_length(): void
+    {
+        $seed = $this->seedListing();
+        $html = $this->get("/akcijos/{$seed['category']->slug}")->assertOk()->getContent();
+
+        preg_match('/<meta name="description" content="([^"]*)"/', $html, $m);
+        $this->assertLessThanOrEqual(160, mb_strlen(html_entity_decode($m[1] ?? '')));
+    }
 }

@@ -25,6 +25,7 @@
     :description="$seo['meta_description'] ?? ($seo['seo_description'] ?? null)"
     :canonical="$canonical"
     :robots="$robots"
+    :og-image="$flyer['image_url'] ?? null"
 >
     @push('head')
         <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>

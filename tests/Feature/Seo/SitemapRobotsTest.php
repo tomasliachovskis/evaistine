@@ -70,9 +70,12 @@ class SitemapRobotsTest extends TestCase
         $this->assertContains(self::ORIGIN."/akcijos/{$seed['store']->slug}", $locs);
         $this->assertContains(self::ORIGIN."/akcijos/{$seed['category']->slug}", $locs);
         $this->assertContains(self::ORIGIN.'/akcijos/seo-publikuotas', $locs);
+        $this->assertContains(self::ORIGIN.'/leidiniai', $locs);
+        $this->assertContains(self::ORIGIN."/akcijos/{$seed['store']->slug}/{$seed['category']->slug}", $locs);
 
         // A 301 or a 404 must never be listed.
         $this->assertNotContains(self::ORIGIN."/akcijos/{$leafletOnly->slug}", $locs);
+        $this->assertNotContains(self::ORIGIN."/akcijos/{$leafletOnly->slug}/{$seed['category']->slug}", $locs);
         $this->assertNotContains(self::ORIGIN.'/akcijos/seo-juodrastis', $locs);
 
         $this->assertSame(count($locs), count(array_unique($locs)), 'Duplicate URLs in sitemap.xml');

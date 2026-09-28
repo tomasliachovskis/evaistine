@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Seo;
 
+use App\Models\BlogPost;
 use App\Models\Discount;
 use App\Models\Store;
 use App\Models\StoreFlyer;
 use App\Models\StoreFlyerPage;
+use App\Models\StoreLocation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Seo\Concerns\InspectsSeoHead;
 use Tests\TestCase;
@@ -209,6 +211,50 @@ class StructuredDataTest extends TestCase
         );
         // H1 keeps the builder's own wording.
         $response->assertSee('Naujas Seo Leidiniai nuolaidų leidinys - NE MAISTO PREKIŲ PASIŪLYMAI Nr.39', false);
+    }
+
+    public function test_news_article_has_news_article_schema(): void
+    {
+        BlogPost::create([
+            'title' => 'Seo naujiena apie kainas',
+            'slug' => 'seo-naujiena',
+            'content' => '<p>Turinys.</p>',
+            'meta_description' => 'Trumpas aprašymas.',
+            'status' => 'published',
+            'published_at' => now()->subDay(),
+        ]);
+
+        [$article] = $this->jsonLdOfType($this->get('/naujienos/seo-naujiena'), 'NewsArticle');
+
+        $this->assertSame('Seo naujiena apie kainas', $article['headline']);
+        $this->assertSame(self::ORIGIN.'/naujienos/seo-naujiena', $article['mainEntityOfPage']['@id']);
+        $this->assertNotEmpty($article['datePublished']);
+        $this->assertSame('SuperAkcijos.lt', $article['publisher']['name']);
+    }
+
+    public function test_store_city_page_lists_locations_with_address_and_hours(): void
+    {
+        $store = Store::factory()->create(['name' => 'Seo Tinklas', 'slug' => 'seo-tinklas']);
+        StoreLocation::create([
+            'store_id' => $store->id,
+            'city' => 'Vilnius',
+            'address' => 'Seo g. 1',
+            'slug' => 'seo-g-1',
+            'lat' => 54.68,
+            'lng' => 25.28,
+            'phone' => '+37060000000',
+            'hours' => array_fill_keys(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'], '08:00-22:00') + ['sunday' => '09:00-20:00'],
+            'is_active' => true,
+        ]);
+
+        [$list] = $this->jsonLdOfType($this->get('/parduotuves/seo-tinklas/vilnius'), 'ItemList');
+        $location = $list['itemListElement'][0]['item'];
+
+        $this->assertSame('Store', $location['@type']);
+        $this->assertSame('Seo g. 1', $location['address']['streetAddress']);
+        $this->assertSame('Vilnius', $location['address']['addressLocality']);
+        $this->assertCount(2, $location['openingHoursSpecification']);
+        $this->assertSame(['Sunday'], $location['openingHoursSpecification'][1]['dayOfWeek']);
     }
 
     public function test_inactive_or_unprocessed_leaflet_is_404(): void

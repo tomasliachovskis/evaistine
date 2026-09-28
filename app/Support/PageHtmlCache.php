@@ -96,7 +96,25 @@ class PageHtmlCache
 
     public static function hydrateForResponse(string $html): string
     {
-        return self::hydrateCsrf(self::hydrateAppUrl($html));
+        return self::hydrateCsrf(self::toAbsoluteMetaUrls(self::hydrateAppUrl($html)));
+    }
+
+    /**
+     * canonical / og:url are stored root-relative (toRelativeMetaUrls())
+     * so a cache entry never bakes in a wrong host — but they must go out
+     * absolute: a relative og:url is invalid Open Graph, and Google asks for
+     * absolute canonicals. Found live 2026-09-28: every cached listing page
+     * served <link rel="canonical" href="/akcijos/kava">.
+     */
+    private static function toAbsoluteMetaUrls(string $html): string
+    {
+        $origin = self::canonicalOrigin();
+
+        return preg_replace(
+            '#(<link rel="canonical" href="|<meta property="og:url" content=")(/[^"]*)#',
+            '$1'.$origin.'$2',
+            $html
+        ) ?? $html;
     }
 
     public static function neutralizeCsrf(string $html): string

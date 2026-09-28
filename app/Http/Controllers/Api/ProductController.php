@@ -25,6 +25,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -1404,10 +1405,26 @@ class ProductController extends Controller
                 $storeSuffix = $storeNames ? " ({$storeNames})" : '';
                 $productLower = mb_strtolower($entity->name);
 
+                // Google cuts titles at ~60 chars and long product names
+                // (up to 100+) pushed the price — the part that earns the
+                // click — out of view. Keep "{name} akcija – kaina nuo X €"
+                // within ~65 chars by trimming the name at a word boundary;
+                // the "(Store)" suffix only when it still fits.
+                $titleTail = ' akcija'.($priceTextDesc ? ' – kaina nuo '.$priceTextDesc : '');
+                $titleName = mb_ucfirst($productLower);
+                $nameBudget = 65 - mb_strlen($titleTail);
+                if (mb_strlen($titleName) > $nameBudget) {
+                    $titleName = rtrim(preg_replace('/\s+\S*$/u', '', mb_substr($titleName, 0, $nameBudget)), ' ,.;:–-');
+                }
+                $metaTitle = $titleName.$titleTail;
+                if ($storeSuffix !== '' && mb_strlen($metaTitle.$storeSuffix) <= 65) {
+                    $metaTitle .= $storeSuffix;
+                }
+
                 return [
                     'seo_title' => $entity->name,
                     'seo_description' => $entity->description ?? '',
-                    'meta_title' => mb_ucfirst($productLower).' akcija'.($priceTextDesc ? ' – kaina nuo '.$priceTextDesc : '').$storeSuffix,
+                    'meta_title' => $metaTitle,
                     'meta_description' => mb_ucfirst($entity->name).($priceTextDesc ? ' ✔ kaina nuo '.$priceTextDesc.', palygink akcijas prekybos centruose!' : ''),
                 ];
             case 'search':
@@ -1436,7 +1453,7 @@ class ProductController extends Controller
   <p class="leading-relaxed">Akcijos rūšiuojamos pagal kategorijas, tad greičiau rasite tai, ko šiuo metu ieškote: <a href="/akcijos/vaisiai-ir-darzoves">vaisius ir daržoves</a>, <a href="/akcijos/mesa-ir-zuvis">mėsą ir žuvį</a>, <a href="/akcijos/buitine-chemija-valymo-priemones">buitinę chemiją</a>, <a href="/akcijos/kosmetika-ir-higiena">kosmetiką ir higienos prekes</a> ar <a href="/akcijos/namu-ukio-ir-laisvalaikio-prekes">namų ūkio prekes</a>. Kiekvienos kategorijos viduje matysite, kuris tinklas tuo metu siūlo geriausią kainą, be reikalo neapsiperkant kitur.</p>
   <p class="leading-relaxed">Pasiūlymai atnaujinami kiekvieną savaitę, kai prekybos tinklai išleidžia naujus akcijų leidinius – jei ieškote konkretaus tinklo savaitės leidinio, jį rasite ir čia, ir per <a href="/leidiniai">visų parduotuvių leidinių sąrašą</a>.</p>
 </div>',
-                    'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – rask akciją iš Maxima, Lidl, Iki, Rimi, Norfa',
+                    'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – Maxima, Lidl, Iki, Rimi',
                     'meta_description' => 'Rask akciją greičiau – visi akcijų leidiniai vienoje vietoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai, savaitės ir savaitgalio akcijos.',
                 ];
             case 'leaflets_index':
@@ -1606,7 +1623,7 @@ class ProductController extends Controller
 
     public function getSitemap()
     {
-        $cacheKey = 'sitemap_entries_v8_'.CacheVersion::suffix(['sitemap']);
+        $cacheKey = 'sitemap_entries_v9_'.CacheVersion::suffix(['sitemap']);
 
         return Cache::remember($cacheKey, 3600, function () {
             $freshness = $this->pageFreshnessService->build();
@@ -1674,10 +1691,7 @@ class ProductController extends Controller
                 ->values()
                 ->all();
 
-            // Just the store overview page now — no more per-city subpages
-            // (/parduotuves/{store}/{city} was a doorway-page pattern, see
-            // StoreController::show()'s redirect-to-parent handling; the
-            // overview already groups and shows every city's locations).
+            // Store overview pages (/parduotuves/{store}).
             $storeLocationSlugs = \App\Models\StoreLocation::query()
                 ->where('is_active', true)
                 ->join('stores', 'stores.id', '=', 'store_locations.store_id')
@@ -1686,9 +1700,45 @@ class ProductController extends Controller
                 ->values()
                 ->all();
 
+            // Per-city pages (/parduotuves/{store}/{city}) — real pages since
+            // 2026-09-10 (StoreController::showCity(), replacing the old
+            // per-address doorway pages), but only cities with 3+ active
+            // locations are listed: most of the ~1,400 are one-address towns,
+            // too thin to actively put forward. The rest stay indexable and
+            // linked from the store overview.
+            $storeCityPages = \App\Models\StoreLocation::query()
+                ->where('store_locations.is_active', true)
+                ->join('stores', 'stores.id', '=', 'store_locations.store_id')
+                ->select('stores.slug as store_slug', 'store_locations.city', DB::raw('COUNT(*) as locations_count'))
+                ->groupBy('stores.slug', 'store_locations.city')
+                ->having('locations_count', '>=', 3)
+                ->get()
+                ->map(fn ($row) => "{$row->store_slug}/" . Str::slug($row->city))
+                ->unique()
+                ->values()
+                ->all();
+
+            // Store+category listings (/akcijos/{store}/{category}) with live
+            // offers, for stores that have an akcijos page at all (otherwise
+            // the URL 301s to the leaflets hub). Categories are root-only.
+            $storeCategoryPages = DB::table('discounts')
+                ->join('products', 'products.id', '=', 'discounts.product_id')
+                ->join('categories', 'categories.id', '=', 'products.category_id')
+                ->join('stores', 'stores.id', '=', 'discounts.store_id')
+                ->where('stores.show_discounts_page', true)
+                ->whereNull('categories.parent_id')
+                ->select('stores.slug as store_slug', 'categories.slug as category_slug')
+                ->distinct()
+                ->get()
+                ->map(fn ($row) => "{$row->store_slug}/{$row->category_slug}")
+                ->values()
+                ->all();
+
             return response()->json([
                 'lastmod' => $defaultLastmod,
                 'store_location_slugs' => $storeLocationSlugs,
+                'store_city_pages' => $storeCityPages,
+                'store_category_pages' => $storeCategoryPages,
                 'stores' => $stores,
                 'leaflet_stores' => $leafletStores,
                 'leaflets' => $leafletEntries,
