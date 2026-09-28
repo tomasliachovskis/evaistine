@@ -363,7 +363,11 @@ class KeywordPageService
                     ->with(['product.category', 'store'])
                     ->orderBy('discounted_price')
                     ->limit(200)
-                    ->get();
+                    ->get()
+                    // Cheapest row per product only (already ordered by
+                    // price) — history holds several rows per product.
+                    ->unique('product_id')
+                    ->values();
 
                 $byStore = $candidates->groupBy('store_id')
                     ->map(fn (Collection $storeItems) => $storeItems->sortBy('discounted_price')->values());
@@ -524,7 +528,14 @@ class KeywordPageService
         // -60% just for being cheaper in absolute terms).
         $priorityRank = array_flip(self::PRIORITY_STORE_NAMES);
 
-        $priced = $discounts->filter(fn (Discount $d) => (float) $d->discounted_price > 0);
+        // One card per product — a product discounted in several stores
+        // shows once, at its cheapest offer (the card itself already lists
+        // the other stores). Without this the per-store pick below put the
+        // same product in twice (Raffaello at Lidl and at Iki side by side).
+        $priced = $discounts->filter(fn (Discount $d) => (float) $d->discounted_price > 0)
+            ->groupBy('product_id')
+            ->map(fn (Collection $offers) => $offers->sortBy(fn (Discount $d) => (float) $d->discounted_price)->first())
+            ->values();
 
         $perStoreCheapest = $priced->groupBy('store_id')
             ->map(fn (Collection $storeDiscounts) => $storeDiscounts->sortByDesc('discount_percent')->first())
@@ -620,15 +631,16 @@ class KeywordPageService
         // shows $limit real products with a real price instead of stopping
         // short. A keyword this thin on active offers is rare; this only
         // ever engages as the last resort after the two tiers above.
-        $usedIds = $combined->pluck('id')->all();
         $widened = Discount::query()
             ->whereIn('product_id', $productIds)
-            ->whereNotIn('id', $usedIds)
+            ->whereNotIn('product_id', $combined->pluck('product_id')->all())
             ->where('discounted_price', '>', 0)
             ->with(['product.category', 'store'])
             ->orderByDesc('discount_percent')
-            ->take($limit - $combined->count())
-            ->get();
+            ->take(($limit - $combined->count()) * 5)
+            ->get()
+            ->unique('product_id')
+            ->take($limit - $combined->count());
 
         return $combined->concat($widened)->values();
     }
