@@ -69,6 +69,10 @@ const parseUnitPrice = (text) => {
     const offers = [
         'https://www.lidl.lt/q/search?q=',
         'https://www.lidl.lt/q/search?q=&offset=48',
+        'https://www.lidl.lt/q/search?q=&offset=96',
+        'https://www.lidl.lt/q/search?q=&offset=96',
+        'https://www.lidl.lt/q/search?q=&offset=144',
+        'https://www.lidl.lt/q/search?q=&offset=192',
     ];
 
     let allProducts = new Map();
@@ -277,8 +281,8 @@ const parseUnitPrice = (text) => {
             // gives the virtualized list another chance to mount whatever
             // didn't load the first time, instead of only ever nudging from
             // wherever the previous pass stalled out.
-            for (let fullRetry = 0; allProducts.size < expectedTotal && fullRetry < 5; fullRetry++) {
-                console.log(`Still ${allProducts.size}/${expectedTotal}, full re-scroll pass ${fullRetry + 1}/5...`);
+            for (let fullRetry = 0; allProducts.size < expectedTotal && fullRetry < 3; fullRetry++) {
+                console.log(`Still ${allProducts.size}/${expectedTotal}, full re-scroll pass ${fullRetry + 1}/3...`);
 
                 await page.evaluate(() => window.scrollTo(0, 0));
                 await sleep(1000);
