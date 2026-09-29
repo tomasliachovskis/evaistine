@@ -19,8 +19,12 @@ class CrossSourceDuplicateFinder
     // Web-side tokens that must be covered by the flyer side. The web name is
     // the terse, specific one ("Višč. br. filė gabaliukai RIMI, A kl.") while
     // the flyer adds descriptive words ("Švieži ... be odos"), so coverage is
-    // measured on the web side only.
-    private const MIN_WEB_COVERAGE = 0.8;
+    // measured on the web side only. Kept loose on purpose: the exact price
+    // match is the main signal, the name only confirms it. 0.6 was picked on
+    // real data (2026-09-29): 0.8 missed "Raudonieji" vs "Didieji raudonieji
+    // greipfrutai", 0.5 started merging generic flyer offers into one scent
+    // ("COCCOLINO" vs "COCCOLINO Sensitive Cotton Cloud").
+    private const MIN_WEB_COVERAGE = 0.6;
 
     private const MIN_MATCHED_TOKENS = 3;
 
@@ -138,7 +142,9 @@ class CrossSourceDuplicateFinder
         // "Skystas skalbiklis WOOLITE (3 rūšys)" is one offer over several
         // variants; only a web product that is itself the multi-variant
         // listing ("NATALI (2 rūš.)") is the same thing.
-        if ($this->isMultiVariant($flyerName . ' ' . $flyerInfo) && !$this->isMultiVariant($webName . ' ' . $webInfo)) {
+        // The web side is judged on its name only: some stores repeat the
+        // flyer's promo text in web info ("6 rūšių, ... Ir IKI EXPRESS").
+        if ($this->isMultiVariant($flyerName . ' ' . $flyerInfo) && !$this->isMultiVariant($webName)) {
             return null;
         }
 
@@ -288,7 +294,9 @@ class CrossSourceDuplicateFinder
     private function isMultiVariant(string $text): bool
     {
         return (bool) preg_match('/(?<!\d)([2-9]|\d{2,})\s*rūš/iu', $text)
-            || (bool) preg_match('/\s(ar|arba)\s/iu', $text);
+            || (bool) preg_match('/\s(ar|arba)\s/iu', $text)
+            // A list of brands: "COCA-COLA, FANTA, SPRITE".
+            || (bool) preg_match('/\p{Lu}{2,}[\p{Lu}\-]*\s*,\s*\p{Lu}{2,}/u', $text);
     }
 
     private function tokensMatch(string $a, string $b): bool
