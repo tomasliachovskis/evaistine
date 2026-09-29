@@ -24,6 +24,9 @@ class CrossSourceDuplicateFinder
 
     private const MIN_MATCHED_TOKENS = 3;
 
+    // A one-word web name ("Grietinė, 360 g") can't confirm anything.
+    private const MIN_WEB_NAME_TOKENS = 2;
+
     private const STOPWORDS = ['su', 'ir', 'ar', 'be', 'a', 'r', 'kg', 'g', 'l', 'ml', 'vnt'];
 
     public function __construct(private ProductDuplicateMergeService $mergeService)
@@ -115,8 +118,14 @@ class CrossSourceDuplicateFinder
 
         $flyerTokens = $this->tokens($flyerName . ' ' . $flyerInfo);
         $webTokens = $this->tokens($webName . ' ' . $webInfo);
+        // Coverage is measured on the web name only. Web info is shelf
+        // noise, and some stores repeat the promo text there ("6 rūšių,
+        // 1,28 Eur/l. Ir IKI EXPRESS"), which matched the flyer's copy of
+        // the same text and pushed "COCA-COLA, FANTA, SPRITE" onto
+        // "FANTA APPLE-CHERRY".
+        $webNameTokens = $this->tokens($webName);
 
-        if ($flyerTokens === [] || $webTokens === []) {
+        if ($flyerTokens === [] || count($webNameTokens) < self::MIN_WEB_NAME_TOKENS) {
             return null;
         }
 
@@ -138,7 +147,7 @@ class CrossSourceDuplicateFinder
         }
 
         $matched = 0;
-        foreach ($webTokens as $webToken) {
+        foreach ($webNameTokens as $webToken) {
             foreach ($flyerTokens as $flyerToken) {
                 if ($this->tokensMatch($webToken, $flyerToken)) {
                     $matched++;
@@ -147,9 +156,9 @@ class CrossSourceDuplicateFinder
             }
         }
 
-        $coverage = $matched / count($webTokens);
+        $coverage = $matched / count($webNameTokens);
 
-        if ($matched < min(self::MIN_MATCHED_TOKENS, count($webTokens)) || $coverage < self::MIN_WEB_COVERAGE) {
+        if ($matched < min(self::MIN_MATCHED_TOKENS, count($webNameTokens)) || $coverage < self::MIN_WEB_COVERAGE) {
             return null;
         }
 
@@ -162,8 +171,9 @@ class CrossSourceDuplicateFinder
             return null;
         }
 
-        // Web scrapers put the shelf unit price in info ("14,45 €/kg").
-        $info = preg_replace('/\d+(?:[.,]\d+)?\s*€\s*\/\s*[\p{L}.]+/u', ' ', $info);
+        // Scrapers put the shelf unit price in info ("14,45 €/kg",
+        // "1,28 Eur/l").
+        $info = preg_replace('/\d+(?:[.,]\d+)?\s*(?:€|eur)\s*\/\s*[\p{L}.]+/iu', ' ', $info);
 
         return trim($info) === '' ? null : trim($info);
     }
