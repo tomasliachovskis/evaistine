@@ -11,7 +11,8 @@ class MergeDuplicateProducts extends Command
 {
     protected $signature = 'products:merge-duplicates
         {--dry-run : Preview without DB changes}
-        {--cross-source : Merge flyer vs e-shop copies of the same product (same store, period and price)}';
+        {--cross-source : Merge flyer vs e-shop copies of the same product (same store, period and price)}
+        {--export= : With --cross-source, also write the pairs to this CSV path}';
 
     protected $description = 'Find and merge duplicate products using SQL matching';
 
@@ -129,10 +130,25 @@ class MergeDuplicateProducts extends Command
 
         $merged = [];
         $rows = [];
+        $csvRows = [];
 
         foreach ($pairs as $pair) {
             $result = $mergeService->mergePair($pair['flyer_product_id'], $pair['web_product_id'], $dryRun)[0];
             $merged[] = $result;
+
+            $csvRows[] = [
+                $pair['store'],
+                $pair['price'],
+                $pair['flyer_product_id'],
+                $pair['flyer_name'],
+                $pair['flyer_info'],
+                $pair['web_product_id'],
+                $pair['web_name'],
+                $pair['web_info'],
+                $pair['coverage'],
+                $result['base_id'],
+                $result['base_name'],
+            ];
 
             $rows[] = [
                 $pair['store'],
@@ -141,10 +157,22 @@ class MergeDuplicateProducts extends Command
                 $pair['web_product_id'] . ' ' . $pair['web_name'] . ($pair['web_info'] ? " [{$pair['web_info']}]" : ''),
                 $pair['coverage'],
                 $result['base_id'],
+                $result['base_name'],
             ];
         }
 
-        $this->table(['Store', 'Price', 'Flyer product', 'Web product', 'Coverage', 'Kept ID'], $rows);
+        $this->table(['Store', 'Price', 'Flyer product', 'Web product', 'Coverage', 'Kept ID', 'Final name'], $rows);
+
+        if ($path = $this->option('export')) {
+            $handle = fopen($path, 'w');
+            fwrite($handle, "\xEF\xBB\xBF"); // UTF-8 BOM so Excel shows Lithuanian letters
+            fputcsv($handle, ['Store', 'Price', 'Flyer ID', 'Flyer name', 'Flyer info', 'Web ID', 'Web name', 'Web info', 'Coverage', 'Kept ID', 'Final name']);
+            foreach ($csvRows as $csvRow) {
+                fputcsv($handle, $csvRow);
+            }
+            fclose($handle);
+            $this->info("Wrote {$path}");
+        }
 
         $this->info('Merged ' . count($merged) . ' cross-source duplicate product(s).');
 

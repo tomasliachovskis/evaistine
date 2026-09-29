@@ -381,21 +381,57 @@ class ProductDuplicateMergeService
         return $merged;
     }
 
-    // Merges one confirmed pair without the name-shape filters
-    // mergeAllClusters() applies — for callers that established the match
-    // another way (CrossSourceDuplicateFinder: same store/period/price).
-    public function mergePair(int $firstId, int $secondId, bool $dryRun): array
-    {
-        $run = function () use ($firstId, $secondId, $dryRun) {
-            $base = $this->pickBaseProduct([$firstId, $secondId]);
-            $duplicate = Product::findOrFail($base->id === $firstId ? $secondId : $firstId);
+    // Standard label short forms that are the catalog's normal format, not
+    // truncations of the product name ("2,5% rieb.", "a. r.", "3 sl.",
+    // "art. HB1218", "/pak.", "(2 rūš.)"). Not counted when choosing between
+    // a flyer and a web name.
+    private const STANDARD_LABEL_ABBREVIATIONS = [
+        'rieb', 'a', 'r', 's', 'm', 'sl', 'art', 'vnt', 'pak', 'rit', 'kl',
+        'tabl', 'lap', 'dėž', 'but', 'skalb', 'sk', 'mėn', 'rūš', 'įv', 'nr', 'kompl', 'rink',
+    ];
 
-            $this->adoptFullerName($base, $duplicate, $dryRun);
+    // Merges a confirmed flyer/web pair without the name-shape filters
+    // mergeAllClusters() applies — the match was established another way
+    // (CrossSourceDuplicateFinder: same store/period/price). The survivor
+    // takes the web name (the store's own format, details like "2,5% rieb."
+    // inline instead of in info), unless it abbreviates the product name
+    // more than the flyer does ("Šald.bulvių ..." vs "Šaldytos bulvių ...").
+    public function mergePair(int $flyerId, int $webId, bool $dryRun): array
+    {
+        $run = function () use ($flyerId, $webId, $dryRun) {
+            $flyer = Product::findOrFail($flyerId);
+            $web = Product::findOrFail($webId);
+
+            $base = $this->pickBaseProduct([$flyerId, $webId]);
+            $duplicate = $base->id === $flyerId ? $web : $flyer;
+
+            if (!$dryRun) {
+                $this->mapName($base->name, $base->id);
+            }
+
+            $this->renameBase($base, $this->pickCrossSourceName($flyer->name, $web->name), $dryRun);
 
             return $this->mergeDuplicateIntoBase($base, $duplicate, $dryRun);
         };
 
         return $dryRun ? $run() : DB::transaction($run);
+    }
+
+    public function pickCrossSourceName(string $flyerName, string $webName): string
+    {
+        return $this->countNameAbbreviations($webName) > $this->countNameAbbreviations($flyerName)
+            ? $flyerName
+            : $webName;
+    }
+
+    private function countNameAbbreviations(string $name): int
+    {
+        preg_match_all('/(?<![0-9\p{L}])(\p{L}+)\./u', $name, $matches);
+
+        return count(array_filter(
+            $matches[1],
+            fn (string $word) => !in_array(mb_strtolower($word), self::STANDARD_LABEL_ABBREVIATIONS, true)
+        ));
     }
 
     private function adoptFullerName(Product $base, Product $duplicate, bool $dryRun): void
@@ -408,8 +444,12 @@ class ProductDuplicateMergeService
         // wording ("Šaltasis kavos gėrimas ..."). Once the caller
         // has established both rows are the same product, the
         // less-abbreviated string is the better display name.
-        $fullerName = $this->pickFullerName($base->name, $duplicate->name);
-        if ($fullerName !== $base->name) {
+        $this->renameBase($base, $this->pickFullerName($base->name, $duplicate->name), $dryRun);
+    }
+
+    private function renameBase(Product $base, string $newName, bool $dryRun): void
+    {
+        if ($newName !== $base->name) {
             if (!$dryRun) {
                 // Record the name we're about to overwrite, not
                 // just the duplicate's — otherwise this exact
@@ -422,13 +462,10 @@ class ProductDuplicateMergeService
                 // record of every raw name this product has
                 // ever carried instead of missing the very one
                 // it started with.
-                ProductMapping::firstOrCreate(
-                    ['name' => $base->name],
-                    ['product_id' => $base->id]
-                );
-                $base->update(['name' => $fullerName]);
+                $this->mapName($base->name, $base->id);
+                $base->update(['name' => $newName]);
             } else {
-                $base->name = $fullerName;
+                $base->name = $newName;
             }
         }
     }
@@ -451,10 +488,14 @@ class ProductDuplicateMergeService
             $this->reassignFavorites($base->id, $duplicate->id);
             $this->adoptStoreImage($base, $duplicate);
 
-            ProductMapping::firstOrCreate(
-                ['name' => $duplicate->name],
-                ['product_id' => $base->id]
-            );
+            // Every name either product was known by must resolve to the
+            // survivor, or the next scrape of that source recreates the
+            // duplicate: the duplicate's own name, and any mapping rows
+            // that pointed at it from earlier merges.
+            ProductMapping::query()
+                ->where('product_id', $duplicate->id)
+                ->update(['product_id' => $base->id]);
+            $this->mapName($duplicate->name, $base->id);
 
             $duplicate->delete();
         }
@@ -482,6 +523,13 @@ class ProductDuplicateMergeService
             'image_from_flyer' => false,
             'image_cache_failed_at' => null,
         ]);
+    }
+
+    // updateOrCreate, not firstOrCreate: an existing row for this name may
+    // point at a product that is being merged away.
+    private function mapName(string $name, int $productId): void
+    {
+        ProductMapping::updateOrCreate(['name' => $name], ['product_id' => $productId]);
     }
 
     public function resolveDiscountConflicts(int $baseId, int $duplicateId, bool $dryRun): int

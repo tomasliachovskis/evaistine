@@ -140,6 +140,11 @@ class MergeDuplicateProductsCommandTest extends TestCase
             Discount::create($offer + ['product_id' => $web->id, 'product_url' => 'https://rimi.lt/natali', 'info' => '1,36 €/kg']),
         ]);
 
+        // Stale rows from earlier merges: one pointing the web name at the
+        // web product, one mapping an older name to it.
+        ProductMapping::create(['name' => $web->name, 'product_id' => $web->id]);
+        ProductMapping::create(['name' => 'Old web name', 'product_id' => $web->id]);
+
         $this->artisan('products:merge-duplicates', ['--cross-source' => true])
             ->assertExitCode(0)
             ->expectsOutputToContain('Merged 1');
@@ -150,7 +155,13 @@ class MergeDuplicateProductsCommandTest extends TestCase
             'image_url' => 'https://rimibaltic-res.cloudinary.com/natali.jpg',
             'image_from_flyer' => false,
         ]);
+        // The web name abbreviates ("Šald."), so the flyer wording stays,
+        // and both source names resolve to the survivor.
+        $this->assertDatabaseHas('products', ['id' => $flyer->id, 'name' => 'Šaldytos bulvių lazdelės NATALI, 1 kg']);
         $this->assertDatabaseHas('product_mapping', ['name' => $web->name, 'product_id' => $flyer->id]);
+        $this->assertDatabaseHas('product_mapping', ['name' => $flyer->name, 'product_id' => $flyer->id]);
+        $this->assertDatabaseHas('product_mapping', ['name' => 'Old web name', 'product_id' => $flyer->id]);
+        $this->assertDatabaseMissing('product_mapping', ['name' => $web->name, 'product_id' => $web->id]);
         $this->assertDatabaseHas('discounts', ['id' => $webDiscount->id, 'product_id' => $flyer->id]);
         // The leftover same-week flyer offer is dropped by
         // DuplicateDiscountRemover in FinalizeScrapedStoresJob (MySQL-only
