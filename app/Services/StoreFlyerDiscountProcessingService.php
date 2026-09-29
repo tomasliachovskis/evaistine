@@ -103,7 +103,7 @@ class StoreFlyerDiscountProcessingService
             : "Flyer #{$flyer->id} ({$flyer->store->name}): extracting discounts from {$pdfPath}");
 
         try {
-            $result = $this->processingService->processPdf($pdfPath, $flyer->store, $targetPages, $seedValidityDates);
+            $result = $this->processingService->processPdf($pdfPath, $flyer->store, $targetPages, $seedValidityDates, $flyer->id);
 
             if ($result['success']) {
                 $this->emit($output, 'info', "OK — extracted: {$result['total_extracted']}, saved: {$result['count']}");

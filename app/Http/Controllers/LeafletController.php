@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Models\Store;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
+use App\Support\ItemListSchema;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 // Ported from discount/src/app/leidiniai/page.tsx and leidinys/[store]/(page,[leafletSlug]/page).tsx.
@@ -77,6 +78,18 @@ class LeafletController extends Controller
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
+            'flyerOffers' => $payload['flyer_offers'] ?? [],
+            'flyerOffersTotal' => $payload['flyer_offers_total'] ?? 0,
+            'flyerOffersSchema' => ! empty($payload['flyer_offers']) ? ItemListSchema::build(
+                ($payload['seo']['seo_title'] ?? 'Leidinys').' – akcijos',
+                collect($payload['flyer_offers'])->map(fn ($d) => [
+                    'name' => $d['product']['name'],
+                    'href' => '/akcijos/'.$d['product']['full_slug'],
+                    'image' => $d['product']['image_url'],
+                    'price' => $d['discounted_price'] ?? null,
+                ])->all(),
+                $payload['flyer_offers_total'] ?? null
+            ) : null,
         ]);
     }
 

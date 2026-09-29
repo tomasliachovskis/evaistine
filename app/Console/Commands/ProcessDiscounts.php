@@ -433,6 +433,7 @@ class ProcessDiscounts extends Command
             Discount::create([
                 'product_id' => $product->id,
                 'store_id' => $store->id,
+                'store_flyer_id' => $tempDiscount->store_flyer_id,
                 'product_url' => $tempDiscount->product_url,
                 'original_price' => $normalizedOriginalPrice,
                 'discounted_price' => $normalizedDiscountedPrice,

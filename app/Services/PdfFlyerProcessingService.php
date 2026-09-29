@@ -111,7 +111,7 @@ class PdfFlyerProcessingService
      *   usually where these come from), so without seeding them here the
      *   retried pages' discounts would fall back to no validity dates.
      */
-    public function processPdf(string $pdfPath, Store $store, ?array $targetPages = null, ?array $seedValidityDates = null): array
+    public function processPdf(string $pdfPath, Store $store, ?array $targetPages = null, ?array $seedValidityDates = null, ?int $storeFlyerId = null): array
     {
         $processId = uniqid('pdf_' . time() . '_', true);
         Log::channel('flyer')->info('Starting PDF processing', ['pdf' => $pdfPath, 'store' => $store->name, 'process_id' => $processId, 'target_pages' => $targetPages]);
@@ -168,7 +168,7 @@ class PdfFlyerProcessingService
                         Log::channel('flyer')->info("Saving discounts from page {$currentPageNumber} to database...",
                             ['count' => $discountCount]);
                         $savedCount = $this->saveToDiscountTemp($result['discounts'], $store, $validityDates,
-                            $originalImagePath);
+                            $originalImagePath, $storeFlyerId);
                         $totalSavedCount += $savedCount;
                         Log::channel('flyer')->info("Page {$currentPageNumber} discounts saved",
                             ['saved' => $savedCount, 'extracted' => $discountCount]);
@@ -1206,7 +1206,8 @@ Return ONLY valid JSON. No explanations. No markdown.
         array $discounts,
         Store $store,
         ?array $validityDates,
-        ?string $pageImagePath = null
+        ?string $pageImagePath = null,
+        ?int $storeFlyerId = null
     ): int {
         Log::channel('flyer')->info('Starting to save discounts to database',
             ['total' => count($discounts), 'page_image_path' => $pageImagePath]);
@@ -1277,6 +1278,7 @@ Return ONLY valid JSON. No explanations. No markdown.
                     'category' => '',
                     'image_url' => null,
                     'store' => $store->name,
+                    'store_flyer_id' => $storeFlyerId,
                     'original_price' => $validated['original_price'] ?? 0,
                     'discounted_price' => $validated['discounted_price'] ?? 0,
                     'discount_percent' => $discountPercent ?? 0,

@@ -185,6 +185,99 @@ class ProductPageMeta
     }
 
     /**
+     * Real per-product price facts from discount_histories for the last
+     * $days days: the lowest recorded price (store + date), the average,
+     * and how many separate promotions ran. Gives each product page unique,
+     * checkable text (FAQ, meta) instead of the same template sentences.
+     * Null when there are fewer than 3 priced rows in the window — too thin
+     * to state as a fact.
+     *
+     * @param  array<int, array<string, mixed>>  $history
+     * @return array{days: int, points: int, min_price: float, min_store: ?string, min_date: ?string, min_is_current: bool, avg_price: float, promo_count: int, last_promo_date: ?string}|null
+     */
+    public static function historyFacts(array $history, float $currentPrice, ?string $currentStoreName, int $days = 90): ?array
+    {
+        $cutoff = \Illuminate\Support\Carbon::today()->subDays($days);
+
+        $rows = collect($history)
+            ->filter(fn ($h) => (float) ($h['discounted_price'] ?? 0) > 0)
+            ->filter(function ($h) use ($cutoff) {
+                $date = $h['to_date'] ?? $h['from_date'] ?? null;
+
+                return $date && \Illuminate\Support\Carbon::parse($date)->gte($cutoff);
+            })
+            ->values();
+
+        if ($rows->count() < 3) {
+            return null;
+        }
+
+        $lowest = $rows->sortBy(fn ($h) => (float) $h['discounted_price'])->first();
+        $minPrice = (float) $lowest['discounted_price'];
+        $minIsCurrent = $currentPrice > 0 && $currentPrice <= $minPrice;
+
+        $prices = $rows->map(fn ($h) => (float) $h['discounted_price']);
+        if ($currentPrice > 0) {
+            $prices->push($currentPrice);
+        }
+
+        // A promotion = a genuinely discounted row (full-catalog stores also
+        // archive plain shelf prices). One per store + start date, since the
+        // same promo can be archived more than once.
+        $promos = $rows
+            ->filter(fn ($h) => (float) ($h['original_price'] ?? 0) > (float) $h['discounted_price'])
+            ->unique(fn ($h) => ($h['store']['slug'] ?? '').'|'.($h['from_date'] ?? $h['to_date']));
+
+        $lastPromoDate = $promos->map(fn ($h) => $h['to_date'] ?? $h['from_date'])->filter()->max();
+
+        return [
+            'days' => $days,
+            'points' => $rows->count(),
+            'min_price' => $minIsCurrent ? $currentPrice : $minPrice,
+            'min_store' => $minIsCurrent ? $currentStoreName : ($lowest['store']['name'] ?? null),
+            'min_date' => $minIsCurrent ? null : ($lowest['from_date'] ?? $lowest['to_date'] ?? null),
+            'min_is_current' => $minIsCurrent,
+            'avg_price' => round($prices->avg(), 2),
+            'promo_count' => $promos->count(),
+            'last_promo_date' => $lastPromoDate,
+        ];
+    }
+
+    private static function historyFaqItems(array $facts, string $shortName): array
+    {
+        $days = $facts['days'];
+        $where = $facts['min_store'] ? " ({$facts['min_store']})" : '';
+
+        $minAnswer = $facts['min_is_current']
+            ? "Dabartinė kaina – " . self::euro($facts['min_price']) . "{$where} – yra mažiausia per paskutines {$days} d."
+            : "Mažiausia kaina per paskutines {$days} d. buvo " . self::euro($facts['min_price']) . $where
+                . ($facts['min_date'] ? ', ' . \Illuminate\Support\Carbon::parse($facts['min_date'])->format('Y.m.d') : '') . '.';
+        $minAnswer .= ' Vidutinė kaina per tą laikotarpį – ' . self::euro($facts['avg_price']) . '.';
+
+        $items = [[
+            'question' => "{$shortName}: kokia buvo mažiausia kaina?",
+            'answer' => $minAnswer,
+        ]];
+
+        if ($facts['promo_count'] > 0) {
+            $n = $facts['promo_count'];
+            $teen = $n % 100 >= 10 && $n % 100 < 20;
+            $times = match (true) {
+                ! $teen && $n % 10 === 1 => 'kartą',
+                ! $teen && $n % 10 >= 2 => 'kartus',
+                default => 'kartų',
+            };
+            $items[] = [
+                'question' => "Kaip dažnai {$shortName} būna akcijoje?",
+                'answer' => "Per paskutines {$days} d. {$shortName} akcijoje buvo {$facts['promo_count']} {$times}"
+                    . ($facts['last_promo_date'] ? ', paskutinį kartą iki ' . \Illuminate\Support\Carbon::parse($facts['last_promo_date'])->format('Y.m.d') : '') . '.',
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
      * @return array<int, array{question: string, answer: string}>
      */
     public static function faqItems(
@@ -192,7 +285,8 @@ class ProductPageMeta
         float $bestPrice,
         ?string $bestStoreName,
         int $offerCount,
-        string $offersHeading = 'Kainos parduotuvėse'
+        string $offersHeading = 'Kainos parduotuvėse',
+        ?array $historyFacts = null
     ): array {
         $shortName = self::shortName($product['name']);
         $genitive = self::toGenitivePlural($shortName);
@@ -213,6 +307,16 @@ class ProductPageMeta
                     ? "Akcijų metu {$genitive} kaina prasideda nuo " . self::euro($bestPrice) . '. Kainos skiriasi priklausomai nuo parduotuvės ir akcijos sąlygų.'
                     : "{$shortName} kainos skiriasi priklausomai nuo parduotuvės. Peržiūrėkite aktualius pasiūlymus šiame puslapyje.",
             ],
+        ];
+
+        // Real price-history facts replace the two template answers below,
+        // which read the same on every product page.
+        if ($historyFacts !== null) {
+            return array_merge($items, self::historyFaqItems($historyFacts, $shortName));
+        }
+
+        $items = [
+            ...$items,
             [
                 'question' => 'Kokios ' . mb_strtolower($category) . ' akcijos galioja šią savaitę?',
                 'answer' => 'Akcijų galiojimo datos nurodytos prie kiekvieno pasiūlymo. Filtruokite ' . mb_strtolower($category) . ' akcijas kategorijos puslapyje arba palyginkite kainas čia, produkto puslapyje.',

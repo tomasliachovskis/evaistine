@@ -123,6 +123,10 @@ class DiscountResponseFormatter
             'discount_percent' => $item->discount_percent,
             'condition' => $item->condition,
             'info' => $item->info ?? null,
+            // Only Discount rows carry these (DiscountHistory has no unit price).
+            'unit_price' => $item->unit_price ?? null,
+            'unit_price_basis' => $item->unit_price_basis ?? null,
+            'unit_price_estimated' => (bool) ($item->unit_price_estimated ?? false),
             'card' => $item->card,
             'valid_date' => ($item->start_at ? $item->start_at->format('Y-m-d') : '') . ' - ' . ($item->end_at ? $item->end_at->format('Y-m-d') : ''),
             'from_date' => $item->start_at ? $item->start_at->format('Y-m-d') : null,

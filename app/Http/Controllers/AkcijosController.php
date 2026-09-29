@@ -394,8 +394,12 @@ class AkcijosController extends Controller
         $bestPrice = (float) ($bestOffer['discounted_price'] ?? $primaryDeal['discounted_price'] ?? 0);
         $offerCount = count($offers) ?: ($primaryDeal ? 1 : 0);
 
+        $historyFacts = $primaryDeal
+            ? ProductPageMeta::historyFacts($primaryDeal['history'] ?? [], $bestPrice, $bestOffer['store']['name'] ?? null)
+            : null;
+
         $faqItems = $primaryDeal
-            ? ProductPageMeta::faqItems($primaryDeal['product'], $bestPrice, $bestOffer['store']['name'] ?? null, $offerCount)
+            ? ProductPageMeta::faqItems($primaryDeal['product'], $bestPrice, $bestOffer['store']['name'] ?? null, $offerCount, ProductPageMeta::offersHeading(), $historyFacts)
             : [];
 
         $faqSchema = $faqItems !== [] ? FaqSchema::build($faqItems) : null;

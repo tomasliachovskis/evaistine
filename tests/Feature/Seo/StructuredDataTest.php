@@ -4,6 +4,7 @@ namespace Tests\Feature\Seo;
 
 use App\Models\BlogPost;
 use App\Models\Discount;
+use App\Models\DiscountHistory;
 use App\Models\Store;
 use App\Models\StoreFlyer;
 use App\Models\StoreFlyerPage;
@@ -315,6 +316,116 @@ class StructuredDataTest extends TestCase
     /**
      * A leaflet-only store with one current, processed leaflet.
      */
+    public function test_product_faq_states_real_price_history_facts(): void
+    {
+        $seed = $this->seedListing();
+        foreach ([[1.49, 1.99, 60], [1.19, 1.99, 40], [1.79, 1.79, 20]] as [$price, $original, $daysAgo]) {
+            DiscountHistory::create([
+                'product_id' => $seed['product']->id,
+                'store_id' => $seed['store']->id,
+                'original_price' => $original,
+                'discounted_price' => $price,
+                'discount_percent' => round((1 - $price / $original) * 100),
+                'start_at' => now()->subDays($daysAgo + 6),
+                'end_at' => now()->subDays($daysAgo),
+            ]);
+        }
+
+        $response = $this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}");
+
+        $answers = collect($this->jsonLdOfType($response, 'FAQPage')[0]['mainEntity'])
+            ->pluck('acceptedAnswer.text', 'name');
+        $minQuestion = $answers->keys()->first(fn ($q) => str_contains($q, 'mažiausia kaina'));
+        $this->assertNotNull($minQuestion);
+        $this->assertStringContainsString('1,19 € (Seo Parduotuve), '.now()->subDays(46)->format('Y.m.d'), $answers[$minQuestion]);
+        $this->assertStringContainsString('Vidutinė kaina per tą laikotarpį – 1,44 €', $answers[$minQuestion]);
+        $frequency = $answers->first(fn ($a, $q) => str_contains($q, 'būna akcijoje'));
+        $this->assertStringContainsString('akcijoje buvo 2 kartus', $frequency);
+        // The current 1.29 € is above the 1.19 € low: no "lowest" claim.
+        $this->assertStringNotContainsString('Mažiausia kaina per 90 d.', $this->seoHead($response)['description']);
+    }
+
+    public function test_product_meta_description_flags_a_90_day_low(): void
+    {
+        $seed = $this->seedListing();
+        foreach ([1.49, 1.59, 1.69] as $i => $price) {
+            DiscountHistory::create([
+                'product_id' => $seed['product']->id,
+                'store_id' => $seed['store']->id,
+                'original_price' => 1.99,
+                'discounted_price' => $price,
+                'discount_percent' => round((1 - $price / 1.99) * 100),
+                'start_at' => now()->subDays(30 * $i + 20),
+                'end_at' => now()->subDays(30 * $i + 14),
+            ]);
+        }
+
+        $response = $this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}");
+
+        $this->assertStringContainsString('Mažiausia kaina per 90 d.', $this->seoHead($response)['description']);
+    }
+
+    public function test_product_offer_carries_stated_unit_price_only(): void
+    {
+        $seed = $this->seedListing();
+        $seed['discount']->update(['unit_price' => 1.29, 'unit_price_basis' => 'l', 'unit_price_estimated' => false]);
+        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+
+        $response = $this->get($path);
+        $specs = $this->offersOf($this->jsonLdOfType($response, 'Product')[0])[0]['priceSpecification'];
+        $unit = collect($specs)->first(fn ($s) => isset($s['referenceQuantity']));
+        $this->assertSame('1.29', $unit['price']);
+        $this->assertSame('LTR', $unit['referenceQuantity']['unitCode']);
+        $response->assertSee('1,29 €/l');
+    }
+
+    public function test_estimated_unit_price_stays_out_of_product_schema(): void
+    {
+        $seed = $this->seedListing();
+        $seed['discount']->update(['unit_price' => 1.29, 'unit_price_basis' => 'l', 'unit_price_estimated' => true]);
+
+        $offer = $this->offersOf($this->jsonLdOfType($this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}"), 'Product')[0])[0];
+        $specs = $offer['priceSpecification'] ?? [];
+
+        $this->assertNull(collect(isset($specs['@type']) ? [$specs] : $specs)->first(fn ($s) => isset($s['referenceQuantity'])));
+    }
+
+    public function test_leaflet_page_lists_its_own_offers_as_text(): void
+    {
+        ['store' => $store, 'flyer' => $flyer] = $this->seedLeaflet();
+        $sibling = $this->createFlyer($store, 'seo-kitas-leidinys', now()->subDay(), now()->addWeek());
+        $category = \App\Models\Category::factory()->create(['slug' => 'seo-leidinio-kategorija']);
+        $make = function (string $name, ?int $flyerId) use ($store, $category) {
+            $product = \App\Models\Product::factory()->create([
+                'name' => $name,
+                'slug' => \Illuminate\Support\Str::slug($name),
+                'category_id' => $category->id,
+                'image_url' => 'https://cdn.example.com/x.jpg',
+            ]);
+            Discount::factory()->create([
+                'product_id' => $product->id,
+                'store_id' => $store->id,
+                'store_flyer_id' => $flyerId,
+                'discounted_price' => 2.49,
+                'original_price' => 3.49,
+                'discount_percent' => 29,
+            ]);
+        };
+        $make('Seo leidinio kava 500 g', $flyer->id);
+        $make('Seo kito leidinio arbata', $sibling->id);
+
+        $response = $this->get("/leidinys/{$store->slug}/{$flyer->slug}");
+
+        $response->assertSee('Šio leidinio akcijos');
+        $response->assertSee('Seo leidinio kava 500 g');
+        $response->assertDontSee('Seo kito leidinio arbata');
+        $this->assertStringContainsString('2 psl., 1 nuolaida', $this->seoHead($response)['description']);
+        $lists = $this->jsonLdOfType($response, 'ItemList');
+        $this->assertCount(1, $lists);
+        $this->assertSame('Seo leidinio kava 500 g', $lists[0]['itemListElement'][0]['name']);
+        $this->assertSame('2.49', $lists[0]['itemListElement'][0]['item']['offers']['price']);
+    }
+
     private function seedLeaflet(): array
     {
         $store = Store::factory()->create(['name' => 'Seo Leidiniai', 'slug' => 'seo-leidiniai']);

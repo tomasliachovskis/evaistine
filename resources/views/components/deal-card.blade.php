@@ -17,18 +17,7 @@
     // name) instead of the raw scraped `info` field, which is free text and
     // just as often something unrelated ("5 rūšys", a condition note) as an
     // actual €/kg figure.
-    $unitPrice = $deal['unit_price'] ?? null;
-    $unitPriceBasis = $deal['unit_price_basis'] ?? null;
-    $unitPriceLabel = null;
-    if ($unitPrice !== null && $unitPriceBasis) {
-        $unitSuffix = match ($unitPriceBasis) {
-            'kg' => '€/kg',
-            'l' => '€/l',
-            '10vnt' => '€/10 vnt.',
-            default => '€/' . $unitPriceBasis,
-        };
-        $unitPriceLabel = number_format((float) $unitPrice, 2, ',', ' ') . ' ' . $unitSuffix;
-    }
+    $unitPriceLabel = \App\Support\UnitPrice::label($deal['unit_price'] ?? null, $deal['unit_price_basis'] ?? null);
 
     $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €';
 

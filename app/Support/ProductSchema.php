@@ -31,6 +31,17 @@ class ProductSchema
                 $isActive = ProductPageMeta::offerIsActive($offer['to_date'] ?? null);
                 $originalPrice = (float) ($offer['original_price'] ?? 0);
 
+                $priceSpecifications = array_values(array_filter([
+                    // The pre-discount price, as Google's "was" price.
+                    $isGenuineDiscount && $originalPrice > (float) $offer['discounted_price'] ? [
+                        '@type' => 'UnitPriceSpecification',
+                        'priceType' => 'https://schema.org/StrikethroughPrice',
+                        'price' => (string) $originalPrice,
+                        'priceCurrency' => 'EUR',
+                    ] : null,
+                    UnitPrice::schema($offer),
+                ]));
+
                 return array_filter([
                     '@type' => 'Offer',
                     'price' => (string) $offer['discounted_price'],
@@ -40,13 +51,11 @@ class ProductSchema
                     'seller' => ['@type' => 'Organization', 'name' => $offer['store']['name'] ?? null],
                     'validFrom' => $isGenuineDiscount && $isActive ? ($offer['from_date'] ?? null) : null,
                     'priceValidUntil' => $isGenuineDiscount ? ($offer['to_date'] ?? null) : null,
-                    // The pre-discount price, as Google's "was" price.
-                    'priceSpecification' => $isGenuineDiscount && $originalPrice > (float) $offer['discounted_price'] ? [
-                        '@type' => 'UnitPriceSpecification',
-                        'priceType' => 'https://schema.org/StrikethroughPrice',
-                        'price' => (string) $originalPrice,
-                        'priceCurrency' => 'EUR',
-                    ] : null,
+                    'priceSpecification' => match (count($priceSpecifications)) {
+                        0 => null,
+                        1 => $priceSpecifications[0],
+                        default => $priceSpecifications,
+                    },
                 ]);
             })->all();
 

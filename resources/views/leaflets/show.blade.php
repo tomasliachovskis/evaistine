@@ -32,6 +32,9 @@
         @if ($imageObjectSchema)
             <script type="application/ld+json">{!! json_encode($imageObjectSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @endif
+        @if ($flyerOffersSchema)
+            <script type="application/ld+json">{!! json_encode($flyerOffersSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @endif
     @endpush
 
     <main class="base-container pb-6 pt-3 sm:pb-8 sm:pt-4">
@@ -282,5 +285,35 @@
                 @endif
             </aside>
         </div>
+
+        {{-- The pages above are images only; this is the flyer's content as
+             text (offers Gemini extracted from this flyer, store_flyer_id),
+             each linking to its product page. Flex-wrap, not CSS grid (see
+             livewire/discount-filters.blade.php). --}}
+        @if (!empty($flyerOffers))
+            <section class="mt-8" aria-labelledby="flyer-offers-heading">
+                <h2 id="flyer-offers-heading" class="section-heading mb-3">
+                    Šio leidinio akcijos
+                    <span class="font-normal text-gray-500">({{ $flyerOffersTotal }})</span>
+                </h2>
+                <div class="flex w-full flex-wrap gap-2 sm:gap-3">
+                    @foreach ($flyerOffers as $deal)
+                        <x-deal-card
+                            :deal="$deal"
+                            :stretch="false"
+                            :context-store-slug="$storeSlug"
+                            source="flyer_offers"
+                            class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
+                        />
+                    @endforeach
+                </div>
+                @if ($flyerOffersTotal > count($flyerOffers) && $showsDiscountsPage)
+                    <a href="/akcijos/{{ $storeSlug }}" class="section-link mt-4">
+                        Visos {{ $storeName }} akcijos
+                        <x-app-icon name="chevron-right" class="size-3.5" />
+                    </a>
+                @endif
+            </section>
+        @endif
     </main>
 </x-layouts.app>

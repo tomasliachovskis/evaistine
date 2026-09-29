@@ -31,6 +31,9 @@ class ProductController extends Controller
 {
     private const PER_PAGE = 20;
 
+    // Offers listed as text on a single flyer page (see getStoreLeaflet()).
+    private const FLYER_OFFERS_LIMIT = 120;
+
     protected $formatter;
 
     protected $meilisearchService;
@@ -1426,12 +1429,26 @@ class ProductController extends Controller
                     $metaTitle .= $storeSuffix;
                 }
 
+                // Same 90-day window and 3-point minimum as
+                // ProductPageMeta::historyFacts() (the FAQ answer this repeats).
+                $isLowestIn90Days = false;
+                if ($minPrice > 0) {
+                    $recent = $entity->discountHistories()
+                        ->where('discounted_price', '>', 0)
+                        ->where(fn ($q) => $q->where('end_at', '>=', now()->subDays(90)->startOfDay())
+                            ->orWhere(fn ($q) => $q->whereNull('end_at')->where('start_at', '>=', now()->subDays(90)->startOfDay())))
+                        ->selectRaw('COUNT(*) as points, MIN(discounted_price) as min_price')
+                        ->first();
+                    $isLowestIn90Days = $recent && $recent->points >= 3 && $minPrice <= (float) $recent->min_price;
+                }
+
                 return [
                     'seo_title' => $entity->name,
                     'seo_description' => $entity->description ?? '',
                     'meta_title' => $metaTitle,
                     'meta_description' => $displayName.($priceTextDesc
-                        ? ' akcija – kaina nuo '.$priceTextDesc.($storeNames ? " ({$storeNames})" : '').'. Palyginkite kainas prekybos centruose!'
+                        ? ' akcija – kaina nuo '.$priceTextDesc.($storeNames ? " ({$storeNames})" : '').'. '
+                            .($isLowestIn90Days ? 'Mažiausia kaina per 90 d. ' : '').'Palyginkite kainas prekybos centruose!'
                         : ' – palyginkite kainas prekybos centruose.'),
                 ];
             case 'search':
@@ -1569,6 +1586,30 @@ class ProductController extends Controller
             // at all, so this is a no-op for those.
             $descriptionTitle = preg_replace('/^Naujas /', 'Naujausias ', $title, 1);
 
+            // Offers Gemini extracted from this exact flyer (store_flyer_id,
+            // set by PdfFlyerProcessingService), so the page carries
+            // crawlable product names and prices, not only page images.
+            // Priced offers first (blanket "-30% visai avalynei" rows have
+            // no price), then biggest discount; capped since some flyers
+            // hold 300+.
+            $flyerDiscounts = Discount::with(['store', 'product.category', 'product.discounts.store'])
+                ->where('store_flyer_id', $flyer->id)
+                ->where(fn ($q) => $q->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay()))
+                ->orderByRaw('CASE WHEN discounted_price > 0 THEN 0 ELSE 1 END')
+                ->orderByRaw('COALESCE(discount_percent, 0) DESC')
+                ->orderBy('id')
+                ->get();
+            $flyerOffers = $flyerDiscounts
+                ->unique('product_id')
+                ->take(self::FLYER_OFFERS_LIMIT)
+                ->map(fn ($discount) => $this->formatter->formatListDiscount($discount))
+                ->values()
+                ->all();
+            $flyerOffersTotal = $flyerDiscounts->unique('product_id')->count();
+            $offersClause = $flyerOffersTotal > 0
+                ? ", {$flyerOffersTotal} ".\App\Support\LithuanianPlural::discountWord($flyerOffersTotal)
+                : '';
+
             return [
                 'listing_meta' => $listingMeta,
                 'breadcrumbs' => $this->generateBreadcrumbs('store_flyer_detail', $storeModel, $flyer),
@@ -1586,9 +1627,11 @@ class ProductController extends Controller
                         $title,
                         1
                     ).$dateRangeLabel,
-                    'meta_description' => "{$descriptionTitle} – {$storeModel->name} leidinys, {$pagesCount} psl.{$validityClause}. Peržiūrėkite visus akcijų puslapius.",
+                    'meta_description' => "{$descriptionTitle} – {$storeModel->name} leidinys, {$pagesCount} psl.{$offersClause}{$validityClause}. Peržiūrėkite visus akcijų puslapius.",
                 ],
                 'total_offers' => Discount::where('store_id', $storeModel->id)->count(),
+                'flyer_offers' => $flyerOffers,
+                'flyer_offers_total' => $flyerOffersTotal,
             ];
         });
 

@@ -162,6 +162,32 @@ Source: `ProductController::generateSeoData()`'s `product` case, JSON-LD in `App
 
 ---
 
+### Price-history facts (added 2026-09-29)
+
+`ProductPageMeta::historyFacts()` reads the product's `discount_histories` for the last 90 days. It needs at least 3 priced rows. It returns the lowest price (store + date), the average (the current price counts as one point), and how many separate promotions ran (rows with `original_price > discounted_price`, one per store + start date).
+
+- **FAQ:** with facts, the two template Q&As ("Kokios … akcijos galioja šią savaitę?", "Ar … kainos atnaujinamos kasdien?") are replaced by:
+  - `{Name}: kokia buvo mažiausia kaina?` → `Mažiausia kaina per paskutines 90 d. buvo 1,19 € (Store), 2026.08.14. Vidutinė kaina per tą laikotarpį – 1,44 €.` (or `Dabartinė kaina – X € (Store) – yra mažiausia per paskutines 90 d.`)
+  - `Kaip dažnai {Name} būna akcijoje?` → `Per paskutines 90 d. {Name} akcijoje buvo 3 kartus, paskutinį kartą iki 2026.08.10.` (1 kartą / 2–9 kartus / 10–20 kartų)
+  - Without facts, the template Q&As stay. `FaqSchema` renders both cases.
+- **Meta description:** when the current lowest price is at or below the 90-day low (same 3-row minimum), `Mažiausia kaina per 90 d.` goes before `Palyginkite kainas prekybos centruose!`.
+
+### Unit price (added 2026-09-29)
+
+- The offer card on the product page shows `X €/kg` / `€/l` next to the price (`App\Support\UnitPrice::label()`, shared with `<x-deal-card>`).
+- Product JSON-LD: each `Offer.priceSpecification` gets a `UnitPriceSpecification` with `referenceQuantity` `{value: 1, unitCode: KGM|LTR}`. Only for kg/l and only when `unit_price_estimated` is false. With a strikethrough price too, `priceSpecification` becomes an array.
+
+---
+
+## Single flyer page: offer list (added 2026-09-29)
+
+The flyer page was images only. `discounts.store_flyer_id` (and `discount_temp.store_flyer_id`) now records which flyer a Gemini-extracted offer came from. `StoreFlyerDiscountProcessingService` → `PdfFlyerProcessingService::processPdf(..., $storeFlyerId)` → `discount_temp` → `ProcessDiscounts`. A store + date match was tried and rejected: Iki had 5 flyers and Maxima had 3 with overlapping dates.
+
+- Below the viewer: the section `Šio leidinio akcijos ({N})`, up to 120 `<x-deal-card>` cards. Priced offers come first, then the highest %. Cards use flex-wrap.
+- `ItemList` JSON-LD with each item's name, URL, image and price. `numberOfItems` is the real total.
+- The meta description gets the count: `… leidinys, 24 psl., 639 nuolaidos, galioja …`.
+- Existing rows have no `store_flyer_id` and cannot be backfilled, because the page image path has no flyer id. The list appears as flyers are processed again, which happens weekly.
+
 ## Error pages
 
 404/500 pass `:canonical="false"`, so no canonical tag is rendered (it used to point at the homepage).
