@@ -381,21 +381,13 @@ class ProductDuplicateMergeService
         return $merged;
     }
 
-    // Standard label short forms that are the catalog's normal format, not
-    // truncations of the product name ("2,5% rieb.", "a. r.", "3 sl.",
-    // "art. HB1218", "/pak.", "(2 rūš.)"). Not counted when choosing between
-    // a flyer and a web name.
-    private const STANDARD_LABEL_ABBREVIATIONS = [
-        'rieb', 'a', 'r', 's', 'm', 'sl', 'art', 'vnt', 'pak', 'rit', 'kl',
-        'tabl', 'lap', 'dėž', 'but', 'skalb', 'sk', 'mėn', 'rūš', 'įv', 'nr', 'kompl', 'rink',
-    ];
-
     // Merges a confirmed flyer/web pair without the name-shape filters
     // mergeAllClusters() applies — the match was established another way
     // (CrossSourceDuplicateFinder: same store/period/price). The survivor
-    // takes the web name (the store's own format, details like "2,5% rieb."
-    // inline instead of in info), unless it abbreviates the product name
-    // more than the flyer does ("Šald.bulvių ..." vs "Šaldytos bulvių ...").
+    // takes whichever name has fewer abbreviations ("ŠEIMOS vytinta dešra,
+    // 200 g" over "..., a. r., 200 g"; "Šaldytos bulvių ..." over
+    // "Šald.bulvių ..."); on a tie the web name, the store's own format
+    // with details like "2,5% rieb." inline instead of in info.
     public function mergePair(int $flyerId, int $webId, bool $dryRun): array
     {
         $run = function () use ($flyerId, $webId, $dryRun) {
@@ -424,14 +416,22 @@ class ProductDuplicateMergeService
             : $webName;
     }
 
+    // A short form right after a number is part of a value, not a
+    // shortened word ("2,5% rieb.", "3 sl.", "(2 rūš.)", "10 tabl."), so it
+    // isn't counted. Everything else is: "a. r.", "Šald.", "art.", "/pak.".
     private function countNameAbbreviations(string $name): int
     {
-        preg_match_all('/(?<![0-9\p{L}])(\p{L}+)\./u', $name, $matches);
+        preg_match_all('/(?<![\p{L}\d])\p{L}+\./u', $name, $matches, PREG_OFFSET_CAPTURE);
 
-        return count(array_filter(
-            $matches[1],
-            fn (string $word) => !in_array(mb_strtolower($word), self::STANDARD_LABEL_ABBREVIATIONS, true)
-        ));
+        $count = 0;
+        foreach ($matches[0] as [$abbreviation, $offset]) {
+            $before = rtrim(substr($name, 0, $offset));
+            if (!preg_match('/\d\s*%?\s*\(?$/u', $before)) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     private function adoptFullerName(Product $base, Product $duplicate, bool $dryRun): void

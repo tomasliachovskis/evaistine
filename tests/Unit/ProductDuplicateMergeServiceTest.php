@@ -59,6 +59,10 @@ class ProductDuplicateMergeServiceTest extends TestCase
             $service->pickCrossSourceName('Šaldytos bulvių lazdelės NATALI, 1 kg', 'Šald.bulvių lazdelės NATALI (2 rūš.), 1 kg')
         );
         $this->assertSame(
+            'ŠEIMOS vytinta dešra, 200 g',
+            $service->pickCrossSourceName('ŠEIMOS vytinta dešra, 200 g', 'ŠEIMOS vytinta dešra, a. r., 200 g')
+        );
+        $this->assertSame(
             'Marinuoti šonkauliai BBQ medaus marinate, 1 kg',
             $service->pickCrossSourceName('Marinuoti šonkauliai BBQ medaus marinate, 1 kg', 'Marin. šonkauliai BBQ medaus marinate, 1 kg')
         );
