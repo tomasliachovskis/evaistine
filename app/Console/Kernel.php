@@ -102,9 +102,21 @@ class Kernel extends ConsoleKernel
         // this nightly chain so nothing after it (keyword mapping, deal
         // pool, cache warm) works from stale still-active-looking expired
         // rows.
+        // archive-expired deletes rows without model events, so they stay in
+        // Meilisearch until a full reindex — which otherwise only happens
+        // after a scraping batch (FinalizeScrapedStoresJob). Until then
+        // search counted archived hits with no row behind them (e.g.
+        // "skumbre (6)" over a single card). Chained with onSuccess, not a
+        // separate time slot, so it never starts before the archive is done.
         $schedule->command('discounts:archive-expired')
             ->dailyAt('04:00')
-            ->withoutOverlapping(60);
+            ->withoutOverlapping(60)
+            ->onSuccess(function () {
+                \Illuminate\Support\Facades\Artisan::call(
+                    'discounts:index-meilisearch',
+                    app()->environment('production') ? [] : ['--with-ssh-tunnel' => true],
+                );
+            });
 
         // discounts:archive-expired deletes Discount rows via
         // Discount::withoutEvents() (same pattern as discounts:process), so
