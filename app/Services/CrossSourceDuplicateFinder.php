@@ -31,7 +31,7 @@ class CrossSourceDuplicateFinder
     // A one-word web name ("Grietinė, 360 g") can't confirm anything.
     private const MIN_WEB_NAME_TOKENS = 2;
 
-    private const STOPWORDS = ['su', 'ir', 'ar', 'be', 'a', 'r', 'kg', 'g', 'l', 'ml', 'vnt'];
+    private const STOPWORDS = ['su', 'ir', 'ar', 'arba', 'be', 'a', 'r', 'kg', 'g', 'l', 'ml', 'vnt'];
 
     public function __construct(private ProductDuplicateMergeService $mergeService)
     {

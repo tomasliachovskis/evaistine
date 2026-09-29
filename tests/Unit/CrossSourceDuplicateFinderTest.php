@@ -39,6 +39,7 @@ class CrossSourceDuplicateFinderTest extends TestCase
             'web variant brand word missing on flyer' => ['Skystas skalbiklis WOOLITE, 4.5 l', null, 'Skystas skalbiklis WOOLITE DARK, 4.5 l', '4,44 €/l'],
             'pack size differs' => ['Šaldytos bulvių lazdelės NATALI, 1 kg', null, 'Šald. bulvių lazdelės NATALI, 750 g', null],
             'multi-brand flyer offer vs one flavor, promo text repeated in web info' => ['Gazuotas gėrimas COCA-COLA, FANTA, SPRITE, 0.85 l', '6 rūšių, 1,28 Eur/l, Ir IKI EXPRESS', 'FANTA APPLE-CHERRY GAZUOTAS GĖRIMAS, 850 ml', '6 rūšių, 1,28 Eur/l. Ir IKI EXPRESS'],
+            'shared connective words only' => ['Moterų arba vyrų terminės kojinės', 'A: 35/38–43/46; B: 35/38–39/42, 522855', 'Moterų arba vyrų maudymosi šlepetės, 1 pora', null],
             'one-word web name' => ['Grietinė ROKIŠKIO TIKRAS, 360 g', '30 % rieb.', 'Grietinė, 360 g', null],
             'flavor differs' => ['Varškė GRAIKIŠKA AMFORA su mangais, 200 g', '0,8 % rieb.', 'Varškė GRAIKIŠKA AMFORA su avietėmis, 0,8 % rieb., 200 g', null],
         ];
