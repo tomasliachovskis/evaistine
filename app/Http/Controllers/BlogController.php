@@ -26,7 +26,7 @@ class BlogController extends Controller
         ];
 
         return view('blog.index', [
-            'title' => 'Naujienos',
+            'title' => 'Akcijų ir nuolaidų naujienos – patarimai, kaip sutaupyti',
             'description' => 'Naujausi straipsniai apie akcijas, nuolaidas ir taupymą. Naudingi patarimai ir gairės geriausiems pasiūlymams.',
             'canonical' => CanonicalUrl::build('/naujienos', $query),
             'robots' => CanonicalUrl::robotsMeta('/naujienos', $query),

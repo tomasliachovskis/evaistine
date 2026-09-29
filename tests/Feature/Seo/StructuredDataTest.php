@@ -53,7 +53,8 @@ class StructuredDataTest extends TestCase
         $this->assertSame($seed['product']->image_url, $product['image']);
         $this->assertSame(self::ORIGIN.$path, $product['url']);
 
-        $offers = isset($product['offers']['@type']) ? [$product['offers']] : $product['offers'];
+        $this->assertSame($seed['product']->name, $product['name']);
+        $offers = $this->offersOf($product);
         $this->assertNotEmpty($offers);
         foreach ($offers as $offer) {
             $this->assertSame('Offer', $offer['@type']);
@@ -78,8 +79,27 @@ class StructuredDataTest extends TestCase
 
         $product = $this->jsonLdOfType($this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}"), 'Product')[0];
 
-        $prices = collect(isset($product['offers']['@type']) ? [$product['offers']] : $product['offers'])->pluck('price')->sort()->values()->all();
+        $prices = collect($this->offersOf($product))->pluck('price')->sort()->values()->all();
         $this->assertSame(['1.29', '1.49'], $prices);
+
+        $this->assertSame('AggregateOffer', $product['offers']['@type']);
+        $this->assertSame('1.29', $product['offers']['lowPrice']);
+        $this->assertSame('1.49', $product['offers']['highPrice']);
+        $this->assertSame(2, $product['offers']['offerCount']);
+
+        $strikethrough = collect($this->offersOf($product))->firstWhere('price', '1.49')['priceSpecification'];
+        $this->assertSame('https://schema.org/StrikethroughPrice', $strikethrough['priceType']);
+        $this->assertSame('1.99', $strikethrough['price']);
+    }
+
+    public function test_product_schema_carries_gtin_from_ean(): void
+    {
+        $seed = $this->seedListing();
+        $seed['product']->update(['ean' => '4770001234567']);
+
+        $product = $this->jsonLdOfType($this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}"), 'Product')[0];
+
+        $this->assertSame('4770001234567', $product['gtin']);
     }
 
     public function test_expired_product_offer_is_out_of_stock(): void
@@ -90,7 +110,7 @@ class StructuredDataTest extends TestCase
         $products = $this->jsonLdOfType($this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}"), 'Product');
 
         $this->assertCount(1, $products);
-        $offers = isset($products[0]['offers']['@type']) ? [$products[0]['offers']] : $products[0]['offers'];
+        $offers = $this->offersOf($products[0]);
         foreach ($offers as $offer) {
             $this->assertSame('https://schema.org/OutOfStock', $offer['availability']);
         }

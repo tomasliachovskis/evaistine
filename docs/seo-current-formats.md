@@ -142,8 +142,30 @@ Source: `ProductController::getStoreLeaflet()` (`app/Http/Controllers/Api/Produc
 
 ---
 
-## Not yet implemented (research/recommendations only, not shipped)
+## Product page — `/akcijos/{category}/{product}`
 
-These page types were researched in `docs/seo-meta-title-research.md` but no code changes were made — do not treat that doc's recommendations as live:
+Source: `ProductController::generateSeoData()`'s `product` case, JSON-LD in `App\Support\ProductSchema`. Changed 2026-09-29. Before that change, meta was lowercased wholesale and the schema reused the meta title.
 
-- Product page — `/akcijos/{category}/{product}`
+- **Title:** `{Name} akcija – kaina nuo {minPrice} € ({Stores})`, capped at about 65 chars. The name is trimmed at a word boundary, and a trailing bare number left by the cut ("…, 40") is dropped. `(Stores)` is added only when it fits.
+- **Name casing:** `ProductPageMeta::displayName()` keeps the store's own casing (brands like `L'Oréal`, `ILAJA`). It lowercases only when more than 60% of the name's letters are uppercase (`DUŠO ŽELĖ` → `Dušo želė`).
+- **Description:** `{Name} akcija – kaina nuo {minPrice} € ({Stores}). Palyginkite kainas prekybos centruose!`. Without a price: `{Name} – palyginkite kainas prekybos centruose.`. No `✔` glyph.
+- **Product JSON-LD:**
+  - `name` is the plain product name (it used to be the meta title with price and store).
+  - `description` is the product's own description, or `{Name} kainos ir akcijos parduotuvėse`.
+  - When there are 2+ offers, `offers` is an `AggregateOffer` (`lowPrice`/`highPrice`/`offerCount`) wrapping the per-store `Offer`s. With 1 offer it is a plain `Offer`.
+  - A genuine discount adds `priceSpecification` with `StrikethroughPrice` = `original_price`.
+  - `gtin` comes from `products.ean` when present.
+
+**Example (Knoppers, 2 stores):**
+- Title: `Vaflinis batonėlis KNOPPERS NUTBAR akcija – kaina nuo 0.82 €`
+- Description: `Vaflinis batonėlis KNOPPERS NUTBAR, 40 g akcija – kaina nuo 0.82 € (Gulbelė, Ermitažas). Palyginkite kainas prekybos centruose!`
+
+---
+
+## Error pages
+
+404/500 pass `:canonical="false"`, so no canonical tag is rendered (it used to point at the homepage).
+
+## IndexNow
+
+`sail artisan seo:indexnow [--since=] [--dry-run]` submits product URLs whose discounts changed to api.indexnow.org (Bing, Yandex, etc.; Google ignores it). It runs from `FinalizeScrapedStoresJob` after every batch. It is a no-op outside production or without `INDEXNOW_KEY` in `.env`. The key is served at `/{key}.txt`.

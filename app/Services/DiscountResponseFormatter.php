@@ -234,6 +234,7 @@ class DiscountResponseFormatter
             'name' => $product->name,
             'slug' => $product->slug,
             'brand' => $product->brand,
+            'ean' => $product->ean,
             'full_slug' => $product->category ? $product->category->slug . '/' . $product->slug : $product->slug,
             'category_id' => $product->category_id,
             'image_url' => $this->resolveProductImageUrl($product),

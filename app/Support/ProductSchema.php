@@ -29,6 +29,7 @@ class ProductSchema
                 // a "last known price") — availability must follow that
                 // date, not assume every entry here is a live deal.
                 $isActive = ProductPageMeta::offerIsActive($offer['to_date'] ?? null);
+                $originalPrice = (float) ($offer['original_price'] ?? 0);
 
                 return array_filter([
                     '@type' => 'Offer',
@@ -39,8 +40,31 @@ class ProductSchema
                     'seller' => ['@type' => 'Organization', 'name' => $offer['store']['name'] ?? null],
                     'validFrom' => $isGenuineDiscount && $isActive ? ($offer['from_date'] ?? null) : null,
                     'priceValidUntil' => $isGenuineDiscount ? ($offer['to_date'] ?? null) : null,
+                    // The pre-discount price, as Google's "was" price.
+                    'priceSpecification' => $isGenuineDiscount && $originalPrice > (float) $offer['discounted_price'] ? [
+                        '@type' => 'UnitPriceSpecification',
+                        'priceType' => 'https://schema.org/StrikethroughPrice',
+                        'price' => (string) $originalPrice,
+                        'priceCurrency' => 'EUR',
+                    ] : null,
                 ]);
             })->all();
+
+            // Several stores selling the same product: Google's comparison-
+            // site shape is one AggregateOffer (price range) wrapping them.
+            if (count($productOffers) > 1) {
+                $prices = array_map(fn ($o) => (float) $o['price'], $productOffers);
+                $productOffers = [
+                    '@type' => 'AggregateOffer',
+                    'lowPrice' => (string) min($prices),
+                    'highPrice' => (string) max($prices),
+                    'offerCount' => count($productOffers),
+                    'priceCurrency' => 'EUR',
+                    'offers' => $productOffers,
+                ];
+            } else {
+                $productOffers = $productOffers[0];
+            }
         } elseif ($lastKnownPrice > 0) {
             $productOffers = [
                 '@type' => 'Offer',
@@ -56,8 +80,10 @@ class ProductSchema
         $schema = array_filter([
             '@context' => 'https://schema.org',
             '@type' => 'Product',
-            'name' => $seo['meta_title'] ?? $seo['seo_title'] ?? $product['name'],
-            'description' => $seo['meta_description'] ?? $seo['seo_description'] ?? ($product['name'] . ' akcija ir nuolaidos'),
+            // The product's own name — not the meta title, which carries
+            // "akcija – kaina nuo X € (Store)" marketing copy.
+            'name' => $product['name'],
+            'description' => trim(strip_tags((string) ($seo['seo_description'] ?? ''))) ?: ($product['name'] . ' kainos ir akcijos parduotuvėse'),
             'image' => $product['image_url'],
             'category' => $product['category']['name'] ?? 'Akcijos',
             'url' => $currentUrl,
@@ -66,6 +92,13 @@ class ProductSchema
 
         if (!empty($product['brand'])) {
             $schema['brand'] = ['@type' => 'Brand', 'name' => $product['brand']];
+        }
+
+        // products.ean only ever holds a real retail barcode
+        // (ProcessDiscounts::normalizeEan() rejects the rest).
+        $ean = (string) ($product['ean'] ?? '');
+        if (preg_match('/^\d{8}$|^\d{12,14}$/', $ean)) {
+            $schema['gtin'] = $ean;
         }
 
         return $schema;

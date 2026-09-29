@@ -24,6 +24,7 @@
             $metaDescription = rtrim(mb_substr($metaDescription, 0, 155));
             $metaDescription = rtrim(preg_replace('/\s+\S*$/u', '', $metaDescription), " \t.,;:–-") . '…';
         }
+        // Error pages pass canonical=false: a 404 has no canonical page.
         $canonicalUrl = $canonical ?? url()->current();
         // Open Graph needs an absolute image URL; product/flyer/article
         // pages pass their own ($ogImage), everything else the site image.
@@ -36,7 +37,9 @@
     <title>{{ $pageTitle }}</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="32x32">
     <meta name="description" content="{{ $metaDescription }}">
-    <link rel="canonical" href="{{ $canonicalUrl }}">
+    @if ($canonicalUrl)
+        <link rel="canonical" href="{{ $canonicalUrl }}">
+    @endif
     <meta name="robots" content="{{ $robots ?? 'index, follow' }}">
 
     {{-- Open Graph / Twitter: share previews (Facebook, Messenger, Viber,
@@ -46,7 +49,7 @@
     <meta property="og:type" content="{{ $ogType ?? 'website' }}">
     <meta property="og:title" content="{{ $pageTitle }}">
     <meta property="og:description" content="{{ $metaDescription }}">
-    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:url" content="{{ $canonicalUrl ?: url()->current() }}">
     <meta property="og:image" content="{{ $ogImageUrl }}">
     <meta name="twitter:card" content="{{ ($ogImage ?? null) ? 'summary_large_image' : 'summary' }}">
     <meta name="twitter:title" content="{{ $pageTitle }}">

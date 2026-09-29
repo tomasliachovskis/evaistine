@@ -1,6 +1,6 @@
 <x-layouts.app
     title="Įvyko klaida"
-    canonical="https://superakcijos.lt"
+    :canonical="false"
     robots="noindex, nofollow"
 >
     <section class="base-container">

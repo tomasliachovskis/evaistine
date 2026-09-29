@@ -65,4 +65,9 @@ return [
         'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
         'redirect' => env('FACEBOOK_REDIRECT_URI', '/auth/facebook/callback'),
     ],
+
+    // seo:indexnow — the key is also served at /{key}.txt for verification.
+    'indexnow' => [
+        'key' => env('INDEXNOW_KEY'),
+    ],
 ];

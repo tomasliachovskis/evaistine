@@ -17,16 +17,35 @@ trait InspectsSeoHead
     protected const NOINDEX = 'noindex, nofollow, noarchive, nosnippet';
 
     /**
+     * A Product's individual Offer nodes, whether it carries one Offer, a
+     * list, or an AggregateOffer wrapping several stores.
+     */
+    protected function offersOf(array $product): array
+    {
+        $offers = $product['offers'];
+
+        if (($offers['@type'] ?? null) === 'AggregateOffer') {
+            return $offers['offers'];
+        }
+
+        return isset($offers['@type']) ? [$offers] : $offers;
+    }
+
+    /**
      * Title, description, canonical and robots from the rendered <head>.
      * Each must appear exactly once — a duplicate canonical or robots tag
-     * leaves Google to pick one, which is a bug in itself.
+     * leaves Google to pick one, which is a bug in itself. Error pages carry
+     * no canonical at all ($canonicalRequired false: zero or one allowed).
      */
-    protected function seoHead(TestResponse $response): array
+    protected function seoHead(TestResponse $response, bool $canonicalRequired = true): array
     {
         $xpath = $this->xpath($response);
 
-        $single = function (string $query, string $label) use ($xpath) {
+        $single = function (string $query, string $label, bool $required = true) use ($xpath) {
             $nodes = $xpath->query($query);
+            if (!$required && $nodes->length === 0) {
+                return null;
+            }
             $this->assertSame(1, $nodes->length, "Expected exactly one {$label}, found {$nodes->length}");
 
             return trim($nodes->item(0)->nodeValue ?? '');
@@ -35,7 +54,7 @@ trait InspectsSeoHead
         return [
             'title' => $single('//head/title', '<title>'),
             'description' => $single('//head/meta[@name="description"]/@content', 'meta description'),
-            'canonical' => $single('//head/link[@rel="canonical"]/@href', 'canonical'),
+            'canonical' => $single('//head/link[@rel="canonical"]/@href', 'canonical', $canonicalRequired),
             'robots' => $single('//head/meta[@name="robots"]/@content', 'robots meta'),
         ];
     }
@@ -55,7 +74,7 @@ trait InspectsSeoHead
 
     protected function assertNoindex(TestResponse $response): array
     {
-        $head = $this->seoHead($response);
+        $head = $this->seoHead($response, canonicalRequired: false);
         $this->assertStringStartsWith('noindex', $head['robots']);
 
         return $head;

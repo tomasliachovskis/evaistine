@@ -100,6 +100,9 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         app(DuplicateDiscountRemover::class)->remove();
         Artisan::call('discounts:archive-expired');
         Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
+        // Product pages with a new/changed offer → Bing & co. (no-op outside
+        // production or without INDEXNOW_KEY; never throws).
+        Artisan::call('seo:indexnow', ['--since' => $batchStartedAt->toDateTimeString()]);
 
         // Once for the whole batch, not once per store — see class docblock.
         Artisan::call('cache:clear-discounts');

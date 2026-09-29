@@ -1,6 +1,6 @@
 <x-layouts.app
     title="Puslapis nerastas"
-    canonical="https://superakcijos.lt"
+    :canonical="false"
     robots="noindex, nofollow"
 >
     <section class="base-container">

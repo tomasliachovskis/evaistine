@@ -36,13 +36,14 @@ class CouponController extends Controller
 
         $latestUpdate = Coupon::max('updated_at');
         $breadcrumbs = [['name' => 'Kuponai', 'href' => $path]];
+        $websites = CouponWebsite::withCount(['coupons' => fn ($q) => $q->active()->currentlyValid()])
+            ->having('coupons_count', '>', 0)
+            ->orderByDesc('coupons_count')
+            ->get();
 
         return view('kuponai.index', [
             'coupons' => $coupons,
-            'websites' => CouponWebsite::withCount(['coupons' => fn ($q) => $q->active()->currentlyValid()])
-                ->having('coupons_count', '>', 0)
-                ->orderByDesc('coupons_count')
-                ->get(),
+            'websites' => $websites,
             'order' => $order,
             'q' => $q,
             'freshnessLabel' => $latestUpdate ? LithuanianDate::relative(Carbon::parse($latestUpdate)) : null,
@@ -50,10 +51,12 @@ class CouponController extends Controller
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
+            // The shops with their own /kuponai/{slug} page, not the coupons
+            // themselves — every coupon item used to carry the same /kuponai
+            // URL, so the list said nothing a crawler could follow.
             'itemListSchema' => ItemListSchema::build(
-                'Nuolaidų kodai ir kuponai',
-                $coupons->getCollection()->map(fn (Coupon $c) => ['name' => $c->title, 'href' => $path])->all(),
-                $coupons->total()
+                'Nuolaidų kodai ir kuponai pagal parduotuvę',
+                $websites->map(fn (CouponWebsite $w) => ['name' => "{$w->name} nuolaidų kodai", 'href' => "/kuponai/{$w->slug}"])->all()
             ),
         ]);
     }

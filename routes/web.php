@@ -45,6 +45,15 @@ Route::get('/robots.txt', [SitemapController::class, 'robots']);
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap']);
 Route::get('/product-sitemap/{page}', [SitemapController::class, 'productSitemap'])->where('page', '[0-9]+');
 
+// IndexNow key verification file (seo:indexnow): must be served at
+// /{key}.txt on the public host and contain the key itself.
+Route::get('/{key}.txt', function (string $key) {
+    $expected = (string) config('services.indexnow.key');
+    abort_unless($expected !== '' && hash_equals($expected, $key), 404);
+
+    return response($expected, 200, ['Content-Type' => 'text/plain']);
+})->where('key', '[a-zA-Z0-9-]{8,128}');
+
 // Order matters: /akcijos/paieska[...] must resolve before the generic
 // {slug1}/{slug2?} catch-all below, or "paieska" would be parsed as a
 // store/category/keyword slug instead.

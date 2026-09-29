@@ -98,6 +98,28 @@ class HeadTagsTest extends TestCase
         $this->assertSame('noindex, follow', $head['robots']);
     }
 
+    public function test_product_meta_keeps_brand_casing_and_has_no_glyphs(): void
+    {
+        $seed = $this->seedListing();
+        $seed['product']->update(['name' => "L'Oréal Paris Elvital šampūnas, 250 ml"]);
+        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+
+        $head = $this->seoHead($this->get($path));
+
+        $this->assertStringStartsWith("L'Oréal Paris Elvital", $head['title']);
+        $this->assertStringStartsWith("L'Oréal Paris Elvital", $head['description']);
+        $this->assertStringNotContainsString('✔', $head['description']);
+    }
+
+    public function test_product_meta_normalizes_all_caps_names(): void
+    {
+        $seed = $this->seedListing();
+        $seed['product']->update(['name' => 'DUŠO ŽELĖ NEUTRAL, 250 ML']);
+        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+
+        $this->assertStringStartsWith('Dušo želė neutral', $this->seoHead($this->get($path))['title']);
+    }
+
     public function test_filtered_listing_is_noindex_with_clean_canonical(): void
     {
         $seed = $this->seedListing();
@@ -149,7 +171,9 @@ class HeadTagsTest extends TestCase
         $response = $this->get('/akcijos/seo-tokio-puslapio-nera');
 
         $response->assertNotFound();
-        $this->assertNoindex($response);
+        $head = $this->assertNoindex($response);
+        // A 404 has no canonical page — it used to point at the homepage.
+        $this->assertNull($head['canonical']);
     }
 
     public function test_pages_carry_open_graph_tags_matching_the_canonical(): void

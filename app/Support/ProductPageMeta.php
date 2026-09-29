@@ -162,6 +162,23 @@ class ProductPageMeta
         return mb_strtolower($w);
     }
 
+    // Meta title/description casing for a product name. Lowercasing every
+    // name wholesale lost brand casing in the SERP ("L'oréal paris",
+    // "Vaza ilaja scandi") — keep the store's own casing, and only
+    // normalize names a scraper sent in (mostly) ALL CAPS.
+    public static function displayName(string $productName): string
+    {
+        $name = trim($productName);
+        $letters = preg_replace('/[^\p{L}]/u', '', $name);
+        $upper = preg_replace('/[^\p{Lu}]/u', '', $name);
+
+        if (mb_strlen($letters) > 0 && mb_strlen($upper) / mb_strlen($letters) > 0.6) {
+            $name = mb_strtolower($name);
+        }
+
+        return mb_ucfirst($name);
+    }
+
     public static function shortName(string $productName): string
     {
         return trim(explode(',', $productName)[0] ?? $productName) ?: $productName;

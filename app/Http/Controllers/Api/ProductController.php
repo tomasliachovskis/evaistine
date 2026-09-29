@@ -1405,7 +1405,7 @@ class ProductController extends Controller
                 $priceTextDesc = $formattedPrice ? $formattedPrice.' €' : '';
                 $storeNames = $this->getStoreNamesForProduct($entity);
                 $storeSuffix = $storeNames ? " ({$storeNames})" : '';
-                $productLower = mb_strtolower($entity->name);
+                $displayName = \App\Support\ProductPageMeta::displayName($entity->name);
 
                 // Google cuts titles at ~60 chars and long product names
                 // (up to 100+) pushed the price — the part that earns the
@@ -1413,10 +1413,13 @@ class ProductController extends Controller
                 // within ~65 chars by trimming the name at a word boundary;
                 // the "(Store)" suffix only when it still fits.
                 $titleTail = ' akcija'.($priceTextDesc ? ' – kaina nuo '.$priceTextDesc : '');
-                $titleName = mb_ucfirst($productLower);
+                $titleName = $displayName;
                 $nameBudget = 65 - mb_strlen($titleTail);
                 if (mb_strlen($titleName) > $nameBudget) {
                     $titleName = rtrim(preg_replace('/\s+\S*$/u', '', mb_substr($titleName, 0, $nameBudget)), ' ,.;:–-');
+                    // A cut that separated a number from its unit ("…, 40 g"
+                    // → "…, 40") leaves a meaningless bare number — drop it.
+                    $titleName = rtrim(preg_replace('/[\s,]+\d+(?:[.,]\d+)?$/u', '', $titleName), ' ,.;:–-');
                 }
                 $metaTitle = $titleName.$titleTail;
                 if ($storeSuffix !== '' && mb_strlen($metaTitle.$storeSuffix) <= 65) {
@@ -1427,7 +1430,9 @@ class ProductController extends Controller
                     'seo_title' => $entity->name,
                     'seo_description' => $entity->description ?? '',
                     'meta_title' => $metaTitle,
-                    'meta_description' => mb_ucfirst($entity->name).($priceTextDesc ? ' ✔ kaina nuo '.$priceTextDesc.', palygink akcijas prekybos centruose!' : ''),
+                    'meta_description' => $displayName.($priceTextDesc
+                        ? ' akcija – kaina nuo '.$priceTextDesc.($storeNames ? " ({$storeNames})" : '').'. Palyginkite kainas prekybos centruose!'
+                        : ' – palyginkite kainas prekybos centruose.'),
                 ];
             case 'search':
                 return [
