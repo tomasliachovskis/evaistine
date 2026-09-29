@@ -259,7 +259,7 @@ class ProductDuplicateMergeService
         return array_values(array_unique($mismatch));
     }
 
-    private function wordsFuzzyMatch(string $word1, string $word2): bool
+    public function wordsFuzzyMatch(string $word1, string $word2): bool
     {
         if ($word1 === $word2) {
             return true;
@@ -362,39 +362,7 @@ class ProductDuplicateMergeService
                         continue;
                     }
 
-                    // Which row survives (base->id, its slug/URL) is picked by
-                    // pickBaseProduct() above for other reasons (image
-                    // quality, id), but its raw catalog `name` is often the
-                    // abbreviated store-card copy ("Šalt. kavos gėr. ...")
-                    // while a duplicate carries the fuller flyer-print
-                    // wording ("Šaltasis kavos gėrimas ..."). Since the fuzzy
-                    // matcher already established these name strings refer
-                    // to the same product with the same word count, the
-                    // longer string is reliably the less-abbreviated one —
-                    // keep that as the surviving product's display name.
-                    $fullerName = $this->pickFullerName($base->name, $duplicate->name);
-                    if ($fullerName !== $base->name) {
-                        if (!$dryRun) {
-                            // Record the name we're about to overwrite, not
-                            // just the duplicate's — otherwise this exact
-                            // string only still resolves to $base because
-                            // its slug happens to have been derived from it
-                            // and slug is left untouched here. That's an
-                            // implicit, easy-to-break coincidence; an
-                            // explicit mapping row is the real guarantee,
-                            // and it also makes product_mapping a complete
-                            // record of every raw name this product has
-                            // ever carried instead of missing the very one
-                            // it started with.
-                            ProductMapping::firstOrCreate(
-                                ['name' => $base->name],
-                                ['product_id' => $base->id]
-                            );
-                            $base->update(['name' => $fullerName]);
-                        } else {
-                            $base->name = $fullerName;
-                        }
-                    }
+                    $this->adoptFullerName($base, $duplicate, $dryRun);
 
                     $merged = array_merge(
                         $merged,
@@ -413,6 +381,58 @@ class ProductDuplicateMergeService
         return $merged;
     }
 
+    // Merges one confirmed pair without the name-shape filters
+    // mergeAllClusters() applies — for callers that established the match
+    // another way (CrossSourceDuplicateFinder: same store/period/price).
+    public function mergePair(int $firstId, int $secondId, bool $dryRun): array
+    {
+        $run = function () use ($firstId, $secondId, $dryRun) {
+            $base = $this->pickBaseProduct([$firstId, $secondId]);
+            $duplicate = Product::findOrFail($base->id === $firstId ? $secondId : $firstId);
+
+            $this->adoptFullerName($base, $duplicate, $dryRun);
+
+            return $this->mergeDuplicateIntoBase($base, $duplicate, $dryRun);
+        };
+
+        return $dryRun ? $run() : DB::transaction($run);
+    }
+
+    private function adoptFullerName(Product $base, Product $duplicate, bool $dryRun): void
+    {
+        // Which row survives (base->id, its slug/URL) is picked by
+        // pickBaseProduct() above for other reasons (image
+        // quality, id), but its raw catalog `name` is often the
+        // abbreviated store-card copy ("Šalt. kavos gėr. ...")
+        // while a duplicate carries the fuller flyer-print
+        // wording ("Šaltasis kavos gėrimas ..."). Once the caller
+        // has established both rows are the same product, the
+        // less-abbreviated string is the better display name.
+        $fullerName = $this->pickFullerName($base->name, $duplicate->name);
+        if ($fullerName !== $base->name) {
+            if (!$dryRun) {
+                // Record the name we're about to overwrite, not
+                // just the duplicate's — otherwise this exact
+                // string only still resolves to $base because
+                // its slug happens to have been derived from it
+                // and slug is left untouched here. That's an
+                // implicit, easy-to-break coincidence; an
+                // explicit mapping row is the real guarantee,
+                // and it also makes product_mapping a complete
+                // record of every raw name this product has
+                // ever carried instead of missing the very one
+                // it started with.
+                ProductMapping::firstOrCreate(
+                    ['name' => $base->name],
+                    ['product_id' => $base->id]
+                );
+                $base->update(['name' => $fullerName]);
+            } else {
+                $base->name = $fullerName;
+            }
+        }
+    }
+
     public function mergeDuplicateIntoBase(Product $base, Product $duplicate, bool $dryRun): array
     {
         $this->resolveDiscountConflicts($base->id, $duplicate->id, $dryRun);
@@ -429,6 +449,7 @@ class ProductDuplicateMergeService
                 ->update(['product_id' => $base->id]);
 
             $this->reassignFavorites($base->id, $duplicate->id);
+            $this->adoptStoreImage($base, $duplicate);
 
             ProductMapping::firstOrCreate(
                 ['name' => $duplicate->name],
@@ -446,6 +467,23 @@ class ProductDuplicateMergeService
         ]];
     }
 
+    // The survivor is the older row, which is often the flyer one with an
+    // image cropped out of the leaflet page. A store e-shop photo is always
+    // the better one — same swap ProcessDiscounts does when a web scrape
+    // hits a flyer-image product.
+    private function adoptStoreImage(Product $base, Product $duplicate): void
+    {
+        if (!$base->image_from_flyer || $duplicate->image_from_flyer || empty($duplicate->image_url)) {
+            return;
+        }
+
+        $base->update([
+            'image_url' => $duplicate->image_url,
+            'image_from_flyer' => false,
+            'image_cache_failed_at' => null,
+        ]);
+    }
+
     public function resolveDiscountConflicts(int $baseId, int $duplicateId, bool $dryRun): int
     {
         $duplicateDiscounts = Discount::query()
@@ -455,17 +493,23 @@ class ProductDuplicateMergeService
         $removed = 0;
 
         foreach ($duplicateDiscounts as $duplicateDiscount) {
-            $conflictExists = Discount::query()
+            $conflict = Discount::query()
                 ->where('product_id', $baseId)
                 ->where('store_id', $duplicateDiscount->store_id)
                 ->where('start_at', $duplicateDiscount->start_at)
                 ->where('end_at', $duplicateDiscount->end_at)
-                ->exists();
+                ->first();
 
-            if ($conflictExists) {
+            if ($conflict) {
+                // Keep whichever copy links to the store's own product page
+                // (a web-scraped offer) over a flyer one with no URL.
+                $loser = empty($conflict->product_url) && !empty($duplicateDiscount->product_url)
+                    ? $conflict
+                    : $duplicateDiscount;
+
                 if (!$dryRun) {
-                    Discount::withoutEvents(function () use ($duplicateDiscount) {
-                        $duplicateDiscount->delete();
+                    Discount::withoutEvents(function () use ($loser) {
+                        $loser->delete();
                     });
                 }
                 $removed++;

@@ -103,6 +103,61 @@ class MergeDuplicateProductsCommandTest extends TestCase
         $this->assertDatabaseMissing('products', ['id' => $duplicate->id]);
     }
 
+    public function test_cross_source_keeps_older_flyer_product_with_web_image_and_web_offer(): void
+    {
+        $category = Category::create(['name' => 'Šaldyti', 'slug' => 'saldyti']);
+        $store = Store::forceCreate(['name' => 'Rimi', 'slug' => 'rimi', 'url' => 'https://rimi.lt']);
+
+        $flyer = Product::create([
+            'name' => 'Šaldytos bulvių lazdelės NATALI, 1 kg',
+            'slug' => 'saldytos-bulviu-lazdeles-natali-1-kg',
+            'category_id' => $category->id,
+            'image_from_flyer' => true,
+            'image_url' => 'https://superakcijos.lt/storage/flyer-crop.jpg',
+            'created_at' => now()->subDays(10),
+        ]);
+
+        $web = Product::create([
+            'name' => 'Šald.bulvių lazdelės NATALI (2 rūš.), 1 kg',
+            'slug' => 'saldbulviu-lazdeles-natali-2-rus-1-kg',
+            'category_id' => $category->id,
+            'image_from_flyer' => false,
+            'image_url' => 'https://rimibaltic-res.cloudinary.com/natali.jpg',
+            'created_at' => now()->subDay(),
+        ]);
+
+        $offer = [
+            'store_id' => $store->id,
+            'original_price' => 2.49,
+            'discounted_price' => 1.36,
+            'discount_percent' => 45,
+            'start_at' => now()->startOfWeek(),
+            'end_at' => now()->endOfWeek(),
+        ];
+
+        [$flyerDiscount, $webDiscount] = Discount::withoutEvents(fn () => [
+            Discount::create($offer + ['product_id' => $flyer->id, 'product_url' => null, 'info' => '(2 rūšių)']),
+            Discount::create($offer + ['product_id' => $web->id, 'product_url' => 'https://rimi.lt/natali', 'info' => '1,36 €/kg']),
+        ]);
+
+        $this->artisan('products:merge-duplicates', ['--cross-source' => true])
+            ->assertExitCode(0)
+            ->expectsOutputToContain('Merged 1');
+
+        $this->assertDatabaseMissing('products', ['id' => $web->id]);
+        $this->assertDatabaseHas('products', [
+            'id' => $flyer->id,
+            'image_url' => 'https://rimibaltic-res.cloudinary.com/natali.jpg',
+            'image_from_flyer' => false,
+        ]);
+        $this->assertDatabaseHas('product_mapping', ['name' => $web->name, 'product_id' => $flyer->id]);
+        $this->assertDatabaseHas('discounts', ['id' => $webDiscount->id, 'product_id' => $flyer->id]);
+        // The leftover same-week flyer offer is dropped by
+        // DuplicateDiscountRemover in FinalizeScrapedStoresJob (MySQL-only
+        // SQL, not runnable on this sqlite schema).
+        $this->assertDatabaseHas('discounts', ['id' => $flyerDiscount->id, 'product_id' => $flyer->id]);
+    }
+
     private function createSchema(): void
     {
         Schema::create('categories', function ($table) {
@@ -126,6 +181,8 @@ class MergeDuplicateProductsCommandTest extends TestCase
             $table->string('slug')->unique();
             $table->foreignId('category_id')->constrained('categories');
             $table->boolean('image_from_flyer')->default(false);
+            $table->string('image_url')->nullable();
+            $table->timestamp('image_cache_failed_at')->nullable();
             $table->timestamps();
         });
 
@@ -133,10 +190,11 @@ class MergeDuplicateProductsCommandTest extends TestCase
             $table->id();
             $table->foreignId('product_id')->constrained('products');
             $table->foreignId('store_id')->constrained('stores');
-            $table->string('product_url');
+            $table->string('product_url')->nullable();
             $table->decimal('original_price', 10, 2);
             $table->decimal('discounted_price', 10, 2);
             $table->integer('discount_percent');
+            $table->string('info')->nullable();
             $table->timestamp('start_at');
             $table->timestamp('end_at');
             $table->timestamps();

@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\DB;
 class DuplicateDiscountRemover
 {
     // Archives and removes older discounts when multiple active rows
-    // exist for the same product+store (keeps the newest, per id DESC).
+    // exist for the same product+store (keeps the newest, per id DESC,
+    // preferring a row with a product_url — a web-scraped offer links to
+    // the store's product page, a flyer one has nothing to link to).
     // Formerly the standalone discounts:remove-duplicate-active command —
     // folded in here since it was only ever invoked from
     // FinalizeScrapedStoresJob/ProcessScrapingFlow, never scheduled or
@@ -31,6 +33,7 @@ class DuplicateDiscountRemover
             $discounts = Discount::query()
                 ->where('product_id', $group->product_id)
                 ->where('store_id', $group->store_id)
+                ->orderByRaw('product_url IS NULL')
                 ->orderByDesc('id')
                 ->pluck('id');
 

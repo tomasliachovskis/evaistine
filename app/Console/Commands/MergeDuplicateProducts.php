@@ -2,13 +2,16 @@
 
 namespace App\Console\Commands;
 
+use App\Services\CrossSourceDuplicateFinder;
 use App\Services\ProductDuplicateMergeService;
 use App\Services\ProductDuplicateQueryService;
 use Illuminate\Console\Command;
 
 class MergeDuplicateProducts extends Command
 {
-    protected $signature = 'products:merge-duplicates {--dry-run : Preview without DB changes}';
+    protected $signature = 'products:merge-duplicates
+        {--dry-run : Preview without DB changes}
+        {--cross-source : Merge flyer vs e-shop copies of the same product (same store, period and price)}';
 
     protected $description = 'Find and merge duplicate products using SQL matching';
 
@@ -20,6 +23,10 @@ class MergeDuplicateProducts extends Command
 
         if ($dryRun) {
             $this->info('Dry run mode — no database changes will be made.');
+        }
+
+        if ($this->option('cross-source')) {
+            return $this->mergeCrossSource(app(CrossSourceDuplicateFinder::class), $mergeService, $dryRun);
         }
 
         $this->info('Searching for duplicate product pairs...');
@@ -98,6 +105,48 @@ class MergeDuplicateProducts extends Command
         );
 
         $this->info('Merged ' . count($merged) . ' duplicate product(s) into base products.');
+
+        if ($dryRun) {
+            $this->warn('Dry run complete — nothing was written to the database.');
+        }
+
+        return 0;
+    }
+
+    private function mergeCrossSource(
+        CrossSourceDuplicateFinder $finder,
+        ProductDuplicateMergeService $mergeService,
+        bool $dryRun
+    ): int {
+        $this->info('Searching for flyer vs e-shop duplicate pairs...');
+
+        $pairs = $finder->findPairs();
+
+        if ($pairs->isEmpty()) {
+            $this->info('No cross-source duplicate pairs found.');
+            return 0;
+        }
+
+        $merged = [];
+        $rows = [];
+
+        foreach ($pairs as $pair) {
+            $result = $mergeService->mergePair($pair['flyer_product_id'], $pair['web_product_id'], $dryRun)[0];
+            $merged[] = $result;
+
+            $rows[] = [
+                $pair['store'],
+                $pair['price'],
+                $pair['flyer_product_id'] . ' ' . $pair['flyer_name'] . ($pair['flyer_info'] ? " [{$pair['flyer_info']}]" : ''),
+                $pair['web_product_id'] . ' ' . $pair['web_name'] . ($pair['web_info'] ? " [{$pair['web_info']}]" : ''),
+                $pair['coverage'],
+                $result['base_id'],
+            ];
+        }
+
+        $this->table(['Store', 'Price', 'Flyer product', 'Web product', 'Coverage', 'Kept ID'], $rows);
+
+        $this->info('Merged ' . count($merged) . ' cross-source duplicate product(s).');
 
         if ($dryRun) {
             $this->warn('Dry run complete — nothing was written to the database.');
