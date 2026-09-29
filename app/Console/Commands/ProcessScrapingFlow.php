@@ -177,6 +177,13 @@ class ProcessScrapingFlow extends Command
             return false;
         }
 
+        $exitCode = $this->call('products:merge-duplicates', ['--cross-source' => true]);
+
+        if ($exitCode !== 0) {
+            $this->error('products:merge-duplicates --cross-source failed with exit code: ' . $exitCode);
+            return false;
+        }
+
         $this->info('✓ Duplicate products merged successfully.');
         $this->newLine();
         return true;

@@ -93,6 +93,10 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         // times. Moved out here, same "once per batch" reasoning as the
         // cache warms below.
         Artisan::call('products:merge-duplicates');
+        // Flyer vs e-shop copies of the same product (same store, period
+        // and price). Before DuplicateDiscountRemover, which then drops the
+        // second same-store offer the merge leaves on the survivor.
+        Artisan::call('products:merge-duplicates', ['--cross-source' => true]);
         app(DuplicateDiscountRemover::class)->remove();
         Artisan::call('discounts:archive-expired');
         Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
