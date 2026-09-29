@@ -411,9 +411,22 @@ class ProductDuplicateMergeService
 
     public function pickCrossSourceName(string $flyerName, string $webName): string
     {
+        // A promo variant count belongs in the offer's info, not the product
+        // name ("Kavos pupelės HIMMEL (3 rūšių), 1 kg").
+        $flyerHasVariants = $this->nameHasVariantCount($flyerName);
+        $webHasVariants = $this->nameHasVariantCount($webName);
+        if ($flyerHasVariants !== $webHasVariants) {
+            return $webHasVariants ? $flyerName : $webName;
+        }
+
         return $this->countNameAbbreviations($webName) > $this->countNameAbbreviations($flyerName)
             ? $flyerName
             : $webName;
+    }
+
+    private function nameHasVariantCount(string $name): bool
+    {
+        return (bool) preg_match('/(?<![\p{L}\d])(\d+|įv\.?|įvairių)\s*rūš/iu', $name);
     }
 
     // A short form right after a number is part of a value, not a
@@ -481,6 +494,8 @@ class ProductDuplicateMergeService
                     ->update(['product_id' => $base->id]);
             });
 
+            $this->fillMissingInfo($base->id);
+
             DB::table('discount_histories')
                 ->where('product_id', $duplicate->id)
                 ->update(['product_id' => $base->id]);
@@ -525,6 +540,28 @@ class ProductDuplicateMergeService
         ]);
     }
 
+    // After a merge the survivor can hold two offers from one store (flyer +
+    // web) until DuplicateDiscountRemover keeps one. Whichever it keeps must
+    // still show the flyer's details ("3 rūšių"), so an offer with empty
+    // info takes it from a same-store sibling that has it.
+    private function fillMissingInfo(int $productId): void
+    {
+        $discounts = Discount::query()->where('product_id', $productId)->get()->groupBy('store_id');
+
+        Discount::withoutEvents(function () use ($discounts) {
+            foreach ($discounts as $storeDiscounts) {
+                $source = $storeDiscounts->first(fn (Discount $discount) => !empty($discount->info));
+                if (!$source) {
+                    continue;
+                }
+
+                $storeDiscounts
+                    ->filter(fn (Discount $discount) => empty($discount->info))
+                    ->each(fn (Discount $discount) => $discount->update(['info' => $source->info]));
+            }
+        });
+    }
+
     // updateOrCreate, not firstOrCreate: an existing row for this name may
     // point at a product that is being merged away.
     private function mapName(string $name, int $productId): void
@@ -554,9 +591,13 @@ class ProductDuplicateMergeService
                 $loser = empty($conflict->product_url) && !empty($duplicateDiscount->product_url)
                     ? $conflict
                     : $duplicateDiscount;
+                $winner = $loser === $conflict ? $duplicateDiscount : $conflict;
 
                 if (!$dryRun) {
-                    Discount::withoutEvents(function () use ($loser) {
+                    Discount::withoutEvents(function () use ($loser, $winner) {
+                        if (empty($winner->info) && !empty($loser->info)) {
+                            $winner->update(['info' => $loser->info]);
+                        }
                         $loser->delete();
                     });
                 }

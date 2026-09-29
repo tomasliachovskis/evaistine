@@ -137,7 +137,7 @@ class MergeDuplicateProductsCommandTest extends TestCase
 
         [$flyerDiscount, $webDiscount] = Discount::withoutEvents(fn () => [
             Discount::create($offer + ['product_id' => $flyer->id, 'product_url' => null, 'info' => '(2 rūšių)']),
-            Discount::create($offer + ['product_id' => $web->id, 'product_url' => 'https://rimi.lt/natali', 'info' => '1,36 €/kg']),
+            Discount::create($offer + ['product_id' => $web->id, 'product_url' => 'https://rimi.lt/natali', 'info' => null]),
         ]);
 
         // Stale rows from earlier merges: one pointing the web name at the
@@ -162,7 +162,9 @@ class MergeDuplicateProductsCommandTest extends TestCase
         $this->assertDatabaseHas('product_mapping', ['name' => $flyer->name, 'product_id' => $flyer->id]);
         $this->assertDatabaseHas('product_mapping', ['name' => 'Old web name', 'product_id' => $flyer->id]);
         $this->assertDatabaseMissing('product_mapping', ['name' => $web->name, 'product_id' => $web->id]);
-        $this->assertDatabaseHas('discounts', ['id' => $webDiscount->id, 'product_id' => $flyer->id]);
+        // The web offer is the one that stays visible; it picks up the
+        // flyer's "(2 rūšių)" the survivor's name no longer carries.
+        $this->assertDatabaseHas('discounts', ['id' => $webDiscount->id, 'product_id' => $flyer->id, 'info' => '(2 rūšių)']);
         // The leftover same-week flyer offer is dropped by
         // DuplicateDiscountRemover in FinalizeScrapedStoresJob (MySQL-only
         // SQL, not runnable on this sqlite schema).

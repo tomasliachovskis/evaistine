@@ -44,9 +44,23 @@ class ProductDuplicateMergeServiceTest extends TestCase
             'Kefyras NAMINIS, 2,5% rieb., 0.9 kg',
             $service->pickCrossSourceName('Kefyras ROKIŠKIO NAMINIS, 0.9 kg', 'Kefyras NAMINIS, 2,5% rieb., 0.9 kg')
         );
+    }
+
+    public function test_cross_source_name_drops_variant_count(): void
+    {
+        $service = new ProductDuplicateMergeService();
+
         $this->assertSame(
-            'Kreminis jogurtas PIENO ROJUS (2 rūš.), 150 g',
+            'Kavos pupelės HIMMEL, 1 kg',
+            $service->pickCrossSourceName('Kavos pupelės HIMMEL, 1 kg', 'Kavos pupelės HIMMEL (3 rūšių), 1 kg')
+        );
+        $this->assertSame(
+            'Kreminis jogurtas PIENO ROJUS, 150 g',
             $service->pickCrossSourceName('Kreminis jogurtas PIENO ROJUS, 150 g', 'Kreminis jogurtas PIENO ROJUS (2 rūš.), 150 g')
+        );
+        $this->assertSame(
+            'Želė DR. OETKER, 72 g',
+            $service->pickCrossSourceName('Želė DR. OETKER, 72 g', 'Želė DR. OETKER (įv. rūšių), 72 g')
         );
     }
 
