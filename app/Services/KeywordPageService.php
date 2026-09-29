@@ -27,8 +27,6 @@ class KeywordPageService
 
     private const MEILISEARCH_FETCH_BUFFER = 50;
 
-    private const STORE_COMPARISON_FETCH_LIMIT = 250;
-
     private const MIN_CHIP_OFFERS = 3;
 
     // Same 5 chains buildStoreKeywordVariants()/KeywordPageGptService already
@@ -144,9 +142,14 @@ class KeywordPageService
 
     public function refreshOfferCounts(KeywordPage $page): KeywordPage
     {
+        // Both columns hold the count the page actually lists. Meilisearch's
+        // raw total also counts hits exclude_terms/category drop, and that
+        // inflated number used to show on chips, home links and the page.
+        $displayed = $this->countDisplayedOffersForPage($page);
+
         $page->forceFill([
-            'matching_offers_count' => $this->countMatchingOffers($page),
-            'displayed_offers_count' => $this->countDisplayedOffersForPage($page),
+            'matching_offers_count' => $displayed,
+            'displayed_offers_count' => $displayed,
             'offers_counted_at' => now(),
         ])->save();
 
@@ -190,7 +193,7 @@ class KeywordPageService
 
     public function countMatchingOffersForPage(KeywordPage $page): int
     {
-        return $this->countMatchingOffers($page);
+        return $this->countDisplayedOffersForPage($page);
     }
 
 
@@ -207,14 +210,17 @@ class KeywordPageService
         // always renders (200, indexable): an empty-state notice plus links
         // to close keyword pages that do have offers right now
         // (alternative_pages), and it recovers on its own once offers return.
-        $matchingTotal = $this->countMatchingOffers($page);
-        $allDiscounts = $matchingTotal >= $page->min_active_offers
+        // The shown total is what the page lists after exclude_terms and
+        // category filtering, not Meilisearch's raw total.
+        $allDiscounts = $this->countMatchingOffers($page) > 0
             ? $this->collectMatchingDiscountsCollection($page)
             : collect();
-        $noOffers = $allDiscounts->isEmpty();
-        if ($noOffers) {
+        $matchingTotal = $allDiscounts->count();
+        if ($matchingTotal < $page->min_active_offers) {
+            $allDiscounts = collect();
             $matchingTotal = 0;
         }
+        $noOffers = $allDiscounts->isEmpty();
 
         // A filter (?store=, ?card=...) narrowing to nothing just renders an
         // empty grid — those URLs are noindex anyway, and a 404 here also
@@ -975,7 +981,7 @@ class KeywordPageService
     {
         $freshness = $this->freshnessService->build();
         $validity = $this->freshnessService->getCurrentWeekRange();
-        $storeComparison = $this->buildStoreComparisonForPage($page, $matchingTotal);
+        $storeComparison = $this->buildStoreComparisonForPage($page, $displayedDiscounts);
         $cheapestPrice = $storeComparison['summary_rows'][0]['min_price'] ?? null;
         // Real distinct store count (answer.store_count), not
         // count(summary_rows) — summary_rows/leading_deals are capped at 8
@@ -1289,10 +1295,8 @@ class KeywordPageService
      *
      * @return array{leading_deals: array, summary_rows: array, brand_summary: array, store_price_table: array, answer: ?array, latest_updated_at: mixed}
      */
-    private function buildStoreComparisonForPage(KeywordPage $page, int $matchingTotal, int $limit = 8): array
+    private function buildStoreComparisonForPage(KeywordPage $page, Collection $discounts, int $limit = 8): array
     {
-        $discounts = $this->collectMatchingDiscountsForComparison($page, $matchingTotal);
-
         if ($discounts->isEmpty()) {
             return ['leading_deals' => [], 'summary_rows' => [], 'brand_summary' => [], 'store_price_table' => [], 'answer' => null, 'latest_updated_at' => null];
         }
@@ -1493,73 +1497,6 @@ class KeywordPageService
 
         return mb_ucfirst($genitive) . ' akcijos: '
             . implode('; ', $parts) . '. Palyginkite ir rinkitės pigiausią variantą.';
-    }
-
-    private function collectMatchingDiscountsForComparison(KeywordPage $page, int $matchingTotal): Collection
-    {
-        $fetchLimit = min($matchingTotal, self::STORE_COMPARISON_FETCH_LIMIT);
-        if ($fetchLimit <= 0) {
-            return collect();
-        }
-
-        $query = $this->buildSearchQuery($page);
-        if ($query === '') {
-            return $this->fallbackCollectAllMatchingDiscounts($page, $fetchLimit);
-        }
-
-        try {
-            $results = $this->meilisearchService->search(
-                $query,
-                $this->buildMeilisearchFilters($this->resolveCategoryIds($page)),
-                [],
-                1,
-                $fetchLimit,
-            );
-        } catch (\Exception $e) {
-            \Log::warning('Keyword page store comparison Meilisearch search failed', [
-                'slug' => $page->slug,
-                'query' => $query,
-                'error' => $e->getMessage(),
-            ]);
-
-            return $this->fallbackCollectAllMatchingDiscounts($page, $fetchLimit);
-        }
-
-        $discountIds = collect($results['hits'] ?? [])
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->filter()
-            ->values()
-            ->all();
-
-        if (empty($discountIds)) {
-            return collect();
-        }
-
-        return Discount::query()
-            ->with(['product.category', 'store'])
-            ->whereIn('id', $discountIds)
-            ->get()
-            ->filter(fn (Discount $discount) => $this->passesKeywordFilters($discount, $page))
-            ->values();
-    }
-
-    private function fallbackCollectAllMatchingDiscounts(KeywordPage $page, int $limit): Collection
-    {
-        $categoryIds = $this->resolveCategoryIds($page);
-        $discountIds = $this->fallbackSearchDiscountIds($page, $categoryIds);
-
-        if (empty($discountIds)) {
-            return collect();
-        }
-
-        return Discount::query()
-            ->with(['product.category', 'store'])
-            ->whereIn('id', $discountIds)
-            ->get()
-            ->filter(fn (Discount $discount) => $this->passesKeywordFilters($discount, $page))
-            ->take($limit)
-            ->values();
     }
 
     private function buildRelatedPages(KeywordPage $page): array

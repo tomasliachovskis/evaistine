@@ -114,10 +114,13 @@ SKIP (skip: true) jei: tik parduotuvės pavadinimas (IKI akcija), lojalumas, mie
 Jei kurk puslapį:
 - intro_html: 1–2 natūralūs <p> paragrafai lietuviškai. Naudok secondary keywords, brands ir dalį store_keyword_variants natūraliai – BE keyword stuffing
 - tips: 2–4 patarimai (title, text)
-- search_terms: 8–15 Meilisearch termų (stiebai, variantai; be žodžio „akcija“)
+- search_terms: 4–10 Meilisearch termų. Paieška laisva (atleidžia rašybos klaidas, nukerpa galūnes, pagauna prekę jau per vieną žodį), todėl kiekvienas terminas turi reikšti TIK šio puslapio prekę:
+  - Siauram puslapiui NEDĖK bendro žodžio, kuris pagauna kitas rūšis: „kavos pupelės“ puslapyje ne „kava“ (pagautų maltą, tirpią kavą, kapsules), „kukurūzai“ puslapyje ne „kukurūzų“ (pagautų traškučius, spragėsius), „galvijų liežuviai“ puslapyje ne „galvijų“.
+  - Pirmas terminas – pati prekės frazė iš primary_keywords (pvz. „kavos pupelės“), toliau jos linksniai ir sinonimai („kava pupelėmis“). Brando frazės („lavazza pupelės“) – tik papildymas, ne vietoj jos; nesiaurink iki konkrečių modelių ar linijų.
+  - Tik prekės pavadinimo žodžiai, kaip jie būna parduotuvės prekės pavadinime (su lietuviškomis raidėmis, keli linksniai jei reikia). NEDĖK: parduotuvių pavadinimų („tirpi kava maxima“), kiekių („100g“), žodžių „kaina“, „pigiausi“, „receptai“, „akcija“, gretimų kitų prekių („pyragai“ puslapyje ne „tortai“, „keksiukai“).
 - category_slugs: tiksliai 1 iš available_category_slugs – pagrindinė kategorija, kurioje realiai parduodamas produktas (pvz. citrinos → vaisiai-ir-darzoves, NE gerimai-kava-arbata)
-- exclude_terms: netinkami match žodžiai. NIEKADA neįtrauk: akcija, akcijos, nuolaida, iki, maxima, lidl
-- brands: patvirtintas/papildytas brandų sąrašas iš candidate_brands
+- exclude_terms: 3–10 poeilučių (mažosiomis, lietuviškai), kurios išmeta prekes, pagaunamas search_terms, bet nesančias šia preke. Galvok, kas tipiškai pakliūva: tokio skonio kitos prekės (visa frazė „kavos skonio“, „su kava“ – niekada vien „skonio“ ar „su“), priedai ir aksesuarai („kapsulės“ kavos pupelių puslapyje, „šepetėliai“ dantų pastos puslapyje), kito gyvūno ėdalas („šunų“ kačių maisto puslapyje), užkandžiai iš to paties produkto („traškuč“, „užkand“, „spraginti“), paruošti patiekalai („salotos“, „sumuštinis“). Kai žodis kaitomas, rašyk kamieną („traškuč“, ne „traškučiai“). NEDĖK brandų, kurie gamina ir šią prekę (pvz. „rokiškio“ grietinėlės puslapyje), ir žodžių, kurie būna tinkamos prekės pavadinime (to paties produkto variantai tinka: tarkuotas Džiugas yra Džiugo sūris). NIEKADA neįtrauk: akcija, akcijos, nuolaida, iki, maxima, lidl, rimi, norfa
+- brands: tik tikri prekės ženklai, kurių VISOS prekės priklauso šiam puslapiui (jie tampa paieškos terminais ir pagauna bet kurią to brando prekę). Brandas, gaminantis ir kitas rūšis (Lavazza gamina ir maltą kavą, kapsules), į brands NEDEDAMAS – naudok jį tik frazėje su prekės žodžiu search_terms („lavazza pupelės“). Ne bendri žodžiai („Kava“, „Kapsulės“, „Club“). Siauram puslapiui dažniausiai – tuščias sąrašas
 - grammar_plural, grammar_genitive, grammar_dative – taisyklinga lietuvių kalba
 - slug: lowercase, lotyniškos raidės ir brūkšneliai
 
@@ -133,10 +136,10 @@ JSON formatas:
   "grammar_plural": "...",
   "grammar_genitive": "...",
   "grammar_dative": "...",
-  "brands": ["Friends", "Duplo"],
-  "search_terms": ["lego", "friends", "duplo"],
+  "brands": ["Lego"],
+  "search_terms": ["lego", "lego duplo", "lego technic"],
   "category_slugs": ["..."],
-  "exclude_terms": [],
+  "exclude_terms": ["dėžė lego", "suderinama su lego"],
   "intro_html": "<p>...</p>",
   "tips": [{"title": "...", "text": "..."}],
   "related_slugs": []

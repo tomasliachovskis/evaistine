@@ -1,0 +1,263 @@
+{
+ "mineralinis-vanduo": {
+  "drop": [
+   "rasa",
+   "neptūnas",
+   "birutė",
+   "druskininkų",
+   "vytautas",
+   "uniqa",
+   "tichė",
+   "borjomi",
+   "perrier",
+   "nabeghlavi",
+   "s.pellegrino",
+   "clever",
+   "kake make",
+   "cido"
+  ]
+ },
+ "saldainiai": {
+  "drop": [
+   "pergalė",
+   "laima",
+   "roshen",
+   "haribo",
+   "skittles",
+   "mamba",
+   "toffifee",
+   "fazer",
+   "raffaello",
+   "ferrero",
+   "bounty",
+   "snickers",
+   "twix",
+   "werther's original"
+  ]
+ },
+ "kumpis": {
+  "drop": [
+   "jautienos",
+   "kiaulienos",
+   "vištienos",
+   "kalakutienos",
+   "šaltai",
+   "vytintas",
+   "karštai"
+  ]
+ },
+ "skalbimo-priemones": {
+  "drop": [
+   "kapsulės",
+   "kaps.",
+   "gelis",
+   "minkštiklis",
+   "servetėlės",
+   "skalbiklis"
+  ]
+ },
+ "grietinele": {
+  "drop": [
+   "žemaitijos",
+   "rokiškio",
+   "žaloji",
+   "vilkyškių",
+   "auga",
+   "bitutė",
+   "varškei"
+  ],
+  "add": [
+   "grietinei"
+  ]
+ },
+ "anglys": {
+  "drop": [
+   "medienos"
+  ],
+  "add": [
+   "briketai"
+  ]
+ },
+ "dziugo-suris": {
+  "drop": [
+   "tarkuotas",
+   "tarkuotų",
+   "mišiniai",
+   "kamuoliukai"
+  ]
+ },
+ "higieniniai-iklotai": {
+  "drop": [
+   "invisible",
+   "goodnight",
+   "wing",
+   "multistyle",
+   "deo",
+   "ultranight"
+  ],
+  "add": [
+   "higieniniai paketai"
+  ]
+ },
+ "indaploviu-tabletes": {
+  "drop": [
+   "kapsulės"
+  ]
+ },
+ "kukuruzai": {
+  "drop": [
+   "chiki pop",
+   "mr.check",
+   "cheetos",
+   "doritos",
+   "santa maria",
+   "nacho",
+   "smash",
+   "gusto",
+   "billa"
+  ],
+  "add": [
+   "spraginti kukurūzai",
+   "lazdelės"
+  ]
+ },
+ "kuno-kremas": {
+  "drop": [
+   "pienelis",
+   "losjonas",
+   "priežiūros",
+   "priež.",
+   "sviestas",
+   "dušo"
+  ]
+ },
+ "saldyti-koldunai": {
+  "drop": [
+   "nowaco",
+   "hortex",
+   "sunrise",
+   "boujee",
+   "ristorante",
+   "mantinga",
+   "clever",
+   "harvest basket",
+   "farm frites",
+   "bonduelle"
+  ],
+  "add": [
+   "daržovėms"
+  ]
+ },
+ "sausainiai": {
+  "drop": [
+   "pergalė"
+  ],
+  "add": [
+   "šokoladas"
+  ]
+ },
+ "kremai-nuo-saules": {
+  "drop": [
+   "įdegį"
+  ]
+ },
+ "kecupas": {
+  "drop": [
+   "daumantų"
+  ]
+ },
+ "majonezas": {
+  "drop": [
+   "wowmama"
+  ],
+  "add": [
+   "majonezinis padažas"
+  ]
+ },
+ "ledinukai": {
+  "drop": [
+   "bazooka"
+  ]
+ },
+ "lesiai": {
+  "drop": [
+   "activus"
+  ]
+ },
+ "konservai-katems": {
+  "drop": [
+   "pedigree",
+   "animonda",
+   "my love"
+  ]
+ },
+ "duona-morta": {
+  "drop": [
+   "lietuvos kepėjas"
+  ]
+ },
+ "friskies": {
+  "drop": [
+   "šunims",
+   "šuniukų",
+   "šuniukui"
+  ]
+ },
+ "gourmet-gold": {
+  "drop": [
+   "mousse",
+   "vienetų"
+  ]
+ },
+ "kiaulienos-sprandine": {
+  "drop": [
+   "kubeliai",
+   "kepsniai"
+  ]
+ },
+ "sheba": {
+  "drop": [
+   "skanėstas",
+   "kreminiai skanėstai"
+  ]
+ },
+ "skustuvai": {
+  "drop": [
+   "skustuvo galvutės",
+   "galvutėms"
+  ]
+ },
+ "suris": {
+  "drop": [
+   "pipirai"
+  ],
+  "add": [
+   "vyšniniai"
+  ]
+ },
+ "kraikas": {
+  "drop": [
+   "mažų gyvūnų",
+   "graužikų"
+  ]
+ },
+ "dolce-gusto": {
+  "drop": [
+   "kakavos"
+  ]
+ },
+ "sausas-sunu-maistas": {
+  "drop": [
+   "sterilizuotų",
+   "sterilizuotoms"
+  ]
+ },
+ "cukrus": {
+  "drop": [
+   "arimex"
+  ],
+  "add": [
+   "mišinys"
+  ]
+ }
+}
