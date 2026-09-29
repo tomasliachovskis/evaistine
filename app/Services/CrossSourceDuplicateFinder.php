@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 // Finds the same product created twice for one store: once from a flyer
 // (Gemini extraction, discount has no product_url) and once from the store's
-// e-shop scraper (discount has a product_url). The two sources word the name
+// e-shop scraper (discount has a product_url, or — Norfa, whose scraper
+// collects no link — a product not flagged image_from_flyer). The two sources word the name
 // differently ("Šaldytos bulvių lazdelės NATALI, 1 kg" + info "(2 rūšių)" vs
 // "Šald.bulvių lazdelės NATALI (2 rūš.), 1 kg"), so name-only matching
 // (find_product_duplicates.sql) misses them. What they do share is the offer
@@ -94,7 +95,6 @@ class CrossSourceDuplicateFinder
             FROM discounts f
             JOIN discounts w
                 ON w.store_id = f.store_id
-                AND w.product_url IS NOT NULL
                 AND w.product_id <> f.product_id
                 AND w.discounted_price = f.discounted_price
                 AND (f.original_price IS NULL OR w.original_price IS NULL OR f.original_price = w.original_price)
@@ -105,6 +105,13 @@ class CrossSourceDuplicateFinder
             JOIN stores s ON s.id = f.store_id
             WHERE f.product_url IS NULL
                 AND f.discounted_price IS NOT NULL
+                -- Web side: an offer linking to the shop, or, for scrapers
+                -- that collect no product link (Norfa's cards have none), a
+                -- product that didn't come from a flyer paired with one that did.
+                AND (
+                    w.product_url IS NOT NULL
+                    OR (pf.image_from_flyer = 1 AND pw.image_from_flyer = 0)
+                )
         SQL);
     }
 
