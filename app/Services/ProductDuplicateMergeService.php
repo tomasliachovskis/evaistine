@@ -401,9 +401,21 @@ class ProductDuplicateMergeService
                 $this->mapName($base->name, $base->id);
             }
 
-            $this->renameBase($base, $this->pickCrossSourceName($flyer->name, $web->name), $dryRun);
+            // When both names carry the variant count, strip it from the
+            // name and keep it on the offer instead.
+            [$name, $variantCount] = $this->stripVariantCount($this->pickCrossSourceName($flyer->name, $web->name));
+            $this->renameBase($base, $name, $dryRun);
 
-            return $this->mergeDuplicateIntoBase($base, $duplicate, $dryRun);
+            $result = $this->mergeDuplicateIntoBase($base, $duplicate, $dryRun);
+
+            if (!$dryRun && $variantCount !== null) {
+                Discount::withoutEvents(fn () => Discount::query()
+                    ->where('product_id', $base->id)
+                    ->where(fn ($query) => $query->whereNull('info')->orWhere('info', ''))
+                    ->update(['info' => $variantCount]));
+            }
+
+            return $result;
         };
 
         return $dryRun ? $run() : DB::transaction($run);
@@ -422,6 +434,20 @@ class ProductDuplicateMergeService
         return $this->countNameAbbreviations($webName) > $this->countNameAbbreviations($flyerName)
             ? $flyerName
             : $webName;
+    }
+
+    /**
+     * @return array{0: string, 1: ?string} [name without the count, the count]
+     */
+    public function stripVariantCount(string $name): array
+    {
+        if (!preg_match('/\s*\(\s*((?:\d+|įv\.?|įvairių)\s*rūš[\p{L}.]*)\s*\)/iu', $name, $m)) {
+            return [$name, null];
+        }
+
+        $clean = trim(preg_replace('/\s+,/u', ',', str_replace($m[0], '', $name)));
+
+        return [$clean, $m[1]];
     }
 
     private function nameHasVariantCount(string $name): bool

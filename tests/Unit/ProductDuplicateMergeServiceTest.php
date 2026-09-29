@@ -81,4 +81,22 @@ class ProductDuplicateMergeServiceTest extends TestCase
             $service->pickCrossSourceName('Marinuoti šonkauliai BBQ medaus marinate, 1 kg', 'Marin. šonkauliai BBQ medaus marinate, 1 kg')
         );
     }
+
+    public function test_strip_variant_count_moves_it_out_of_the_name(): void
+    {
+        $service = new ProductDuplicateMergeService();
+
+        $this->assertSame(
+            ['Pjaustyta lašišų filė VIČI, 100 g', '2 rūšių'],
+            $service->stripVariantCount('Pjaustyta lašišų filė VIČI (2 rūšių), 100 g')
+        );
+        $this->assertSame(
+            ['Kepti žuvies kukuliai EDEGA, 320 g', '2 rūš.'],
+            $service->stripVariantCount('Kepti žuvies kukuliai EDEGA (2 rūš.), 320 g')
+        );
+        $this->assertSame(
+            ['Kavos pupelės HIMMEL, 1 kg', null],
+            $service->stripVariantCount('Kavos pupelės HIMMEL, 1 kg')
+        );
+    }
 }
