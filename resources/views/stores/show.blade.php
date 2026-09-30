@@ -29,11 +29,14 @@
 
         @if (!$cities->isEmpty())
             {{-- "Netoliese manęs" / nearest-store finder — real geolocation +
-                 distance against every location's own lat/lng (already
-                 loaded for the map below), not just a "near me" label with
-                 nothing behind it. Haversine done client-side, no API call. --}}
+                 distance against every location's own lat/lng, not just a
+                 "near me" label with nothing behind it. Locations come from
+                 the API (shared with the map below), not inlined here: the
+                 full address list in this page's HTML made Google treat
+                 every /parduotuves/{store}/{city} page as a duplicate of
+                 this one. --}}
             <div
-                x-data="nearestStoreFinder({{ $locations->map(fn ($l) => ['lat' => $l['lat'], 'lng' => $l['lng'], 'address' => $l['address'], 'city' => $l['city'], 'citySlug' => \Illuminate\Support\Str::slug($l['city'])])->values()->toJson() }})"
+                x-data="nearestStoreFinder(@js($locationsUrl))"
                 class="rounded-xl border border-gray-200 bg-white p-4"
             >
                 <template x-if="!result && !loading && !error">
@@ -97,7 +100,7 @@
                          Leaflet sets it. --}}
                     <div class="order-1 isolate h-[400px] lg:order-2 lg:h-auto">
                         <div
-                            x-data="storeLocatorMap({{ $locations->map(fn ($l) => ['lat' => $l['lat'], 'lng' => $l['lng'], 'address' => $l['address'], 'city' => $l['city']])->values()->toJson() }})"
+                            x-data="storeLocatorMap(@js($locationsUrl))"
                             class="h-full min-h-[400px] w-full rounded-xl border border-gray-200"
                         ></div>
                     </div>

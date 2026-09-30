@@ -239,9 +239,29 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    Alpine.data('storeLocatorMap', (locations) => ({
+    // `source` is either the locations array itself (city pages — their
+    // addresses are already on the page) or an /api/store-locations URL
+    // (chain pages — fetched client-side so the chain page's HTML doesn't
+    // carry every city's full address list, which made Google treat each
+    // city page as a duplicate of it; /api/ is disallowed in robots.txt).
+    const storeLocationRequests = {};
+    function loadStoreLocations(source) {
+        if (Array.isArray(source)) {
+            return Promise.resolve(source);
+        }
+
+        storeLocationRequests[source] ??= fetch(source, { headers: { Accept: 'application/json' } })
+            .then((response) => (response.ok ? response.json() : { locations: [] }))
+            .then((payload) => (payload.locations || []).map((l) => ({ ...l, citySlug: l.city_slug })))
+            .catch(() => []);
+
+        return storeLocationRequests[source];
+    }
+
+    Alpine.data('storeLocatorMap', (source) => ({
         map: null,
-        init() {
+        async init() {
+            const locations = await loadStoreLocations(source);
             if (!locations.length) {
                 return;
             }
@@ -266,10 +286,10 @@ document.addEventListener('alpine:init', () => {
     }));
 
     // "Rasti parduotuvę netoliese manęs" — real browser geolocation +
-    // client-side haversine against every location's own lat/lng (no API
-    // call, no server round-trip). `locations` is
-    // [{lat, lng, address, city, citySlug}].
-    Alpine.data('nearestStoreFinder', (locations) => ({
+    // client-side haversine against every location's own lat/lng. `source`
+    // is [{lat, lng, address, city, citySlug}] or a URL returning them (see
+    // loadStoreLocations above).
+    Alpine.data('nearestStoreFinder', (source) => ({
         loading: false,
         error: null,
         result: null,
@@ -283,7 +303,8 @@ document.addEventListener('alpine:init', () => {
             this.error = null;
 
             navigator.geolocation.getCurrentPosition(
-                (position) => {
+                async (position) => {
+                    const locations = await loadStoreLocations(source);
                     this.loading = false;
                     const { latitude, longitude } = position.coords;
                     const withCoords = locations.filter((l) => l.lat && l.lng);

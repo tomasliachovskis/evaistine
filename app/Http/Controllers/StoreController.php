@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Api\ProductController;
+use App\Models\Discount;
 use App\Models\Store;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
 use App\Support\FaqSchema;
 use App\Support\ItemListSchema;
+use App\Support\OpeningHours;
 use App\Support\StoreLocationsSchema;
 use Illuminate\Support\Str;
 
@@ -83,7 +85,7 @@ class StoreController extends Controller
         return view('stores.show', [
             'store' => $store,
             'cities' => $cities,
-            'locations' => $locations,
+            'locationsUrl' => "/api/store-locations/{$slug}",
             'totalCount' => $locations->count(),
             'canonical' => CanonicalUrl::build($path),
             'robots' => CanonicalUrl::robotsMeta($path),
@@ -138,9 +140,15 @@ class StoreController extends Controller
         return view('stores.city', [
             'store' => $store,
             'cityName' => $cityName,
-            'locations' => $cityLocations,
-            'dayLabels' => self::DAY_LABELS,
-            'todayKey' => $todayKey,
+            'locations' => $cityLocations->map(fn (array $location) => [
+                ...$location,
+                'hours_summary' => OpeningHours::summary((array) ($location['hours'] ?? [])),
+            ]),
+            'hoursFacts' => OpeningHours::cityFacts($cityLocations),
+            // Same rule as the store toolbar: link deals/leaflets only when
+            // the store currently has any.
+            'offersCount' => $store->showsDiscountsPage() ? Discount::where('store_id', $store->id)->count() : 0,
+            'leafletsCount' => $store->flyers()->ready()->currentlyValid()->count(),
             'title' => $title,
             'description' => $description,
             'canonical' => CanonicalUrl::build($path),

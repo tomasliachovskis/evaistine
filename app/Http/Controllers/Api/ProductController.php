@@ -586,14 +586,18 @@ class ProductController extends Controller
             return response()->json(['error' => 'Store not found'], 404);
         }
 
-        $cacheKey = "store_locations_{$store->id}_".CacheVersion::suffix(['discounts']);
+        $cacheKey = "store_locations_v2_{$store->id}_".CacheVersion::suffix(['discounts']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($store) {
+            // city_slug: the chain page's map and nearest-store finder load
+            // this endpoint client-side and link each result to its
+            // /parduotuves/{store}/{city} page.
             $locations = \App\Models\StoreLocation::where('store_id', $store->id)
                 ->active()
                 ->orderBy('city')
                 ->orderBy('address')
-                ->get(['city', 'address', 'slug', 'lat', 'lng', 'phone', 'hours']);
+                ->get(['city', 'address', 'slug', 'lat', 'lng', 'phone', 'hours'])
+                ->map(fn ($location) => [...$location->toArray(), 'city_slug' => Str::slug($location->city)]);
 
             return [
                 'store' => ['name' => $store->name, 'slug' => $store->slug],
