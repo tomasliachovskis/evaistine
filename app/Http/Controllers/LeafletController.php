@@ -61,6 +61,13 @@ class LeafletController extends Controller
         try {
             $response = $api->getStoreLeaflet($store, $flyerSlug);
         } catch (ModelNotFoundException $e) {
+            // An expired/deactivated flyer's URL stays indexed and linked
+            // for weeks — send it to the store's current leaflets instead
+            // of a 404 (Search Console listed these as 404s).
+            if (Store::where('slug', $store)->exists()) {
+                return redirect("/leidinys/{$store}", 301);
+            }
+
             abort(404);
         }
 

@@ -34,6 +34,12 @@ use Illuminate\View\View;
 // query/formatting logic the old JSON API used.
 class AkcijosController extends Controller
 {
+    // Retired category slug => the category its listing now redirects to
+    // (same target as the route-level redirects in routes/web.php).
+    private const LEGACY_CATEGORY_SLUGS = [
+        'alkoholiniai-ir-nealkoholiniai-gerimai' => 'nealkoholiniai-gerimai',
+    ];
+
     public function index(Request $request, ProductController $api, HomePageMetaService $metaService)
     {
         // Verified against production (not the invented category-tile grid
@@ -344,6 +350,13 @@ class AkcijosController extends Controller
             // category listing rather than a bare 404 — preserves link equity.
             if (Category::where('slug', $categorySlug)->exists()) {
                 return redirect("/akcijos/{$categorySlug}", 301);
+            }
+
+            // A removed product under a category slug that no longer exists
+            // (e.g. the 2026-09-08 drinks split) has nothing to resolve its
+            // real category from — Search Console listed these as 404s.
+            if (isset(self::LEGACY_CATEGORY_SLUGS[$categorySlug])) {
+                return redirect('/akcijos/'.self::LEGACY_CATEGORY_SLUGS[$categorySlug], 301);
             }
 
             abort(404);

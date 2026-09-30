@@ -97,6 +97,27 @@ class RedirectsTest extends TestCase
             ->assertRedirect("/akcijos/{$seed['category']->slug}");
     }
 
+    public function test_missing_product_under_retired_category_redirects_to_its_successor(): void
+    {
+        $this->get('/akcijos/alkoholiniai-ir-nealkoholiniai-gerimai/seo-istrinta-preke')
+            ->assertStatus(301)
+            ->assertRedirect('/akcijos/nealkoholiniai-gerimai');
+    }
+
+    public function test_missing_flyer_of_a_known_store_redirects_to_its_leaflet_hub(): void
+    {
+        $store = Store::factory()->create(['slug' => 'seo-leidiniu-parduotuve']);
+
+        $this->get("/leidinys/{$store->slug}/seo-pasibaiges-leidinys")
+            ->assertStatus(301)
+            ->assertRedirect("/leidinys/{$store->slug}");
+    }
+
+    public function test_flyer_of_unknown_store_is_404(): void
+    {
+        $this->get('/leidinys/seo-nera-parduotuves/seo-leidinys')->assertNotFound();
+    }
+
     public function test_missing_product_under_unknown_category_is_404(): void
     {
         $this->get('/akcijos/seo-nera-kategorijos/seo-nera-prekes')->assertNotFound();

@@ -278,14 +278,14 @@ class StructuredDataTest extends TestCase
         $this->assertSame(['Sunday'], $location['openingHoursSpecification'][1]['dayOfWeek']);
     }
 
-    public function test_inactive_or_unprocessed_leaflet_is_404(): void
+    public function test_inactive_or_unprocessed_leaflet_redirects_to_store_hub(): void
     {
         ['store' => $store] = $this->seedLeaflet();
         $this->createFlyer($store, 'seo-isjungtas', now()->subDay(), now()->addWeek(), ['is_active' => false]);
         $this->createFlyer($store, 'seo-neapdorotas', now()->subDay(), now()->addWeek(), ['processing_status' => StoreFlyer::STATUS_PENDING]);
 
-        $this->get("/leidinys/{$store->slug}/seo-isjungtas")->assertNotFound();
-        $this->get("/leidinys/{$store->slug}/seo-neapdorotas")->assertNotFound();
+        $this->get("/leidinys/{$store->slug}/seo-isjungtas")->assertStatus(301)->assertRedirect("/leidinys/{$store->slug}");
+        $this->get("/leidinys/{$store->slug}/seo-neapdorotas")->assertStatus(301)->assertRedirect("/leidinys/{$store->slug}");
     }
 
     public function test_homepage_has_organization_and_site_search(): void
