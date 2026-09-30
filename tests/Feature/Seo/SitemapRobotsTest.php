@@ -36,6 +36,7 @@ class SitemapRobotsTest extends TestCase
         $this->assertStringContainsString('Sitemap: https://superakcijos.lt/product-sitemap/1', $body);
         $this->assertStringContainsString('Disallow: /akcijos/paieska', $body);
         $this->assertStringContainsString('Disallow: /api/', $body);
+        $this->assertStringContainsString('Disallow: /auth/', $body);
 
         // The first group is the one every real search engine falls into —
         // a blanket "Disallow: /" there would deindex the whole site.

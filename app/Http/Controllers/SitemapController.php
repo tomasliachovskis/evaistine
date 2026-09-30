@@ -40,6 +40,7 @@ class SitemapController extends Controller
             'User-agent: *',
             'Disallow: /api/',
             'Disallow: /private/',
+            'Disallow: /auth/',
             // Previously allowed + noindex-meta'd instead of blocked here, so
             // Googlebot would actually crawl the page and see the noindex tag
             // rather than showing "Indexed, though blocked by robots.txt".

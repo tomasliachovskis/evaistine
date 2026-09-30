@@ -7,6 +7,7 @@ use App\Mail\MagicLinkMail;
 use App\Models\MagicLoginLink;
 use App\Models\ProductFavorite;
 use App\Models\User;
+use GuzzleHttp\Exception\ClientException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 
 // Session-based auth for the Blade/Livewire frontend, replacing the old
 // Sanctum-token + NextAuth-JWT flow that Api\AuthController still serves to
@@ -156,7 +158,23 @@ class AuthController extends Controller
 
     public function handleProviderCallback(Request $request, string $provider): RedirectResponse
     {
-        $socialUser = Socialite::driver($provider)->user();
+        // No `code` means the provider isn't handing back a login: the user
+        // cancelled on the consent screen (`?error=access_denied`) or a bot
+        // opened the bare URL — Socialite threw a 500 on both (Search
+        // Console listed /auth/google/callback as a server error). A stale
+        // state or an already-used/expired code (back button, double
+        // submit) throws too; all of these just go back to the login modal.
+        if (! $request->filled('code')) {
+            return redirect('/?login=1');
+        }
+
+        try {
+            $socialUser = Socialite::driver($provider)->user();
+        } catch (InvalidStateException|ClientException $e) {
+            report($e);
+
+            return redirect('/?login=1');
+        }
 
         // Match by provider id first (returning OAuth user), then fall back
         // to email — this is how the old NextAuth bridge matched accounts
