@@ -128,7 +128,7 @@
             data-sticky-filter-bar
             x-data="{ allStoresOpen: false, sortOpen: false }"
             @keydown.escape.window="allStoresOpen = false; sortOpen = false"
-            class="sticky top-[calc(var(--header-h)+env(safe-area-inset-top,0px))] z-[60] flex items-center gap-2 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-1 min-h-14 sm:px-[20px]"
+            class="sticky top-[calc(var(--header-h)+env(safe-area-inset-top,0px))] z-[60] flex items-center gap-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-2 py-1 min-h-14 sm:gap-2 sm:px-[20px]"
         >
             <nav aria-label="Parduotuvės" class="scroll-cards-x flex min-w-0 flex-1 flex-nowrap items-center gap-1 max-sm:hidden">
                 @foreach ($topStoreChips as $chip)
@@ -156,10 +156,10 @@
                 data-ga-event="filter_select"
                 data-ga-item="store:all"
                 data-ga-source="leidiniai_chip_bar"
-                class="inline-flex min-h-12 shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]"
+                class="inline-flex min-h-12 min-w-0 shrink cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl px-2 text-base font-semibold text-gray-900 hover:bg-[#dedede] sm:shrink-0 sm:px-3"
             >
                 <x-app-icon name="store" class="size-5 shrink-0" />
-                <span>Visos parduotuvės</span>
+                <span class="min-w-0 truncate"><span class="sm:hidden">Parduotuvės</span><span class="hidden sm:inline">Visos parduotuvės</span></span>
                 <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $storeChips->count() }}</span>
                 <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="allStoresOpen ? 'rotate-180' : ''" />
             </button>
@@ -194,10 +194,10 @@
             </template>
 
             <div class="relative ml-auto shrink-0" @click.outside="sortOpen = false">
-                <button type="button" @click="sortOpen = !sortOpen" class="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen" aria-label="Rūšiuoti">
+                <button type="button" @click="sortOpen = !sortOpen" class="inline-flex min-h-12 min-w-12 cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-semibold text-gray-900 hover:bg-[#dedede] sm:px-3" aria-haspopup="listbox" :aria-expanded="sortOpen" aria-label="Rūšiuoti">
                     <x-app-icon name="arrow-down-up" class="size-5 shrink-0" />
                     <span class="hidden truncate sm:inline">{{ $leafletOrderOptions[$leafletOrder] ?? 'Populiariausi' }}</span>
-                    <x-app-icon name="chevron-down" class="size-5 shrink-0 opacity-70" />
+                    <x-app-icon name="chevron-down" class="hidden size-5 shrink-0 opacity-70 sm:block" />
                 </button>
                 <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
                     @foreach ($leafletOrderOptions as $value => $label)
