@@ -3,6 +3,7 @@
     $pages = $listingMeta['pages'] ?? [];
     $storeName = $listingMeta['store_name'] ?? $storeSlug;
     $otherLeaflets = collect($listingMeta['leaflets'] ?? [])->filter(fn ($l) => ($l['slug'] ?? null) !== $flyer['slug'])->values();
+    $leafletEnded = ! empty($flyer['valid_to']) && \Illuminate\Support\Carbon::parse($flyer['valid_to'])->endOfDay()->isPast();
     // In words ("rugsėjo 8–14 d."), same as components/leaflet-card.blade.php.
     $dateRange = ($flyer['valid_from'] ?? null) && ($flyer['valid_to'] ?? null)
         ? \App\Support\LithuanianDate::range(\Illuminate\Support\Carbon::parse($flyer['valid_from']), \Illuminate\Support\Carbon::parse($flyer['valid_to']))
@@ -182,6 +183,19 @@
         >
             @if (!empty($pages))
                 <div class="order-1 min-w-0 lg:order-2">
+                    {{-- Phones: the title row sits under the viewer, so say
+                         whose leaflet this is and until when right above it.
+                         Otherwise an older reader lands on a bare page image
+                         without knowing if it's still valid. --}}
+                    <div class="mb-2 flex min-h-12 items-center gap-3 lg:hidden">
+                        <x-store-logo :slug="$storeSlug" :name="$storeName" size="sm" class="shrink-0" />
+                        <span class="h-6 w-px shrink-0 bg-gray-300"></span>
+                        @if ($dateRange)
+                            <span class="min-w-0 text-base leading-snug {{ $leafletEnded ? 'font-semibold text-amber-800' : 'text-gray-700' }}">{{ $leafletEnded ? 'Galiojo' : 'Galioja' }} {{ $dateRange }}</span>
+                        @else
+                            <span class="min-w-0 text-base font-semibold leading-snug text-gray-900">{{ $flyer['title'] }}</span>
+                        @endif
+                    </div>
                     {{-- Instruction, search and filters only when this
                          leaflet has clickable products. --}}
                     @if ($betaConfig && ! empty($betaConfig['hotspots']))
@@ -340,7 +354,7 @@
                     </nav>
                     <h1 class="mt-2 text-xl font-bold leading-tight">{{ $flyer['title'] }}</h1>
                     @if ($dateRange)
-                        <p class="mt-1 {{ $betaConfig ? 'text-base' : 'text-sm' }} text-gray-600">{{ $dateRange }}</p>
+                        <p class="mt-1 {{ $betaConfig ? 'text-base' : 'text-sm' }} {{ $leafletEnded ? 'font-semibold text-amber-800' : 'text-gray-600' }}">{{ $leafletEnded ? 'Galiojo' : 'Galioja' }} {{ $dateRange }}</p>
                     @endif
                 </div>
 
