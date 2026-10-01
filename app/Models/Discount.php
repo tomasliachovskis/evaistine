@@ -17,6 +17,7 @@ class Discount extends Model
         'store_id',
         'store_flyer_id',
         'flyer_page',
+        'flyer_box',
         'original_price',
         'discounted_price',
         'discount_percent',
@@ -42,6 +43,7 @@ class Discount extends Model
         'start_at' => 'datetime',
         'unit_price' => 'float',
         'unit_price_estimated' => 'boolean',
+        'flyer_box' => 'array',
     ];
 
     protected static function booted()

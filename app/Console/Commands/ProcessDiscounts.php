@@ -416,17 +416,19 @@ class ProcessDiscounts extends Command
             // e-shop scraper. Without this the flyer row was simply dropped,
             // so the flyer page listed only the few offers the e-shop
             // doesn't carry. Link the existing discount to this flyer
-            // instead; one already linked to another flyer keeps that one.
+            // instead (re-running a flyer refreshes its page and box); one
+            // already linked to another flyer keeps that one.
             if ($tempDiscount->store_flyer_id !== null) {
                 Discount::query()
                     ->where('product_id', $product->id)
                     ->where('store_id', $store->id)
                     ->where('start_at', $startAt)
                     ->where('end_at', $endAt)
-                    ->whereNull('store_flyer_id')
+                    ->where(fn ($q) => $q->whereNull('store_flyer_id')->orWhere('store_flyer_id', $tempDiscount->store_flyer_id))
                     ->update([
                         'store_flyer_id' => $tempDiscount->store_flyer_id,
                         'flyer_page' => $tempDiscount->flyer_page,
+                        'flyer_box' => $this->flyerBoxJson($tempDiscount),
                     ]);
             }
 
@@ -453,6 +455,7 @@ class ProcessDiscounts extends Command
                     'end_at' => $endAt,
                     'store_flyer_id' => $tempDiscount->store_flyer_id,
                     'flyer_page' => $sameOffer->store_flyer_id === null ? $tempDiscount->flyer_page : $sameOffer->flyer_page,
+                    'flyer_box' => $sameOffer->store_flyer_id === null ? $this->flyerBox($tempDiscount) : $sameOffer->flyer_box,
                 ]);
                 $this->markDiscountExists($product->id, $store->id, $startAt, $endAt);
                 $this->touchedStoreIds[$store->id] = true;
@@ -481,6 +484,7 @@ class ProcessDiscounts extends Command
                 'store_id' => $store->id,
                 'store_flyer_id' => $tempDiscount->store_flyer_id,
                 'flyer_page' => $tempDiscount->flyer_page,
+                'flyer_box' => $this->flyerBox($tempDiscount),
                 'product_url' => $tempDiscount->product_url,
                 'original_price' => $normalizedOriginalPrice,
                 'discounted_price' => $normalizedDiscountedPrice,
@@ -658,6 +662,33 @@ class ProcessDiscounts extends Command
         }
 
         return $product;
+    }
+
+    /**
+     * The temp row's Gemini box ([ymin, xmin, ymax, xmax], 0-1000) when it
+     * is a valid one, for discounts.flyer_box.
+     *
+     * @return array<int>|null
+     */
+    private function flyerBox(DiscountTemp $tempDiscount): ?array
+    {
+        $box = $tempDiscount->box ? json_decode($tempDiscount->box, true) : null;
+
+        if (! is_array($box) || count($box) !== 4 || array_filter($box, fn ($v) => ! is_numeric($v)) !== []) {
+            return null;
+        }
+
+        [$ymin, $xmin, $ymax, $xmax] = array_map('intval', $box);
+
+        return $ymax > $ymin && $xmax > $xmin ? [$ymin, $xmin, $ymax, $xmax] : null;
+    }
+
+    // flyerBox() for a query-builder update(), which skips model casts.
+    private function flyerBoxJson(DiscountTemp $tempDiscount): ?string
+    {
+        $box = $this->flyerBox($tempDiscount);
+
+        return $box ? json_encode($box) : null;
     }
 
     private function discountExists(int $productId, int $storeId, ?string $startAt, ?string $endAt): bool

@@ -1608,6 +1608,7 @@ class ProductController extends Controller
             // matched by the backfill) go last. Capped since some flyers
             // hold 300+.
             $flyerDiscounts = $this->flyerOffersQuery([$flyer->id])
+                ->with('product.discountHistories')
                 ->orderByRaw('flyer_page IS NULL')
                 ->orderBy('flyer_page')
                 ->orderBy('id')
@@ -1615,7 +1616,13 @@ class ProductController extends Controller
             $flyerOffers = $flyerDiscounts
                 ->unique('product_id')
                 ->take(self::FLYER_OFFERS_LIMIT)
-                ->map(fn ($discount) => $this->formatter->formatListDiscount($discount) + ['flyer_page' => $discount->flyer_page])
+                ->map(fn ($discount) => $this->formatter->formatListDiscount($discount) + [
+                    'flyer_page' => $discount->flyer_page,
+                    // [ymin, xmin, ymax, xmax] 0-1000: the clickable zone
+                    // for this offer on its flyer page.
+                    'flyer_box' => $discount->flyer_box,
+                    'deal_signal' => $this->flyerOfferDealSignal($discount),
+                ])
                 ->values()
                 ->all();
             $flyerOffersTotal = $flyerDiscounts->unique('product_id')->count();
@@ -1990,6 +1997,22 @@ class ProductController extends Controller
     // ranked like the "Geriausi pasiūlymai" pool (deal_score), not by raw
     // percent, which surfaced books and household goods. Falls back to every
     // category for a flyer with no food offers (Pepco, Jysk...).
+    // "Gera kaina!" style signal for a flyer hotspot card, only when the
+    // product has real price history: with none, the current price alone
+    // would always read as "one of the lowest".
+    private function flyerOfferDealSignal(Discount $discount): ?array
+    {
+        $history = $discount->product?->discountHistories
+            ?->map(fn ($h) => ['discounted_price' => (float) $h->discounted_price])
+            ->all() ?? [];
+
+        if ($history === [] || $discount->discounted_price <= 0) {
+            return null;
+        }
+
+        return \App\Support\ProductPageMeta::priceDealSignal($history, (float) $discount->discounted_price);
+    }
+
     private function topFlyerDiscounts($discounts, int $limit = 3)
     {
         $priced = $discounts->filter(fn ($d) => $d->discounted_price > 0 && $d->discount_percent > 0);
@@ -2364,7 +2387,7 @@ class ProductController extends Controller
     // "prekės" entirely), so this is a small curated map instead. Categories
     // not listed here either already have a comma (handled by the fallback
     // explode(',', ...) below) or are already short enough as-is.
-    private const SHORT_CATEGORY_LABELS = [
+    public const SHORT_CATEGORY_LABELS = [
         'Pieno produktai ir kiaušiniai' => 'Pieno produktai',
         'Šaldytas maistas ir ledai' => 'Šaldyti produktai',
         'Vaikų ir kūdikių prekės' => 'Vaikų prekės',

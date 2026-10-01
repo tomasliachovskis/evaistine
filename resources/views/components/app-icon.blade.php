@@ -68,6 +68,22 @@
             <path d="M18 6 6 18" />
             <path d="m6 6 12 12" />
             @break
+        @case('plus')
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
+            @break
+        @case('printer')
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+            <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
+            <rect x="6" y="14" width="12" height="8" rx="1" />
+            @break
+        @case('share-2')
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" />
+            <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" />
+            @break
         @case('check')
             <path d="M20 6 9 17l-5-5" />
             @break

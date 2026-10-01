@@ -28,22 +28,10 @@
 
     // compareStores (leaflet pages): with the logos hidden, say instead
     // whether this store's price is the cheapest or another store sells it
-    // for less. Only offers with a real price count.
-    $priceComparison = null;
-    if ($compareStores && $contextStoreSlug && $discountPrice > 0) {
-        $otherOffers = collect($deal['offers'] ?? [])
-            ->filter(fn ($o) => ($o['store']['slug'] ?? null) !== $contextStoreSlug && (float) ($o['discounted_price'] ?? 0) > 0)
-            ->sortBy('discounted_price');
-        $cheapestOther = $otherOffers->first();
-
-        if ($cheapestOther && (float) $cheapestOther['discounted_price'] < $discountPrice - 0.005) {
-            $priceComparison = ['cheapest' => false, 'label' => $cheapestOther['store']['name'] . ' pigiau – ' . $euro($cheapestOther['discounted_price'])];
-        } elseif ($cheapestOther) {
-            $storeCount = $otherOffers->unique(fn ($o) => $o['store']['slug'])->count() + 1;
-            $storeWord = $storeCount % 10 === 1 && $storeCount % 100 !== 11 ? 'parduotuvės' : 'parduotuvių';
-            $priceComparison = ['cheapest' => true, 'label' => "Pigiausia iš {$storeCount} {$storeWord}"];
-        }
-    }
+    // for less.
+    $priceComparison = $compareStores && $contextStoreSlug
+        ? \App\Support\PriceComparison::forDeal($deal, $contextStoreSlug)
+        : null;
 
     // Featured (e.g. price-compare-card's "Gera kaina" match) reuses the
     // site's one existing accent yellow (#ffdb4d, already the discount-%

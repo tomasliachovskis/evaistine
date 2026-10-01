@@ -41,6 +41,10 @@
         @if ($flyerOffersSchema)
             <script type="application/ld+json">{!! json_encode($flyerOffersSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @endif
+        @if ($betaConfig)
+            <meta name="robots" content="noindex, nofollow">
+            @include('leaflets.partials.beta-script')
+        @endif
     @endpush
 
     <main class="base-container pb-6 pt-3 sm:pb-8 sm:pt-4">
@@ -62,6 +66,7 @@
             class="flex flex-col gap-6"
             @if (!empty($pages))
                 x-data="{
+                    @if ($betaConfig) ...window.leafletBeta(@js($betaConfig)), @endif
                     currentPage: 1, totalPages: {{ count($pages) }}, fullscreen: false, touchStartX: null,
                     viewerHeight: null,
                     // Pages beyond the first two are loading='lazy' and
@@ -120,6 +125,7 @@
                             });
                         });
                         window.addEventListener('resize', () => this.sizeViewer());
+                        if (this.beta) this.betaInit();
                         // Pseudo-fullscreen (see toggleFullscreen) doesn't get
                         // the browser's own scroll lock, so lock the page
                         // behind the fixed overlay ourselves.
@@ -166,6 +172,48 @@
         >
             @if (!empty($pages))
                 <div class="order-1 min-w-0 lg:order-2">
+                    @if ($betaConfig)
+                        <div class="mb-3 flex flex-col gap-2">
+                            <div x-show="showHint" x-cloak class="flex items-start gap-2 rounded-lg bg-green/10 px-3 py-2 text-sm text-dark-green">
+                                <x-app-icon name="info" class="mt-0.5 size-4 shrink-0" />
+                                <p class="min-w-0 flex-1"><span class="font-bold">Naujiena:</span> spauskite ant prekės leidinyje – pamatysite kainas kitose parduotuvėse ir galėsite ją įsidėti į pirkinių sąrašą.</p>
+                                <button type="button" @click="dismissHint()" aria-label="Uždaryti" class="shrink-0 text-dark-green/70 hover:text-dark-green"><x-app-icon name="x" class="size-4" /></button>
+                            </div>
+                            <div class="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                                <label class="relative block shrink-0 sm:w-64">
+                                    <x-app-icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="search"
+                                        x-model="query"
+                                        @input.debounce.250ms="onSearch()"
+                                        placeholder="Ieškoti leidinyje, pvz. sviestas"
+                                        class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-green focus:outline-none"
+                                    >
+                                </label>
+                                <div class="scroll-cards-x -my-2 flex min-w-0 gap-1.5">
+                                    <template x-for="lens in lenses" :key="lens.key">
+                                        <button
+                                            type="button"
+                                            @click="setLens(lens.key)"
+                                            class="shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium transition-colors"
+                                            :class="activeLens === lens.key ? 'border-green bg-green text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-green/40'"
+                                        >
+                                            <span x-text="lens.label"></span>
+                                            <span class="ml-0.5 opacity-70" x-text="lens.count"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                            <div x-show="filtering()" x-cloak class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600">
+                                <span x-show="matchCount() > 0"><span class="font-bold text-gray-900" x-text="matchCount()"></span> prekės, <span x-text="matchPages().length"></span> psl.</span>
+                                <span x-show="matchCount() === 0">Nieko nerasta šiame leidinyje.</span>
+                                <button type="button" x-show="matchPages().length > 1" @click="gotoNextMatch()" class="section-link">
+                                    Kitas puslapis su atitikmenimis <x-app-icon name="chevron-right" class="size-3.5" />
+                                </button>
+                                <button type="button" @click="activeLens = null; query = ''" class="text-sm font-medium text-gray-500 hover:text-gray-900">Išvalyti</button>
+                            </div>
+                        </div>
+                    @endif
                     <div
                         x-ref="viewerFrame"
                         class="relative flex h-[75vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
@@ -174,6 +222,7 @@
                              wins over 'fixed' in the compiled CSS order, so the
                              pseudo-fullscreen overlay never left the page flow. --}}
                         :class="fullscreen && 'fixed! inset-0 z-[9999] rounded-none! border-none! bg-black/95! p-4'"
+                        @if ($betaConfig) @click="selectedId = null" @endif
                         @touchstart="touchStartX = $event.touches[0].clientX"
                         @touchend="
                             if (touchStartX === null) return;
@@ -185,19 +234,68 @@
                             touchStartX = null;
                         "
                     >
+                        @if ($betaConfig)
+                            {{-- Each page in a wrapper with an overlay sized to
+                                 the image's real rendered rect (measure()),
+                                 holding one clickable zone per product. --}}
+                            @foreach ($pages as $page)
+                                @php $pageNumber = $page['page_number']; @endphp
+                                <div
+                                    x-show="isShown({{ $pageNumber }})"
+                                    x-cloak
+                                    data-page-wrap="{{ $pageNumber }}"
+                                    class="relative h-full min-w-0"
+                                    :class="spread().length > 1 ? 'w-1/2' : 'w-full'"
+                                >
+                                    <img
+                                        src="{{ $page['image_url'] }}"
+                                        alt="{{ $flyer['title'] }} – {{ $pageNumber }} puslapis{{ $pageProductNames->has($pageNumber) ? ': ' . $pageProductNames[$pageNumber] : '' }}"
+                                        class="block h-full w-full object-contain"
+                                        :class="{ 'object-right': pageAlign({{ $pageNumber }}) === 'right', 'object-left': pageAlign({{ $pageNumber }}) === 'left' }"
+                                        loading="{{ $pageNumber <= 3 ? 'eager' : 'lazy' }}"
+                                        @load="loadedPages[{{ $pageNumber }}] = true{{ $pageNumber === 1 ? '; portrait = $el.naturalHeight >= $el.naturalWidth' : '' }}; $nextTick(() => measure())"
+                                        x-on:error="loadedPages[{{ $pageNumber }}] = true"
+                                    >
+                                    <div class="absolute" :style="overlayStyle({{ $pageNumber }})">
+                                        <template x-for="h in hotspotsOn({{ $pageNumber }})" :key="h.id">
+                                            <button
+                                                type="button"
+                                                class="absolute rounded-md transition-[box-shadow,background-color] duration-150"
+                                                :style="boxStyle(h)"
+                                                :class="hotspotClass(h)"
+                                                :aria-label="h.name + ', ' + euro(h.price)"
+                                                @click.stop="select(h)"
+                                                @mouseenter="hoveredId = h.id"
+                                                @mouseleave="hoveredId = null"
+                                            >
+                                                <span
+                                                    x-show="h.comparison && h.comparison.cheapest && !(filtering() && !isMatch(h))"
+                                                    class="pointer-events-none absolute -top-2 left-1 whitespace-nowrap rounded-full bg-green px-1.5 py-0.5 text-xs font-bold leading-none text-white shadow-sm"
+                                                >Pigiausia</span>
+                                                <span
+                                                    x-show="inList(h.id)"
+                                                    class="pointer-events-none absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-green text-white shadow-sm"
+                                                ><x-app-icon name="check" class="size-3" /></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
                         @foreach ($pages as $page)
-                            <img
-                                x-show="isShown({{ $page['page_number'] }})"
-                                x-cloak
-                                src="{{ $page['image_url'] }}"
-                                alt="{{ $flyer['title'] }} – {{ $page['page_number'] }} puslapis{{ $pageProductNames->has($page['page_number']) ? ': ' . $pageProductNames[$page['page_number']] : '' }}"
-                                class="block h-full w-auto object-contain"
-                                :class="[spread().length > 1 ? 'max-w-[50%]' : 'max-w-full', fullscreen && 'max-h-full', fullscreen && spread().length === 1 && 'mx-auto']"
-                                loading="{{ $page['page_number'] <= 3 ? 'eager' : 'lazy' }}"
-                                @load="loadedPages[{{ $page['page_number'] }}] = true{{ $page['page_number'] === 1 ? '; portrait = $el.naturalHeight >= $el.naturalWidth' : '' }}"
-                                x-on:error="loadedPages[{{ $page['page_number'] }}] = true"
-                            >
-                        @endforeach
+                                <img
+                                    x-show="isShown({{ $page['page_number'] }})"
+                                    x-cloak
+                                    src="{{ $page['image_url'] }}"
+                                    alt="{{ $flyer['title'] }} – {{ $page['page_number'] }} puslapis{{ $pageProductNames->has($page['page_number']) ? ': ' . $pageProductNames[$page['page_number']] : '' }}"
+                                    class="block h-full w-auto object-contain"
+                                    :class="[spread().length > 1 ? 'max-w-[50%]' : 'max-w-full', fullscreen && 'max-h-full', fullscreen && spread().length === 1 && 'mx-auto']"
+                                    loading="{{ $page['page_number'] <= 3 ? 'eager' : 'lazy' }}"
+                                    @load="loadedPages[{{ $page['page_number'] }}] = true{{ $page['page_number'] === 1 ? '; portrait = $el.naturalHeight >= $el.naturalWidth' : '' }}"
+                                    x-on:error="loadedPages[{{ $page['page_number'] }}] = true"
+                                >
+                            @endforeach
+                        @endif
 
                         <div
                             x-show="!spread().every((page) => pageLoaded(page))"
@@ -234,13 +332,103 @@
                             <x-app-icon x-show="!fullscreen" name="maximize" class="size-4" />
                             <x-app-icon x-show="fullscreen" name="x" class="size-4" />
                         </button>
+
+                        @if ($betaConfig)
+                            <template x-if="selected()">
+                                <div
+                                    @click.stop
+                                    class="fixed inset-x-2 bottom-20 z-[55] rounded-xl border border-gray-200 bg-white p-4 shadow-xl lg:absolute lg:inset-x-auto lg:bottom-auto lg:right-3 lg:top-12 lg:z-30 lg:w-80"
+                                >
+                                    <button type="button" @click="selectedId = null" aria-label="Uždaryti" class="absolute right-2 top-2 flex size-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-700">
+                                        <x-app-icon name="x" class="size-4" />
+                                    </button>
+                                    <div class="flex gap-3 pr-6">
+                                        <img x-show="selected().image" :src="selected().image" alt="" class="size-16 shrink-0 rounded-md bg-gray-50 object-contain">
+                                        <div class="min-w-0">
+                                            <p class="line-clamp-2 text-sm font-semibold text-gray-900" x-text="selected().name"></p>
+                                            <p class="mt-1 flex items-baseline gap-1.5">
+                                                <span class="text-xl font-bold tabular-nums text-gray-900" x-text="euro(selected().price)"></span>
+                                                <del x-show="selected().original > selected().price" class="text-sm tabular-nums text-gray-400" x-text="euro(selected().original)"></del>
+                                                <span x-show="selected().percent" class="rounded bg-[#ffdb4d] px-1.5 py-0.5 text-xs font-bold text-gray-900" x-text="'-' + Math.abs(selected().percent) + '%'"></span>
+                                            </p>
+                                            <p x-show="selected().unit" class="text-xs text-gray-500" x-text="selected().unit"></p>
+                                        </div>
+                                    </div>
+
+                                    <div x-show="selected().comparison" class="mt-3 rounded-lg bg-gray-50 px-3 py-2">
+                                        <p class="text-sm font-semibold" :class="selected().comparison?.cheapest ? 'text-green' : 'text-gray-900'" x-text="selected().comparison?.label"></p>
+                                        <div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-600">
+                                            <template x-for="other in (selected().comparison?.others || []).slice(0, 4)" :key="other.slug">
+                                                <span><span x-text="other.store"></span> <span class="font-semibold tabular-nums" x-text="euro(other.price)"></span></span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <p
+                                        x-show="selected().signal"
+                                        class="mt-2 text-xs font-medium"
+                                        :class="selected().signal?.tone === 'good' ? 'text-green' : (selected().signal?.tone === 'bad' ? 'text-red-600' : 'text-gray-600')"
+                                        x-text="selected().signal ? selected().signal.label + ' ' + selected().signal.description : ''"
+                                    ></p>
+
+                                    <div class="mt-3 flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            @click="toggleList(selected())"
+                                            class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors"
+                                            :class="inList(selected().id) ? 'bg-green/10 text-dark-green' : 'bg-green text-white hover:bg-dark-green'"
+                                        >
+                                            <x-app-icon x-show="!inList(selected().id)" name="plus" class="size-4" />
+                                            <x-app-icon x-show="inList(selected().id)" name="check" class="size-4" />
+                                            <span x-text="inList(selected().id) ? 'Sąraše' : 'Į sąrašą'"></span>
+                                        </button>
+                                        <template x-for="h in [selected()]" :key="h.id">
+                                            <button
+                                                type="button"
+                                                x-data="favoriteButton(h.product_id, false, h.name, h.image)"
+                                                @click.stop.prevent="toggle()"
+                                                class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 hover:border-gray-300"
+                                                x-bind:aria-label="favorited ? 'Nebesekti kainos' : 'Sekti kainą'"
+                                            >
+                                                <x-app-icon name="heart" class="size-5" x-bind:class="favorited ? 'fill-red-500 text-red-500' : 'fill-none text-gray-500'" />
+                                            </button>
+                                        </template>
+                                        <a :href="selected().href" class="flex h-10 shrink-0 items-center gap-0.5 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-700 hover:border-gray-300">
+                                            Prekė <x-app-icon name="chevron-right" class="size-3.5" />
+                                        </a>
+                                    </div>
+                                </div>
+                            </template>
+                        @endif
                     </div>
+
+                    @if ($betaConfig)
+                        <div x-show="spreadHotspots().length > 0" x-cloak class="mt-3">
+                            <p class="mb-1 text-sm font-semibold text-gray-900">Prekės šiame <span x-text="spread().length > 1 ? 'atvertime' : 'puslapyje'"></span> <span class="font-normal text-gray-500" x-text="'(' + spreadHotspots().length + ')'"></span></p>
+                            <div class="scroll-cards-x flex gap-2">
+                                <template x-for="h in spreadHotspots()" :key="h.id">
+                                    <button
+                                        type="button"
+                                        @click="selectedId = h.id; $refs.viewerFrame.scrollIntoView({ behavior: 'smooth', block: 'nearest' })"
+                                        @mouseenter="hoveredId = h.id"
+                                        @mouseleave="hoveredId = null"
+                                        class="relative flex w-32 shrink-0 flex-col rounded-lg border bg-white p-2 text-left transition-colors"
+                                        :class="selectedId === h.id || hoveredId === h.id ? 'border-green' : 'border-gray-200'"
+                                    >
+                                        <img x-show="h.image" :src="h.image" alt="" loading="lazy" class="h-20 w-full object-contain">
+                                        <span class="mt-1 text-sm font-bold tabular-nums text-gray-900" x-text="euro(h.price)"></span>
+                                        <span class="line-clamp-2 text-xs leading-snug text-gray-700" x-text="h.name"></span>
+                                        <span x-show="inList(h.id)" class="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-green text-white"><x-app-icon name="check" class="size-3" /></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    @endif
 
                     {{-- Mobile only — desktop shows this same pager in the
                          rail, right under the date range, instead (see
                          below). --}}
                     <div class="mt-3 lg:hidden">
-                        @include('leaflets.partials.leaflet-pager', ['pages' => $pages])
+                        @include('leaflets.partials.leaflet-pager', ['pages' => $pages, 'beta' => (bool) $betaConfig])
                     </div>
                 </div>
             @elseif (!empty($flyer['image_url']))
@@ -277,7 +465,7 @@
                      the image instead (see the viewer column). --}}
                 @if (!empty($pages))
                     <div class="hidden shrink-0 lg:block">
-                        @include('leaflets.partials.leaflet-pager', ['pages' => $pages])
+                        @include('leaflets.partials.leaflet-pager', ['pages' => $pages, 'beta' => (bool) $betaConfig])
                     </div>
                 @endif
             </div>
@@ -319,6 +507,76 @@
                     @endif
                 </div>
             </aside>
+
+            @if ($betaConfig)
+                <button
+                    type="button"
+                    x-show="list.length > 0 && !selectedId"
+                    x-cloak
+                    @click="listOpen = true"
+                    class="fixed bottom-20 right-4 z-50 flex items-center gap-2 rounded-full bg-green px-4 py-3 text-sm font-bold text-white shadow-lg hover:bg-dark-green lg:bottom-6"
+                >
+                    <x-app-icon name="shopping-basket" class="size-5" />
+                    Sąrašas · <span x-text="list.length"></span> · <span class="tabular-nums" x-text="euro(listTotal())"></span>
+                </button>
+
+                <div x-show="toast" x-cloak x-transition.opacity class="fixed bottom-36 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-lg lg:bottom-24" x-text="toast"></div>
+
+                <div
+                    x-show="listOpen"
+                    x-cloak
+                    x-transition.opacity
+                    @click.self="listOpen = false"
+                    @keydown.escape.window="listOpen = false"
+                    class="fixed inset-0 z-[60] flex justify-end bg-black/40"
+                >
+                    <div class="flex h-full w-full max-w-md flex-col bg-white shadow-xl">
+                        <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                            <h2 class="text-lg font-bold text-gray-900">Pirkinių sąrašas</h2>
+                            <button type="button" @click="listOpen = false" aria-label="Uždaryti" class="flex size-9 items-center justify-center rounded-lg text-gray-500 hover:text-gray-900"><x-app-icon name="x" class="size-5" /></button>
+                        </div>
+                        <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                            <p x-show="list.length === 0" class="text-sm text-gray-500">Sąrašas tuščias. Spauskite ant prekės leidinyje ir „Į sąrašą“.</p>
+                            <template x-for="group in listByStore()" :key="group.store">
+                                <div class="mb-4">
+                                    <h3 class="mb-1 text-sm font-bold uppercase tracking-wide text-gray-500" x-text="group.store"></h3>
+                                    <template x-for="item in group.items" :key="item.id">
+                                        <div class="flex items-start gap-3 border-b border-gray-100 py-2">
+                                            <button
+                                                type="button"
+                                                @click="toggleChecked(item.id)"
+                                                class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border"
+                                                :class="item.checked ? 'border-green bg-green text-white' : 'border-gray-300'"
+                                                :aria-label="item.checked ? 'Pažymėti kaip nenupirktą' : 'Pažymėti kaip nupirktą'"
+                                            ><x-app-icon x-show="item.checked" name="check" class="size-3.5" /></button>
+                                            <div class="min-w-0 flex-1">
+                                                <a :href="item.href" class="line-clamp-2 text-sm text-gray-900 hover:text-green" :class="item.checked && 'text-gray-400 line-through'" x-text="item.name"></a>
+                                                <div class="mt-0.5 flex flex-wrap gap-x-2 text-xs text-gray-500">
+                                                    <a :href="item.flyer_href" class="hover:text-green" x-text="item.page + ' psl.'"></a>
+                                                    <span x-show="item.cheaper" class="text-gray-600" x-text="item.cheaper"></span>
+                                                </div>
+                                            </div>
+                                            <span class="shrink-0 text-sm font-bold tabular-nums text-gray-900" x-text="euro(item.price)"></span>
+                                            <button type="button" @click="removeFromList(item.id)" aria-label="Pašalinti" class="shrink-0 text-gray-400 hover:text-gray-700"><x-app-icon name="x" class="size-4" /></button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                        <div x-show="list.length > 0" class="border-t border-gray-200 px-4 py-3">
+                            <div class="mb-3 flex items-baseline justify-between">
+                                <span class="text-sm text-gray-600">Iš viso</span>
+                                <span class="text-xl font-bold tabular-nums text-gray-900" x-text="euro(listTotal())"></span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="button" @click="shareList()" class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-green px-3 py-2.5 text-sm font-semibold text-white hover:bg-dark-green"><x-app-icon name="share-2" class="size-4" /> Dalintis</button>
+                                <button type="button" @click="printList()" class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2.5 text-sm font-semibold text-gray-700 hover:border-gray-300"><x-app-icon name="printer" class="size-4" /> Spausdinti</button>
+                                <button type="button" @click="clearList()" class="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-900">Išvalyti</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
         {{-- The pages above are images only; this is the flyer's content as

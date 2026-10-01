@@ -11,8 +11,13 @@
             type="button"
             @click="currentPage = {{ $page['page_number'] }}"
             :class="isShown({{ $page['page_number'] }}) ? 'border-green bg-green text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-green/40'"
-            class="flex min-h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-colors"
-        >{{ $page['page_number'] }}</button>
+            class="relative flex min-h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-colors"
+        >{{ $page['page_number'] }}@if (! empty($beta))<span
+                x-show="filtering() && pageMatchCount({{ $page['page_number'] }}) > 0"
+                x-cloak
+                class="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-[#ffdb4d] px-1 text-xs font-bold leading-5 text-gray-900"
+                x-text="pageMatchCount({{ $page['page_number'] }})"
+            ></span>@endif</button>
 
         @if ($page['page_number'] === 5 && $lastPage > 6)
             {{-- Prev/next arrows, swipe, and the keyboard shortcuts can land
