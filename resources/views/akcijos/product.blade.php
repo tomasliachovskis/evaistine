@@ -276,7 +276,7 @@ use App\Support\ProductPageMeta;
                                                 @endif
                                             </div>
                                             @if ($heroOtherStores > 0)
-                                                <a href="#offers" class="text-base font-semibold text-dark-green underline underline-offset-4">Dar {{ $heroOtherStores }} {{ \App\Support\LithuanianPlural::storeWord($heroOtherStores) }} – palyginti kainas</a>
+                                                <a href="#offers" class="-my-2 inline-flex min-h-12 items-center text-base font-semibold text-dark-green underline underline-offset-4">Dar {{ $heroOtherStores }} {{ \App\Support\LithuanianPlural::storeWord($heroOtherStores) }} – palyginti kainas</a>
                                             @endif
                                         </div>
                                     @endif
