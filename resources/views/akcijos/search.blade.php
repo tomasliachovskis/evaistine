@@ -37,6 +37,7 @@
     {{-- Title block matches discounts-layout.tsx's <h1> treatment used by every
          other listing page, for visual consistency. --}}
     <div class="base-container gap-4 pb-4 pt-4 sm:pb-5">
+        <x-search-box :value="$query" class="mb-4" />
         <h1 class="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
             <span>Paieškos rezultatai: „{{ $query }}“</span>
             @if ($total > 0)
