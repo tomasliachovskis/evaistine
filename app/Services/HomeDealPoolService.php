@@ -463,6 +463,20 @@ class HomeDealPoolService
         return $pricelessCount >= self::MAX_PRICELESS_PER_SECTION;
     }
 
+    /**
+     * deal_score's static part (discount %, € saved, popular category) for
+     * an already-loaded Discount, without the SQL query's history/date
+     * bonuses. Keep in step with scoredCandidatesQuery().
+     */
+    public static function staticDealScore(Discount $discount): float
+    {
+        $percent = min((float) ($discount->discount_percent ?? 0), 70);
+        $saved = max((float) $discount->original_price - (float) $discount->discounted_price, 0);
+        $popular = in_array($discount->product?->category_id, self::POPULAR_CATEGORY_IDS, true) ? 15 : 0;
+
+        return $percent * 2 + $saved * 3 + $popular;
+    }
+
     private function resolveDealScore(Discount $discount): float
     {
         if (isset($discount->deal_score)) {

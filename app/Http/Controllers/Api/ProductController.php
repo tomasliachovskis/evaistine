@@ -1624,7 +1624,7 @@ class ProductController extends Controller
                 ? "Iš šio {$storeModel->name} leidinio surinkome {$flyerOffersTotal} akcijų "
                     .\App\Support\LithuanianPlural::offerWordAccusative($flyerOffersTotal)
                     .' su kainomis. Jie išdėstyti taip pat kaip leidinyje, puslapis po puslapio.'
-                    .($topClause !== '' ? " Didžiausios nuolaidos: {$topClause}." : '')
+                    .($topClause !== '' ? " Geriausi pasiūlymai: {$topClause}." : '')
                 : null;
             $offersClause = $flyerOffersTotal > 0
                 ? ", {$flyerOffersTotal} ".\App\Support\LithuanianPlural::discountWord($flyerOffersTotal)
@@ -1943,20 +1943,31 @@ class ProductController extends Controller
             ? "Galiojančiuose {$store->name} leidiniuose surinkome {$total} akcijų {$offerWordAccusative} su kainomis."
             : "„{$label}“".($validity ? " galioja {$validity}." : '.')." Iš jo surinkome {$total} akcijų {$offerWordAccusative} su kainomis.";
         if ($topClause !== '') {
-            $intro .= " Didžiausios nuolaidos: {$topClause}.";
+            $intro .= " Geriausi pasiūlymai: {$topClause}.";
         }
 
-        $first = $top->first();
-        $example = $first
-            ? ', pvz. '.Str::limit($first->product->name, 40, '…').' – '.number_format($first->discounted_price, 2, ',', '').' €'
-            : '';
-        // The layout cuts descriptions over ~158 chars, so drop the example
-        // product rather than lose the call to action.
-        $metaDescription = "Dabar galioja „{$label}“".($validity ? " ({$validity})" : '')
-            .": {$total} akcijų {$offerWord}{$example}. Peržiūrėkite visą katalogą.";
-        if (mb_strlen($metaDescription) > 155) {
-            $metaDescription = "Dabar galioja „{$label}“".($validity ? " ({$validity})" : '')
-                .": {$total} akcijų {$offerWord}. Peržiūrėkite visą katalogą ir prekių kainas.";
+        // Meta: the most valuable food deals, short names first so two fit
+        // the ~155-char snippet (the layout cuts anything longer); fewer
+        // examples when they don't.
+        $metaCandidates = $this->topFlyerDiscounts($discounts, 8);
+        $maxPercent = (int) round((float) $metaCandidates->max('discount_percent'));
+        $examples = $metaCandidates
+            ->filter(fn ($d) => mb_strlen($d->product->name) <= 38)
+            ->take(2)
+            ->map(fn ($d) => $d->product->name.' – '.number_format($d->discounted_price, 2, ',', '').' €')
+            ->values();
+        $head = "„{$label}“".($validity ? " galioja {$validity}" : ' galioja dabar')
+            .": {$total} akcijų {$offerWord}".($maxPercent > 0 ? ", nuolaidos iki -{$maxPercent} %" : '');
+        $metaDescription = "{$head}. Peržiūrėkite visą katalogą.";
+        foreach ([2, 1] as $count) {
+            if ($examples->count() < $count) {
+                continue;
+            }
+            $candidate = "{$head}, pvz. ".$examples->take($count)->implode(', ').'. Peržiūrėkite visą katalogą.';
+            if (mb_strlen($candidate) <= 155) {
+                $metaDescription = $candidate;
+                break;
+            }
         }
 
         return [
@@ -1975,12 +1986,18 @@ class ProductController extends Controller
         ];
     }
 
-    private function topFlyerDiscounts($discounts)
+    // The flyer's most valuable food/drink deals for intro and meta text:
+    // ranked like the "Geriausi pasiūlymai" pool (deal_score), not by raw
+    // percent, which surfaced books and household goods. Falls back to every
+    // category for a flyer with no food offers (Pepco, Jysk...).
+    private function topFlyerDiscounts($discounts, int $limit = 3)
     {
-        return $discounts
-            ->filter(fn ($d) => $d->discounted_price > 0 && $d->discount_percent > 0)
-            ->sortByDesc('discount_percent')
-            ->take(3)
+        $priced = $discounts->filter(fn ($d) => $d->discounted_price > 0 && $d->discount_percent > 0);
+        $food = $priced->filter(fn ($d) => in_array($d->product?->category?->slug, \App\Support\FoodCategorySlugs::FOOD, true));
+
+        return ($food->isNotEmpty() ? $food : $priced)
+            ->sortByDesc(fn ($d) => \App\Services\HomeDealPoolService::staticDealScore($d))
+            ->take($limit)
             ->values();
     }
 
