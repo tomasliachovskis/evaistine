@@ -26,7 +26,12 @@ Most people reading leaflets on superakcijos.lt are older. The interactive leafl
   - **Text links:** `text-dark-green` (`#044923`). Plain `text-green` and white-on-`bg-green` are too low contrast (about 3:1).
   - **Greys:** `gray-400` and `gray-500` are darkened in the theme.
 - **Focus:** a 3px outline on every link and control (base rule in `app.css`).
-- **No surprises:** nothing jumps or changes on its own. Popups close with the phone's Back button.
+- **No surprises:** nothing jumps or changes on its own. Popups close with the phone's Back button. No popup opens by itself on a timer: the old 10-second signup popup became `<x-signup-inline-card>`, a card in the page flow (home page, product page).
+- **Dates in words:** "iki spalio 5 d.", "rugsėjo 8–14 d.", never "Iki 10.05" or "2026.09.08 – 2026.09.14". A bare number pair reads as either day.month or month.day. The year is only added when it isn't this year. Use `LithuanianDate::dayMonthGenitive()` / `LithuanianDate::range()`, or `ProductPageMeta::validUntilLabel()` for offers.
+- **No sideways strips on phones:** below sm, deal carousels show 4 cards two to a row plus a full-width "Žiūrėti visas (N)" button. Home stores and leaflets wrap two to a row, and categories are a one-column list with a "Rodyti visas" toggle. A cut-off card and tiny dots weren't read as "swipe for more". From sm up, the strips stay.
+- **Full product names:** deal cards never cut a name with "…". A minimum height keeps short names level.
+- **Where and until when, up top:** the product hero shows the price, "Įprasta kaina", then one row with the store logo and "Galioja iki …". The leaflet viewer has the same logo + dates row above it on phones. On phones the product photo is full width with the text under it.
+- **Charts:** SVG text is in user units, so the price chart sets its viewBox width to the real rendered width (16px labels stay 16px). Points have a finger-sized hit area and respond to a tap as well as hover.
 
 ## Shared pieces
 
