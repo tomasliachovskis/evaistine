@@ -149,10 +149,13 @@ class ListingPageMetaService
             'category_name' => $categoryName,
             'keyword_pages' => $this->keywordPageService->listPublishedPagesForCategory($categorySlug),
             'intro' => [
+                // Genitive ("mėsos ir žuvies akcijas"): dropping the
+                // nominative name into the sentence read as "Sekite mėsa ir
+                // žuvis kainas".
                 'description' => $this->pickVariant($categorySlug, [
-                    'Palyginkite ' . mb_strtolower($categoryName) . ' akcijas visuose pagrindiniuose prekybos tinkluose. Matysite didžiausias nuolaidas ir aktyvių pasiūlymų skaičių kiekvienoje parduotuvėje.',
-                    $categoryName . ' akcijos iš visų didžiųjų prekybos tinklų vienoje vietoje — palyginkite kainas ir rinkitės pigiausią pasiūlymą.',
-                    'Sekite ' . mb_strtolower($categoryName) . ' kainas ir nuolaidas kiekviename prekybos tinkle — čia matysite, kur šiuo metu didžiausios akcijos ir kiek galima sutaupyti.',
+                    'Palyginkite ' . ($categoryGenitive = \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($categoryName)) . ' akcijas visuose pagrindiniuose prekybos tinkluose. Matysite didžiausias nuolaidas ir aktyvių pasiūlymų skaičių kiekvienoje parduotuvėje.',
+                    'Visų didžiųjų prekybos tinklų ' . $categoryGenitive . ' akcijos vienoje vietoje — palyginkite kainas ir rinkitės pigiausią pasiūlymą.',
+                    'Sekite ' . $categoryGenitive . ' kainas ir nuolaidas kiekviename prekybos tinkle — čia matysite, kur šiuo metu didžiausios akcijos ir kiek galima sutaupyti.',
                 ]),
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
@@ -197,10 +200,12 @@ class ListingPageMetaService
             'leaflets_count' => $this->activeLeafletsCount($store),
             'locations_count' => $store->locations()->active()->count(),
             'intro' => [
+                // Genitive category ("Lidl mėsos ir žuvies akcijos"), not
+                // the nominative name dropped in mid-sentence.
                 'description' => $this->pickVariant($store->slug . '/' . $category->slug, [
-                    "Visos {$storeName} " . mb_strtolower($categoryName) . ' akcijos vienoje vietoje. Peržiūrėkite savaitės pasiūlymus ir sutaupykite apsipirkdami sezoninius produktus.',
-                    "{$storeName} " . mb_strtolower($categoryName) . ' akcijos šią savaitę — palyginkite kainas ir raskite geriausius pasiūlymus vienoje vietoje.',
-                    "Naujausios {$storeName} " . mb_strtolower($categoryName) . ' nuolaidos surinktos į vieną sąrašą — sutaupykite apsipirkdami šios savaitės akcijų prekėmis.',
+                    "Visos {$storeName} " . ($categoryGenitive = \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($categoryName)) . ' akcijos vienoje vietoje. Peržiūrėkite savaitės pasiūlymus ir sutaupykite apsipirkdami sezoninius produktus.',
+                    "{$storeName} " . $categoryGenitive . ' akcijos šią savaitę — palyginkite kainas ir raskite geriausius pasiūlymus vienoje vietoje.',
+                    "Naujausios {$storeName} " . $categoryGenitive . ' nuolaidos surinktos į vieną sąrašą — sutaupykite apsipirkdami šios savaitės akcijų prekėmis.',
                 ]),
                 'valid_from' => $validity['valid_from'],
                 'valid_to' => $validity['valid_to'],
@@ -615,7 +620,7 @@ class ListingPageMetaService
 
         return [
             'title' => $categoryName . ' akcijų statistika',
-            'summary' => "Šiuo metu SuperAkcijos.lt stebi {$totalOffers} aktyvių " . mb_strtolower($categoryName) . " akcijų {$storeCount} prekybos tinkluose. Didžiausia aptikta nuolaida siekia {$maxDiscount} %, o vidutinis sutaupymas šioje kategorijoje – apie {$avgDiscount} %.",
+            'summary' => "Šiuo metu SuperAkcijos.lt stebi {$totalOffers} aktyvių " . \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($categoryName) . " akcijų {$storeCount} prekybos tinkluose. Didžiausia aptikta nuolaida siekia {$maxDiscount} %, o vidutinis sutaupymas šioje kategorijoje – apie {$avgDiscount} %.",
             'highlights' => [
                 ['label' => 'Aktyvios akcijos', 'value' => (string) $totalOffers],
                 ['label' => 'Vidutinė nuolaida', 'value' => $avgDiscount . ' %'],

@@ -1189,7 +1189,7 @@ class ProductController extends Controller
                 // pages this session (see SHORT_CATEGORY_LABELS's comment for
                 // why the raw DB name breaks mid-sentence grammar).
                 $categoryShortName = $this->shortenCategoryName($entity->name);
-                $categoryGenitive = self::CATEGORY_GENITIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
+                $categoryGenitive = self::categoryGenitiveLabel($entity->name);
                 $categoryDative = self::CATEGORY_DATIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
 
                 // Some listings are full-catalog (price-only, no discount_percent
@@ -1339,7 +1339,7 @@ class ProductController extends Controller
                 $categoryDative = self::CATEGORY_DATIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
                 // Genitive for the title ("Maxima duonos gaminių akcijos") —
                 // see CATEGORY_GENITIVE_LABELS's comment.
-                $categoryGenitive = self::CATEGORY_GENITIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
+                $categoryGenitive = self::categoryGenitiveLabel($entity->name);
                 // Concrete illustrative item examples (dative plural, e.g.
                 // "duonai, bandelėms ir kruasanams" for Duonos gaminiai) —
                 // explicit product decision to use hand-written, specific
@@ -2500,6 +2500,16 @@ class ProductController extends Controller
         $name = trim($name);
 
         return self::SHORT_CATEGORY_LABELS[$name] ?? trim(explode(',', $name)[0]);
+    }
+
+    // "mėsos ir žuvies" for a root category's full DB name, lowercased
+    // nominative of the short name when no hand-checked form exists.
+    // Shared with ListingPageMetaService's category intro copy.
+    public static function categoryGenitiveLabel(string $name): string
+    {
+        $short = self::SHORT_CATEGORY_LABELS[trim($name)] ?? trim(explode(',', trim($name))[0]);
+
+        return self::CATEGORY_GENITIVE_LABELS[$short] ?? mb_strtolower($short);
     }
 
     // "Which root categories have this store's best discounts, and what are
