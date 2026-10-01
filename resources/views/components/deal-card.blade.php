@@ -55,7 +55,9 @@
     if ($inCarousel) {
         // discountCarouselWidthClass in discount-card.tsx — merged onto the card
         // shell so the carousel track doesn't need a separate wrapper div.
-        $shellClass .= ' w-[calc((100%-0.75rem)/2.3)] max-w-[164px] min-w-[140px] shrink-0 grow-0 basis-[calc((100%-0.75rem)/2.3)] self-stretch snap-start sm:w-[186px] sm:min-w-[186px] sm:max-w-none sm:basis-auto md:min-w-[214px] lg:min-w-[248px]';
+        // Phones: two to a row in a wrapped list (see landing-deals-section),
+        // not a sideways strip; the fixed widths only apply from sm up.
+        $shellClass .= ' w-[calc(50%-0.25rem)] shrink-0 grow-0 basis-[calc(50%-0.25rem)] self-stretch snap-start sm:w-[186px] sm:min-w-[186px] sm:basis-auto md:min-w-[214px] lg:min-w-[248px]';
     }
 @endphp
 

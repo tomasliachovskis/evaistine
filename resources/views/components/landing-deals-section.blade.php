@@ -19,7 +19,7 @@
                 @endif
             </div>
             @if ($seeAllHref)
-                <div class="flex shrink-0 items-center gap-2">
+                <div class="flex shrink-0 items-center gap-2 max-sm:hidden">
                     <a href="{{ $seeAllHref }}" class="section-link text-right">
                         Žiūrėti visas{{ $seeAllCount ? ' ('.number_format($seeAllCount, 0, ',', ' ').')' : '' }}
                         <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
@@ -54,18 +54,21 @@
                 }"
                 x-init="update()"
             >
-                <div x-ref="track" @scroll.passive="update()" class="scroll-cards-x -mx-0.5 flex w-full min-w-0 snap-x snap-mandatory items-stretch gap-1.5 px-0.5 sm:mx-0 sm:gap-3 sm:px-0">
+                {{-- Phones: the first 4 cards, two to a row, and a full-width
+                     "Žiūrėti visas" button under them. A sideways strip that only
+                     hinted at more cards with a cut-off card and tiny dots was easy
+                     to miss for older readers. Swipeable strip from sm up. --}}
+                <div x-ref="track" @scroll.passive="update()" class="scroll-cards-x flex w-full min-w-0 snap-x snap-mandatory items-stretch gap-2 max-sm:flex-wrap max-sm:overflow-visible sm:gap-3">
                     @foreach ($deals as $deal)
-                        <x-deal-card :deal="$deal" :context-store-slug="$contextStoreSlug" :in-carousel="true" />
+                        <x-deal-card :deal="$deal" :context-store-slug="$contextStoreSlug" :in-carousel="true" @class(['max-sm:hidden' => $loop->index >= 4]) />
                     @endforeach
                 </div>
-                <template x-if="pageCount > 1">
-                    <div class="mt-2 flex items-center justify-center gap-1.5 sm:hidden">
-                        <template x-for="index in pageCount" :key="index">
-                            <span :class="index - 1 === activePage ? 'size-2 rounded-full bg-action' : 'size-1.5 rounded-full bg-gray-300'"></span>
-                        </template>
-                    </div>
-                </template>
+                @if ($seeAllHref)
+                    <a href="{{ $seeAllHref }}" class="mt-2 flex min-h-12 w-full items-center justify-center gap-1 rounded-xl border border-green bg-white text-base font-bold text-dark-green transition-colors hover:bg-green/5 sm:hidden">
+                        Žiūrėti visas{{ $seeAllCount ? ' ('.number_format($seeAllCount, 0, ',', ' ').')' : '' }}
+                        <x-app-icon name="chevron-right" class="size-5" />
+                    </a>
+                @endif
             </div>
         @endif
     </section>

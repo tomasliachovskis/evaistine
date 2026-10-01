@@ -133,13 +133,11 @@
                         <x-app-icon name="chevron-right" class="size-4 opacity-80" />
                     </a>
                 </div>
-                {{-- Horizontal snap-scroll slider on mobile (same
-                     scroll-cards-x pattern as the leaflets section below),
-                     a plain 5-col grid at sm+ where they all fit on one row
-                     anyway. --}}
-                <div class="scroll-cards-x mt-4 flex snap-x snap-mandatory gap-3 sm:grid sm:grid-cols-5 sm:overflow-visible">
+                {{-- Two to a row on phones (a sideways strip hid most of
+                     them from older readers), a 5-col grid at sm+. --}}
+                <div class="mt-4 flex flex-wrap gap-3 sm:grid sm:grid-cols-5">
                     @foreach ($stores as $store)
-                        <div class="w-[42%] shrink-0 snap-start sm:w-auto sm:shrink">
+                        <div class="w-[calc(50%-0.375rem)] sm:w-auto">
                             <x-store-card :store="$store" layout="grid" />
                         </div>
                     @endforeach
@@ -154,15 +152,28 @@
             @if (count($categories))
                 <div>
                     <h2 class="section-heading-lg">Kategorijos</h2>
-                    <div class="scroll-cards-x mt-4 flex snap-x snap-mandatory gap-3">
-                        @foreach ($categories as $category)
-                            <a href="/akcijos/{{ $category['slug'] }}" class="flex w-[140px] shrink-0 snap-start flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-2.5 text-center transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm sm:w-[168px] sm:p-3">
-                                <div class="flex h-[72px] w-full items-center justify-center sm:h-[80px]">
-                                    <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-10 shrink-0 grayscale sm:size-12" onerror="this.style.display='none'">
-                                </div>
-                                <span class="line-clamp-2 text-sm font-bold leading-snug text-gray-900">{{ $category['name'] }}</span>
-                            </a>
-                        @endforeach
+                    {{-- Phones: a two-column list of the first 6 with a button
+                         that opens the rest in place, instead of a sideways
+                         strip. From sm up, the strip as before. --}}
+                    <div x-data="{ all: false }">
+                        <div class="mt-4 flex flex-wrap gap-2 sm:snap-x sm:snap-mandatory sm:flex-nowrap sm:gap-3 sm:overflow-x-auto sm:py-2 sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
+                            @foreach ($categories as $category)
+                                <a href="/akcijos/{{ $category['slug'] }}"
+                                   @if ($loop->index >= 6) :class="all ? 'flex' : 'max-sm:hidden'" @endif
+                                   class="flex min-h-12 w-full items-center gap-3 rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm sm:w-[168px] sm:shrink-0 sm:snap-start sm:flex-col sm:gap-2 sm:p-3 sm:text-center">
+                                    <div class="flex shrink-0 items-center justify-center sm:h-[80px] sm:w-full">
+                                        <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-8 shrink-0 grayscale sm:size-12" onerror="this.style.display='none'">
+                                    </div>
+                                    <span class="text-base font-bold leading-snug text-gray-900 sm:line-clamp-2 sm:text-sm">{{ $category['name'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                        @if (count($categories) > 6)
+                            <button type="button" x-show="!all" @click="all = true" class="mt-2 flex min-h-12 w-full items-center justify-center gap-1 rounded-xl border border-green bg-white text-base font-bold text-dark-green hover:bg-green/5 sm:hidden">
+                                Rodyti visas kategorijas ({{ count($categories) }})
+                                <x-app-icon name="chevron-down" class="size-5" />
+                            </button>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -185,18 +196,15 @@
                             <x-app-icon name="chevron-right" class="size-4 opacity-80" />
                         </a>
                     </div>
-                    {{-- Horizontal snap-scroll slider on mobile (same
-                         scroll-cards-x pattern as the carousel sections
-                         above), a plain 4-col grid at sm+ where they all fit
-                         on one row anyway. --}}
-                    <div class="scroll-cards-x mt-4 flex snap-x snap-mandatory gap-3 sm:grid sm:grid-cols-4 sm:overflow-visible">
+                    {{-- Two to a row on phones, a 4-col grid at sm+. --}}
+                    <div class="mt-4 flex flex-wrap gap-3 sm:grid sm:grid-cols-4">
                         @foreach ($latestLeaflets as $leaflet)
                             @php
                                 $isExpired = $leaflet['status'] === 'expired';
                                 $days = $leaflet['days_remaining'] ?? null;
                                 $href = $leaflet['view_url'] ?? "/leidinys/{$leaflet['store_slug']}";
                             @endphp
-                            <a href="{{ $href }}" class="flex w-[42%] shrink-0 snap-start flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 hover:opacity-80 sm:w-auto sm:shrink">
+                            <a href="{{ $href }}" class="flex w-[calc(50%-0.375rem)] flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 hover:opacity-80 sm:w-auto">
                                 <div class="relative aspect-square w-full overflow-hidden rounded-lg bg-white">
                                     @if (!empty($leaflet['thumbnail_url'] ?? $leaflet['image_url'] ?? null))
                                         <img src="{{ $leaflet['thumbnail_url'] ?? $leaflet['image_url'] }}" alt="{{ $leaflet['title'] ?? $leaflet['store_name'] }}" loading="lazy" class="h-full w-full object-contain p-2 {{ $isExpired ? 'grayscale' : '' }}">
