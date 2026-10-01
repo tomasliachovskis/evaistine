@@ -7,9 +7,8 @@
         . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
     $selectedStores = array_values(array_filter(explode(',', $storeFilter)));
     $selectedCategories = array_values(array_filter(explode(',', $categoryFilter)));
-    // $activeCount is (re)computed further down, once $activeStoreName/
-    // $activeCategoryName exist, so it also counts a URL-fixed facet, not
-    // just a checkbox pick — see the comment there.
+    // $activeCount is computed further down: only real picks count, not
+    // the store/category the URL already fixes — see the comment there.
     $orderOptions = [
         // Keyword pages' 'popular' is really Meilisearch relevance order
         // (KeywordPageService::sortDiscounts() leaves it untouched), not
@@ -147,16 +146,19 @@
                         // source as the desktop pills); falls back to a count
                         // when the selection instead came from the checkbox
                         // list (multi-select, no single name to show).
+                        // The URL-fixed store/category is left out: the H1
+                        // already names it, and repeating it here with a "1"
+                        // badge read as a filter the reader had to undo.
                         $mobileFilterParts = [];
                         if ($activeStoreName) {
-                            $mobileFilterParts[] = $activeStoreName;
+                            // named in the H1
                         } elseif (count($selectedStores) === 1) {
                             $mobileFilterParts[] = collect($allStores)->firstWhere('slug', $selectedStores[0])['name'] ?? $selectedStores[0];
                         } elseif (count($selectedStores) > 1) {
                             $mobileFilterParts[] = count($selectedStores) . ' parduotuvės';
                         }
                         if ($activeCategoryName) {
-                            $mobileFilterParts[] = $activeCategoryName;
+                            // named in the H1
                         } elseif (count($selectedCategories) === 1) {
                             $mobileFilterParts[] = collect($allCategories)->firstWhere('slug', $selectedCategories[0])['name'] ?? $selectedCategories[0];
                         } elseif (count($selectedCategories) > 1) {
@@ -177,8 +179,11 @@
                         // showed a badge, so a store_category/category page's
                         // URL-fixed facet (already named in the label, e.g.
                         // "Kategorija: Bakalėja") never got one at all.
-                        $storeBadgeCount = $activeStoreName ? 1 : count($selectedStores);
-                        $categoryBadgeCount = $activeCategoryName ? 1 : count($selectedCategories);
+                        // URL-fixed facets get no badge any more: the page
+                        // itself is that store/category (H1), the button
+                        // just switches to another one ("Keisti ...").
+                        $storeBadgeCount = $activeStoreName ? 0 : count($selectedStores);
+                        $categoryBadgeCount = $activeCategoryName ? 0 : count($selectedCategories);
                         // Mobile's combined pill badge — same "URL-fixed
                         // counts too" fix as the desktop pills above, so it
                         // doesn't disagree with them on a store_category/
@@ -190,9 +195,9 @@
                         $activeCount = $storeBadgeCount + $categoryBadgeCount;
                     @endphp
                     @if ($showStoreFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="hidden min-h-12 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3 text-base {{ $activeStoreName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="hidden min-h-12 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3 text-base {{ $storeBadgeCount > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
                             <x-app-icon name="store" class="size-5 shrink-0" />
-                            <span class="truncate">{{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}</span>
+                            <span class="truncate">{{ $activeStoreName ? 'Keisti parduotuvę' : 'Parduotuvės' }}</span>
                             @if ($storeBadgeCount > 0)
                                 <span class="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-action px-2 text-sm font-bold tabular-nums text-white">{{ $storeBadgeCount }}</span>
                             @endif
@@ -200,30 +205,18 @@
                         </button>
                     @endif
                     @if ($showCategoryFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="hidden min-h-12 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3 text-base {{ $activeCategoryName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="hidden min-h-12 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3 text-base {{ $categoryBadgeCount > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
                             <x-app-icon name="layout-grid" class="size-5 shrink-0" />
-                            <span class="truncate">{{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}</span>
+                            <span class="truncate">{{ $activeCategoryName ? 'Keisti kategoriją' : 'Kategorijos' }}</span>
                             @if ($categoryBadgeCount > 0)
                                 <span class="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-action px-2 text-sm font-bold tabular-nums text-white">{{ $categoryBadgeCount }}</span>
                             @endif
                             <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'category' ? 'rotate-180' : ''" />
                         </button>
                     @endif
-                    {{-- Same pill style as the store/category buttons above,
-                         but a plain nav link (no panel to open) — routes to
-                         this store's own leaflet page when a store is fixed
-                         (matches the "{store} savaitės leidiniai" shortcut
-                         already in the mobile/store panels), otherwise the
-                         general leaflets hub. --}}
-                    @php
-                        $leafletsCount = $activeStoreSlug !== null
-                            ? \App\Models\Store::where('slug', $activeStoreSlug)->first()?->flyers()->ready()->currentlyValid()->count()
-                            : null;
-                    @endphp
-                    <a href="{{ $activeStoreSlug !== null ? '/leidinys/' . $activeStoreSlug : '/leidiniai' }}" class="hidden min-h-12 shrink-0 items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede] sm:inline-flex">
-                        <x-app-icon name="bookmark" class="size-5 shrink-0" />
-                        <span class="truncate">{{ $activeStoreName ? "{$activeStoreName} leidiniai" : 'Leidiniai' }}{{ $leafletsCount ? ' (' . $leafletsCount . ')' : '' }}</span>
-                    </a>
+                    {{-- The "Leidiniai" link that sat here moved to the fact line
+                         under the H1 (listing.blade.php): it isn't a filter, and
+                         next to the filter buttons it read like one. --}}
                     {{-- Mobile: a single "Filtrai" pill combining both facets
                          into one sheet instead of two full-width buttons that
                          wrap into their own 2-line stack and collide with the

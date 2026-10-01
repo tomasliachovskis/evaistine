@@ -132,7 +132,21 @@
                             'pill' => \App\Support\LithuanianPlural::formatCount($richHeroOffers) . ' ' . \App\Support\LithuanianPlural::offerWord($richHeroOffers),
                         ]] : []);
                 @endphp
-                <x-hero-stats :stats="$richHeroStats" :freshness="$listingMeta['intro']['freshness_label'] ?? null" />
+                @php
+                    // Store pages: the store's leaflets link, moved here
+                    // out of the filter bar (it isn't a filter).
+                    $heroLeafletsCount = $isStoreHeader && ! empty($listingMeta['store_slug'])
+                        ? \App\Models\Store::where('slug', $listingMeta['store_slug'])->first()?->flyers()->ready()->currentlyValid()->count()
+                        : null;
+                @endphp
+                <x-hero-stats :stats="$richHeroStats" :freshness="$listingMeta['intro']['freshness_label'] ?? null">
+                    @if ($heroLeafletsCount)
+                        <a href="/leidinys/{{ $listingMeta['store_slug'] }}" class="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-green/40 bg-white px-2.5 py-1 text-xs font-semibold text-dark-green underline-offset-4 hover:underline sm:px-3 sm:text-sm">
+                            <x-app-icon name="bookmark" class="size-3.5 sm:size-4" />
+                            {{ $listingMeta['store_name'] }} leidiniai ({{ $heroLeafletsCount }})
+                        </a>
+                    @endif
+                </x-hero-stats>
 
                 @if ($headerType === 'category')
                     <x-keyword-chips-row :pages="$listingMeta['keyword_pages'] ?? []" title="Populiarios prekės" />

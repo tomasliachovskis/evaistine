@@ -24,6 +24,11 @@
                         {{ $stat['pill'] }}
                     </li>
                 @endforeach
+                @if ($slot->isNotEmpty())
+                    {{-- Extra pill-shaped link (a store's leaflets), passed
+                         in the slot by listing.blade.php. --}}
+                    <li class="flex shrink-0">{{ $slot }}</li>
+                @endif
                 @if ($freshness)
                     {{-- Same type as the pills, no chip: on sm+ it sits at the
                          end of the row. --}}
