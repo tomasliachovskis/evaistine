@@ -107,7 +107,7 @@
         type="button"
         @click="toggle()"
         class="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:flex-none"
-        :class="favorited ? 'bg-amber-50 text-amber-900 hover:bg-amber-100' : 'bg-green-soft text-dark-green hover:bg-green-soft-border'"
+        :class="favorited ? 'bg-action text-white hover:bg-action-hover' : 'bg-green-soft-border text-dark-green hover:bg-[#acdfc0]'"
         :disabled="busy"
     >
         <x-app-icon x-show="!favorited" :name="$desktopIcon" class="size-5 fill-none" />
