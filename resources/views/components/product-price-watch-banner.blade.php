@@ -84,18 +84,24 @@
         },
         copied: false,
         // Share sheet on phones; elsewhere copy the link and say so.
+        // GA: share_click on every press, then GA4's recommended "share"
+        // only once the share/copy actually went through (a dismissed
+        // share sheet throws AbortError and isn't counted).
         async share() {
             const data = { title: {$shareTitleJs}, url: window.location.href.split('#')[0] };
+            const method = navigator.share ? 'native' : 'copy';
+            const ga = { method, content_type: 'product', item_id: '{$productId}', product_id: {$productId}, product_name: {$shareTitleJs} };
+            if (window.trackGaEvent) window.trackGaEvent('share_click', ga);
             try {
                 if (navigator.share) {
                     await navigator.share(data);
-                    return;
+                } else {
+                    await navigator.clipboard.writeText(data.url);
+                    this.copied = true;
+                    setTimeout(() => { this.copied = false; }, 2500);
                 }
-                await navigator.clipboard.writeText(data.url);
-                this.copied = true;
-                setTimeout(() => { this.copied = false; }, 2500);
+                if (window.trackGaEvent) window.trackGaEvent('share', ga);
             } catch (e) {}
-            if (window.trackGaEvent) window.trackGaEvent('share', { method: navigator.share ? 'native' : 'copy', item_id: {$productId} });
         },
     JS;
 @endphp
