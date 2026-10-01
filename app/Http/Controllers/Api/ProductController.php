@@ -1241,6 +1241,12 @@ class ProductController extends Controller
                         ?: $currentFlyer->catalog_name
                         ?: ($currentFlyer->issue_number ? "Nr. {$currentFlyer->issue_number}" : 'naujausias leidinys');
 
+                    // Some scraped titles are all caps ("NE MAISTO PREKIŲ
+                    // PASIŪLYMAI"), which reads as shouting in a snippet.
+                    if (preg_match('/\p{L}{4}/u', $currentLabel) && mb_strtoupper($currentLabel) === $currentLabel) {
+                        $currentLabel = preg_replace('/\bnr\./u', 'Nr.', Str::ucfirst(mb_strtolower($currentLabel)));
+                    }
+
                     $metaDescription = "Dabar galioja „{$currentLabel}“. Peržiūrėkite katalogą ir kitus naujausius „{$entity->name}“ akcijų {$leafletNounAccusativePlural}.";
                 } else {
                     // No currently-valid flyer found at all — fall back to

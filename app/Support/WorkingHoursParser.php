@@ -5,7 +5,9 @@ namespace App\Support;
 // Parses nuolaidos.lt's Lithuanian Roman-numeral weekday-range notation
 // (e.g. ["I-V 08:00-20:00", "VI 08:00-20:00", "VII 08:00-17:00"]) into a
 // normalized per-day map. I=Monday...VII=Sunday. A day not mentioned in the
-// source array is treated as closed (null).
+// source array is treated as closed (null). Some chains (Senukai, Grustė)
+// write the range with an en dash ("I–V"), which used to be skipped, so
+// only their Saturday/Sunday hours were stored.
 class WorkingHoursParser
 {
     private const DAYS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
@@ -21,7 +23,7 @@ class WorkingHoursParser
         foreach ($workTimes ?? [] as $entry) {
             $entry = trim((string) $entry);
 
-            if (!preg_match('/^([IVX]+)(?:-([IVX]+))?\s+(.+)$/u', $entry, $matches)) {
+            if (!preg_match('/^([IVX]+)(?:\s*[-–—]\s*([IVX]+))?\s+(.+)$/u', $entry, $matches)) {
                 continue;
             }
 

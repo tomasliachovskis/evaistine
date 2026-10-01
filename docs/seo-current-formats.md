@@ -87,6 +87,7 @@ Source: `ProductController::generateSeoData()`'s `store_leaflet` case (`app/Http
 - **H1:** `Visi {Store} akcijų leidiniai` (`leidyniai` for Iki) — no validity date, no year, no "naujausi".
 - **Title (`meta_title`):** `Naujausi {Store} akcijų {leidiniai/leidyniai}` — different word order from the H1 ("Naujausi" leads), same Iki-only plural spelling, still `leidiniai`-based (not "katalogai" — that word was tried and reverted same day). No date or issue number in the title at all.
 - **Description (`meta_description`):** names the single newest currently-valid flyer (not the unreliable `is_active` flag — same "expired means `valid_to` < today" rule as `StoreFlyerTitleBuilder::toListingArray()`), by its own real `title` (falling back to `catalog_name`, then `Nr. {issue_number}`, then a generic "naujausias leidinys" only if none of those exist): `Dabar galioja „{flyer title}“. Peržiūrėkite katalogą ir kitus naujausius „{Store}“ akcijų {leidinius/leidynius}.` (accusative plural — a further stem-swap from the same singular nominative as the H1/title noun, "leidinys"→"leidinius"/"leidynys"→"leidynius").
+- An all-caps flyer title ("NE MAISTO PREKIŲ PASIŪLYMAI") is sentence-cased in the description, keeping "Nr." (added 2026-10-01).
 - Guarded: if a store has no currently-valid flyer at all, description falls back to the previous generic sentence (`Naujas {Store} {leidinys/leidynys} galioja nuo {validFrom} iki {validTo}.`, from `resolveStoreValidity()`). H1/title never fall back — they carry no per-flyer data to lose.
 
 **Live examples (2026-09-22, local dev flyer data — some stores' flyers are already expired locally vs production, see Norfa below):**
@@ -187,6 +188,24 @@ The flyer page was images only. `discounts.store_flyer_id` (and `discount_temp.s
 - `ItemList` JSON-LD with each item's name, URL, image and price. `numberOfItems` is the real total.
 - The meta description gets the count: `… leidinys, 24 psl., 639 nuolaidos, galioja …`.
 - Existing rows have no `store_flyer_id` and cannot be backfilled, because the page image path has no flyer id. The list appears as flyers are processed again, which happens weekly.
+
+## Store chain page — `/parduotuves/{store}` (changed 2026-10-01)
+
+Source: `StoreController::show()`.
+
+- **Title:** `{Store} darbo laikas ir parduotuvių adresai`.
+- **Description:** `{Store} Lietuvoje – {N} {parduotuvė/-ės/-ių}: {top 3 cities with counts} ir kiti miestai. Dažniausias darbo laikas: {summary}. Adresai, darbo laikas ir kontaktai pagal miestą.` The hours sentence appears only when more than half of the locations share one `OpeningHours::summary()`.
+
+## Store city page — `/parduotuves/{store}/{city}` (changed 2026-10-01)
+
+Source: `StoreController::showCity()`. GSC (Sept 2026): ~106k impressions in 28 days at 0.87% CTR, mostly "{store} darbo laikas" / "{store} {city}" queries.
+
+- **Title:** query words first. One location: `{Store} {City} darbo laikas – {address}`. Several: `{Store} {City} darbo laikas – {N} parduotuvės`.
+- **Description:** weekly hours from `OpeningHours::summary()`, never today's row (Google keeps a snippet for days, so "šiandien 08:00–21:00" was often wrong).
+  - One location: `{Store} {City}, {address} ({hours}). Adresas, kontaktai ir vieta žemėlapyje.`
+  - All locations share hours: `{Store} {City}: {addr1}, {addr2} ir kt. Darbo laikas: {hours}. Visi adresai ir kontaktai.`
+  - Hours differ: two addresses with their hours if that fits the layout's 158-char cut, otherwise one, then ` Visi adresai, darbo laikas ir kontaktai.`
+- Number agreement everywhere on these pages goes through `LithuanianPlural::storeWord()`.
 
 ## Error pages
 

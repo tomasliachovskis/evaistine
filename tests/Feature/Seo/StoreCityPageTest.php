@@ -29,6 +29,75 @@ class StoreCityPageTest extends TestCase
         $response->assertSee('Anksčiausiai darbo dienomis atsidaro – nuo 07:00: Seo g. 1.', false);
     }
 
+    // Query words ("{store} {city} darbo laikas") lead the title, and the
+    // description carries the whole week's hours rather than today's row,
+    // which Google's cached snippet would show on the wrong day.
+    public function test_city_page_meta_leads_with_darbo_laikas_and_weekly_hours(): void
+    {
+        $this->seedChain();
+
+        $response = $this->get('/parduotuves/seo-tinklas/vilnius')->assertOk();
+
+        $response->assertSee('<title>Seo Tinklas Vilnius darbo laikas – 3 parduotuvės', false);
+        $response->assertSee('content="Seo Tinklas Vilnius: Seo g. 1 (Pr–Št 07:00–22:00, Sk 09:00–20:00), Seo g. 2 (Pr–Št 08:00–22:00, Sk 09:00–20:00) ir kt. Visi adresai', false);
+        $response->assertDontSee('šiandien');
+    }
+
+    public function test_single_location_city_names_the_address_in_the_title(): void
+    {
+        $this->seedChain();
+        StoreLocation::create([
+            'store_id' => Store::where('slug', 'seo-tinklas')->value('id'),
+            'city' => 'Utena',
+            'address' => 'Aukštakalnio g. 5',
+            'slug' => 'aukstakalnio-g-5',
+            'lat' => 55.5,
+            'lng' => 25.6,
+            'hours' => array_fill_keys(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], '08:00-21:00'),
+            'is_active' => true,
+        ]);
+
+        $this->get('/parduotuves/seo-tinklas/utena')
+            ->assertOk()
+            ->assertSee('<title>Seo Tinklas Utena darbo laikas – Aukštakalnio g. 5', false)
+            ->assertSee('content="Seo Tinklas Utena, Aukštakalnio g. 5 (Kasdien 08:00–21:00). Adresas, kontaktai ir vieta žemėlapyje."', false)
+            ->assertSee('1 parduotuvė Utena mieste');
+    }
+
+    public function test_city_with_shared_hours_states_them_once(): void
+    {
+        $this->seedChain();
+        $storeId = Store::where('slug', 'seo-tinklas')->value('id');
+
+        foreach (['Kauno g. 1', 'Kauno g. 2', 'Kauno g. 3'] as $address) {
+            StoreLocation::create([
+                'store_id' => $storeId,
+                'city' => 'Kaunas',
+                'address' => $address,
+                'slug' => \Illuminate\Support\Str::slug($address),
+                'lat' => 54.9,
+                'lng' => 23.9,
+                'hours' => array_fill_keys(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'], '08:00-22:00'),
+                'is_active' => true,
+            ]);
+        }
+
+        $this->get('/parduotuves/seo-tinklas/kaunas')
+            ->assertOk()
+            ->assertSee('content="Seo Tinklas Kaunas: Kauno g. 1, Kauno g. 2 ir kt. Darbo laikas: Kasdien 08:00–22:00. Visi adresai ir kontaktai."', false);
+    }
+
+    public function test_chain_page_meta_names_top_cities_and_typical_hours(): void
+    {
+        $this->seedChain();
+
+        $this->get('/parduotuves/seo-tinklas')
+            ->assertOk()
+            ->assertSee('<title>Seo Tinklas darbo laikas ir parduotuvių adresai', false)
+            // Only one city, so no city list; 2 of 3 locations share the hours.
+            ->assertSee('content="Seo Tinklas Lietuvoje – 3 parduotuvės. Dažniausias darbo laikas: Pr–Št 08:00–22:00, Sk 09:00–20:00. Adresai, darbo laikas ir kontaktai pagal miestą."', false);
+    }
+
     public function test_city_page_links_deals_and_leaflets_only_when_the_store_has_them(): void
     {
         $this->seedChain();

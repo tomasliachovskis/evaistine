@@ -15,7 +15,7 @@
         <div>
             <h1>{{ $store->name }} {{ $cityName }}</h1>
             <p class="mt-1 text-sm text-gray-600">
-                {{ $locations->count() }} {{ $locations->count() === 1 ? 'parduotuvė' : 'parduotuvės' }} {{ $cityName }} mieste — adresai, darbo laikas ir kontaktai.
+                {{ $locations->count() }} {{ \App\Support\LithuanianPlural::storeWord($locations->count()) }} {{ $cityName }} mieste — adresai, darbo laikas ir kontaktai.
             </p>
         </div>
 

@@ -1,14 +1,6 @@
-@php
-    $cityLabel = fn ($count) => match (true) {
-        $count === 1 => 'parduotuvė',
-        $count % 10 >= 2 && $count % 10 <= 9 && !($count % 100 >= 11 && $count % 100 <= 19) => 'parduotuvės',
-        default => 'parduotuvių',
-    };
-@endphp
-
 <x-layouts.app
-    :title="$store->name . ' parduotuvių tinklas – adresai ir darbo laikas'"
-    :description="'Raskite artimiausią ' . $store->name . ' parduotuvę — visi ' . $totalCount . ' adresai, darbo laikas ir kontaktai vienoje vietoje.'"
+    :title="$title"
+    :description="$description"
     :canonical="$canonical"
     :robots="$robots"
 >
@@ -22,7 +14,7 @@
         <div>
             <h1>{{ $store->name }} parduotuvės ir darbo laikas</h1>
             <p class="mt-1 text-sm text-gray-600">
-                Iš viso {{ $totalCount }} {{ $cityLabel($totalCount) }} Lietuvoje.
+                Iš viso {{ $totalCount }} {{ \App\Support\LithuanianPlural::storeWord($totalCount) }} Lietuvoje.
                 Pasirinkite miestą, kad pamatytumėte visus adresus ir darbo laiką.
             </p>
         </div>
@@ -84,7 +76,7 @@
                                 class="rounded-xl border border-gray-200 bg-white p-4 hover:border-green"
                             >
                                 <p class="font-semibold text-gray-900">{{ $city['name'] }}</p>
-                                <p class="mt-1 text-sm text-gray-600">{{ $city['count'] }} {{ $cityLabel($city['count']) }}</p>
+                                <p class="mt-1 text-sm text-gray-600">{{ $city['count'] }} {{ \App\Support\LithuanianPlural::storeWord($city['count']) }}</p>
                                 @if ($city['sampleAddress'])
                                     <p class="mt-1 truncate text-xs text-gray-400">{{ $city['sampleAddress'] }}{{ $city['count'] > 1 ? ' ir kt.' : '' }}</p>
                                 @endif

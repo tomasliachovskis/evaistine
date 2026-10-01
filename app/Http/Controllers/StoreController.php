@@ -9,6 +9,7 @@ use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
 use App\Support\FaqSchema;
 use App\Support\ItemListSchema;
+use App\Support\LithuanianPlural;
 use App\Support\OpeningHours;
 use App\Support\StoreLocationsSchema;
 use Illuminate\Support\Str;
@@ -16,13 +17,6 @@ use Illuminate\Support\Str;
 // Ported from discount/src/app/parduotuves/{page,[slug]/page,[slug]/[city]/page}.tsx.
 class StoreController extends Controller
 {
-    private const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-    private const DAY_LABELS = [
-        'monday' => 'Pirmadienis', 'tuesday' => 'Antradienis', 'wednesday' => 'Trečiadienis',
-        'thursday' => 'Ketvirtadienis', 'friday' => 'Penktadienis', 'saturday' => 'Šeštadienis', 'sunday' => 'Sekmadienis',
-    ];
-
     public function index(ProductController $api)
     {
         $payload = json_decode($api->getStores()->getContent(), true);
@@ -82,8 +76,22 @@ class StoreController extends Controller
             'sampleAddress' => $cityLocations->first()['address'] ?? null,
         ])->values()->sortBy('name');
 
+        // The chain-wide hours most locations share, if a clear majority
+        // does — a 30-store chain with mixed hours gets no hours line.
+        $summaries = $locations->map(fn (array $location) => OpeningHours::summary((array) ($location['hours'] ?? [])))->filter();
+        $commonHours = $summaries->countBy()->sortDesc();
+        $typicalHours = $commonHours->isNotEmpty() && $commonHours->first() * 2 > $locations->count() ? $commonHours->keys()->first() : null;
+
+        $total = $locations->count();
+        $topCities = $cities->sortByDesc('count')->take(3)->map(fn (array $city) => "{$city['name']} ({$city['count']})")->implode(', ');
+
         return view('stores.show', [
             'store' => $store,
+            'title' => "{$store->name} darbo laikas ir parduotuvių adresai",
+            'description' => "{$store->name} Lietuvoje – {$total} ".LithuanianPlural::storeWord($total)
+                .($cities->count() > 1 ? ": {$topCities}".($cities->count() > 3 ? ' ir kiti miestai' : '') : '')
+                .'.'.($typicalHours ? " Dažniausias darbo laikas: {$typicalHours}." : '')
+                .' Adresai, darbo laikas ir kontaktai pagal miestą.',
             'cities' => $cities,
             'locationsUrl' => "/api/store-locations/{$slug}",
             'totalCount' => $locations->count(),
@@ -120,22 +128,32 @@ class StoreController extends Controller
             ['name' => $cityName, 'href' => $path],
         ];
 
-        $todayKey = self::DAY_KEYS[now()->dayOfWeekIso - 1];
-        $todayLabel = self::DAY_LABELS[$todayKey];
+        // Query words first: people search "senukai klaipeda darbo laikas".
+        // Hours come from OpeningHours::summary() (whole week), not today's
+        // row — Google keeps a snippet for days, so "šiandien 08:00–21:00"
+        // was often wrong by the time someone read it.
+        $title = $count === 1
+            ? "{$store->name} {$cityName} darbo laikas – {$cityLocations->first()['address']}"
+            : "{$store->name} {$cityName} darbo laikas – {$count} ".LithuanianPlural::storeWord($count);
 
-        $storeLabel = $count === 1 ? 'parduotuvė' : ($count % 10 >= 2 && $count % 10 <= 9 && !($count % 100 >= 11 && $count % 100 <= 19) ? 'parduotuvės' : 'parduotuvių');
-        $title = "„{$store->name}“ {$cityName} – {$count} {$storeLabel}, adresai ir darbo laikas";
+        $summaries = $cityLocations->map(fn (array $location) => OpeningHours::summary((array) ($location['hours'] ?? [])));
+        $sharedHours = $summaries->filter()->count() === $count && $summaries->unique()->count() === 1 ? $summaries->first() : null;
 
-        // Real addresses + their real today's-hours, not a generic sentence
-        // — this is the part that keeps every city page genuinely distinct.
-        $sample = $cityLocations->take(2)->map(function ($location) use ($todayKey) {
-            $hours = $location['hours'][$todayKey] ?? null;
-            return $hours ? "{$location['address']} (šiandien {$hours})" : $location['address'];
-        })->implode(', ');
-
-        $description = "„{$store->name}“ {$cityName} mieste turi {$count} {$storeLabel}: {$sample}"
-            .($count > 2 ? ' ir kt.' : '.')
-            ." Žemiau visi adresai, darbo laikas ({$todayLabel}) ir kontaktai.";
+        if ($count === 1) {
+            $description = "{$store->name} {$cityName}, {$cityLocations->first()['address']}"
+                .($sharedHours ? " ({$sharedHours})" : '').'. Adresas, kontaktai ir vieta žemėlapyje.';
+        } elseif ($sharedHours) {
+            $description = "{$store->name} {$cityName}: ".$cityLocations->take(2)->pluck('address')->implode(', ')
+                .($count > 2 ? ' ir kt.' : '.')." Darbo laikas: {$sharedHours}. Visi adresai ir kontaktai.";
+        } else {
+            // Hours differ per address: name as many addresses with their
+            // hours as fit before the layout's ~158-char snippet cut.
+            $build = fn (int $take) => "{$store->name} {$cityName}: ".$cityLocations->take($take)
+                ->map(fn (array $location, int $i) => $summaries[$i] ? "{$location['address']} ({$summaries[$i]})" : $location['address'])
+                ->implode(', ').($count > $take ? ' ir kt.' : '.');
+            $description = mb_strlen($build(2)) <= 158 ? $build(2) : $build(1);
+            $description .= ' Visi adresai, darbo laikas ir kontaktai.';
+        }
 
         return view('stores.city', [
             'store' => $store,
