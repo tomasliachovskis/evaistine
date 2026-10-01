@@ -101,7 +101,7 @@ class LeafletController extends Controller
             'storeSlug' => $store,
             'showsDiscountsPage' => (bool) Store::where('slug', $store)->value('show_discounts_page'),
             'canonical' => CanonicalUrl::build($path),
-            'robots' => CanonicalUrl::robotsMeta($path),
+            'robots' => $betaConfig ? 'noindex, nofollow' : CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
             'flyerOffers' => $payload['flyer_offers'] ?? [],

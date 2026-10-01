@@ -42,7 +42,6 @@
             <script type="application/ld+json">{!! json_encode($flyerOffersSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @endif
         @if ($betaConfig)
-            <meta name="robots" content="noindex, nofollow">
             @include('leaflets.partials.beta-script')
         @endif
     @endpush
