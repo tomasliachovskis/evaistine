@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Store;
+use App\Services\HomePageMetaService;
 use App\Services\KeywordPageService;
 use App\Services\StoresPageMetaService;
 use App\Support\CacheVersion;
@@ -35,12 +36,20 @@ class HomeBetaController extends Controller
     private const STORE_TOTAL = 40;
 
     public function __construct(
+        private HomePageMetaService $metaService,
         private StoresPageMetaService $storesMetaService,
         private KeywordPageService $keywordPageService,
     ) {}
 
     public function index()
     {
+        // Same cached payload the live homepage reads (NewHomeController).
+        $pageMeta = Cache::remember(
+            'new_home_meta_'.CacheVersion::suffix(['discounts']),
+            1800,
+            fn () => $this->metaService->build()
+        );
+
         $stores = Cache::remember(
             'new_home_stores_'.CacheVersion::suffix(['discounts']),
             1800,
@@ -74,6 +83,8 @@ class HomeBetaController extends Controller
             'storeTiles' => $storeTiles,
             'otherStoresCount' => self::STORE_TOTAL - count($storeTiles),
             'storeTotal' => self::STORE_TOTAL,
+            'totalDeals' => (int) ($pageMeta['stats']['total_deals'] ?? 0),
+            'totalDealsLabel' => ($pageMeta['stats']['total_deals'] ?? 0) > 0 ? $pageMeta['stats']['total_deals_label'] : null,
             'cards' => $this->keywordCards(),
         ]);
     }

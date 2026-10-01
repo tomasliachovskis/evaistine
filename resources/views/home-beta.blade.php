@@ -6,24 +6,32 @@
     <div class="base-container mx-auto flex flex-col gap-10 pb-12 pt-6 sm:gap-14 sm:pt-12">
 
         {{-- Hero --}}
-        <section class="flex flex-col gap-4 sm:items-center sm:gap-5 sm:text-center">
-            <span class="inline-flex w-fit items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm">
-                <span class="size-2 rounded-full bg-green"></span>
-                Kainos atnaujintos šiandien
-            </span>
-            <h1 class="m-0 text-4xl font-extrabold leading-tight tracking-tight text-dark-green sm:text-6xl">Ką šiandien perkate?</h1>
-            <p class="m-0 text-base leading-relaxed text-gray-600 sm:text-xl">Parodysime, kur pigiausia – {{ $storeTotal }} parduotuvių vienoje vietoje.</p>
-            <x-search-box size="lg" placeholder="Pienas, kava, sviestas…" class="mt-1" />
+        {{-- Left-aligned, no eyebrow pill: the centred pill + huge headline
+             + subtitle stack read as a generic template. The subtitle carries
+             one concrete fact instead (today's real offer count). From lg the
+             store tiles sit in a right-hand column beside the search. --}}
+        <section class="flex flex-col gap-6 lg:flex-row lg:items-end lg:gap-14">
+          <div class="flex min-w-0 flex-1 flex-col gap-3 sm:gap-4">
+            <h1 class="m-0 text-3xl font-extrabold leading-tight tracking-tight text-dark-green sm:text-5xl">Ką šiandien perkate?</h1>
+            <p class="m-0 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-xl">
+                @if ($totalDealsLabel)
+                    Šiandien palyginome <strong class="font-bold text-gray-900">{{ $totalDealsLabel }}</strong> {{ \App\Support\LithuanianPlural::offerWordAccusative($totalDeals) }} iš {{ $storeTotal }} parduotuvių. Įrašykite prekę – parodysime, kur pigiausia.
+                @else
+                    Įrašykite prekę – parodysime, kur pigiausia iš {{ $storeTotal }} parduotuvių.
+                @endif
+            </p>
+            <x-search-box size="lg" placeholder="Pienas, kava, sviestas…" class="mt-2" />
+          </div>
 
-            <div class="mt-2 flex w-full max-w-3xl flex-col gap-3 sm:items-center">
+            <div class="flex w-full flex-col gap-3 lg:w-[26rem] lg:shrink-0">
                 <span class="text-base font-bold text-gray-700">Arba pasirinkite parduotuvę</span>
                 <div class="flex w-full flex-wrap gap-2.5 sm:gap-3">
                     @foreach ($storeTiles as $store)
-                        <a href="{{ $store['href'] }}" aria-label="{{ $store['name'] }} akcijos" class="flex h-16 w-[calc((100%-1.25rem)/3)] items-center justify-center rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-md sm:h-[4.5rem] sm:w-[calc((100%-3.75rem)/6)]">
+                        <a href="{{ $store['href'] }}" aria-label="{{ $store['name'] }} akcijos" class="flex h-16 w-[calc((100%-1.25rem)/3)] items-center justify-center rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-md sm:h-[4.5rem] sm:w-[calc((100%-3.75rem)/6)] lg:w-[calc((100%-1.5rem)/3)]">
                             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="sm" />
                         </a>
                     @endforeach
-                    <a href="/parduotuves" class="flex h-16 w-[calc((100%-1.25rem)/3)] items-center justify-center rounded-2xl bg-white text-base font-bold text-dark-green shadow-sm transition-shadow hover:shadow-md sm:h-[4.5rem] sm:w-[calc((100%-3.75rem)/6)] sm:text-lg">+{{ $otherStoresCount }} kitos</a>
+                    <a href="/parduotuves" class="flex h-16 w-[calc((100%-1.25rem)/3)] items-center justify-center rounded-2xl bg-white text-base font-bold text-dark-green shadow-sm transition-shadow hover:shadow-md sm:h-[4.5rem] sm:w-[calc((100%-3.75rem)/6)] sm:text-lg lg:w-[calc((100%-1.5rem)/3)]">+{{ $otherStoresCount }} kitos</a>
                 </div>
             </div>
         </section>
