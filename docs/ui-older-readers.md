@@ -40,7 +40,7 @@ Most people reading leaflets on superakcijos.lt are older. The interactive leafl
   Account, "Didžiausios nuolaidos" and popular products are in the menu. The breadcrumbs stay visible on phones.
 - **`mobile-bottom-nav`:** four worded tabs (Pradžia, Akcijos, Leidiniai, Stebimos), always visible.
 - **`--header-h`** (CSS variable): 3.5rem on phones, 4.5rem from lg. Sticky bars dock at `top-[calc(var(--header-h)+env(safe-area-inset-top,0px))]`.
-- **Store cards (`x-store-card`):** two buttons, "Leidiniai N" and "Akcijos N", with the counts inside the buttons rather than on separate lines.
+- **Store cards (`x-store-card`):** two buttons with the count declined Lithuanian-style ("5 leidiniai", "1 leidinys", "252 akcijos", "10 akcijų" via `LithuanianPlural::leafletWord` / `promotionWord`) instead of separate count lines.
 - **Popups:** `.sheet-backdrop` / `.sheet-panel` / `.sheet-handle` / `.sheet-head` / `.sheet-close`. A bottom sheet on phones, a centered card from sm up. Add `x-back-closes="openExpression"` (Alpine directive in `resources/js/app.js`) so Back closes it.
 - **Other classes:**
   - `.crumb-link`, `.crumb-current`, `.crumb-sep`: breadcrumbs;

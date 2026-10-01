@@ -62,10 +62,10 @@
         </a>
         <div class="mt-auto flex flex-col gap-2 pt-3">
             @if ($showsLeaflets)
-                <a href="/leidinys/{{ $store['slug'] }}" class="{{ $buttonClass }} gap-2">Leidiniai @if ($leafletsCount > 0)<span class="tabular-nums text-gray-700">{{ $leafletsCount }}</span>@endif</a>
+                <a href="/leidinys/{{ $store['slug'] }}" class="{{ $buttonClass }}">{{ $leafletsCount > 0 ? $leafletsCount.' '.LithuanianPlural::leafletWord($leafletsCount) : 'Leidiniai' }}</a>
             @endif
             @if ($showsDiscountsPage)
-                <a href="/akcijos/{{ $store['slug'] }}" class="{{ $buttonClass }} gap-2">Akcijos <span class="tabular-nums text-gray-700">{{ LithuanianPlural::formatCount($store['discounts_count']) }}</span></a>
+                <a href="/akcijos/{{ $store['slug'] }}" class="{{ $buttonClass }} tabular-nums">{{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::promotionWord((int) $store['discounts_count']) }}</a>
             @endif
         </div>
     </div>

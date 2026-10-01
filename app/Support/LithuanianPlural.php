@@ -67,6 +67,27 @@ class LithuanianPlural
         return 'leidinių';
     }
 
+    // "1 akcija / 5 akcijos / 10 akcijų".
+    public static function promotionWord(int $count): string
+    {
+        $lastDigit = $count % 10;
+        $lastTwoDigits = $count % 100;
+
+        if ($lastTwoDigits >= 11 && $lastTwoDigits <= 19) {
+            return 'akcijų';
+        }
+
+        if ($lastDigit === 1) {
+            return 'akcija';
+        }
+
+        if ($lastDigit >= 2 && $lastDigit <= 9) {
+            return 'akcijos';
+        }
+
+        return 'akcijų';
+    }
+
     public static function storeWord(int $count): string
     {
         $lastDigit = $count % 10;
