@@ -102,6 +102,17 @@
                     // fill everything below it down to a small bottom margin.
                     sizeViewer() {
                         if (this.fullscreen || !this.$refs.viewerFrame) return;
+                        // Beta puts the instruction, search and filters
+                        // above the flyer, so 'space left below the frame'
+                        // shrank it to the 320px floor. Size it to the full
+                        // screen below the sticky header instead, as if it
+                        // were scrolled to the top.
+                        if (this.beta) {
+                            const header = document.querySelector('header');
+                            const headerHeight = header ? header.getBoundingClientRect().height : 64;
+                            this.viewerHeight = Math.max(420, window.innerHeight - headerHeight - 24);
+                            return;
+                        }
                         const top = this.$refs.viewerFrame.getBoundingClientRect().top;
                         this.viewerHeight = Math.max(320, window.innerHeight - top - 16);
                     },
