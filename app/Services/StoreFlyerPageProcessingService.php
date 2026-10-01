@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\StoreFlyer;
 use App\Models\StoreFlyerPage;
+use App\Support\CacheVersion;
 use App\Support\FlyerStorage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -63,6 +64,12 @@ class StoreFlyerPageProcessingService
                 'processing_status' => StoreFlyer::STATUS_READY,
                 'processing_error' => null,
             ]);
+
+            // /leidiniai and /leidinys/{store} payloads are cached for 1h —
+            // without this a freshly processed flyer stays invisible until
+            // that expires. Own group, not 'discounts': bumping that would
+            // drop every discount/page-HTML cache entry site-wide.
+            CacheVersion::bump('flyers');
 
             $this->reportProgress($onProgress, "Flyer #{$flyer->id}: baigta, " . count($pages) . ' puslapiai', [
                 'flyer_id' => $flyer->id,

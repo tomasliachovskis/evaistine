@@ -1515,7 +1515,7 @@ class ProductController extends Controller
 
     public function getAllLeaflets()
     {
-        $cacheKey = 'all_leaflets_'.CacheVersion::suffix(['discounts']);
+        $cacheKey = 'all_leaflets_'.CacheVersion::suffix(['discounts', 'flyers']);
 
         $payload = Cache::remember($cacheKey, 3600, function () {
             $leaflets = $this->listingPageMetaService->buildAllLeaflets();
@@ -1539,7 +1539,7 @@ class ProductController extends Controller
     public function getStoreLeafletHub(string $store)
     {
         $storeModel = \App\Models\Store::where('slug', $store)->firstOrFail();
-        $cacheKey = "store_leaflet_hub_{$storeModel->id}_".CacheVersion::suffix(['discounts']);
+        $cacheKey = "store_leaflet_hub_{$storeModel->id}_".CacheVersion::suffix(['discounts', 'flyers']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($storeModel) {
             return [
@@ -1564,7 +1564,7 @@ class ProductController extends Controller
             ->with('pages')
             ->firstOrFail();
 
-        $cacheKey = "store_leaflet_{$flyer->id}_".CacheVersion::suffix(['discounts']);
+        $cacheKey = "store_leaflet_{$flyer->id}_".CacheVersion::suffix(['discounts', 'flyers']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($storeModel, $flyer) {
             $listingMeta = $this->listingPageMetaService->buildForStoreFlyer($storeModel, $flyer);
