@@ -50,14 +50,16 @@
              sidebar, with no height cap on the image. Net effect: on a
              normal screen, most of the leaflet page needed scrolling just to
              see it once, let alone at a readable size (confirmed live
-             2026-09-18). Flipped here: the image is the hero column, sized
-             to fill the viewport height available to it; everything that
-             used to sit above it (breadcrumb, title, dates, follow CTA, the
-             quick-links pill bar, "Kiti leidiniai") moves into a narrow side
-             rail instead. Below lg, the rail collapses to a single column
-             below the viewer — same relative order mobile already had. --}}
+             2026-09-18). Flipped here: the image is sized to fill the
+             viewport height available to it. On desktop a slim title row
+             (breadcrumb, title, dates, pager) sits above it and the
+             quick links and "Kiti leidiniai" go below, so the viewer gets
+             the full container width for the two-page spread. A 320px side
+             rail used to take that width, which left a single portrait page
+             at about half the screen. On mobile the viewer still comes
+             first, then the pager, the title and the rest. --}}
         <div
-            class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+            class="flex flex-col gap-6"
             @if (!empty($pages))
                 x-data="{
                     currentPage: 1, totalPages: {{ count($pages) }}, fullscreen: false, touchStartX: null,
@@ -70,6 +72,23 @@
                     // state so a spinner can cover that gap instead.
                     loadedPages: {},
                     pageLoaded(page) { return !!this.loadedPages[page]; },
+                    // Desktop shows two pages side by side like an opened
+                    // magazine (1, 2-3, 4-5, ...): a portrait page fitted to
+                    // the viewer's height only filled ~half of a wide screen.
+                    // Only for portrait pages (a landscape spread would come
+                    // out tiny), detected from page 1's real size.
+                    wide: false,
+                    portrait: true,
+                    spread() {
+                        if (!this.wide || !this.portrait || this.currentPage === 1) return [this.currentPage];
+                        const left = this.currentPage % 2 === 0 ? this.currentPage : this.currentPage - 1;
+                        return left + 1 <= this.totalPages ? [left, left + 1] : [left];
+                    },
+                    isShown(page) { return this.spread().includes(page); },
+                    hasNext() { return Math.max(...this.spread()) < this.totalPages; },
+                    hasPrev() { return Math.min(...this.spread()) > 1; },
+                    next() { this.currentPage = Math.min(this.totalPages, Math.max(...this.spread()) + 1); },
+                    prev() { this.currentPage = Math.max(1, Math.min(...this.spread()) - 1); },
                     // Height was a guessed calc(100vh - Nrem) constant, tied to
                     // this page's current header/padding sizes — any future
                     // change to those (or a device's own chrome/safe-area
@@ -83,6 +102,9 @@
                         this.viewerHeight = Math.max(320, window.innerHeight - top - 16);
                     },
                     init() {
+                        const wideQuery = window.matchMedia('(min-width: 1024px)');
+                        this.wide = wideQuery.matches;
+                        wideQuery.addEventListener('change', (e) => { this.wide = e.matches; });
                         // #psl-N (product pages link to the page an offer
                         // is printed on) opens that page.
                         const hashPage = parseInt((location.hash.match(/^#psl-(\d+)$/) || [])[1], 10);
@@ -133,8 +155,8 @@
                     },
                 }"
                 @keydown.window="
-                    if ($event.key === 'ArrowRight') currentPage = Math.min(totalPages, currentPage + 1);
-                    if ($event.key === 'ArrowLeft') currentPage = Math.max(1, currentPage - 1);
+                    if ($event.key === 'ArrowRight') next();
+                    if ($event.key === 'ArrowLeft') prev();
                     if ($event.key === 'Escape' && fullscreen && !document.fullscreenElement && !document.webkitFullscreenElement) fullscreen = false;
                 "
                 @leaflet-goto.window="currentPage = $event.detail; $refs.viewerFrame.scrollIntoView({ behavior: 'smooth', block: 'center' })"
@@ -143,7 +165,7 @@
             @endif
         >
             @if (!empty($pages))
-                <div class="order-1 min-w-0">
+                <div class="order-1 min-w-0 lg:order-2">
                     <div
                         x-ref="viewerFrame"
                         class="relative flex h-[75vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
@@ -157,28 +179,28 @@
                             if (touchStartX === null) return;
                             const dx = $event.changedTouches[0].clientX - touchStartX;
                             if (Math.abs(dx) > 50) {
-                                if (dx < 0) currentPage = Math.min(totalPages, currentPage + 1);
-                                else currentPage = Math.max(1, currentPage - 1);
+                                if (dx < 0) next();
+                                else prev();
                             }
                             touchStartX = null;
                         "
                     >
                         @foreach ($pages as $page)
                             <img
-                                x-show="currentPage === {{ $page['page_number'] }}"
+                                x-show="isShown({{ $page['page_number'] }})"
                                 x-cloak
                                 src="{{ $page['image_url'] }}"
                                 alt="{{ $flyer['title'] }} – {{ $page['page_number'] }} puslapis{{ $pageProductNames->has($page['page_number']) ? ': ' . $pageProductNames[$page['page_number']] : '' }}"
-                                class="block h-full w-auto max-w-full object-contain"
-                                :class="fullscreen && 'mx-auto max-h-full'"
-                                loading="{{ $page['page_number'] <= 2 ? 'eager' : 'lazy' }}"
-                                @load="loadedPages[{{ $page['page_number'] }}] = true"
+                                class="block h-full w-auto object-contain"
+                                :class="[spread().length > 1 ? 'max-w-[50%]' : 'max-w-full', fullscreen && 'max-h-full', fullscreen && spread().length === 1 && 'mx-auto']"
+                                loading="{{ $page['page_number'] <= 3 ? 'eager' : 'lazy' }}"
+                                @load="loadedPages[{{ $page['page_number'] }}] = true{{ $page['page_number'] === 1 ? '; portrait = $el.naturalHeight >= $el.naturalWidth' : '' }}"
                                 x-on:error="loadedPages[{{ $page['page_number'] }}] = true"
                             >
                         @endforeach
 
                         <div
-                            x-show="currentPage > 0 && !pageLoaded(currentPage)"
+                            x-show="!spread().every((page) => pageLoaded(page))"
                             x-cloak
                             class="pointer-events-none absolute inset-0 flex items-center justify-center bg-gray-50"
                         >
@@ -187,8 +209,8 @@
 
                         <button
                             type="button"
-                            @click="currentPage = Math.max(1, currentPage - 1)"
-                            x-show="currentPage > 1"
+                            @click="prev()"
+                            x-show="hasPrev()"
                             aria-label="Ankstesnis puslapis"
                             class="absolute left-2 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
                         >
@@ -196,8 +218,8 @@
                         </button>
                         <button
                             type="button"
-                            @click="currentPage = Math.min(totalPages, currentPage + 1)"
-                            x-show="currentPage < totalPages"
+                            @click="next()"
+                            x-show="hasNext()"
                             aria-label="Kitas puslapis"
                             class="absolute right-2 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
                         >
@@ -222,15 +244,43 @@
                     </div>
                 </div>
             @elseif (!empty($flyer['image_url']))
-                <div class="order-1 min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <div class="order-1 min-w-0 overflow-hidden rounded-xl lg:order-2 border border-gray-200 bg-white">
                     <img src="{{ $flyer['image_url'] }}" alt="{{ $flyer['title'] }}" class="block h-auto w-full">
                 </div>
             @else
-                <div class="order-1 min-w-0 rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-600">
+                <div class="order-1 min-w-0 rounded-xl border lg:order-2 border-gray-200 bg-white p-6 text-center text-sm text-gray-600">
                     Leidinio puslapiai dar ruošiami.
                     <a href="/leidinys/{{ $storeSlug }}" class="font-semibold text-dark-green">Grįžti į {{ $storeName }} leidinius</a>
                 </div>
             @endif
+
+            {{-- Title row: above the viewer on desktop (lg:order-1), below
+                 it on mobile, where the flyer page comes first. The
+                 viewer used to sit beside a 320px rail; it now gets the
+                 full container width so the two-page spread (see spread())
+                 shows both pages at a readable size. --}}
+            <div class="order-2 flex min-w-0 flex-col gap-3 lg:order-1 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
+                <div class="min-w-0">
+                    <nav class="flex flex-wrap items-center gap-1 text-xs text-gray-500" aria-label="Naršymo kelias">
+                        @foreach ($breadcrumbs as $index => $crumb)
+                            @if ($index > 0)<x-app-icon name="arrow-right" class="size-3 text-gray-300" />@endif
+                            <a href="{{ $crumb['href'] }}" class="transition-colors hover:text-green {{ $canonical === $crumb['href'] ? 'font-medium text-green' : '' }}">{{ $crumb['name'] }}</a>
+                        @endforeach
+                    </nav>
+                    <h1 class="mt-2 text-xl font-bold leading-tight">{{ $flyer['title'] }}</h1>
+                    @if ($dateRange)
+                        <p class="mt-1 text-sm text-gray-600">{{ $dateRange }}</p>
+                    @endif
+                </div>
+
+                {{-- Desktop only: mobile shows this same pager just below
+                     the image instead (see the viewer column). --}}
+                @if (!empty($pages))
+                    <div class="hidden shrink-0 lg:block">
+                        @include('leaflets.partials.leaflet-pager', ['pages' => $pages])
+                    </div>
+                @endif
+            </div>
 
             {{-- data-sticky-filter-bar: gates the header's row2 (nav links)
                  scroll-hide behavior — this page previously had none of the
@@ -239,45 +289,26 @@
                  once by site-header.blade.php's scroll listener; doesn't
                  need to sit on the thing that visually docks in that space
                  (there isn't one on this page), just needs to exist. --}}
-            <aside data-sticky-filter-bar class="order-2 flex min-w-0 flex-col gap-4">
-                {{-- Compact breadcrumb + title instead of <x-breadcrumb-trail>
-                     (full-width, its own row) and <x-type-hero> (h1 with no
-                     size class — inherits the global, large h1 rule meant
-                     for full-width headers, which ballooned to 4+ wrapped
-                     lines at this rail's ~320px width, confirmed live
-                     2026-09-18). Both moved/rebuilt here instead, sized for
-                     the rail. --}}
-                <nav class="flex flex-wrap items-center gap-1 text-xs text-gray-500" aria-label="Naršymo kelias">
-                    @foreach ($breadcrumbs as $index => $crumb)
-                        @if ($index > 0)<x-app-icon name="arrow-right" class="size-3 text-gray-300" />@endif
-                        <a href="{{ $crumb['href'] }}" class="transition-colors hover:text-green {{ $canonical === $crumb['href'] ? 'font-medium text-green' : '' }}">{{ $crumb['name'] }}</a>
-                    @endforeach
-                </nav>
-                <div>
-                    <h1 class="text-xl font-bold leading-tight">{{ $flyer['title'] }}</h1>
-                    @if ($dateRange)
-                        <p class="mt-1 text-sm text-gray-600">{{ $dateRange }}</p>
+            <aside data-sticky-filter-bar class="order-3 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+                <div class="flex flex-col gap-4 lg:w-80 lg:shrink-0">
+                    <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" :shows-discounts-page="$showsDiscountsPage" :show-leaflets-link="true" :leaflets-count="$listingMeta['leaflets_count'] ?? 0" :compact="true" />
+
+                    @if ($showsDiscountsPage)
+                        <a href="/akcijos/{{ $storeSlug }}" class="section-link">
+                            Visos {{ $storeName }} akcijos
+                            <x-app-icon name="chevron-right" class="size-3.5" />
+                        </a>
                     @endif
                 </div>
 
-                {{-- Desktop only — mobile shows this same pager just below
-                     the image instead (see the viewer column above). --}}
-                @if (!empty($pages))
-                    <div class="hidden lg:block">
-                        @include('leaflets.partials.leaflet-pager', ['pages' => $pages])
-                    </div>
-                @endif
-
-                <x-leaflet-quick-links :store-slug="$storeSlug" :store-name="$storeName" :total-offers="$totalOffers" :shows-discounts-page="$showsDiscountsPage" :show-leaflets-link="true" :leaflets-count="$listingMeta['leaflets_count'] ?? 0" :compact="true" />
-
-                <div class="section-card">
+                <div class="section-card min-w-0 lg:flex-1">
                     <h2 class="section-heading mb-3">Kiti {{ $storeName }} leidiniai</h2>
                     @if ($otherLeaflets->isEmpty())
                         <p class="text-sm text-gray-500">Kitų leidinių nėra.</p>
                     @else
-                        <div class="flex flex-col gap-2">
+                        <div class="flex flex-col gap-2 lg:flex-row lg:flex-wrap">
                             @foreach ($otherLeaflets->take(6) as $other)
-                                <a href="{{ $other['view_url'] ?? "/leidinys/{$storeSlug}" }}" class="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-green/5">
+                                <a href="{{ $other['view_url'] ?? "/leidinys/{$storeSlug}" }}" class="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-green/5 lg:w-[calc(33.333%-0.375rem)]">
                                     @if (!empty($other['image_url']))
                                         <img src="{{ $other['image_url'] }}" alt="" class="h-20 w-16 shrink-0 rounded-md object-cover">
                                     @endif
@@ -287,13 +318,6 @@
                         </div>
                     @endif
                 </div>
-
-                @if ($showsDiscountsPage)
-                    <a href="/akcijos/{{ $storeSlug }}" class="section-link">
-                        Visos {{ $storeName }} akcijos
-                        <x-app-icon name="chevron-right" class="size-3.5" />
-                    </a>
-                @endif
             </aside>
         </div>
 

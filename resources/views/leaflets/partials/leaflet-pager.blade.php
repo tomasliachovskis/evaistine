@@ -10,7 +10,7 @@
         <button
             type="button"
             @click="currentPage = {{ $page['page_number'] }}"
-            :class="currentPage === {{ $page['page_number'] }} ? 'border-green bg-green text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-green/40'"
+            :class="isShown({{ $page['page_number'] }}) ? 'border-green bg-green text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-green/40'"
             class="flex min-h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-colors"
         >{{ $page['page_number'] }}</button>
 
