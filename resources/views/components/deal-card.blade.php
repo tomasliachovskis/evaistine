@@ -125,10 +125,12 @@
                 @endif
             </div>
 
-            {{-- 3 lines on mobile (more of the product name visible without
-                 opening the card), back to 2 at sm+ where cards are smaller
-                 relative to screen width and 3 lines would crowd the row. --}}
-            <p class="{{ ($discountPrice > 0 || $unitPriceLabel) ? 'mt-1.5' : '' }} line-clamp-3 max-h-[3lh] min-h-[3lh] min-w-0 overflow-hidden text-sm font-normal leading-snug text-gray-900 sm:line-clamp-2 sm:max-h-[2lh] sm:min-h-[2lh]">
+            {{-- The whole name, never cut with "…" (older readers couldn't
+                 tell "Majonezas KĖDAINIŲ LIETUVIŠKAS…" apart from its
+                 siblings). The minimum height keeps short names level; cards
+                 in a row stretch to the tallest one, the store logo sits at
+                 the bottom (mt-auto). --}}
+            <p class="{{ ($discountPrice > 0 || $unitPriceLabel) ? 'mt-1.5' : '' }} min-h-[3lh] min-w-0 break-words text-sm font-normal leading-snug text-gray-900 sm:min-h-[2lh]">
                 {{ $product['name'] }}
             </p>
 
