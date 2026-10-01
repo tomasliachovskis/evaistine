@@ -167,10 +167,12 @@ use App\Support\ProductPageMeta;
              (resolvePriceDealSignal). --}}
         <div class="base-container pb-3">
             <div class="rounded-2xl border border-gray-200 bg-white p-4 max-lg:border-gray-100 sm:p-6">
-                <div class="grid grid-cols-[128px_minmax(0,1fr)] items-start gap-x-4 gap-y-6 sm:grid-cols-[144px_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-7 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-x-8">
-                    <div class="flex min-w-0 items-start justify-center self-start overflow-hidden pt-2 pl-1.5 sm:pt-3 sm:pl-2 lg:p-3">
+                {{-- Phones: one column, the photo full width on top and the title,
+                     price and store under it (a 128px photo column squeezed both). --}}
+                <div class="grid grid-cols-1 items-start gap-x-4 gap-y-4 sm:grid-cols-[144px_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-7 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-x-8">
+                    <div class="flex min-w-0 items-start justify-center self-start overflow-hidden sm:pt-3 sm:pl-2 lg:p-3">
                         @if ($product['image_url'])
-                            <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" fetchpriority="high" loading="eager" class="aspect-square h-auto max-h-[128px] w-full max-w-full origin-center scale-[1.2] object-contain sm:max-h-[144px] sm:scale-[1.15] {{ $bestAlternative ? 'lg:max-h-[320px]' : 'lg:max-h-[190px]' }} lg:scale-100">
+                            <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" fetchpriority="high" loading="eager" class="aspect-square h-auto max-h-48 w-full max-w-full origin-center object-contain sm:max-h-[144px] sm:scale-[1.15] {{ $bestAlternative ? 'lg:max-h-[320px]' : 'lg:max-h-[190px]' }} lg:scale-100">
                         @endif
                     </div>
 
@@ -300,7 +302,7 @@ use App\Support\ProductPageMeta;
                          is its own directly clickable card (no separate button) — always at
                          least 2 up even on narrow phones (max 2 shown there), 3 from lg. --}}
                     @if ($bestAlternative)
-                        <div class="col-span-2 rounded-2xl border border-green/30 bg-green/5 p-4 lg:hidden">
+                        <div class="col-span-full rounded-2xl border border-green/30 bg-green/5 p-4 lg:hidden">
                             <p class="text-base font-bold text-dark-green">Radome panašų produktą su aktyvia nuolaida:</p>
 
                             <div class="mt-3 grid grid-cols-2 gap-2.5 lg:grid-cols-3">
@@ -355,7 +357,7 @@ use App\Support\ProductPageMeta;
                          col-start-1 row-start-2 ... lg:hidden) — a grid SIBLING of the
                          image/title columns, not nested inside the narrow title column,
                          which is what looked squeezed/collapsed there. --}}
-                    <div class="col-span-2 pt-1 lg:hidden">
+                    <div class="col-span-full pt-1 lg:hidden">
                         <x-product-price-watch-banner
                             :product-id="$product['id']"
                             :favorited="\App\Support\FavoritedProducts::has($product['id'])"
@@ -451,6 +453,12 @@ use App\Support\ProductPageMeta;
                 @endif
             </section>
         @endif
+
+        @guest
+            <div class="base-container pb-6">
+                <x-signup-inline-card />
+            </div>
+        @endguest
 
         {{-- Panašūs produktai (live, potentially still-active deals) comes
              before the stale "Paskutinės žinomos kainos" history list below —
