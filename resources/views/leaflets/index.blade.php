@@ -113,13 +113,21 @@
              Kategorijos dropdown and the akcijos filter sheet. --}}
         @php
             $topStoreChips = $storeChips->take(5);
+            // Sorting: the same dropdown as the product listings' sort
+            // button (discount-filters.blade.php), as links over ?order=.
+            $leafletOrder = request('order', 'best');
+            $leafletOrderOptions = [
+                'best' => 'Populiariausi',
+                'newest' => 'Naujausi',
+                'old' => 'Baigsis greitai',
+            ];
             $storeChipRowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-base leading-snug text-left transition-colors '
                 . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
         @endphp
         <div
             data-sticky-filter-bar
-            x-data="{ allStoresOpen: false }"
-            @keydown.escape.window="allStoresOpen = false"
+            x-data="{ allStoresOpen: false, sortOpen: false }"
+            @keydown.escape.window="allStoresOpen = false; sortOpen = false"
             class="sticky top-[calc(var(--header-h)+env(safe-area-inset-top,0px))] z-[60] flex items-center gap-2 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-1 min-h-14 sm:px-[20px]"
         >
             <nav aria-label="Parduotuvės" class="scroll-cards-x flex min-w-0 flex-1 flex-nowrap items-center gap-1 max-sm:hidden">
@@ -184,23 +192,19 @@
                     </div>
                 </div>
             </template>
-        </div>
 
-        {{-- Same "Rūšiuoti" toggle as kuponai/index.blade.php — plain text
-             links over ?order=, not a boxed <select>. --}}
-        @php
-            $leafletOrder = request('order', 'best');
-            $leafletOrderOptions = [
-                'best' => 'Populiariausi',
-                'newest' => 'Naujausi',
-                'old' => 'Baigsis greitai',
-            ];
-        @endphp
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-base">
-            <span class="font-bold text-gray-900">Rūšiuoti:</span>
-            @foreach ($leafletOrderOptions as $value => $label)
-                <a href="{{ $value === 'best' ? '/leidiniai' : '/leidiniai?order=' . $value }}" class="inline-flex min-h-12 items-center rounded-xl px-3 {{ $leafletOrder === $value ? 'bg-action font-bold text-white' : 'font-semibold text-gray-800 hover:bg-gray-100' }}">{{ $label }}</a>
-            @endforeach
+            <div class="relative ml-auto shrink-0" @click.outside="sortOpen = false">
+                <button type="button" @click="sortOpen = !sortOpen" class="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen" aria-label="Rūšiuoti">
+                    <x-app-icon name="arrow-down-up" class="size-5 shrink-0" />
+                    <span class="hidden truncate sm:inline">{{ $leafletOrderOptions[$leafletOrder] ?? 'Populiariausi' }}</span>
+                    <x-app-icon name="chevron-down" class="size-5 shrink-0 opacity-70" />
+                </button>
+                <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                    @foreach ($leafletOrderOptions as $value => $label)
+                        <a href="{{ $value === 'best' ? '/leidiniai' : '/leidiniai?order=' . $value }}" class="{{ $storeChipRowClass($leafletOrder === $value) }}">{{ $label }}</a>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
         @if (empty($leaflets))

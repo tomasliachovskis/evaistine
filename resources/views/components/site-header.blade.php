@@ -70,8 +70,11 @@
             <img src="/assets/logo.svg" alt="SuperAkcijos.lt" class="h-7 w-auto max-w-[min(200px,42vw)] object-contain object-left lg:max-w-none">
         </a>
 
-        {{-- Categories as an icon next to the logo (owner's request). --}}
-        <div class="relative">
+        {{-- Categories as an icon next to the logo from lg (owner's request);
+             on phones the same button sits with the other icons on the right
+             (below). The sheet is teleported to <body>, so hiding this
+             wrapper doesn't hide it. --}}
+        <div class="relative hidden lg:block">
             <button type="button" @click="categoriesNavOpen = !categoriesNavOpen" data-ga-event="desktop_nav_click" data-ga-item="categories" class="{{ $headerButtonClass }}" :aria-expanded="categoriesNavOpen" aria-label="Kategorijos" title="Kategorijos">
                 <x-app-icon name="layout-grid" class="size-7" />
             </button>
@@ -108,7 +111,10 @@
             <a href="/parduotuves" data-ga-event="desktop_nav_click" data-ga-item="stores" class="{{ $navLinkClass($storesActive) }}">Parduotuvės{!! $navCount('parduotuves') !!}</a>
         </nav>
 
-        <div class="ml-auto flex min-w-0 items-center gap-1 lg:flex-1 lg:justify-end lg:gap-2">
+        <div class="-mr-2 ml-auto flex min-w-0 items-center gap-0.5 lg:mr-0 lg:flex-1 lg:justify-end lg:gap-2">
+            <button type="button" @click="categoriesNavOpen = !categoriesNavOpen" data-ga-event="mobile_header_click" data-ga-item="categories" class="{{ $headerButtonClass }} lg:hidden" aria-label="Kategorijos" title="Kategorijos">
+                <x-app-icon name="layout-grid" class="size-7" />
+            </button>
             {{-- Search field from xl, an icon below that. --}}
             <div class="hidden min-w-0 max-w-[420px] flex-1 xl:block">
                 <livewire:site-search mode="desktop" />
