@@ -3,6 +3,10 @@
     'offer',
     'showBestPriceBadge' => false,
     'historical' => false,
+    // ['title', 'page', 'href'] when this offer is printed in a current
+    // flyer: the card then opens that flyer page and says so in place of
+    // the generic origin line.
+    'flyerLink' => null,
 ])
 
 @php
@@ -12,7 +16,7 @@
 @endphp
 
 <a
-    href="/akcijos/{{ $store['slug'] ?? '' }}"
+    href="{{ $flyerLink['href'] ?? '/akcijos/' . ($store['slug'] ?? '') }}"
     {{ $attributes->class([
         'relative flex w-full rounded-xl border border-green/35 bg-white p-4 transition-colors hover:border-green/45 sm:p-5',
         'pt-6 sm:pt-7' => $showBestPriceBadge,
@@ -49,8 +53,12 @@
                 <span class="whitespace-nowrap rounded-full bg-[#e8eef3] px-3 py-1 text-xs font-medium text-gray-700">{{ $validityLabel }}</span>
             @endif
             <span class="inline-flex min-w-0 items-start justify-end gap-1.5 text-xs font-normal leading-snug text-gray-500">
-                <x-app-icon name="info" class="mt-px size-3.5 shrink-0 text-gray-400 max-[359px]:hidden sm:size-4" />
-                <span class="min-w-0">{{ \App\Support\ProductPageMeta::offerOriginLabel($store['slug'] ?? '', $store['name'] ?? '') }}</span>
+                <x-app-icon :name="$flyerLink ? 'bookmark' : 'info'" class="mt-px size-3.5 shrink-0 {{ $flyerLink ? 'text-green' : 'text-gray-400' }} max-[359px]:hidden sm:size-4" />
+                @if ($flyerLink)
+                    <span class="min-w-0 font-medium text-green">Leidinyje „{{ $flyerLink['title'] }}“{{ $flyerLink['page'] ? ", {$flyerLink['page']} psl." : '' }}</span>
+                @else
+                    <span class="min-w-0">{{ \App\Support\ProductPageMeta::offerOriginLabel($store['slug'] ?? '', $store['name'] ?? '') }}</span>
+                @endif
             </span>
         </div>
     </div>

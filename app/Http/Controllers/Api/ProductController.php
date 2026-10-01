@@ -1959,11 +1959,11 @@ class ProductController extends Controller
         $head = "„{$label}“".($validity ? " galioja {$validity}" : ' galioja dabar')
             .": {$total} akcijų {$offerWord}".($maxPercent > 0 ? ", nuolaidos iki -{$maxPercent} %" : '');
         $metaDescription = "{$head}. Peržiūrėkite visą katalogą.";
-        foreach ([2, 1] as $count) {
+        foreach ([[2, true], [1, true], [1, false]] as [$count, $withCta]) {
             if ($examples->count() < $count) {
                 continue;
             }
-            $candidate = "{$head}, pvz. ".$examples->take($count)->implode(', ').'. Peržiūrėkite visą katalogą.';
+            $candidate = "{$head}, pvz. ".$examples->take($count)->implode(', ').'.'.($withCta ? ' Peržiūrėkite visą katalogą.' : '');
             if (mb_strlen($candidate) <= 155) {
                 $metaDescription = $candidate;
                 break;

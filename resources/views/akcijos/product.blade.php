@@ -411,22 +411,12 @@ use App\Support\ProductPageMeta;
                      for the rest, scraped from a leaflet). --}}
                 <div class="flex w-full flex-col gap-3 sm:gap-4">
                     @foreach ($offerGroups as $index => $group)
-                        @php $flyerLink = ($flyerLinks ?? collect())->get($group['bestOffer']['id'] ?? null); @endphp
-                        <div class="flex flex-col gap-1.5">
-                            <x-product-store-offer-card
-                                :store="$group['store']"
-                                :offer="$group['bestOffer']"
-                                :show-best-price-badge="$offerGroups->count() > 1 && $index === 0"
-                            />
-                            {{-- Separate line, not inside the card: the card
-                                 itself is already a link to the store page. --}}
-                            @if ($flyerLink)
-                                <a href="{{ $flyerLink['href'] }}" class="inline-flex items-center gap-0.5 self-end text-xs font-medium text-green transition-colors hover:text-dark-green">
-                                    Leidinyje „{{ $flyerLink['title'] }}“{{ $flyerLink['page'] ? ", {$flyerLink['page']} psl." : '' }}
-                                    <x-app-icon name="chevron-right" class="size-3.5" />
-                                </a>
-                            @endif
-                        </div>
+                        <x-product-store-offer-card
+                            :store="$group['store']"
+                            :offer="$group['bestOffer']"
+                            :show-best-price-badge="$offerGroups->count() > 1 && $index === 0"
+                            :flyer-link="($flyerLinks ?? collect())->get($group['bestOffer']['id'] ?? null)"
+                        />
                     @endforeach
                 </div>
 
