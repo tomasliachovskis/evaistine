@@ -393,26 +393,23 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('priceHistoryChart', (points) => ({
         allPoints: points,
         activeStore: null,
-        tooltip: { visible: false, x: 0, y: 0, price: '', sub: '' },
+        tooltip: { visible: false, x: 0, y: 0, shift: '-50%', price: '', sub: '' },
 
         // The SVG scales its whole coordinate system (including font-size,
         // which is in user units, not real CSS px) to fill whatever width
-        // the box actually renders at (preserveAspectRatio="none"). At a
-        // fixed W=760 that's fine on desktop, but on a ~360px-wide phone
-        // the scale factor is ~0.47x — 10.5px axis-label text was rendering
-        // at ~5px on screen, unreadably small. Using a much smaller W on
-        // narrow viewports keeps that scale factor close to 1:1, so text/
-        // points/strokes render near their intended physical size instead
-        // of shrinking with the screen. H stays the same either way, so the
-        // chart also reads as taller/bigger on mobile, not just legible.
+        // the box actually renders at (preserveAspectRatio="none"). The
+        // viewBox width is set to the SVG's real rendered width, so one user
+        // unit is one CSS pixel at every screen size and the 16px axis
+        // labels really are 16px (a fixed 380/760 still shrank them to
+        // ~11px on a 360px phone).
         get W() {
-            return window.innerWidth < 640 ? 380 : 760;
+            return Math.round(this.$refs.svg?.clientWidth || 760);
         },
         H: 220,
-        padL: 48,
-        padR: 10,
+        padL: 64,
+        padR: 12,
         padT: 12,
-        padB: 22,
+        padB: 30,
 
         init() {
             this.renderChart();
@@ -452,13 +449,13 @@ document.addEventListener('alpine:init', () => {
 
             this.yTicks.forEach((tick) => {
                 svg.appendChild(mk('line', { x1: this.padL, y1: tick.y, x2: this.W - this.padR, y2: tick.y, stroke: '#eef0f2', 'stroke-width': 1 }));
-                const label = mk('text', { x: this.padL - 8, y: tick.y + 3, 'text-anchor': 'end', class: 'fill-gray-400 text-[10.5px]' });
+                const label = mk('text', { x: this.padL - 8, y: tick.y + 5, 'text-anchor': 'end', class: 'fill-gray-500 text-xs' });
                 label.textContent = this.fmtPrice(tick.price);
                 svg.appendChild(label);
             });
 
             this.dateTicks.forEach((tick) => {
-                const label = mk('text', { x: tick.x, y: this.H - 6, 'text-anchor': 'middle', class: 'fill-gray-400 text-[10.5px]' });
+                const label = mk('text', { x: tick.x, y: this.H - 6, 'text-anchor': tick.anchor, class: 'fill-gray-500 text-xs' });
                 label.textContent = tick.label;
                 svg.appendChild(label);
             });
@@ -475,9 +472,15 @@ document.addEventListener('alpine:init', () => {
                     'stroke-width': 2,
                     class: 'cursor-pointer',
                 });
-                circle.addEventListener('mouseenter', () => this.showTooltip(pt, svg));
-                circle.addEventListener('mouseleave', () => { this.tooltip.visible = false; });
                 svg.appendChild(circle);
+                // Invisible, finger-sized hit area over each point: hover on
+                // a computer, a tap on a phone (the 3.5px dot alone can't be
+                // hit with a finger).
+                const hit = mk('circle', { cx: pt.x, cy: pt.y, r: 16, fill: 'transparent', class: 'cursor-pointer' });
+                hit.addEventListener('mouseenter', () => this.showTooltip(pt, svg));
+                hit.addEventListener('mouseleave', () => { this.tooltip.visible = false; });
+                hit.addEventListener('click', () => this.showTooltip(pt, svg));
+                svg.appendChild(hit);
             });
         },
 
@@ -561,8 +564,9 @@ document.addEventListener('alpine:init', () => {
             // Evenly spaced by pixel position (not by fixed calendar interval,
             // like the old month-start ticks were) so a narrow date range
             // still gets several readable "D mon" labels instead of just one.
-            const count = 6;
             const innerW = this.W - this.padL - this.padR;
+            // About one 16px "12 geg" label per 110px, so they never touch.
+            const count = Math.max(2, Math.min(6, Math.floor(innerW / 110) + 1));
             const span = this.t1 - this.t0 || 1;
             const seen = new Set();
             const ticks = [];
@@ -574,7 +578,7 @@ document.addEventListener('alpine:init', () => {
                 const label = `${d.getDate()} ${LT_MONTHS_SHORT[d.getMonth()]}`;
                 if (seen.has(label)) continue;
                 seen.add(label);
-                ticks.push({ label, x });
+                ticks.push({ label, x, anchor: i === 0 ? 'start' : (i === count - 1 ? 'end' : 'middle') });
             }
 
             return ticks;
@@ -582,9 +586,13 @@ document.addEventListener('alpine:init', () => {
 
         showTooltip(point, svg) {
             const rect = svg.getBoundingClientRect();
+            const x = (point.x / this.W) * rect.width;
             this.tooltip = {
                 visible: true,
-                x: (point.x / this.W) * rect.width,
+                x,
+                // Keep the bubble inside the chart near its edges (centred
+                // on a point at the very right ran off a phone screen).
+                shift: x > rect.width - 90 ? '-100%' : (x < 90 ? '0%' : '-50%'),
                 y: (point.y / this.H) * rect.height,
                 price: this.fmtPrice(point.price),
                 sub: `${point.store_name} · ${this.fmtDate(point.date)}`,

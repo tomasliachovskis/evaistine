@@ -70,16 +70,16 @@
             x-show="tooltip.visible"
             x-cloak
             x-transition.opacity.duration.100ms
-            class="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[115%] whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs font-semibold text-white"
-            :style="`left:${tooltip.x}px;top:${tooltip.y}px`"
+            class="pointer-events-none absolute z-10 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs font-semibold text-white"
+            :style="`left:${tooltip.x}px;top:${tooltip.y}px;transform:translate(${tooltip.shift},-115%)`"
         >
             <span x-text="tooltip.price"></span>
             <span class="block text-xs font-medium opacity-75" x-text="tooltip.sub"></span>
         </div>
     </div>
 
-    <div class="mb-5 mt-2 flex items-center gap-3.5 text-xs text-gray-600">
-        <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full bg-action"></span>Kaina (užvesk pelę taškui)</span>
+    <div class="mb-5 mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600">
+        <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full bg-action"></span>Kaina (paspauskite tašką)</span>
         <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full bg-action"></span>Žemiausia iki šiol</span>
     </div>
 
