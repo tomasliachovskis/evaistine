@@ -7,6 +7,7 @@ use App\Services\HomePageMetaService;
 use App\Services\KeywordPageService;
 use App\Services\StoresPageMetaService;
 use App\Support\CacheVersion;
+use App\Support\HomeLatestLeaflets;
 use App\Support\StoreListPriority;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -86,6 +87,7 @@ class HomeBetaController extends Controller
             'totalDeals' => (int) ($pageMeta['stats']['total_deals'] ?? 0),
             'totalDealsLabel' => ($pageMeta['stats']['total_deals'] ?? 0) > 0 ? $pageMeta['stats']['total_deals_label'] : null,
             'cards' => $this->keywordCards(),
+            'latestLeaflets' => HomeLatestLeaflets::pick(),
         ]);
     }
 

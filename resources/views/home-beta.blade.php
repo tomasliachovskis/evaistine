@@ -93,5 +93,8 @@
                 </a>
             @endguest
         </section>
+
+        {{-- Same leaflet row as the live homepage. --}}
+        <x-home-latest-leaflets :leaflets="$latestLeaflets" />
     </div>
 </x-layouts.app>

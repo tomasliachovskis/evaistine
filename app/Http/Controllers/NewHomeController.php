@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Api\ProductController;
 use App\Models\Store;
 use App\Services\HomePageMetaService;
 use App\Services\KeywordPageService;
 use App\Services\StoresPageMetaService;
 use App\Support\CacheVersion;
+use App\Support\HomeLatestLeaflets;
 use App\Support\StoreListPriority;
 use Illuminate\Support\Facades\Cache;
 
@@ -26,10 +26,6 @@ class NewHomeController extends Controller
     // page's own matching_offers_count), not a hand-picked slug list.
     private const HOMEPAGE_ITEMS_PER_BLOCK = 3;
 
-    // "Naujausi akcijų leidiniai" is one row (grid-cols-4 at sm+) — one
-    // leaflet per store, in this priority order, per explicit product
-    // decision (was: whichever 10 leaflets happened to be newest overall).
-    private const HOMEPAGE_LEAFLET_STORE_PRIORITY = ['maxima', 'norfa', 'lidl', 'rimi', 'iki'];
 
     public function __construct(
         private HomePageMetaService $metaService,
@@ -87,25 +83,7 @@ class NewHomeController extends Controller
             $buildComparisonBlock('Ne maisto prekių kainų palyginimas', $candidates['non_food']),
         ])->filter(fn (array $block) => !empty($block['items']))->values()->all();
 
-        // Same source/filtering as HomeController — only genuinely current
-        // leaflets. One per store, in HOMEPAGE_LEAFLET_STORE_PRIORITY order,
-        // capped at one row (4, matching the grid's sm:grid-cols-4) — not
-        // "whichever 10 leaflets happen to be newest overall" as before.
-        $leafletsPayload = json_decode(app(ProductController::class)->getAllLeaflets()->getContent(), true);
-        // groupBy()->map()->first(), not keyBy() (which keeps the LAST
-        // match for a duplicate key, not the first) — leaflets arrive
-        // newest-first, and a store with more than one current leaflet
-        // should keep its newest, not whichever happened to load last.
-        $currentLeafletsByStore = collect($leafletsPayload['leaflets'] ?? [])
-            ->filter(fn ($leaflet) => ($leaflet['status'] ?? null) !== 'expired')
-            ->groupBy('store_slug')
-            ->map(fn ($leaflets) => $leaflets->first());
-        $latestLeaflets = collect(self::HOMEPAGE_LEAFLET_STORE_PRIORITY)
-            ->map(fn ($slug) => $currentLeafletsByStore->get($slug))
-            ->filter()
-            ->take(4)
-            ->values()
-            ->all();
+        $latestLeaflets = HomeLatestLeaflets::pick();
 
         // Reuses the same root-category data HomePageMetaService already
         // computes for the footer links list — no new query needed, just
