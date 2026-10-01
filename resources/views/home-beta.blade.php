@@ -12,8 +12,8 @@
              store tiles sit in a right-hand column beside the search. --}}
         <section class="flex flex-col gap-6 lg:flex-row lg:items-end lg:gap-14">
           <div class="flex min-w-0 flex-1 flex-col gap-3 sm:gap-4">
-            <h1 class="m-0 text-3xl font-extrabold leading-tight tracking-tight text-dark-green sm:text-5xl">Ką šiandien perkate?</h1>
-            <p class="m-0 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-xl">
+            <h1 class="m-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-green sm:text-4xl">Ką šiandien perkate?</h1>
+            <p class="m-0 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg">
                 @if ($totalDealsLabel)
                     Šiandien palyginome <strong class="font-bold text-gray-900">{{ $totalDealsLabel }}</strong> {{ \App\Support\LithuanianPlural::offerWordAccusative($totalDeals) }} iš {{ $storeTotal }} parduotuvių. Įrašykite prekę – parodysime, kur pigiausia.
                 @else
@@ -43,7 +43,7 @@
             <section class="flex flex-col gap-4 sm:gap-5" x-data="{ more: false }">
                 <div class="flex items-end justify-between gap-4">
                     <div class="flex flex-col gap-1">
-                        <h2 class="m-0 text-2xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">Pigiausia šią savaitę</h2>
+                        <h2 class="m-0 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">Pigiausia šią savaitę</h2>
                         <p class="m-0 text-base text-gray-600 sm:text-lg">Geriausia kaina kiekvienai prekei</p>
                     </div>
                     <a href="/akcijos" class="hidden min-h-12 shrink-0 items-center gap-2 rounded-2xl bg-white px-5 text-base font-bold text-dark-green ring-2 ring-green-soft-border hover:bg-green-soft sm:inline-flex">
@@ -80,7 +80,7 @@
                 <x-app-icon name="bell" class="size-7 fill-none text-[#ffdb4d] sm:size-9" />
             </span>
             <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-                <h2 class="m-0 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Pranešime, kai atpigs</h2>
+                <h2 class="m-0 text-xl font-extrabold tracking-tight text-white sm:text-2xl">Pranešime, kai atpigs</h2>
                 <p class="m-0 text-base leading-relaxed text-white/85 sm:text-lg">Pažymėkite, ką perkate dažnai. Kai kaina nukris, parašysime el. paštu.</p>
             </div>
             @guest

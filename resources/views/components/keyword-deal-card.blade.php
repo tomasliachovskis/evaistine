@@ -3,7 +3,7 @@
 {{-- One keyword per card (/pradzia-beta): the keyword, a photo of its
      cheapest current deal, that price and store, and how many offers the
      keyword page compares. The whole card is one link to the keyword page.
-     Sized for older readers: price 28/32px, a 48px bottom row. untilMore:
+     Sized for older readers: price 28px, a 48px bottom row. untilMore:
      hidden until the parent's Alpine `more` flag ("Rodyti daugiau") is on. --}}
 @php
     use App\Support\LithuanianPlural;
@@ -31,8 +31,8 @@
 
     <div class="flex flex-col gap-0.5 px-1.5 sm:gap-1.5 sm:px-2.5">
         <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
-            <span class="text-lg font-extrabold leading-tight tracking-tight text-gray-900 sm:text-2xl">{{ $card['label'] }}</span>
-            <span class="text-2xl font-extrabold leading-tight tracking-tight text-action tabular-nums sm:text-price-lg">{{ number_format($card['price'], 2, ',', ' ') }} €</span>
+            <span class="text-lg font-extrabold leading-tight tracking-tight text-gray-900 sm:text-xl">{{ $card['label'] }}</span>
+            <span class="text-2xl font-extrabold leading-tight tracking-tight text-action tabular-nums">{{ number_format($card['price'], 2, ',', ' ') }} €</span>
         </div>
         <span class="hidden text-sm leading-snug text-gray-600 sm:block">{{ $card['product_name'] }}</span>
         @if ($card['store_slug'])
