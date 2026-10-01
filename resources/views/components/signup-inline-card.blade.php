@@ -4,7 +4,7 @@
      the "nothing changes on its own" rule for older readers
      (docs/ui-older-readers.md). Opens the shared auth-modal. --}}
 @guest
-    <div {{ $attributes->class('flex flex-col gap-3 rounded-2xl border border-green/30 bg-green/5 p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-5') }}>
+    <div x-data {{ $attributes->class('flex flex-col gap-3 rounded-2xl border border-green/30 bg-green/5 p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-5') }}>
         <div class="min-w-0 flex-1">
             <h2 class="flex items-center gap-2 text-lg font-bold leading-snug text-gray-900">
                 <x-app-icon name="bell" class="size-6 shrink-0 fill-none text-dark-green" />
