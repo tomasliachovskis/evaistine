@@ -261,8 +261,7 @@ use App\Support\ProductPageMeta;
                                             $heroOtherStores = $offerGroups->count() - 1;
                                         @endphp
                                         <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-gray-700">
-                                            <x-store-logo :slug="$bestOffer['store']['slug']" :name="$bestOffer['store']['name'] ?? ''" size="xs" />
-                                            <span class="font-semibold text-gray-900">{{ $bestOffer['store']['name'] ?? '' }}</span>
+                                            <x-store-logo :slug="$bestOffer['store']['slug']" :name="$bestOffer['store']['name'] ?? ''" size="sm" class="object-left" />
                                             @if ($heroValidity)
                                                 <span class="w-full sm:hidden">Galioja {{ lcfirst($heroValidity) }}</span>
                                                 <span class="hidden sm:inline">· galioja {{ lcfirst($heroValidity) }}</span>
