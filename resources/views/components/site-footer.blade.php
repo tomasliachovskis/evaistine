@@ -107,7 +107,7 @@
                 <div>
                     <h2 class="mb-4 text-lg font-bold">Naudinga</h2>
                     <ul class="flex flex-col gap-2">
-                        <li><a href="/favorites" class="text-base text-white/80 transition-colors hover:text-dark-green">Mėgstami</a></li>
+                        <li><a href="/favorites" class="text-base text-white/80 transition-colors hover:text-dark-green">Stebimos prekės</a></li>
                         <li><a href="/akcijos" class="text-base text-white/80 transition-colors hover:text-dark-green">Akcijos</a></li>
                         <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-dark-green">Naujienos</a></li>
                     </ul>

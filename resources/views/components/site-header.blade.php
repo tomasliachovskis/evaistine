@@ -125,14 +125,14 @@
 
             <div class="hidden sm:block">
                 @auth
-                    <a href="/favorites" class="{{ $headerButtonClass }}" aria-label="Mėgstami" title="Mėgstami">
+                    <a href="/favorites" class="{{ $headerButtonClass }}" aria-label="Stebimos prekės" title="Stebimos prekės">
                         <span class="relative inline-flex">
                             <x-app-icon name="heart" class="size-7" />
                             <livewire:favorites-badge />
                         </span>
                     </a>
                 @else
-                    <button type="button" @click="$store.authModal.open = true" class="{{ $headerButtonClass }}" aria-label="Mėgstami" title="Mėgstami">
+                    <button type="button" @click="$store.authModal.open = true" class="{{ $headerButtonClass }}" aria-label="Stebimos prekės" title="Stebimos prekės">
                         <x-app-icon name="heart" class="size-7" />
                     </button>
                 @endauth
@@ -217,11 +217,11 @@
 
                     @auth
                         <a href="/favorites" @click="menuOpen = false" class="{{ $menuItemClass(false) }}">
-                            <x-app-icon name="heart" class="size-5 shrink-0" />Mėgstami
+                            <x-app-icon name="heart" class="size-5 shrink-0" />Stebimos prekės
                         </a>
                     @else
                         <button type="button" @click="menuOpen = false; $store.authModal.open = true" class="{{ $menuItemClass(false) }}">
-                            <x-app-icon name="heart" class="size-5 shrink-0" />Mėgstami
+                            <x-app-icon name="heart" class="size-5 shrink-0" />Stebimos prekės
                         </button>
                     @endauth
 

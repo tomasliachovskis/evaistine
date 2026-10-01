@@ -1,5 +1,5 @@
 <x-layouts.app
-    app-title="Mėgstami"
+    app-title="Stebimos"
     back-href="/" :title="$title" :robots="$robots">
     @php
         $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €';
@@ -137,7 +137,7 @@
             <div class="rounded-2xl border bg-card p-10 text-center">
                 <x-app-icon name="heart" class="mx-auto size-10 text-gray-300" />
                 <p class="mt-4 text-lg text-gray-600">
-                    Jūs dar neturite mėgstamiausių prekių. Pridėkite prekes prie mėgstamiausių, paspaudę ant širdelės ikonos.
+                    Jūs dar nestebite jokių prekių. Paspauskite širdelę arba „Sekti kainą“ prie prekės, ir ji atsiras čia.
                 </p>
                 <a href="/akcijos" class="mt-6 inline-flex items-center gap-2 rounded-xl border border-green bg-action px-5 py-3 text-base font-bold text-white transition-colors hover:bg-action-hover hover:border-gray-300">
                     Žiūrėti visas akcijas
