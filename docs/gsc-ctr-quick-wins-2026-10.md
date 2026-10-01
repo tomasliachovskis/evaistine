@@ -33,6 +33,16 @@ Pulled from the Search Console API (`sc-domain:superakcijos.lt`, 28 days 2026-09
 - Import on prod: `php artisan keywords:import-manual database/data/gsc-keyword-pages-2026-10.json --apply`.
 - Search Console → URL Inspection → request indexing for a few city pages (e.g. `/parduotuves/senukai/klaipeda`, `/parduotuves/ermitazas/kaunas`).
 
+## Done 2026-10-01
+
+Deployed. Hours were re-scraped for Senukai (58) and Grustė (24). The 3 keyword pages were imported on prod.
+
+After the import, the page export (`docs/keyword-exclude-terms.md` step 1) showed off-intent items, so excludes were appended:
+- `kavos-pupeles` showed 3in1 sachets, Dolce Gusto capsules and iced coffee drinks. Added `gėrim`, `gėr.`, `kaps.`, `kap.`, `kavos k.`; 63 → 43 shown, from 0.33 € → 10.49 €.
+- `hellmanns-majonezas` showed sauces. Added `padaž`; 6 → 1 shown.
+
+The re-export surfaced no new products.
+
 ## Re-checking
 
 Service account key + `GOOGLE_APPLICATION_CREDENTIALS`, Python from the claude-seo venv (`~/Library/Application Support/claude-seo/.venv/bin/python`). Query `searchanalytics().query` with dimensions `page` and `query` for 28 days and compare:
