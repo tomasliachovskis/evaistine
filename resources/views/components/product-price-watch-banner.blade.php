@@ -12,7 +12,7 @@
     // products, noOffers when there is no live promotion.
     $productId = (int) $productId;
     $favoritedJs = $favorited ? 'true' : 'false';
-    $mobileLabel = $variant === 'noOffers' ? 'Pranešti, kai bus akcija' : 'Stebėkite kainą';
+    $mobileLabel = $variant === 'noOffers' ? 'Pranešti, kai bus akcija' : 'Sekti kainą';
     $desktopLabel = $variant === 'noOffers' ? 'Pranešti, kai bus akcija' : 'Sekti kainą';
     // Bell everywhere a "follow/notify me" action is offered (matches the
     // mobile button right above and every other Sekti* button site-wide,
@@ -30,6 +30,7 @@
         'productName' => $productName,
         'productImage' => $productImage,
     ], JSON_UNESCAPED_UNICODE);
+    $shareTitleJs = json_encode($productName, JSON_UNESCAPED_UNICODE);
     $toggleHandler = <<<JS
         busy: false,
         favorited: {$favoritedJs},
@@ -81,39 +82,47 @@
                 .catch(() => { this.favorited = prev; })
                 .finally(() => { this.busy = false; });
         },
+        copied: false,
+        // Share sheet on phones; elsewhere copy the link and say so.
+        async share() {
+            const data = { title: {$shareTitleJs}, url: window.location.href.split('#')[0] };
+            try {
+                if (navigator.share) {
+                    await navigator.share(data);
+                    return;
+                }
+                await navigator.clipboard.writeText(data.url);
+                this.copied = true;
+                setTimeout(() => { this.copied = false; }, 2500);
+            } catch (e) {}
+            if (window.trackGaEvent) window.trackGaEvent('share', { method: navigator.share ? 'native' : 'copy', item_id: {$productId} });
+        },
     JS;
 @endphp
 
-<div class="flex w-full flex-col items-start gap-1.5 lg:w-auto lg:shrink-0" x-data="{ {{ $toggleHandler }} }">
-    {{-- Mobile: full-width, same slim CTA shape as <x-leaflet-card>'s
-         "Peržiūrėti" button (h-11, rounded-lg, text-base). --}}
+{{-- Soft (not solid green) follow button plus a share button, owner's
+     request: the solid green read as too loud next to the price. --}}
+<div class="flex w-full items-stretch gap-2 lg:w-auto lg:shrink-0" x-data="{ {{ $toggleHandler }} }">
     <button
         type="button"
         @click="toggle()"
-        class="flex h-11 w-full items-center justify-center gap-2 rounded-lg border-0 bg-action text-base font-bold text-white transition-colors hover:bg-action-hover disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
+        class="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:flex-none"
+        :class="favorited ? 'bg-amber-50 text-amber-900 hover:bg-amber-100' : 'bg-green-soft text-dark-green hover:bg-green-soft-border'"
         :disabled="busy"
     >
-        <template x-if="favorited">
-            <span class="flex items-center gap-2">
-                <x-app-icon name="check" class="size-4 text-white" style="stroke-width:2.5" />
-                Sekama
-            </span>
-        </template>
-        <template x-if="!favorited">
-            <span class="flex items-center gap-2"><x-app-icon name="bell" class="size-4 fill-none text-white" /> {{ $mobileLabel }}</span>
-        </template>
-    </button>
-
-    {{-- Desktop: shrink-wrapped, heart icon, "Sekti kainą" / "Sekama" --}}
-    <button
-        type="button"
-        @click="toggle()"
-        class="hidden items-center gap-2 rounded-lg border-0 px-4 py-2.5 text-sm font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:flex min-h-12"
-        :class="favorited ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'bg-action text-white hover:bg-action-hover'"
-        :disabled="busy"
-    >
-        <x-app-icon :name="$desktopIcon" class="size-4 transition-colors" x-bind:class="favorited ? 'fill-amber-500 text-amber-500' : 'fill-none text-white'" />
+        <x-app-icon x-show="!favorited" :name="$desktopIcon" class="size-5 fill-none" />
+        <x-app-icon x-show="favorited" x-cloak name="check" class="size-5" style="stroke-width:2.5" />
         <span x-show="favorited" x-cloak>Sekama</span>
-        <span x-show="!favorited" x-cloak>{{ $desktopLabel }}</span>
+        <span x-show="!favorited"><span class="lg:hidden">{{ $mobileLabel }}</span><span class="hidden lg:inline">{{ $desktopLabel }}</span></span>
+    </button>
+    <button
+        type="button"
+        @click="share()"
+        class="flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-gray-100 px-3 text-base font-bold text-gray-900 transition-colors hover:bg-gray-200 min-[400px]:px-4"
+        aria-label="Dalintis"
+    >
+        <x-app-icon x-show="!copied" name="share-2" class="size-5" />
+        <x-app-icon x-show="copied" x-cloak name="check" class="size-5" />
+        <span class="hidden min-[400px]:inline" x-text="copied ? 'Nukopijuota' : 'Dalintis'">Dalintis</span>
     </button>
 </div>
