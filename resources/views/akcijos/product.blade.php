@@ -246,11 +246,31 @@ use App\Support\ProductPageMeta;
                                             <span class="text-price-lg font-bold leading-none text-gray-900 lg:text-price-hero">{{ number_format($heroDiscountedPrice, 2, ',', ' ') }} €</span>
                                             <x-discount-badge :percent="$bestOffer['discount_percent'] ?? null" size="lg" />
                                             @if (!empty($bestOffer['original_price']) && $bestOffer['original_price'] > $heroDiscountedPrice)
-                                                <del class="hidden text-xs font-medium tabular-nums text-gray-400 sm:text-sm lg:inline">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del>
+                                                <del class="text-sm font-medium tabular-nums text-gray-500">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del>
                                             @endif
                                         </div>
                                     @elseif ($heroPriceSlotPct !== null)
                                         <span class="inline-flex w-fit max-w-full items-center justify-center rounded-lg bg-[#ffdb4d] px-2 py-1 text-xl font-bold leading-none tabular-nums text-gray-900 sm:text-2xl">Sutaupyk iki {{ $heroPriceSlotPct }}%</span>
+                                    @endif
+                                    {{-- Where and until when, right under the price: older
+                                         readers otherwise had to scroll to "Kainos
+                                         parduotuvėse" to learn which shop the price is from. --}}
+                                    @if (!empty($bestOffer['store']['slug']))
+                                        @php
+                                            $heroValidity = \App\Support\ProductPageMeta::validUntilLabel($bestOffer['to_date'] ?? null);
+                                            $heroOtherStores = $offerGroups->count() - 1;
+                                        @endphp
+                                        <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-gray-700">
+                                            <x-store-logo :slug="$bestOffer['store']['slug']" :name="$bestOffer['store']['name'] ?? ''" size="xs" />
+                                            <span class="font-semibold text-gray-900">{{ $bestOffer['store']['name'] ?? '' }}</span>
+                                            @if ($heroValidity)
+                                                <span class="w-full sm:hidden">Galioja {{ lcfirst($heroValidity) }}</span>
+                                                <span class="hidden sm:inline">· galioja {{ lcfirst($heroValidity) }}</span>
+                                            @endif
+                                        </p>
+                                        @if ($heroOtherStores > 0)
+                                            <a href="#offers" class="text-base font-semibold text-dark-green underline underline-offset-4">Dar {{ $heroOtherStores }} {{ \App\Support\LithuanianPlural::storeWord($heroOtherStores) }} – palyginti kainas</a>
+                                        @endif
                                     @endif
                                 </div>
                             @endif
