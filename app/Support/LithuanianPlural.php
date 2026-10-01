@@ -87,6 +87,16 @@ class LithuanianPlural
         return 'parduotuvių';
     }
 
+    // Accusative ("surinkome 1 pasiūlymą / 3 pasiūlymus / 40 pasiūlymų").
+    public static function offerWordAccusative(int $count): string
+    {
+        return match (self::offerWord($count)) {
+            'pasiūlymas' => 'pasiūlymą',
+            'pasiūlymai' => 'pasiūlymus',
+            default => 'pasiūlymų',
+        };
+    }
+
     // "aktyvus pasiūlymas" / "aktyvūs pasiūlymai" / "aktyvių pasiūlymų" —
     // the adjective agrees with offerWord()'s form.
     public static function activeOfferPhrase(int $count): string

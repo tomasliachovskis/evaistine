@@ -1622,8 +1622,8 @@ class ProductController extends Controller
             $topClause = $this->topDiscountsClause($this->topFlyerDiscounts($flyerDiscounts->unique('product_id')));
             $flyerOffersIntro = $flyerOffersTotal > 0
                 ? "Iš šio {$storeModel->name} leidinio surinkome {$flyerOffersTotal} akcijų "
-                    .\App\Support\LithuanianPlural::offerWord($flyerOffersTotal)
-                    .' su kainomis, išdėstytus taip pat kaip leidinyje, puslapis po puslapio.'
+                    .\App\Support\LithuanianPlural::offerWordAccusative($flyerOffersTotal)
+                    .' su kainomis. Jie išdėstyti taip pat kaip leidinyje, puslapis po puslapio.'
                     .($topClause !== '' ? " Didžiausios nuolaidos: {$topClause}." : '')
                 : null;
             $offersClause = $flyerOffersTotal > 0
@@ -1937,10 +1937,11 @@ class ProductController extends Controller
         $top = $this->topFlyerDiscounts($discounts);
         $topClause = $this->topDiscountsClause($top);
         $offerWord = \App\Support\LithuanianPlural::offerWord($total);
+        $offerWordAccusative = \App\Support\LithuanianPlural::offerWordAccusative($total);
 
         $intro = $flyers->count() > 1
-            ? "Galiojančiuose {$store->name} leidiniuose surinkome {$total} akcijų {$offerWord} su kainomis."
-            : "„{$label}“".($validity ? " galioja {$validity}." : '.')." Iš jo surinkome {$total} akcijų {$offerWord} su kainomis.";
+            ? "Galiojančiuose {$store->name} leidiniuose surinkome {$total} akcijų {$offerWordAccusative} su kainomis."
+            : "„{$label}“".($validity ? " galioja {$validity}." : '.')." Iš jo surinkome {$total} akcijų {$offerWordAccusative} su kainomis.";
         if ($topClause !== '') {
             $intro .= " Didžiausios nuolaidos: {$topClause}.";
         }
@@ -1949,8 +1950,14 @@ class ProductController extends Controller
         $example = $first
             ? ', pvz. '.Str::limit($first->product->name, 40, '…').' – '.number_format($first->discounted_price, 2, ',', '').' €'
             : '';
+        // The layout cuts descriptions over ~158 chars, so drop the example
+        // product rather than lose the call to action.
         $metaDescription = "Dabar galioja „{$label}“".($validity ? " ({$validity})" : '')
-            .": {$total} akcijų {$offerWord}{$example}. Peržiūrėkite visą katalogą ir prekių kainas.";
+            .": {$total} akcijų {$offerWord}{$example}. Peržiūrėkite visą katalogą.";
+        if (mb_strlen($metaDescription) > 155) {
+            $metaDescription = "Dabar galioja „{$label}“".($validity ? " ({$validity})" : '')
+                .": {$total} akcijų {$offerWord}. Peržiūrėkite visą katalogą ir prekių kainas.";
+        }
 
         return [
             'offers' => $discounts
