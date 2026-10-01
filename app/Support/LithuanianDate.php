@@ -52,6 +52,22 @@ class LithuanianDate
         return self::MONTHS_GENITIVE[$date->month - 1].' '.$date->day.' d.';
     }
 
+    // "rugsėjo 8–14 d." / "rugsėjo 29 d. – spalio 5 d." — a validity range
+    // in words for older readers, instead of "2026.09.08 – 2026.09.14".
+    // The year is only added when the range doesn't fall in this year.
+    public static function range(Carbon $from, Carbon $to): string
+    {
+        $year = ($from->year !== now()->year || $to->year !== now()->year) ? $to->year.' m. ' : '';
+
+        if ($from->year === $to->year && $from->month === $to->month) {
+            return $year.self::monthGenitive($from).' '.$from->day.($from->day === $to->day ? '' : '–'.$to->day).' d.';
+        }
+
+        $fromYear = $from->year !== $to->year ? $from->year.' m. ' : '';
+
+        return $fromYear.($fromYear ? '' : $year).self::dayMonthGenitive($from).' – '.($fromYear ? $year : '').self::dayMonthGenitive($to);
+    }
+
     // Absolute date+time, not "prieš N min/val." — per explicit product
     // decision: a relative label goes stale-looking the moment the page sits
     // open a while (and was also the site of a real bug, see git history —

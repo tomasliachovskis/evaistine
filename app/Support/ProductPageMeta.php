@@ -405,13 +405,16 @@ class ProductPageMeta
 
         $to = \Illuminate\Support\Carbon::parse($toDate)->startOfDay();
         $today = \Illuminate\Support\Carbon::today();
-        $format = $to->year < $today->year ? 'Y.m.d' : 'm.d';
+        // Month in words ("iki spalio 5 d."), not "Iki 10.05": a bare
+        // numeric pair reads as either day.month or month.day to an older
+        // reader. The year is only spelled out when it isn't this year.
+        $date = ($to->year !== $today->year ? $to->year . ' m. ' : '') . LithuanianDate::dayMonthGenitive($to);
 
         if ($to->lt($today)) {
-            return $allowPast ? 'Galiojo iki ' . $to->format($format) : null;
+            return $allowPast ? 'Galiojo iki ' . $date : null;
         }
 
-        return 'Iki ' . $to->format($format);
+        return 'Iki ' . $date;
     }
 
     private static function euro(float $amount): string

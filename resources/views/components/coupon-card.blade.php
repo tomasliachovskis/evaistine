@@ -10,7 +10,7 @@
         $daysLeft = now()->startOfDay()->diffInDays($coupon->valid_until, false);
         $validityLabel = $daysLeft <= 3
             ? ($daysLeft <= 0 ? 'baigiasi šiandien' : 'baigiasi po ' . $daysLeft . ' d.')
-            : 'iki ' . $coupon->valid_until->format('Y-m-d');
+            : 'iki ' . ($coupon->valid_until->year !== now()->year ? $coupon->valid_until->year . ' m. ' : '') . \App\Support\LithuanianDate::dayMonthGenitive($coupon->valid_until);
     }
 @endphp
 

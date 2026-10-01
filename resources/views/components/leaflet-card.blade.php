@@ -10,7 +10,7 @@
     $href = $leaflet['view_url'] ?? "/leidinys/{$leaflet['store_slug']}";
     $days = $leaflet['days_remaining'] ?? null;
     $dateRange = !empty($leaflet['valid_from']) && !empty($leaflet['valid_to'])
-        ? \Illuminate\Support\Carbon::parse($leaflet['valid_from'])->format('Y.m.d') . ' – ' . \Illuminate\Support\Carbon::parse($leaflet['valid_to'])->format('Y.m.d')
+        ? \App\Support\LithuanianDate::range(\Illuminate\Support\Carbon::parse($leaflet['valid_from']), \Illuminate\Support\Carbon::parse($leaflet['valid_to']))
         : null;
 @endphp
 

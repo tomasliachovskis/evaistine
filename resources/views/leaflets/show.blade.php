@@ -3,10 +3,9 @@
     $pages = $listingMeta['pages'] ?? [];
     $storeName = $listingMeta['store_name'] ?? $storeSlug;
     $otherLeaflets = collect($listingMeta['leaflets'] ?? [])->filter(fn ($l) => ($l['slug'] ?? null) !== $flyer['slug'])->values();
-    // Y.m.d (dots), not Y-m-d — matches every listing card's date range
-    // format (leaflets/hub.blade.php, components/leaflet-card.blade.php).
+    // In words ("rugsėjo 8–14 d."), same as components/leaflet-card.blade.php.
     $dateRange = ($flyer['valid_from'] ?? null) && ($flyer['valid_to'] ?? null)
-        ? \Illuminate\Support\Carbon::parse($flyer['valid_from'])->format('Y.m.d') . ' – ' . \Illuminate\Support\Carbon::parse($flyer['valid_to'])->format('Y.m.d')
+        ? \App\Support\LithuanianDate::range(\Illuminate\Support\Carbon::parse($flyer['valid_from']), \Illuminate\Support\Carbon::parse($flyer['valid_to']))
         : null;
     // Real cover image (confirmed live, e.g. /storage/flyers/pages/15/page-1.webp)
     // was previously in no structured data anywhere on this page, despite

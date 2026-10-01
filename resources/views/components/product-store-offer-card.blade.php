@@ -32,7 +32,7 @@
          validity chip (and from sm the price origin) on the right. --}}
     <div class="flex w-full min-w-0 items-stretch gap-3 sm:gap-4">
         <x-store-logo :slug="$store['slug'] ?? ''" :name="$store['name'] ?? ''" size="md" class="shrink-0 self-center sm:self-start" />
-        <div class="flex min-w-0 flex-1 items-center">
+        <div class="flex min-w-fit flex-1 items-center">
             @if (!empty($offer['discounted_price']) && $offer['discounted_price'] > 0)
                 <span class="flex shrink-0 flex-col">
                     <span class="text-xl font-bold tabular-nums text-gray-900 sm:text-2xl">{{ number_format($offer['discounted_price'], 2, ',', ' ') }} €</span>
@@ -48,7 +48,7 @@
         </div>
         <div class="flex min-w-0 max-w-[50%] shrink flex-col items-end justify-center gap-2 text-right sm:justify-between">
             @if ($validityLabel)
-                <span class="whitespace-nowrap rounded-full bg-[#e8eef3] px-3 py-1 text-xs font-medium text-gray-700">{{ $validityLabel }}</span>
+                <span class="rounded-xl bg-[#e8eef3] px-3 py-1 text-xs font-medium leading-snug text-gray-700">{{ $validityLabel }}</span>
             @endif
             <span class="hidden min-w-0 items-start justify-end gap-1.5 text-xs font-normal leading-snug text-gray-500 sm:inline-flex">
                 <x-app-icon :name="$flyerLink ? 'bookmark' : 'info'" class="mt-px size-3.5 shrink-0 {{ $flyerLink ? 'text-dark-green' : 'text-gray-400' }} sm:size-4" />
