@@ -462,7 +462,9 @@ use App\Support\ProductPageMeta;
         @endif
 
         @guest
-            <div class="base-container pb-6">
+            {{-- Without the offers section above, the card would sit right
+                 against the sticky tabs, so it brings its own top gap then. --}}
+            <div class="base-container pb-6 {{ $hasOffers ? '' : 'pt-5 sm:pt-6' }}">
                 <x-signup-inline-card />
             </div>
         @endguest

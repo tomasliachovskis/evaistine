@@ -108,11 +108,11 @@
 
 {{-- Soft (not solid green) follow button plus a share button, owner's
      request: the solid green read as too loud next to the price. --}}
-<div class="flex w-full items-stretch gap-2 lg:w-auto lg:shrink-0" x-data="{ {{ $toggleHandler }} }">
+<div class="flex w-full flex-wrap items-stretch gap-2 lg:w-auto lg:shrink-0" x-data="{ {{ $toggleHandler }} }">
     <button
         type="button"
         @click="toggle()"
-        class="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:flex-none"
+        class="flex min-h-12 flex-auto items-center justify-center gap-2 rounded-xl px-4 text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:flex-none"
         :class="favorited ? 'bg-action text-white hover:bg-action-hover' : 'bg-green-soft-border text-dark-green hover:bg-[#acdfc0]'"
         :disabled="busy"
     >
@@ -124,7 +124,7 @@
     <button
         type="button"
         @click="share()"
-        class="flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 text-base font-bold text-gray-900 transition-colors hover:bg-gray-200"
+        class="flex min-h-12 flex-auto items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 text-base font-bold text-gray-900 transition-colors hover:bg-gray-200 lg:flex-none"
         aria-label="Dalintis"
     >
         <x-app-icon x-show="!copied" name="share-2" class="size-5" />
