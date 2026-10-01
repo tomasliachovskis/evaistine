@@ -55,6 +55,9 @@
         @if ($itemListSchema)
             <script type="application/ld+json">{!! json_encode($itemListSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @endif
+        @if ($flyerOffersSchema)
+            <script type="application/ld+json">{!! json_encode($flyerOffersSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        @endif
     @endpush
 
     <x-breadcrumb-trail :items="$breadcrumbs" :current="$canonical" />
@@ -101,6 +104,38 @@
                         <x-leaflet-card :leaflet="$leaflet" :show-store-name="false" />
                     @endforeach
                 </div>
+            </section>
+        @endif
+
+        {{-- The current flyers' offers as text: this evergreen URL is the
+             one that ranks for "{store} leidinys", and the leaflet cards
+             above are images only. Flex-wrap, not CSS grid (see
+             livewire/discount-filters.blade.php). --}}
+        @if (! empty($flyerOffers['offers']))
+            <section aria-labelledby="hub-flyer-offers-heading">
+                <div class="section-heading-row">
+                    <h2 id="hub-flyer-offers-heading" class="section-heading">
+                        Naujausio {{ $storeName }} {{ $storeSlug === 'iki' ? 'leidynio' : 'leidinio' }} akcijos
+                        <span class="font-normal text-gray-500">({{ $flyerOffers['total'] }})</span>
+                    </h2>
+                </div>
+                <p class="mb-3 max-w-3xl text-sm leading-relaxed text-gray-600">{{ $flyerOffers['intro'] }}</p>
+                <div class="flex w-full flex-wrap gap-2 sm:gap-3">
+                    @foreach ($flyerOffers['offers'] as $deal)
+                        <x-deal-card
+                            :deal="$deal"
+                            :stretch="false"
+                            :context-store-slug="$storeSlug"
+                            :compare-stores="true"
+                            source="hub_flyer_offers"
+                            class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
+                        />
+                    @endforeach
+                </div>
+                <a href="{{ $flyerOffers['main_flyer']['href'] }}" class="section-link mt-4">
+                    Visas {{ $storeSlug === 'iki' ? 'leidynys' : 'leidinys' }} „{{ $flyerOffers['main_flyer']['title'] }}“ – {{ $flyerOffers['main_flyer']['total'] }} {{ \App\Support\LithuanianPlural::offerWord($flyerOffers['main_flyer']['total']) }}
+                    <x-app-icon name="chevron-right" class="size-3.5" />
+                </a>
             </section>
         @endif
 

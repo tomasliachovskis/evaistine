@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Api\KeywordPageController;
 use App\Http\Controllers\Api\ProductController;
 use App\Models\Category;
+use App\Models\Discount;
 use App\Models\KeywordPage;
 use App\Models\Store;
 use App\Support\BreadcrumbSchema;
@@ -405,6 +406,22 @@ class AkcijosController extends Controller
         usort($offers, fn ($a, $b) => (float) ($a['discounted_price'] ?? PHP_INT_MAX) <=> (float) ($b['discounted_price'] ?? PHP_INT_MAX));
         $bestOffer = $offers[0] ?? null;
         $bestPrice = (float) ($bestOffer['discounted_price'] ?? $primaryDeal['discounted_price'] ?? 0);
+
+        // Offers printed in a flyer link to that flyer, opened on the page
+        // the offer is on: product pages point at the current leaflet and
+        // the leaflet lists the products back. Keyed by discount id.
+        $flyerLinks = $offers === [] ? collect() : Discount::query()
+            ->whereIn('id', collect($offers)->pluck('id'))
+            ->whereNotNull('store_flyer_id')
+            ->with(['store', 'storeFlyer' => fn ($q) => $q->active()->ready()->currentlyValid()])
+            ->get()
+            ->filter(fn ($discount) => $discount->storeFlyer && $discount->store)
+            ->mapWithKeys(fn ($discount) => [$discount->id => [
+                'title' => $discount->storeFlyer->metaLabel(),
+                'page' => $discount->flyer_page,
+                'href' => "/leidinys/{$discount->store->slug}/{$discount->storeFlyer->slug}"
+                    .($discount->flyer_page ? "#psl-{$discount->flyer_page}" : ''),
+            ]]);
         $offerCount = count($offers) ?: ($primaryDeal ? 1 : 0);
 
         $historyFacts = $primaryDeal
@@ -437,6 +454,7 @@ class AkcijosController extends Controller
             'offers' => $offers,
             'bestOffer' => $bestOffer,
             'bestPrice' => $bestPrice,
+            'flyerLinks' => $flyerLinks,
             'similar' => $similar,
             'genericAlternatives' => $payload['generic_alternatives'] ?? [],
             'breadcrumbs' => $breadcrumbs,

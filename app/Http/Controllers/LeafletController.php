@@ -53,6 +53,18 @@ class LeafletController extends Controller
             'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
+            'flyerOffers' => $payload['flyer_offers'] ?? null,
+            'flyerOffersSchema' => ! empty($payload['flyer_offers']['offers']) ? ItemListSchema::build(
+                ($payload['seo']['seo_title'] ?? 'Leidinys').' – akcijos',
+                collect($payload['flyer_offers']['offers'])->map(fn ($d) => [
+                    'name' => $d['product']['name'],
+                    'href' => '/akcijos/'.$d['product']['full_slug'],
+                    'image' => $d['product']['image_url'],
+                    'price' => $d['discounted_price'] ?? null,
+                    'price_valid_until' => $d['to_date'] ?? null,
+                ])->all(),
+                $payload['flyer_offers']['total']
+            ) : null,
         ]);
     }
 
@@ -87,6 +99,7 @@ class LeafletController extends Controller
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
             'flyerOffers' => $payload['flyer_offers'] ?? [],
             'flyerOffersTotal' => $payload['flyer_offers_total'] ?? 0,
+            'flyerOffersIntro' => $payload['flyer_offers_intro'] ?? null,
             'flyerOffersSchema' => ! empty($payload['flyer_offers']) ? ItemListSchema::build(
                 ($payload['seo']['seo_title'] ?? 'Leidinys').' – akcijos',
                 collect($payload['flyer_offers'])->map(fn ($d) => [
@@ -94,6 +107,7 @@ class LeafletController extends Controller
                     'href' => '/akcijos/'.$d['product']['full_slug'],
                     'image' => $d['product']['image_url'],
                     'price' => $d['discounted_price'] ?? null,
+                    'price_valid_until' => $d['to_date'] ?? null,
                 ])->all(),
                 $payload['flyer_offers_total'] ?? null
             ) : null,

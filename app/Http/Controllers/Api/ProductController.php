@@ -34,6 +34,8 @@ class ProductController extends Controller
     // Offers listed as text on a single flyer page (see getStoreLeaflet()).
     private const FLYER_OFFERS_LIMIT = 400;
 
+    private const HUB_FLYER_OFFERS_LIMIT = 24;
+
     protected $formatter;
 
     protected $meilisearchService;
@@ -1237,15 +1239,7 @@ class ProductController extends Controller
                     ->first();
 
                 if ($currentFlyer) {
-                    $currentLabel = $currentFlyer->title
-                        ?: $currentFlyer->catalog_name
-                        ?: ($currentFlyer->issue_number ? "Nr. {$currentFlyer->issue_number}" : 'naujausias leidinys');
-
-                    // Some scraped titles are all caps ("NE MAISTO PREKIŲ
-                    // PASIŪLYMAI"), which reads as shouting in a snippet.
-                    if (preg_match('/\p{L}{4}/u', $currentLabel) && mb_strtoupper($currentLabel) === $currentLabel) {
-                        $currentLabel = preg_replace('/\bnr\./u', 'Nr.', Str::ucfirst(mb_strtolower($currentLabel)));
-                    }
+                    $currentLabel = $currentFlyer->metaLabel();
 
                     $metaDescription = "Dabar galioja „{$currentLabel}“. Peržiūrėkite katalogą ir kitus naujausius „{$entity->name}“ akcijų {$leafletNounAccusativePlural}.";
                 } else {
@@ -1548,11 +1542,20 @@ class ProductController extends Controller
         $cacheKey = "store_leaflet_hub_{$storeModel->id}_".CacheVersion::suffix(['discounts', 'flyers']);
 
         $payload = Cache::remember($cacheKey, 3600, function () use ($storeModel) {
+            $seo = $this->generateSeoData('store_leaflet', $storeModel);
+            $flyerOffers = $this->currentFlyerOffersSummary($storeModel);
+
+            if ($flyerOffers !== null) {
+                $seo['meta_description'] = $flyerOffers['meta_description'];
+                unset($flyerOffers['meta_description']);
+            }
+
             return [
                 'listing_meta' => $this->listingPageMetaService->buildForStore($storeModel),
                 'breadcrumbs' => $this->generateBreadcrumbs('store_leaflet', $storeModel),
-                'seo' => $this->generateSeoData('store_leaflet', $storeModel),
+                'seo' => $seo,
                 'total_offers' => Discount::where('store_id', $storeModel->id)->count(),
+                'flyer_offers' => $flyerOffers,
             ];
         });
 
@@ -1604,9 +1607,7 @@ class ProductController extends Controller
             // without a page (extracted before flyer_page existed and not
             // matched by the backfill) go last. Capped since some flyers
             // hold 300+.
-            $flyerDiscounts = Discount::with(['store', 'product.category', 'product.discounts.store'])
-                ->where('store_flyer_id', $flyer->id)
-                ->where(fn ($q) => $q->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay()))
+            $flyerDiscounts = $this->flyerOffersQuery([$flyer->id])
                 ->orderByRaw('flyer_page IS NULL')
                 ->orderBy('flyer_page')
                 ->orderBy('id')
@@ -1618,6 +1619,13 @@ class ProductController extends Controller
                 ->values()
                 ->all();
             $flyerOffersTotal = $flyerDiscounts->unique('product_id')->count();
+            $topClause = $this->topDiscountsClause($this->topFlyerDiscounts($flyerDiscounts->unique('product_id')));
+            $flyerOffersIntro = $flyerOffersTotal > 0
+                ? "Iš šio {$storeModel->name} leidinio surinkome {$flyerOffersTotal} akcijų "
+                    .\App\Support\LithuanianPlural::offerWord($flyerOffersTotal)
+                    .' su kainomis, išdėstytus taip pat kaip leidinyje, puslapis po puslapio.'
+                    .($topClause !== '' ? " Didžiausios nuolaidos: {$topClause}." : '')
+                : null;
             $offersClause = $flyerOffersTotal > 0
                 ? ", {$flyerOffersTotal} ".\App\Support\LithuanianPlural::discountWord($flyerOffersTotal)
                 : '';
@@ -1644,6 +1652,7 @@ class ProductController extends Controller
                 'total_offers' => Discount::where('store_id', $storeModel->id)->count(),
                 'flyer_offers' => $flyerOffers,
                 'flyer_offers_total' => $flyerOffersTotal,
+                'flyer_offers_intro' => $flyerOffersIntro,
             ];
         });
 
@@ -1874,6 +1883,104 @@ class ProductController extends Controller
         }
 
         return $this->pageFreshnessService->getCurrentWeekRange();
+    }
+
+    // Active discounts extracted from (or linked to) the given flyers.
+    private function flyerOffersQuery(array $flyerIds)
+    {
+        return Discount::with(['store', 'product.category', 'product.discounts.store'])
+            ->whereIn('store_flyer_id', $flyerIds)
+            ->where(fn ($q) => $q->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay()));
+    }
+
+    /**
+     * The store's currently valid flyers' offers, for the evergreen
+     * /leidinys/{store} hub. That URL is the one that ranks for
+     * "{store} leidinys" (flyer URLs change every issue and 301 to the hub
+     * once expired), and until now it carried no product text at all, only
+     * cover images, same as competitors' image-only leaflet pages.
+     *
+     * @return array{offers: array, total: int, main_flyer: array, intro: string, meta_description: string}|null
+     */
+    private function currentFlyerOffersSummary(\App\Models\Store $store): ?array
+    {
+        $flyers = $store->flyers()->active()->ready()->currentlyValid()->get();
+
+        if ($flyers->isEmpty()) {
+            return null;
+        }
+
+        // Priced offers first (blanket "-30% visai avalynei" rows have no
+        // price), then the biggest discount.
+        $discounts = $this->flyerOffersQuery($flyers->pluck('id')->all())
+            ->orderByRaw('CASE WHEN discounted_price > 0 THEN 0 ELSE 1 END')
+            ->orderByRaw('COALESCE(discount_percent, 0) DESC')
+            ->orderBy('id')
+            ->get()
+            ->unique('product_id')
+            ->values();
+
+        if ($discounts->isEmpty()) {
+            return null;
+        }
+
+        $total = $discounts->count();
+        $mainFlyer = $flyers
+            ->sortByDesc(fn ($flyer) => $discounts->where('store_flyer_id', $flyer->id)->count())
+            ->first();
+        $mainFlyerTotal = $discounts->where('store_flyer_id', $mainFlyer->id)->count();
+        $label = $mainFlyer->metaLabel();
+        $validity = $mainFlyer->valid_from && $mainFlyer->valid_to
+            ? Carbon::parse($mainFlyer->valid_from)->format('m.d').'–'.Carbon::parse($mainFlyer->valid_to)->format('m.d')
+            : null;
+
+        $top = $this->topFlyerDiscounts($discounts);
+        $topClause = $this->topDiscountsClause($top);
+        $offerWord = \App\Support\LithuanianPlural::offerWord($total);
+
+        $intro = $flyers->count() > 1
+            ? "Galiojančiuose {$store->name} leidiniuose surinkome {$total} akcijų {$offerWord} su kainomis."
+            : "„{$label}“".($validity ? " galioja {$validity}." : '.')." Iš jo surinkome {$total} akcijų {$offerWord} su kainomis.";
+        if ($topClause !== '') {
+            $intro .= " Didžiausios nuolaidos: {$topClause}.";
+        }
+
+        $first = $top->first();
+        $example = $first
+            ? ', pvz. '.Str::limit($first->product->name, 40, '…').' – '.number_format($first->discounted_price, 2, ',', '').' €'
+            : '';
+        $metaDescription = "Dabar galioja „{$label}“".($validity ? " ({$validity})" : '')
+            .": {$total} akcijų {$offerWord}{$example}. Peržiūrėkite visą katalogą ir prekių kainas.";
+
+        return [
+            'offers' => $discounts
+                ->take(self::HUB_FLYER_OFFERS_LIMIT)
+                ->map(fn ($discount) => $this->formatter->formatListDiscount($discount))
+                ->all(),
+            'total' => $total,
+            'main_flyer' => [
+                'title' => $label,
+                'href' => "/leidinys/{$store->slug}/{$mainFlyer->slug}",
+                'total' => $mainFlyerTotal,
+            ],
+            'intro' => $intro,
+            'meta_description' => $metaDescription,
+        ];
+    }
+
+    private function topFlyerDiscounts($discounts)
+    {
+        return $discounts
+            ->filter(fn ($d) => $d->discounted_price > 0 && $d->discount_percent > 0)
+            ->sortByDesc('discount_percent')
+            ->take(3)
+            ->values();
+    }
+
+    // "Sviestas GHEE (-41 %), Grietinė ROKIŠKIO (-36 %)" for intro text.
+    private function topDiscountsClause($top): string
+    {
+        return $top->map(fn ($d) => $d->product->name.' (-'.(int) round($d->discount_percent).' %)')->implode(', ');
     }
 
     private function getStoreLeafletWords(string $storeSlug): array

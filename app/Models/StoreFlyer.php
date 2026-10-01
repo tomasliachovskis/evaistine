@@ -73,6 +73,28 @@ class StoreFlyer extends Model
         return $this->belongsTo(Store::class);
     }
 
+    // The flyer's own title for meta text and links. Some scraped titles
+    // are all caps ("NE MAISTO PREKIŲ PASIŪLYMAI"), which reads as
+    // shouting in a snippet.
+    public function metaLabel(): string
+    {
+        $label = $this->title
+            ?: $this->catalog_name
+            ?: ($this->issue_number ? "Nr. {$this->issue_number}" : 'naujausias leidinys');
+
+        if (preg_match('/\p{L}{4}/u', $label) && mb_strtoupper($label) === $label) {
+            $label = preg_replace('/\bnr\./u', 'Nr.', \Illuminate\Support\Str::ucfirst(mb_strtolower($label)));
+        }
+
+        return $label;
+    }
+
+    // Offers extracted from (or linked to) this flyer.
+    public function discounts(): HasMany
+    {
+        return $this->hasMany(Discount::class);
+    }
+
     public function pages(): HasMany
     {
         return $this->hasMany(StoreFlyerPage::class)->orderBy('sort_order')->orderBy('page_number');

@@ -18,6 +18,7 @@ class ItemListSchema
     // present, adds an inline Offer so the list item itself carries price
     // data, not just name/url/image. Omitted (not "price": null) when a
     // particular item has no price, since Offer requires a real price.
+    // Optional 'price_valid_until' (Y-m-d) adds the Offer's priceValidUntil.
     public static function build(string $name, array $items, ?int $totalCount = null): array
     {
         return [
@@ -36,13 +37,14 @@ class ItemListSchema
                     'name' => $item['name'],
                     'url' => url($item['href']),
                     'image' => $item['image'] ?? null,
-                    'offers' => [
+                    'offers' => array_filter([
                         '@type' => 'Offer',
                         'price' => (string) $item['price'],
                         'priceCurrency' => 'EUR',
+                        'priceValidUntil' => $item['price_valid_until'] ?? null,
                         'availability' => 'https://schema.org/InStock',
                         'url' => url($item['href']),
-                    ],
+                    ]),
                 ]) : null,
             ]))->all(),
         ];

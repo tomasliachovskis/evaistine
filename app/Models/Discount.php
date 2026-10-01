@@ -81,6 +81,11 @@ class Discount extends Model
         return $this->belongsTo(Store::class);
     }
 
+    public function storeFlyer()
+    {
+        return $this->belongsTo(StoreFlyer::class);
+    }
+
     public function scopeSearchByProductName($query, $searchTerm)
     {
         return $query->whereHas('product', function ($q) use ($searchTerm) {

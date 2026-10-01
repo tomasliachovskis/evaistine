@@ -11,6 +11,12 @@
     // Real cover image (confirmed live, e.g. /storage/flyers/pages/15/page-1.webp)
     // was previously in no structured data anywhere on this page, despite
     // being the whole point of the page.
+    // First few product names printed on each page, for the page image's
+    // alt text (image search), from the offers extracted from this flyer.
+    $pageProductNames = collect($flyerOffers ?? [])
+        ->filter(fn ($d) => ! empty($d['flyer_page']))
+        ->groupBy('flyer_page')
+        ->map(fn ($offers) => $offers->take(3)->pluck('product.name')->implode(', '));
     $imageObjectSchema = ! empty($flyer['image_url']) ? array_filter([
         '@context' => 'https://schema.org',
         '@type' => 'ImageObject',
@@ -77,6 +83,10 @@
                         this.viewerHeight = Math.max(320, window.innerHeight - top - 16);
                     },
                     init() {
+                        // #psl-N (product pages link to the page an offer
+                        // is printed on) opens that page.
+                        const hashPage = parseInt((location.hash.match(/^#psl-(\d+)$/) || [])[1], 10);
+                        if (hashPage >= 1 && hashPage <= this.totalPages) this.currentPage = hashPage;
                         this.$nextTick(() => {
                             this.sizeViewer();
                             // Eager-loaded pages (1-2) can finish loading
@@ -158,7 +168,7 @@
                                 x-show="currentPage === {{ $page['page_number'] }}"
                                 x-cloak
                                 src="{{ $page['image_url'] }}"
-                                alt="{{ $flyer['title'] }} – {{ $page['page_number'] }} puslapis"
+                                alt="{{ $flyer['title'] }} – {{ $page['page_number'] }} puslapis{{ $pageProductNames->has($page['page_number']) ? ': ' . $pageProductNames[$page['page_number']] : '' }}"
                                 class="block h-full w-auto max-w-full object-contain"
                                 :class="fullscreen && 'mx-auto max-h-full'"
                                 loading="{{ $page['page_number'] <= 2 ? 'eager' : 'lazy' }}"
@@ -297,6 +307,9 @@
                     Šio leidinio akcijos
                     <span class="font-normal text-gray-500">({{ $flyerOffersTotal }})</span>
                 </h2>
+                @if ($flyerOffersIntro)
+                    <p class="mb-4 max-w-3xl text-sm leading-relaxed text-gray-600">{{ $flyerOffersIntro }}</p>
+                @endif
                 {{-- Grouped by the flyer page each offer was printed on, in
                      the flyer's own order (see getStoreLeaflet()). Offers
                      with no known page come last, under no page heading. --}}
@@ -324,6 +337,7 @@
                                         :deal="$deal"
                                         :stretch="false"
                                         :context-store-slug="$storeSlug"
+                                        :compare-stores="true"
                                         source="flyer_offers"
                                         class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
                                     />

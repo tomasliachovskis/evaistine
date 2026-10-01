@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Product;
+use App\Models\StoreFlyer;
 use App\Support\CanonicalUrl;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -21,10 +22,10 @@ use Illuminate\Support\Facades\Log;
 class IndexNowPing extends Command
 {
     protected $signature = 'seo:indexnow
-        {--since= : Ping product pages whose discounts changed since this datetime (default: 1 day ago)}
+        {--since= : Ping product and leaflet pages whose discounts changed since this datetime (default: 1 day ago)}
         {--dry-run : List the URLs without sending them}';
 
-    protected $description = 'Submit recently changed product page URLs to IndexNow';
+    protected $description = 'Submit recently changed product and leaflet page URLs to IndexNow';
 
     private const ENDPOINT = 'https://api.indexnow.org/indexnow';
 
@@ -57,6 +58,19 @@ class IndexNowPing extends Command
             ->unique()
             ->values();
 
+        // Leaflet pages whose offers changed: the flyer page itself and the
+        // store's evergreen /leidinys/{store} hub, which lists them too.
+        $flyerUrls = StoreFlyer::active()->ready()->currentlyValid()
+            ->whereHas('discounts', fn ($q) => $q->where('updated_at', '>=', $since))
+            ->with('store:id,slug')
+            ->get(['id', 'slug', 'store_id'])
+            ->filter(fn (StoreFlyer $f) => $f->store)
+            ->flatMap(fn (StoreFlyer $f) => [
+                CanonicalUrl::build("/leidinys/{$f->store->slug}/{$f->slug}"),
+                CanonicalUrl::build("/leidinys/{$f->store->slug}"),
+            ]);
+        $urls = $urls->merge($flyerUrls)->unique()->values();
+
         if ($dryRun) {
             $urls->each(fn ($url) => $this->line($url));
             $this->info("{$urls->count()} URLs (dry run, nothing sent).");
@@ -65,7 +79,7 @@ class IndexNowPing extends Command
         }
 
         if ($urls->isEmpty()) {
-            $this->info('No changed product pages.');
+            $this->info('No changed product or leaflet pages.');
 
             return self::SUCCESS;
         }
