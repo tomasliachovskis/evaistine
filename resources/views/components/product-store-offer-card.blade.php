@@ -53,7 +53,7 @@
                 <span class="whitespace-nowrap rounded-full bg-[#e8eef3] px-3 py-1 text-xs font-medium text-gray-700">{{ $validityLabel }}</span>
             @endif
             <span class="inline-flex min-w-0 items-start justify-end gap-1.5 text-xs font-normal leading-snug text-gray-500">
-                <x-app-icon :name="$flyerLink ? 'bookmark' : 'info'" class="mt-px size-3.5 shrink-0 {{ $flyerLink ? 'text-dark-green' : 'text-gray-400' }} max-[359px]:hidden sm:size-4" />
+                <x-app-icon :name="$flyerLink ? 'bookmark' : 'info'" class="mt-px size-3.5 shrink-0 {{ $flyerLink ? 'text-dark-green' : 'text-gray-400' }} max-sm:hidden sm:size-4" />
                 @if ($flyerLink)
                     <span class="min-w-0 font-medium text-dark-green">Leidinyje „{{ $flyerLink['title'] }}“{{ $flyerLink['page'] ? ", {$flyerLink['page']} psl." : '' }}</span>
                 @else
