@@ -67,7 +67,7 @@
 >
     <div class="base-container flex h-14 items-center gap-2 lg:h-[72px] lg:gap-4">
         <a href="/" class="flex min-h-12 min-w-0 shrink-0 items-center no-underline hover:opacity-90">
-            <img src="/assets/logo.svg" alt="SuperAkcijos.lt" class="h-7 w-auto max-w-[min(200px,42vw)] object-contain object-left lg:max-w-none">
+            <img src="/assets/logo.svg" alt="SuperAkcijos.lt" class="h-8 w-auto max-w-[calc(100vw-11.5rem)] object-contain object-left lg:h-7 lg:max-w-none">
         </a>
 
         {{-- Categories as an icon next to the logo from lg (owner's request);
