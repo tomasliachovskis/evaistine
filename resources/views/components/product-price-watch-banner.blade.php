@@ -124,11 +124,11 @@
     <button
         type="button"
         @click="share()"
-        class="flex min-h-12 min-w-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-gray-100 px-3 text-base font-bold text-gray-900 transition-colors hover:bg-gray-200 min-[400px]:px-4"
+        class="flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 text-base font-bold text-gray-900 transition-colors hover:bg-gray-200"
         aria-label="Dalintis"
     >
         <x-app-icon x-show="!copied" name="share-2" class="size-5" />
         <x-app-icon x-show="copied" x-cloak name="check" class="size-5" />
-        <span class="hidden min-[400px]:inline" x-text="copied ? 'Nukopijuota' : 'Dalintis'">Dalintis</span>
+        <span x-text="copied ? 'Nukopijuota' : 'Dalintis'">Dalintis</span>
     </button>
 </div>
