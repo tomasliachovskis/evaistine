@@ -242,13 +242,18 @@ use App\Support\ProductPageMeta;
                                         ? round($bestOffer['discount_percent'])
                                         : null;
                                 @endphp
-                                <div class="flex flex-col gap-1 py-2 sm:py-3">
+                                {{-- Price, then "Įprasta kaina" spelled out (a bare
+                                     struck-through number next to the badge read as clutter),
+                                     then one boxed row saying where and until when. --}}
+                                <div class="flex flex-col gap-3 py-1 sm:py-2">
                                     @if ($heroDiscountedPrice > 0)
-                                        <div class="flex flex-wrap items-end gap-x-1.5">
-                                            <span class="text-price-lg font-bold leading-none text-gray-900 lg:text-price-hero">{{ number_format($heroDiscountedPrice, 2, ',', ' ') }} €</span>
-                                            <x-discount-badge :percent="$bestOffer['discount_percent'] ?? null" size="lg" />
+                                        <div class="flex flex-col gap-1.5">
+                                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                <span class="text-price-lg font-bold leading-none text-gray-900 lg:text-price-hero">{{ number_format($heroDiscountedPrice, 2, ',', ' ') }} €</span>
+                                                <x-discount-badge :percent="$bestOffer['discount_percent'] ?? null" size="lg" />
+                                            </div>
                                             @if (!empty($bestOffer['original_price']) && $bestOffer['original_price'] > $heroDiscountedPrice)
-                                                <del class="text-sm font-medium tabular-nums text-gray-500">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del>
+                                                <p class="text-base text-gray-600">Įprasta kaina <del class="tabular-nums">{{ number_format($bestOffer['original_price'], 2, ',', ' ') }} €</del></p>
                                             @endif
                                         </div>
                                     @elseif ($heroPriceSlotPct !== null)
@@ -262,16 +267,18 @@ use App\Support\ProductPageMeta;
                                             $heroValidity = \App\Support\ProductPageMeta::validUntilLabel($bestOffer['to_date'] ?? null);
                                             $heroOtherStores = $offerGroups->count() - 1;
                                         @endphp
-                                        <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-base text-gray-700">
-                                            <x-store-logo :slug="$bestOffer['store']['slug']" :name="$bestOffer['store']['name'] ?? ''" size="sm" class="object-left" />
-                                            @if ($heroValidity)
-                                                <span class="w-full sm:hidden">Galioja {{ lcfirst($heroValidity) }}</span>
-                                                <span class="hidden sm:inline">· galioja {{ lcfirst($heroValidity) }}</span>
+                                        <div class="flex flex-col items-start gap-2">
+                                            <div class="inline-flex max-w-full items-center gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                                                <x-store-logo :slug="$bestOffer['store']['slug']" :name="$bestOffer['store']['name'] ?? ''" size="sm" class="shrink-0" />
+                                                @if ($heroValidity)
+                                                    <span class="h-6 w-px shrink-0 bg-gray-300"></span>
+                                                    <span class="min-w-0 text-base leading-snug text-gray-700">Galioja {{ lcfirst($heroValidity) }}</span>
+                                                @endif
+                                            </div>
+                                            @if ($heroOtherStores > 0)
+                                                <a href="#offers" class="text-base font-semibold text-dark-green underline underline-offset-4">Dar {{ $heroOtherStores }} {{ \App\Support\LithuanianPlural::storeWord($heroOtherStores) }} – palyginti kainas</a>
                                             @endif
-                                        </p>
-                                        @if ($heroOtherStores > 0)
-                                            <a href="#offers" class="text-base font-semibold text-dark-green underline underline-offset-4">Dar {{ $heroOtherStores }} {{ \App\Support\LithuanianPlural::storeWord($heroOtherStores) }} – palyginti kainas</a>
-                                        @endif
+                                        </div>
                                     @endif
                                 </div>
                             @endif
