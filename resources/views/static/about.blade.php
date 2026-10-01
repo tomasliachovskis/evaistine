@@ -1,4 +1,5 @@
-<x-layouts.app :title="$title" :description="$description" :canonical="$canonical">
+<x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []" :title="$title" :description="$description" :canonical="$canonical">
     <x-page-breadcrumbs :items="$breadcrumbs" current="/apie" />
 
     <div class="base-container">
@@ -28,10 +29,10 @@
                 Turite klausimų, pastebėjote neteisingą informaciją ar norite susisiekti dėl bendradarbiavimo?
                 Rašykite mums:
             </p>
-            <p class="mb-6 text-base">El. paštas: <a href="mailto:info@superakcijos.lt" class="text-primary underline hover:text-green">info@superakcijos.lt</a></p>
+            <p class="mb-6 text-base">El. paštas: <a href="mailto:info@superakcijos.lt" class="text-primary underline hover:text-dark-green">info@superakcijos.lt</a></p>
             <p class="text-base">
                 Su asmens duomenų tvarkymu susijusius klausimus rasite
-                <a href="/privatumo-politika" class="text-primary underline hover:text-green">privatumo politikoje</a>.
+                <a href="/privatumo-politika" class="text-primary underline hover:text-dark-green">privatumo politikoje</a>.
             </p>
         </div>
     </div>

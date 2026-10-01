@@ -4,15 +4,15 @@
      base-container spacing, ArrowRight separators, current-page item in
      green/font-medium. $items is the same ['name' => ..., 'href' => ...][]
      shape passed to App\Support\BreadcrumbSchema::build(). --}}
-<div class="base-container pb-4 pt-3">
-    <nav class="flex flex-wrap items-center gap-1.5">
+<div class="base-container pb-2 pt-3 lg:pb-4">
+    <nav class="flex flex-wrap items-center gap-x-2" aria-label="Naršymo kelias">
         @foreach ($items as $index => $item)
             @if ($index > 0)
-                <x-app-icon name="arrow-right" class="size-3.5 text-gray-300" />
+                <x-app-icon name="arrow-right" class="crumb-sep" />
             @endif
             <a
                 href="{{ $item['href'] }}"
-                class="text-sm text-gray-600 transition-colors hover:text-green {{ $current === $item['href'] ? 'font-medium text-green' : '' }}"
+                class="crumb-link {{ $current === $item['href'] ? 'crumb-current' : '' }}"
             >{{ $item['name'] }}</a>
         @endforeach
     </nav>

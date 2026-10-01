@@ -10,8 +10,8 @@
         <button
             type="button"
             @click="currentPage = {{ $page['page_number'] }}"
-            :class="isShown({{ $page['page_number'] }}) ? '{{ ! empty($beta) ? 'border-dark-green bg-dark-green' : 'border-green bg-green' }} text-white' : '{{ ! empty($beta) ? 'border-gray-400 text-font' : 'border-gray-200 text-gray-700' }} bg-white hover:border-green/40'"
-            class="relative flex items-center justify-center rounded-lg border font-bold transition-colors {{ ! empty($beta) ? 'min-h-12 min-w-12 border-2 px-2.5 text-lg' : 'min-h-10 min-w-10 px-2 text-sm' }}"
+            :class="isShown({{ $page['page_number'] }}) ? '{{ ! empty($beta) ? 'border-action bg-action' : 'border-green bg-action' }} text-white' : '{{ ! empty($beta) ? 'border-gray-400 text-font' : 'border-gray-200 text-gray-700' }} bg-white hover:border-green/40'"
+            class="relative flex items-center justify-center rounded-lg border font-bold transition-colors min-h-12 min-w-12 border px-2.5 text-lg"
         >{{ $page['page_number'] }}@if (! empty($beta))<span
                 x-show="filtering() && pageMatchCount({{ $page['page_number'] }}) > 0"
                 x-cloak
@@ -35,7 +35,7 @@
             <template x-if="currentPage > 5 && currentPage < {{ $lastPage }}">
                 <button
                     type="button"
-                    class="flex items-center justify-center rounded-lg border font-bold text-white {{ ! empty($beta) ? 'min-h-12 min-w-12 border-2 border-dark-green bg-dark-green px-2.5 text-lg' : 'min-h-10 min-w-10 border-green bg-green px-2 text-sm' }}"
+                    class="flex items-center justify-center rounded-lg border font-bold text-white min-h-12 min-w-12 bg-green-soft bg-action px-2.5 text-lg"
                     x-text="currentPage"
                 ></button>
             </template>

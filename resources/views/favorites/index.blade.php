@@ -1,4 +1,6 @@
-<x-layouts.app :title="$title" :robots="$robots">
+<x-layouts.app
+    app-title="Mėgstami"
+    back-href="/" :title="$title" :robots="$robots">
     @php
         $euro = fn ($amount) => number_format((float) $amount, 2, ',', ' ') . ' €';
 
@@ -56,8 +58,8 @@
         // used across store rows and the category filter rows.
         $rowActive = 'border-green bg-green/10';
         $rowInactive = 'border-gray-200 hover:border-gray-400';
-        $checkBase = 'flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors';
-        $checkActive = 'border-green bg-green';
+        $checkBase = 'flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors';
+        $checkActive = 'border-green bg-action';
         $checkInactive = 'border-gray-300 bg-white';
     @endphp
 
@@ -69,7 +71,7 @@
         <h1 class="mb-5 text-3xl font-extrabold text-gray-900 sm:text-4xl">Stebimos prekės</h1>
 
         @if ($savingsSummary['total_savings'] > 0)
-            <div class="mb-6 flex items-center gap-4 rounded-2xl border-2 border-green bg-green/10 p-4">
+            <div class="mb-6 flex items-center gap-4 rounded-2xl border border-green bg-green/10 p-4">
                 <div class="flex size-12 shrink-0 items-center justify-center rounded-full bg-green/20">
                     <x-app-icon name="wallet" class="size-6 text-dark-green" />
                 </div>
@@ -88,7 +90,7 @@
 
         @if (count($storeTotals) > 0)
             @php
-                $gridCellBase = 'flex flex-col items-start gap-1 rounded-xl border-2 bg-white p-3 text-left transition-colors';
+                $gridCellBase = 'flex flex-col items-start gap-1 rounded-xl border bg-white p-3 text-left transition-colors';
             @endphp
             <h2 class="mb-2 text-lg font-bold text-gray-900">Jūsų parduotuvės</h2>
             <div class="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -105,7 +107,7 @@
                         <span class="min-w-0 flex-1 truncate text-base font-bold text-gray-900">Visos</span>
                     </span>
                     <span class="text-sm text-gray-600">{{ $activeCount }} {{ $activeCount === 1 ? 'akcija' : 'akcijos' }}</span>
-                    <span class="text-base font-extrabold text-green">{{ number_format($allStoresTotalPrice, 2, ',', ' ') }}€</span>
+                    <span class="text-base font-extrabold text-dark-green">{{ number_format($allStoresTotalPrice, 2, ',', ' ') }}€</span>
                 </button>
                 @foreach ($storeTotals as $total)
                     <button
@@ -125,19 +127,19 @@
                             @endif
                         </span>
                         <span class="text-sm text-gray-600">{{ $total['product_count'] }} {{ $total['product_count'] === 1 ? 'akcija' : 'akcijos' }}</span>
-                        <span class="text-base font-extrabold text-green">{{ number_format($total['total_price'], 2, ',', ' ') }}€</span>
+                        <span class="text-base font-extrabold text-dark-green">{{ number_format($total['total_price'], 2, ',', ' ') }}€</span>
                     </button>
                 @endforeach
             </div>
         @endif
 
         @if (count($products) === 0)
-            <div class="rounded-2xl border-2 bg-card p-10 text-center">
+            <div class="rounded-2xl border bg-card p-10 text-center">
                 <x-app-icon name="heart" class="mx-auto size-10 text-gray-300" />
                 <p class="mt-4 text-lg text-gray-600">
                     Jūs dar neturite mėgstamiausių prekių. Pridėkite prekes prie mėgstamiausių, paspaudę ant širdelės ikonos.
                 </p>
-                <a href="/akcijos" class="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-green bg-green px-5 py-3 text-base font-bold text-white transition-colors hover:bg-dark-green hover:border-dark-green">
+                <a href="/akcijos" class="mt-6 inline-flex items-center gap-2 rounded-xl border border-green bg-action px-5 py-3 text-base font-bold text-white transition-colors hover:bg-action-hover hover:border-gray-300">
                     Žiūrėti visas akcijas
                     <x-app-icon name="arrow-right" class="size-4" />
                 </a>
@@ -145,9 +147,9 @@
         @else
             @if ($showCategoryFilter && $categoryFilterOptions->isNotEmpty())
                 @php
-                    $categoryRowBase = 'flex w-full items-center gap-3 rounded-xl border-2 bg-white px-4 py-3 text-left transition-colors';
+                    $categoryRowBase = 'flex w-full items-center gap-3 rounded-xl border bg-white px-4 py-3 text-left transition-colors';
                 @endphp
-                <button type="button" @click="categoryOpen = !categoryOpen" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-left">
+                <button type="button" @click="categoryOpen = !categoryOpen" class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-left">
                     <span>
                         <span class="block text-lg font-bold text-gray-900">Kategorija</span>
                         <span class="block text-sm text-gray-600" x-text="categoryFilter === '' ? 'Visos kategorijos' : (categoryNames[categoryFilter] || categoryFilter)"></span>
@@ -174,9 +176,9 @@
             @endif
 
             <div class="mb-4 flex items-center justify-between gap-3">
-                <h2 id="favorites-grid" class="scroll-mt-24 text-2xl font-bold text-gray-900">Prekės</h2>
+                <h2 id="favorites-grid" class="scroll-mt-32 text-2xl font-bold text-gray-900">Prekės</h2>
                 <div class="relative shrink-0" @click.outside="sortOpen = false">
-                    <button type="button" @click="sortOpen = !sortOpen" class="inline-flex items-center gap-2 rounded-2xl bg-[#e8e8e8] px-3 py-2 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
+                    <button type="button" @click="sortOpen = !sortOpen" class="inline-flex items-center gap-2 rounded-2xl bg-[#e8e8e8] px-3 py-2 text-base font-semibold text-gray-900 hover:bg-[#dedede] min-h-12" aria-haspopup="listbox" :aria-expanded="sortOpen">
                         <x-app-icon name="arrow-down-up" class="size-4 shrink-0" />
                         <span class="hidden sm:inline">
                             @foreach ($sortOptions as $value => $option)
@@ -187,7 +189,7 @@
                     </button>
                     <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[220px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
                         @foreach ($sortOptions as $value => $option)
-                            <button type="button" @click="sort = '{{ $value }}'; sortOpen = false" class="flex w-full items-center gap-2 rounded-2xl px-3 py-2.5 text-left text-base font-semibold text-gray-900 transition-colors hover:bg-gray-100" :class="sort === '{{ $value }}' ? 'bg-gray-100' : ''">
+                            <button type="button" @click="sort = '{{ $value }}'; sortOpen = false" class="flex w-full items-center gap-2 rounded-2xl px-3 py-2.5 text-left text-base font-semibold text-gray-900 transition-colors hover:bg-gray-100 min-h-12" :class="sort === '{{ $value }}' ? 'bg-gray-100' : ''">
                                 <x-app-icon name="{{ $option['icon'] }}" class="size-4 shrink-0 opacity-90" />
                                 {{ $option['label'] }}
                             </button>
@@ -213,7 +215,7 @@
                         class="relative {{ !$hasActiveDiscount($deal) ? 'opacity-60' : '' }}"
                     >
                         @if ($currentSavings > 0)
-                            <span class="absolute left-2 top-2 z-20 rounded-lg bg-green px-2 py-1 text-xs font-bold text-white">
+                            <span class="absolute left-2 top-2 z-20 rounded-lg bg-action px-2 py-1 text-xs font-bold text-white">
                                 −{{ $euro($currentSavings) }}
                             </span>
                         @endif

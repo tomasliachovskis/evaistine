@@ -51,23 +51,23 @@
                     <div>
                         <h2 class="mb-4 text-lg font-bold">Apie SuperAkcijos.lt</h2>
                         <ul class="flex flex-col gap-2">
-                            <li><a href="/apie" class="text-base text-white/80 transition-colors hover:text-green">Apie mus</a></li>
-                            <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-green">Naujienos</a></li>
-                            <li><a href="/privatumo-politika" class="text-base text-white/80 transition-colors hover:text-green">Privatumo politika</a></li>
-                            <li><a href="/parduotuves" class="text-base text-white/80 transition-colors hover:text-green">Parduotuvės</a></li>
+                            <li><a href="/apie" class="text-base text-white/80 transition-colors hover:text-dark-green">Apie mus</a></li>
+                            <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-dark-green">Naujienos</a></li>
+                            <li><a href="/privatumo-politika" class="text-base text-white/80 transition-colors hover:text-dark-green">Privatumo politika</a></li>
+                            <li><a href="/parduotuves" class="text-base text-white/80 transition-colors hover:text-dark-green">Parduotuvės</a></li>
                         </ul>
                     </div>
                     <div class="border-t border-white/10 pt-6">
                         <h3 class="mb-4 text-lg font-bold">Sekite mus</h3>
                         <ul class="flex flex-col gap-2">
                             <li>
-                                <a href="https://www.facebook.com/profile.php?id=61586857013836" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-base text-white/80 transition-colors hover:text-green">
+                                <a href="https://www.facebook.com/profile.php?id=61586857013836" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-base text-white/80 transition-colors hover:text-dark-green">
                                     <x-app-icon name="facebook" class="h-6 w-6 shrink-0" />
                                     Facebook
                                 </a>
                             </li>
                             <li>
-                                <a href="https://www.instagram.com/superakcijos.lt/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-base text-white/80 transition-colors hover:text-green">
+                                <a href="https://www.instagram.com/superakcijos.lt/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-base text-white/80 transition-colors hover:text-dark-green">
                                     <x-app-icon name="instagram" class="h-6 w-6 shrink-0" />
                                     Instagram
                                 </a>
@@ -80,7 +80,7 @@
                     <h2 class="mb-4 text-lg font-bold">Kategorijos</h2>
                     <ul class="flex flex-col gap-2">
                         @foreach ($footerCategories as $category)
-                            <li><a href="/akcijos/{{ $category->slug }}" class="text-base text-white/80 transition-colors hover:text-green">{{ $category->name }}</a></li>
+                            <li><a href="/akcijos/{{ $category->slug }}" class="text-base text-white/80 transition-colors hover:text-dark-green">{{ $category->name }}</a></li>
                         @endforeach
                     </ul>
                 </div>
@@ -89,9 +89,9 @@
                     <h2 class="mb-4 text-lg font-bold">Parduotuvės</h2>
                     <ul class="flex flex-col gap-2">
                         @foreach ($footerStores as $store)
-                            <li><a href="/akcijos/{{ $store['slug'] }}" class="text-base text-white/80 transition-colors hover:text-green">{{ $store['name'] }}</a></li>
+                            <li><a href="/akcijos/{{ $store['slug'] }}" class="text-base text-white/80 transition-colors hover:text-dark-green">{{ $store['name'] }}</a></li>
                         @endforeach
-                        <li><a href="/parduotuves" class="text-base text-white/80 transition-colors hover:text-green">Visos parduotuvės</a></li>
+                        <li><a href="/parduotuves" class="text-base text-white/80 transition-colors hover:text-dark-green">Visos parduotuvės</a></li>
                     </ul>
                 </div>
 
@@ -99,7 +99,7 @@
                     <h2 class="mb-4 text-lg font-bold">Produktai</h2>
                     <ul class="flex flex-col gap-2">
                         @foreach ($footerKeywordItems as $item)
-                            <li><a href="{{ $item['href'] }}" class="text-base text-white/80 transition-colors hover:text-green">{{ $item['label'] }}</a></li>
+                            <li><a href="{{ $item['href'] }}" class="text-base text-white/80 transition-colors hover:text-dark-green">{{ $item['label'] }}</a></li>
                         @endforeach
                     </ul>
                 </div>
@@ -107,9 +107,9 @@
                 <div>
                     <h2 class="mb-4 text-lg font-bold">Naudinga</h2>
                     <ul class="flex flex-col gap-2">
-                        <li><a href="/favorites" class="text-base text-white/80 transition-colors hover:text-green">Mėgstami</a></li>
-                        <li><a href="/akcijos" class="text-base text-white/80 transition-colors hover:text-green">Akcijos</a></li>
-                        <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-green">Naujienos</a></li>
+                        <li><a href="/favorites" class="text-base text-white/80 transition-colors hover:text-dark-green">Mėgstami</a></li>
+                        <li><a href="/akcijos" class="text-base text-white/80 transition-colors hover:text-dark-green">Akcijos</a></li>
+                        <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-dark-green">Naujienos</a></li>
                     </ul>
                 </div>
             </div>

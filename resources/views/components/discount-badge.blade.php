@@ -8,7 +8,7 @@
 
 @if ($roundedPercent !== null && $roundedPercent >= 20)
     @if ($size === 'lg')
-        <span class="inline-flex h-[1.6rem] items-center rounded-lg bg-[#ffdb4d] px-2.5 text-[17.6px] font-bold leading-none tabular-nums text-gray-900 sm:h-[2rem] sm:px-3 sm:text-[19px]">-{{ $roundedPercent }}%</span>
+        <span class="inline-flex h-[1.6rem] items-center rounded-lg bg-[#ffdb4d] px-2.5 text-base font-bold leading-none tabular-nums text-gray-900 sm:h-[2rem] sm:px-3 sm:text-lg">-{{ $roundedPercent }}%</span>
     @else
         <span class="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#ffdb4d] px-2.5 py-1.5 text-sm font-bold leading-none tabular-nums text-gray-900">-{{ $roundedPercent }}%</span>
     @endif

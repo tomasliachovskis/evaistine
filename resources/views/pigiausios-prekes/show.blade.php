@@ -1,4 +1,5 @@
-<x-layouts.app :title="$title" :description="$description" :canonical="$canonical" :robots="$robots">
+<x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []" :title="$title" :description="$description" :canonical="$canonical" :robots="$robots">
     @push('head')
         <script type="application/ld+json">
             {!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
@@ -65,7 +66,7 @@
                                     @foreach ($item['leading_deals'] as $index => $deal)
                                         <div class="relative">
                                             @if ($index === $cheapestIndex)
-                                                <span class="absolute left-2 top-2 z-20 inline-flex items-center rounded-md bg-[#ffdb4d] px-1.5 py-0.5 text-[0.65rem] font-extrabold uppercase tracking-wide text-gray-900">Gera kaina</span>
+                                                <span class="absolute left-2 top-2 z-20 inline-flex items-center rounded-md bg-[#ffdb4d] px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wide text-gray-900">Gera kaina</span>
                                             @endif
                                             <x-deal-card :deal="$deal" source="pigiausios-prekes" :featured="$index === $cheapestIndex" />
                                         </div>
@@ -77,7 +78,7 @@
                 </div>
             @endforeach
 
-            <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
+            <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-dark-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
                 <h2>Kodėl verta sekti maisto prekių kainas kiekvieną savaitę</h2>
                 <p>Kainos didžiuosiuose prekybos tinkluose — <a href="/akcijos/maxima">Maxima</a>, <a href="/akcijos/lidl">Lidl</a>, <a href="/akcijos/rimi">Rimi</a>, <a href="/akcijos/norfa">Norfa</a> ir <a href="/akcijos/iki">Iki</a> — tam pačiam produktui gali skirtis nemažai, o kuris tinklas tuo metu pigiausias priklauso nuo konkrečios prekių kategorijos ir savaitės akcijų. Todėl vienkartinis apsipirkimas vienoje parduotuvėje retai būna pats pigiausias variantas — verta palyginti prieš renkantis, kur eiti su pirkinių sąrašu.</p>
 
@@ -88,7 +89,7 @@
                 <p>Be šio bendro prekių palyginimo, verta pasitikrinti konkrečių kategorijų akcijas — pavyzdžiui <a href="/akcijos/vaisiai-ir-darzoves">vaisius ir daržoves</a>, <a href="/akcijos/pieno-produktai-ir-kiausiniai">pieno produktus</a> ar <a href="/akcijos/mesa-ir-zuvis">mėsą ir žuvį</a> — nes būtent šiose kategorijose kainų skirtumai tarp tinklų dažniausiai būna didžiausi. Taip pat naudinga sekti savaitės <a href="/leidiniai">akcijų leidinius</a>, kad pastebėtumėte naujus pasiūlymus, kol jie dar galioja.</p>
             </div>
 
-            <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
+            <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-dark-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
                 <p>
                     <strong>Kaip skaičiuojame:</strong> kiekvienai prekei rodome jos pačios akcijų puslapio realiu laiku skaičiuojamą kainų palyginimą — po vieną pigiausią šiuo metu galiojantį pasiūlymą iš kiekvienos parduotuvės, kuri tą prekę turi (iki penkių parduotuvių). Kainos remiasi realiais SuperAkcijos.lt sistemoje esančiais duomenimis ir gali kartais atspindėti pavienes šaltinio klaidas.
                 </p>

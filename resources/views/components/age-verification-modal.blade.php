@@ -27,7 +27,7 @@
             Alkoholinius gėrimus gali įsigyti tik asmenys, kuriems yra ne mažiau kaip 20 metų.
         </p>
         <div class="mt-6 flex flex-col gap-3">
-            <button type="button" @click="verify()" class="h-12 w-full rounded-lg bg-green text-base font-bold text-white transition-colors hover:bg-dark-green">
+            <button type="button" @click="verify()" class="h-12 w-full rounded-lg bg-action text-base font-bold text-white transition-colors hover:bg-action-hover">
                 MAN YRA 20 METŲ
             </button>
             <button type="button" @click="deny()" class="h-12 w-full rounded-lg border border-gray-300 text-base font-semibold text-gray-900 hover:bg-gray-50">

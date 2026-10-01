@@ -36,11 +36,14 @@
         x-show="elapsed && !dismissed && !$store.authModal.open && !$store.priceWatchModal.open"
         x-cloak
         @click.self="dismiss()"
-        class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4"
+        class="sheet-backdrop z-[110]"
     >
-        <div class="w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:max-w-[440px]">
+        <div class="sheet-panel">
+            <div class="sheet-handle"></div>
             <div class="flex items-center justify-end px-5 pt-3">
-                <button type="button" @click="dismiss()" class="text-gray-400 hover:text-gray-700" aria-label="Uždaryti">&times;</button>
+                <button type="button" @click="dismiss()" class="sheet-close" aria-label="Uždaryti">
+                    <x-app-icon name="x" class="size-7" />
+                </button>
             </div>
 
             <div class="flex flex-col items-center gap-4 px-6 pb-2 pt-2 text-center sm:px-10">
@@ -62,7 +65,7 @@
                                 <span class="hidden h-3 w-px shrink-0 bg-gray-200 sm:block"></span>
                             @endif
                             <span class="flex items-center gap-1 whitespace-nowrap">
-                                <x-app-icon name="check" class="size-3.5 shrink-0 text-green sm:size-3" style="stroke-width:3" />
+                                <x-app-icon name="check" class="size-3.5 shrink-0 text-dark-green sm:size-3" style="stroke-width:3" />
                                 <span class="sm:hidden">{{ $feature['short'] }}</span>
                                 <span class="hidden sm:inline">{{ $feature['full'] }}</span>
                             </span>
@@ -73,7 +76,7 @@
                 <button
                     type="button"
                     @click="dismiss(); $store.authModal.open = true"
-                    class="h-12 w-full rounded-lg bg-green text-base font-bold text-white transition-colors hover:bg-dark-green"
+                    class="h-12 w-full rounded-lg bg-action text-base font-bold text-white transition-colors hover:bg-action-hover"
                 >
                     Prisijungti nemokamai
                 </button>

@@ -16,10 +16,10 @@
                 x-model="query"
                 @search="if (query === '') activeQuery = ''"
                 placeholder="pvz. sviestas"
-                class="h-12 w-full rounded-lg border-2 border-gray-400 bg-white px-3 text-lg text-font placeholder:text-gray-500 focus:border-dark-green focus:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
+                class="h-12 w-full rounded-lg border border-gray-300 bg-white px-3 text-lg text-font placeholder:text-gray-500 focus:border-dark-green focus:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
             >
         </label>
-        <button type="submit" class="inline-flex h-12 items-center gap-2 rounded-lg bg-dark-green px-5 text-lg font-bold text-white hover:bg-green focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40">
+        <button type="submit" class="inline-flex h-12 items-center gap-2 rounded-lg bg-action px-5 text-lg font-bold text-white hover:bg-action-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40">
             <x-app-icon name="search" class="size-5" />
             Ieškoti
         </button>
@@ -32,8 +32,8 @@
                 type="button"
                 @click="setLens(lens.key)"
                 :aria-pressed="activeLens === lens.key"
-                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border-2 px-4 text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
-                :class="activeLens === lens.key ? 'border-dark-green bg-dark-green text-white' : 'border-gray-400 bg-white text-font hover:border-dark-green'"
+                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border px-4 text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
+                :class="activeLens === lens.key ? 'border-action bg-action text-white' : 'border-gray-400 bg-white text-font hover:border-gray-300'"
             >
                 <x-app-icon x-show="activeLens === lens.key" name="check" class="size-4" />
                 <span x-text="lens.label"></span>
@@ -48,7 +48,7 @@
             type="button"
             x-show="nextMatchPage() !== null"
             @click="currentPage = nextMatchPage()"
-            class="inline-flex min-h-12 items-center gap-1.5 rounded-lg bg-dark-green px-4 text-base font-bold text-white hover:bg-green focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40"
+            class="inline-flex min-h-12 items-center gap-1.5 rounded-lg bg-action px-4 text-base font-bold text-white hover:bg-action-hover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40"
         >
             <span x-text="'Rodyti ' + nextMatchPage() + ' puslapį'"></span>
             <x-app-icon name="chevron-right" class="size-5" />

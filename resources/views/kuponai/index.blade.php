@@ -7,6 +7,7 @@
 @endphp
 
 <x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []"
     title="Nuolaidų kodai ir kuponai"
     description="Patikrinti nuolaidų kodai ir aktualios akcijos internetinėse parduotuvėse. Rinkitės iš patikimų kuponų ir sutaupykite kiekvieną kartą apsipirkdami."
     :canonical="$canonical"
@@ -49,14 +50,14 @@
                 name="q"
                 value="{{ $q }}"
                 placeholder="Ieškoti kuponų ar parduotuvės, pvz. VidaXL, kvepalai..."
-                class="w-full rounded-full border-2 border-gray-300 bg-white py-4 pl-14 pr-5 text-lg font-medium text-gray-900 placeholder:text-gray-400 focus:border-green focus:outline-none focus:ring-1 focus:ring-green"
+                class="w-full rounded-full border border-gray-200 bg-white py-4 pl-14 pr-5 text-lg font-medium text-gray-900 placeholder:text-gray-400 focus:border-green focus:outline-none focus:ring-1 focus:ring-green"
             >
         </form>
 
         @if ($q !== '')
             <p class="text-base text-gray-600">
                 Paieškos „{{ $q }}“ rezultatai ({{ $coupons->total() }})
-                <a href="/kuponai" class="ml-2 font-bold text-green hover:text-dark-green">Išvalyti</a>
+                <a href="/kuponai" class="ml-2 font-bold text-dark-green hover:underline">Išvalyti</a>
             </p>
         @endif
 
@@ -71,7 +72,7 @@
                     $sortParams = array_filter(['order' => $value === 'best' ? null : $value, 'q' => $q !== '' ? $q : null]);
                     $sortHref = '/kuponai' . ($sortParams ? '?' . http_build_query($sortParams) : '');
                 @endphp
-                <a href="{{ $sortHref }}" class="{{ $order === $value ? 'font-bold text-green' : 'font-medium text-gray-600 hover:text-gray-900' }}">{{ $label }}</a>
+                <a href="{{ $sortHref }}" class="inline-flex min-h-12 items-center rounded-xl px-3 {{ $order === $value ? 'bg-action font-bold text-white' : 'font-semibold text-gray-800 hover:bg-gray-100' }}">{{ $label }}</a>
             @endforeach
         </div>
 
@@ -99,7 +100,7 @@
             @endif
         @endif
 
-        <section id="kaip-panaudoti" class="scroll-mt-24 rounded-xl border border-gray-200 bg-white p-4 sm:p-5" aria-labelledby="how-to-heading">
+        <section id="kaip-panaudoti" class="scroll-mt-32 rounded-xl border border-gray-200 bg-white p-4 sm:p-5" aria-labelledby="how-to-heading">
             <h2 id="how-to-heading" class="text-base font-extrabold text-gray-900 sm:text-lg">Kaip panaudoti nuolaidų kodus?</h2>
             <p class="mt-2 text-sm leading-relaxed text-gray-600 sm:text-base">
                 Nuolaidos kodas – tai kuponas, kuriame yra specialus kodas. Paspaudus mygtuką „Rodyti kodą“, kodas bus parodytas ir automatiškai nukopijuotas.

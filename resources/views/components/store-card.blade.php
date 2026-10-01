@@ -30,7 +30,7 @@
             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="md" />
         </div>
         <div class="mt-2 flex min-w-0 flex-col gap-0.5 sm:mt-2.5">
-            <p class="mb-1 whitespace-nowrap text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
+            <p class="mb-1 whitespace-nowrap text-center text-xl font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
             {{-- No offers: no "Nėra akcijų" line, the leaflet count below is all it shows. --}}
             @if ($hasOffers)
                 <p class="truncate text-center text-sm leading-snug text-gray-600">
@@ -45,27 +45,28 @@
         </div>
     </a>
 @else
-    {{-- Ported from discount/src/components/stores/store-card.tsx (slider layout, view-only actions). --}}
-    <a href="{{ $storeHref }}" class="group flex snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:p-3 {{ $widthClass }} {{ !$isActive ? 'opacity-75' : '' }}">
-        <div class="flex h-[72px] items-center justify-center sm:h-[80px]">
-            <x-store-logo :slug="$store['slug']" size="lg" />
-        </div>
-        <div class="mt-2 flex min-w-0 flex-col gap-0.5 sm:mt-2.5">
-            <p class="mb-1 line-clamp-2 text-center text-[22px] font-bold leading-none text-gray-900">{{ $store['name'] }}</p>
-            {{-- No offers: no "Nėra akcijų" line, the leaflet count below is all it shows. --}}
-            @if ($hasOffers)
-                <p class="truncate text-center text-sm leading-snug text-gray-600">
-                    {{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::discountWord($store['discounts_count']) }}
-                </p>
+    {{-- Ported from discount/src/components/stores/store-card.tsx. Two
+         separate buttons (owner's request, 2026-10): leaflets and offers,
+         each only when the store has that page; the logo/name link goes to
+         the main one. --}}
+    @php
+        $showsLeaflets = $leafletsCount > 0 || ! $showsDiscountsPage;
+        $buttonClass = 'inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-green-soft px-2 text-base font-bold text-dark-green transition-colors hover:bg-green-soft-border';
+    @endphp
+    <div class="flex snap-start flex-col rounded-2xl border border-gray-300 bg-white p-3 {{ $widthClass }} {{ !$isActive ? 'opacity-75' : '' }}">
+        <a href="{{ $storeHref }}" class="flex flex-col rounded-xl hover:opacity-90">
+            <div class="flex h-[72px] items-center justify-center sm:h-[80px]">
+                <x-store-logo :slug="$store['slug']" size="lg" />
+            </div>
+            <p class="mt-2 line-clamp-2 text-center text-xl font-bold leading-tight text-gray-900 sm:mt-2.5">{{ $store['name'] }}</p>
+        </a>
+        <div class="mt-auto flex flex-col gap-2 pt-3">
+            @if ($showsLeaflets)
+                <a href="/leidinys/{{ $store['slug'] }}" class="{{ $buttonClass }} gap-2">Leidiniai @if ($leafletsCount > 0)<span class="tabular-nums text-gray-700">{{ $leafletsCount }}</span>@endif</a>
             @endif
-            @if ($leafletsCount > 0)
-                <p class="truncate text-center text-sm leading-snug text-gray-500">
-                    {{ $leafletsCount }} {{ LithuanianPlural::leafletWord($leafletsCount) }}
-                </p>
+            @if ($showsDiscountsPage)
+                <a href="/akcijos/{{ $store['slug'] }}" class="{{ $buttonClass }} gap-2">Akcijos <span class="tabular-nums text-gray-700">{{ LithuanianPlural::formatCount($store['discounts_count']) }}</span></a>
             @endif
         </div>
-        <span class="mt-3 inline-flex h-8 w-full items-center justify-center rounded-lg border border-green bg-white px-2 text-sm font-bold text-green transition-colors group-hover:bg-green/5 group-hover:text-dark-green sm:mt-3.5 sm:h-9">
-            {{ $showsDiscountsPage ? 'Žiūrėti akcijas' : 'Žiūrėti leidinius' }}
-        </span>
-    </a>
+    </div>
 @endif

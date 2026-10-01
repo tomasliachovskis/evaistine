@@ -14,7 +14,7 @@
                         <x-app-icon name="chevron-down" class="size-5 text-gray-500" />
                     </span>
                 </button>
-                <div x-show="open === {{ $index }}" x-cloak class="border-t border-gray-200 bg-white px-4 py-3 text-sm leading-snug text-gray-600 [&_a]:font-medium [&_a]:text-green [&_a]:hover:text-dark-green [&_a]:hover:underline">
+                <div x-show="open === {{ $index }}" x-cloak class="border-t border-gray-200 bg-white px-4 py-3 text-sm leading-snug text-gray-600 [&_a]:font-medium [&_a]:text-dark-green [&_a]:hover:text-dark-green [&_a]:hover:underline">
                     {!! $item['answer'] !!}
                 </div>
             </div>

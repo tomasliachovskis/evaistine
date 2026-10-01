@@ -119,16 +119,26 @@
 @php
     // Mirrors site-header.blade.php's own $hideNavRow check — that
     // component drops row2 entirely on the leaflet detail page, so this
-    // page's lg+ header is only 3.5rem tall (row1 only), not the usual
-    // 7.25rem (row1 + row2). Without this, <main> kept reserving space for
+    // page's lg+ header is only 5rem tall (row1 only), not the usual
+    // 9rem (row1 + row2). Without this, <main> kept reserving space for
     // a row2 that no longer renders, leaving a dead gap above the leaflet
     // image the user wanted flush with the header instead.
     $hideNavRow = preg_match('#^leidinys/[^/]+/[^/]+#', request()->path()) === 1;
+
+    // Phone app bar (site-header): title = the current page's breadcrumb,
+    // Atgal = the one before it. Pages without breadcrumbs pass app-title /
+    // back-href themselves. Crumbs come either mapped (name/href) or raw
+    // from the API (name/slug).
+    $crumbHref = fn ($crumb) => $crumb['href'] ?? (isset($crumb['slug']) ? ($crumb['slug'] === '/' ? '/' : '/'.ltrim($crumb['slug'], '/')) : null);
+    $crumbList = array_values($breadcrumbs ?? []);
+    $appTitle = $appTitle ?? (count($crumbList) ? ($crumbList[count($crumbList) - 1]['name'] ?? null) : null);
+    $backHref = $backHref ?? (count($crumbList) >= 2 ? $crumbHref($crumbList[count($crumbList) - 2]) : (count($crumbList) === 1 ? '/' : null));
 @endphp
 <body class="h-full min-h-screen bg-background text-font antialiased">
-    <x-site-header />
+    <x-site-header :app-title="$appTitle" :back-href="$backHref" />
 
-    <main class="pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] sm:pb-0 {{ $hideNavRow ? '' : 'lg:pt-[calc(7.25rem+env(safe-area-inset-top,0px))]' }}">
+    {{-- Header: 4rem on phones, 5rem row1 + 4rem nav row from lg. --}}
+    <main class="pt-[calc(4rem+env(safe-area-inset-top,0px))] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0 {{ $hideNavRow ? 'lg:pt-[calc(5rem+env(safe-area-inset-top,0px))]' : 'lg:pt-[calc(9rem+env(safe-area-inset-top,0px))]' }}">
         {{ $slot }}
     </main>
 

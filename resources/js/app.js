@@ -54,6 +54,38 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('alpine:init', () => {
+    // x-back-closes="openExpression": while the sheet/dialog is open, the
+    // phone's Back button closes it instead of leaving the page (an extra
+    // history entry is pushed on open). Closing it any other way removes
+    // that entry again, so Back afterwards still goes to the previous page.
+    Alpine.directive('back-closes', (el, { expression }, { evaluateLater, effect, cleanup }) => {
+        const isOpen = evaluateLater(expression);
+        const close = evaluateLater(`${expression} = false`);
+        const marker = 'sheet-' + Math.random().toString(36).slice(2);
+        let pushed = false;
+
+        const onPop = () => {
+            if (pushed && !(history.state && history.state.sheet === marker)) {
+                pushed = false;
+                close();
+            }
+        };
+        window.addEventListener('popstate', onPop);
+        cleanup(() => window.removeEventListener('popstate', onPop));
+
+        effect(() => {
+            isOpen((open) => {
+                if (open && !pushed) {
+                    history.pushState({ sheet: marker }, '');
+                    pushed = true;
+                } else if (!open && pushed) {
+                    pushed = false;
+                    if (history.state && history.state.sheet === marker) history.back();
+                }
+            });
+        });
+    });
+
     Alpine.data('listingLoadMore', (config) => ({
         page: config.page,
         lastPage: config.lastPage,

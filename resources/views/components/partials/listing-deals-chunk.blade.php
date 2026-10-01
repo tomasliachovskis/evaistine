@@ -8,6 +8,6 @@
         :deal="$deal"
         :stretch="false"
         :context-store-slug="$contextStoreSlug"
-        class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
+        class="deal-card-width"
     />
 @endforeach

@@ -52,6 +52,7 @@
 @endphp
 
 <x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []"
     :title="$seo['meta_title'] ?? $pageTitle"
     :description="$seo['meta_description'] ?? null"
     :canonical="$canonical"
@@ -85,12 +86,12 @@
          classes: breadcrumb row, h1 + total-count, sidebar/content two-column
          layout). The filter panel itself lives inside the Livewire component
          below; this file only owns the page chrome around it. --}}
-    <div class="base-container pb-4 pt-3">
-        <nav class="flex flex-wrap items-center gap-1" aria-label="Naršymo kelias">
+    <div class="base-container pb-2 pt-3 lg:pb-4">
+        <nav class="flex flex-wrap items-center gap-x-2" aria-label="Naršymo kelias">
             @foreach ($breadcrumbs as $index => $crumb)
-                @if ($index > 0)<x-app-icon name="arrow-right" class="size-3.5 text-gray-300" />@endif
+                @if ($index > 0)<x-app-icon name="arrow-right" class="crumb-sep" />@endif
                 @php $isLast = $index === count($breadcrumbs) - 1; @endphp
-                <a href="{{ $crumb['slug'] === '/' ? '/' : '/' . ltrim($crumb['slug'], '/') }}" class="text-sm transition-colors hover:text-green {{ $isLast ? 'font-medium text-green' : 'text-gray-600' }}">{{ $crumb['name'] }}</a>
+                <a href="{{ $crumb['slug'] === '/' ? '/' : '/' . ltrim($crumb['slug'], '/') }}" class="crumb-link {{ $isLast ? 'crumb-current' : '' }}">{{ $crumb['name'] }}</a>
             @endforeach
         </nav>
     </div>
@@ -240,9 +241,9 @@
             </div>
 
             @if (!empty($fallbackOtherStores['data']['data']))
-                <div class="mt-4 grid w-full grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
+                <div class="mt-4 flex w-full flex-wrap gap-2 sm:gap-3">
                     @foreach ($fallbackOtherStores['data']['data'] as $deal)
-                        <x-deal-card :deal="$deal" class="h-full" />
+                        <x-deal-card :deal="$deal" :stretch="false" class="deal-card-width" />
                     @endforeach
                 </div>
             @endif
@@ -377,7 +378,7 @@
                                                     </span>
                                                 </td>
                                                 <td class="p-3">
-                                                    <a href="{{ $row['product_href'] }}" class="flex min-w-0 items-center gap-3">
+                                                    <a href="{{ $row['product_href'] }}" class="flex min-h-12 min-w-0 items-center gap-3">
                                                         <span class="relative hidden size-10 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white sm:block">
                                                             @if ($row['product_image_url'])
                                                                 <img src="{{ $row['product_image_url'] }}" alt="{{ $row['product_name'] }}" loading="lazy" class="h-full w-full object-contain p-1">
@@ -454,7 +455,7 @@
                                     @foreach ($categoryStoreRows as $row)
                                         <tr class="{{ $loop->first ? 'bg-green-soft' : 'bg-white' }}">
                                             <td class="p-3">
-                                                <a href="{{ $row['href'] }}" class="flex min-w-0 items-center gap-2.5 font-bold text-gray-900 hover:text-green">
+                                                <a href="{{ $row['href'] }}" class="flex min-h-12 min-w-0 items-center gap-2.5 font-bold text-gray-900 hover:text-dark-green">
                                                     <x-store-logo :slug="$row['store_slug']" :name="$row['store']" size="xs" class="shrink-0" />
                                                     <span class="min-w-0 break-words leading-snug">{{ $row['store'] }}</span>
                                                 </a>
@@ -527,7 +528,7 @@
                                     @foreach ($storeCategoryRows as $row)
                                         <tr class="bg-white">
                                             <td class="p-3">
-                                                <a href="/akcijos/{{ $listingMeta['store_slug'] }}/{{ $row['slug'] }}" class="flex min-w-0 items-center gap-2.5 font-semibold text-gray-900 hover:text-green">
+                                                <a href="/akcijos/{{ $listingMeta['store_slug'] }}/{{ $row['slug'] }}" class="flex min-w-0 items-center gap-2.5 font-semibold text-gray-900 hover:text-dark-green">
                                                     <img src="/assets/categories/{{ $row['slug'] }}.svg" alt="" class="size-6 shrink-0 object-contain" onerror="this.style.visibility='hidden'">
                                                     <span class="min-w-0 leading-snug">{{ $row['name'] }}</span>
                                                 </a>
@@ -592,7 +593,7 @@
                                  etc) — Tailwind Typography's default ~2em top margin
                                  on that h2 wasn't being zeroed by its own first-child
                                  reset here, leaving a large gap above it. --}}
-                            <div class="category-description max-w-none text-sm prose prose-sm [&>p]:mb-4 [&>p:last-child]:mb-0 [&_:first-child]:mt-0! [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
+                            <div class="category-description max-w-none text-sm prose prose-sm [&>p]:mb-4 [&>p:last-child]:mb-0 [&_:first-child]:mt-0! [&_a]:text-dark-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
                                 {!! $seoAboutHtml !!}
                             </div>
                         @endif
@@ -605,7 +606,7 @@
                             <ul class="space-y-2.5">
                                 @foreach ($tips as $tip)
                                     <li class="flex gap-2.5 text-sm leading-relaxed">
-                                        <x-app-icon name="check" class="mt-0.5 size-4 shrink-0 text-green" />
+                                        <x-app-icon name="check" class="mt-0.5 size-4 shrink-0 text-dark-green" />
                                         <p class="text-gray-600"><span class="font-semibold text-gray-900">{{ $tip['title'] }}{{ preg_match('/[.!?:]$/u', $tip['title']) ? '' : '.' }}</span> {{ $tip['text'] }}</p>
                                     </li>
                                 @endforeach
@@ -637,7 +638,7 @@
                  that greyed out the H2 the raw HTML embeds along with the body
                  copy; prose gives headings and paragraphs distinct colors, matching
                  discounts-layout.tsx's exact class list. --}}
-            <div class="category-description mt-10 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">{!! $seo['seo_description'] !!}</div>
+            <div class="category-description mt-10 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-dark-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">{!! $seo['seo_description'] !!}</div>
         @endif
     </div>
 </x-layouts.app>

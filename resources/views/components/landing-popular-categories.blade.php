@@ -7,7 +7,7 @@
             <h2 id="landing-categories-heading" class="min-w-0 flex-1 text-lg font-extrabold leading-snug text-gray-900 sm:text-xl">
                 {{ $title }}
             </h2>
-            <a href="{{ $linkHref }}" class="inline-flex shrink-0 items-center gap-0.5 pt-0.5 text-sm font-semibold text-green hover:text-dark-green">
+            <a href="{{ $linkHref }}" class="section-link">
                 Žiūrėti visas
                 <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
             </a>
@@ -48,7 +48,7 @@
             <template x-if="pageCount > 1">
                 <div class="mt-2 flex items-center justify-center gap-1.5 sm:hidden">
                     <template x-for="index in pageCount" :key="index">
-                        <span :class="index - 1 === activePage ? 'size-2 rounded-full bg-green' : 'size-1.5 rounded-full bg-gray-300'"></span>
+                        <span :class="index - 1 === activePage ? 'size-2 rounded-full bg-action' : 'size-1.5 rounded-full bg-gray-300'"></span>
                     </template>
                 </div>
             </template>

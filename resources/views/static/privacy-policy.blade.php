@@ -1,4 +1,5 @@
-<x-layouts.app :title="$title" :description="$description" :canonical="$canonical">
+<x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []" :title="$title" :description="$description" :canonical="$canonical">
     <x-page-breadcrumbs :items="$breadcrumbs" current="/privatumo-politika" />
 
     <div class="base-container">

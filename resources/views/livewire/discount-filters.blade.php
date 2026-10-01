@@ -1,9 +1,9 @@
 @php
     // Row styling below reuses the exact constants from
     // discount/src/components/common/product-filter-controls.tsx:
-    // FILTER_ROW_HEIGHT_CLASS='min-h-[40px]' FILTER_ROW_TEXT_CLASS='text-[16px] leading-snug'
+    // FILTER_ROW_HEIGHT_CLASS='min-h-[40px]' FILTER_ROW_TEXT_CLASS='text-sm leading-snug'
     // FILTER_LIST_GAP_CLASS='gap-0.5', and its active/hover row colors.
-    $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-[18px] leading-snug text-left transition-colors '
+    $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-base leading-snug text-left transition-colors '
         . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
     $selectedStores = array_values(array_filter(explode(',', $storeFilter)));
     $selectedCategories = array_values(array_filter(explode(',', $categoryFilter)));
@@ -111,7 +111,7 @@
                  parts fighting each other, at the cost of the full-bleed
                  nicety on mobile. --}}
             {{-- top offset is a plain constant matching the header's top
-                 row height (3.5rem) at every breakpoint — the top row never
+                 row height (--header-h) at every breakpoint — the top row never
                  hides, so this never needs to change. At lg+ that means the
                  bar docks in the same spot the nav-links row occupies when
                  visible; that row hides on scroll (site-header.blade.php)
@@ -119,14 +119,14 @@
                  no coordination between the two needed. --}}
             <div
                 {{-- z-[60], above the header's own z-50: the bar docks at
-                     top:3.5rem unconditionally (see comment below), which
+                     top: var(--header-h) unconditionally (see comment below), which
                      is exactly where the nav-links row sits while it's
                      still visible (before its own scroll-triggered hide
                      catches up) — without a higher z-index the bar was
                      rendering BEHIND that still-visible row and disappearing
                      outright, not just briefly overlapping it. --}}
                 data-sticky-filter-bar
-                class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] mb-4 flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:flex-nowrap sm:py-0 sm:min-h-[52px] sm:mb-[17px] sm:px-[20px]"
+                class="sticky top-[calc(var(--header-h)+env(safe-area-inset-top,0px))] z-[60] mb-4 flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-1 min-h-14 sm:flex-nowrap sm:py-0 sm:min-h-[52px] sm:mb-[17px] sm:px-[20px]"
                 x-data="{ sortOpen: false }"
                 @click.outside="sortOpen = false"
             >
@@ -190,21 +190,21 @@
                         $activeCount = $storeBadgeCount + $categoryBadgeCount;
                     @endphp
                     @if ($showStoreFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[18px] {{ $activeStoreName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'store' ? null : 'store')" class="hidden min-h-12 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3 text-base {{ $activeStoreName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
                             <x-app-icon name="store" class="size-5 shrink-0" />
                             <span class="truncate">{{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}</span>
                             @if ($storeBadgeCount > 0)
-                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green text-sm font-bold text-white">{{ $storeBadgeCount }}</span>
+                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $storeBadgeCount }}</span>
                             @endif
                             <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'store' ? 'rotate-180' : ''" />
                         </button>
                     @endif
                     @if ($showCategoryFilter)
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="hidden h-full shrink-0 cursor-pointer items-center gap-2 rounded-2xl px-2 text-[18px] {{ $activeCategoryName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'category' ? null : 'category')" class="hidden min-h-12 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3 text-base {{ $activeCategoryName ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:inline-flex">
                             <x-app-icon name="layout-grid" class="size-5 shrink-0" />
                             <span class="truncate">{{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}</span>
                             @if ($categoryBadgeCount > 0)
-                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green text-sm font-bold text-white">{{ $categoryBadgeCount }}</span>
+                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $categoryBadgeCount }}</span>
                             @endif
                             <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'category' ? 'rotate-180' : ''" />
                         </button>
@@ -220,7 +220,7 @@
                             ? \App\Models\Store::where('slug', $activeStoreSlug)->first()?->flyers()->ready()->currentlyValid()->count()
                             : null;
                     @endphp
-                    <a href="{{ $activeStoreSlug !== null ? '/leidinys/' . $activeStoreSlug : '/leidiniai' }}" class="hidden h-full shrink-0 items-center gap-2 rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede] sm:inline-flex">
+                    <a href="{{ $activeStoreSlug !== null ? '/leidinys/' . $activeStoreSlug : '/leidiniai' }}" class="hidden min-h-12 shrink-0 items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede] sm:inline-flex">
                         <x-app-icon name="bookmark" class="size-5 shrink-0" />
                         <span class="truncate">{{ $activeStoreName ? "{$activeStoreName} leidiniai" : 'Leidiniai' }}{{ $leafletsCount ? ' (' . $leafletsCount . ')' : '' }}</span>
                     </a>
@@ -242,11 +242,11 @@
                              left the label hugging the left edge with a
                              huge dead gap on the right instead of a normal
                              evenly-padded pill. --}}
-                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'combined' ? null : 'combined')" class="inline-flex h-full min-w-0 {{ $showSort ? 'flex-1' : 'shrink-0' }} cursor-pointer items-center gap-2 rounded-2xl px-2 text-[19px] {{ $activeCount > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:hidden">
+                        <button type="button" @click="$wire.openPanel = ($wire.openPanel === 'combined' ? null : 'combined')" class="inline-flex min-h-12 min-w-0 {{ $showSort ? 'flex-1' : 'shrink-0' }} cursor-pointer items-center gap-2 rounded-xl px-3 text-lg {{ $activeCount > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-900' }} hover:bg-[#dedede] sm:hidden">
                             <x-app-icon name="filter" class="size-6 shrink-0" />
                             <span class="truncate">{{ $mobileFilterLabel }}</span>
                             @if ($activeCount > 0)
-                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green text-sm font-bold text-white">{{ $activeCount }}</span>
+                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $activeCount }}</span>
                             @endif
                             <x-app-icon name="chevron-down" class="size-5 shrink-0 text-gray-500 transition-transform sm:size-4" x-bind:class="$wire.openPanel === 'combined' ? 'rotate-180' : ''" />
                         </button>
@@ -254,7 +254,7 @@
                 </div>
                 @if ($showSort)
                     <div class="relative shrink-0">
-                        <button type="button" @click="sortOpen = !sortOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
+                        <button type="button" @click="sortOpen = !sortOpen" class="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
                             <x-app-icon name="arrow-down-up" class="size-6 shrink-0 sm:size-5" />
                             <span class="hidden max-w-[140px] truncate sm:inline">{{ $orderOptions[$order] }}</span>
                             <x-app-icon name="chevron-down" class="size-6 shrink-0 opacity-70 sm:size-5" />
@@ -298,7 +298,7 @@
                              another $rowClass list item — it's a navigation
                              shortcut, not a facet choice. --}}
                         @if ($activeStoreSlug !== null)
-                            <a href="/leidinys/{{ $activeStoreSlug }}" data-ga-event="filter_select" data-ga-item="leidiniai:{{ $activeStoreSlug }}" data-ga-source="filter_leaflet_shortcut" class="mt-2 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
+                            <a href="/leidinys/{{ $activeStoreSlug }}" data-ga-event="filter_select" data-ga-item="leidiniai:{{ $activeStoreSlug }}" data-ga-source="filter_leaflet_shortcut" class="mt-2 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-12 text-sm font-semibold text-dark-green transition-colors hover:bg-gray-50">
                                 <x-app-icon name="bookmark" class="size-5 shrink-0" />
                                 <span class="min-w-0 flex-1 truncate">{{ $activeStoreName }} savaitės leidiniai</span>
                             </a>
@@ -418,15 +418,15 @@
                             </section>
                         @endif
                         @if ($activeStoreSlug !== null)
-                            <a href="/leidinys/{{ $activeStoreSlug }}" data-ga-event="filter_select" data-ga-item="leidiniai:{{ $activeStoreSlug }}" data-ga-source="filter_leaflet_shortcut" class="mb-3 mt-3 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-[40px] text-[16px] font-semibold text-green transition-colors hover:bg-gray-50">
+                            <a href="/leidinys/{{ $activeStoreSlug }}" data-ga-event="filter_select" data-ga-item="leidiniai:{{ $activeStoreSlug }}" data-ga-source="filter_leaflet_shortcut" class="mb-3 mt-3 flex w-full items-center gap-2 rounded-2xl border border-gray-200 px-3 min-h-12 text-sm font-semibold text-dark-green transition-colors hover:bg-gray-50">
                                 <x-app-icon name="bookmark" class="size-5 shrink-0" />
                                 <span class="min-w-0 flex-1 truncate">{{ $activeStoreName }} savaitės leidiniai</span>
                             </a>
                         @endif
                     </div>
                     <div class="flex shrink-0 gap-2 border-t border-gray-200 px-4 py-3">
-                        <button type="button" @click="stagedStore = null; stagedCategory = null" class="flex-1 rounded-2xl border border-gray-300 px-4 py-3 text-[16px] font-semibold text-gray-900">Išvalyti viską</button>
-                        <button type="button" @click="applyFilters()" class="flex-1 rounded-2xl bg-green px-4 py-3 text-[16px] font-bold text-white">Filtruoti</button>
+                        <button type="button" @click="stagedStore = null; stagedCategory = null" class="flex-1 rounded-2xl border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-900">Išvalyti viską</button>
+                        <button type="button" @click="applyFilters()" class="flex-1 rounded-2xl bg-action px-4 py-3 text-sm font-bold text-white">Filtruoti</button>
                     </div>
                 </div>
             @endif
@@ -492,7 +492,7 @@
                                 :deal="$deal"
                                 :stretch="false"
                                 :context-store-slug="$contextStoreSlug"
-                                class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
+                                class="deal-card-width"
                             />
                         @endforeach
                     </div>
@@ -511,7 +511,7 @@
                                     iš <span class="font-bold tabular-nums text-gray-900">{{ number_format((int) ($pagination['total'] ?? count($displayDeals)), 0, ',', ' ') }}</span>
                                 </p>
                                 <div class="h-1 w-full overflow-hidden rounded-full bg-gray-200">
-                                    <div class="h-full rounded-full bg-green transition-[width] duration-300" :style="`width: ${Math.min(100, Math.round(shown / total * 100))}%`" style="width: {{ min(100, (int) round(count($displayDeals) / max(1, (int) ($pagination['total'] ?? 1)) * 100)) }}%"></div>
+                                    <div class="h-full rounded-full bg-action transition-[width] duration-300" :style="`width: ${Math.min(100, Math.round(shown / total * 100))}%`" style="width: {{ min(100, (int) round(count($displayDeals) / max(1, (int) ($pagination['total'] ?? 1)) * 100)) }}%"></div>
                                 </div>
                             </div>
                             <a
@@ -520,7 +520,7 @@
                                 rel="next"
                                 @click.prevent="loadMore()"
                                 :aria-busy="loading"
-                                class="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-green bg-white px-8 text-base font-bold text-green shadow-sm transition-colors hover:bg-green-soft hover:text-dark-green active:bg-green-soft sm:w-auto sm:min-w-72"
+                                class="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-green bg-white px-8 text-base font-bold text-dark-green shadow-sm transition-colors hover:bg-green-soft hover:text-dark-green active:bg-green-soft sm:w-auto sm:min-w-72"
                                 :class="loading && 'pointer-events-none opacity-70'"
                             >
                                 <svg x-show="loading" x-cloak class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M12 3a9 9 0 1 0 9 9" /></svg>

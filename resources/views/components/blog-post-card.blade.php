@@ -27,7 +27,7 @@
         @endunless
     </div>
     <div class="flex flex-1 flex-col p-4 sm:p-5">
-        <h2 class="line-clamp-2 text-base font-bold leading-snug text-gray-900 group-hover:text-green">
+        <h2 class="line-clamp-2 text-base font-bold leading-snug text-gray-900 group-hover:text-dark-green">
             {{ $post->title }}
         </h2>
         <time datetime="{{ $post->published_at?->toDateString() }}" class="mt-1.5 inline-flex w-fit items-center gap-1.5 text-xs font-medium text-gray-500">
@@ -39,7 +39,7 @@
         @else
             <div class="flex-1"></div>
         @endif
-        <span class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-green">
+        <span class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-dark-green">
             Skaityti
             <x-app-icon name="arrow-right" class="size-4 transition-transform group-hover:translate-x-0.5" />
         </span>

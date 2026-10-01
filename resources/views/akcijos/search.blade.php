@@ -1,4 +1,6 @@
-<x-layouts.app :title="'Paieška: ' . $query" :canonical="$canonical" :robots="$robots">
+<x-layouts.app
+    app-title="Paieška"
+    back-href="/" :title="'Paieška: ' . $query" :canonical="$canonical" :robots="$robots">
     @php
         // Same order options/icons/row styling as
         // livewire/discount-filters.blade.php's sort dropdown, ported here as
@@ -20,7 +22,7 @@
             'price_discount_proc_max' => 'percent',
         ];
         $currentOrder = request('order', 'popular');
-        $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[40px] text-[16px] leading-snug text-left transition-colors '
+        $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[40px] text-sm leading-snug text-left transition-colors '
             . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
         // Plain query-param navigation, same as the sort dropdown next to it
         // (this page isn't Livewire, unlike discount-filters' multi-select
@@ -46,7 +48,7 @@
             <div class="mt-4 flex w-full items-center justify-between gap-2 rounded-2xl bg-[#e8e8e8] px-4 min-h-[40px]" x-data="{ sortOpen: false, storeOpen: false }" @click.outside="sortOpen = false; storeOpen = false">
                 <div class="flex min-w-0 flex-1 items-center gap-2">
                     <div class="relative shrink-0">
-                        <button type="button" @click="storeOpen = !storeOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="storeOpen">
+                        <button type="button" @click="storeOpen = !storeOpen" class="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="storeOpen">
                             <x-app-icon name="store" class="size-4 shrink-0" />
                             <span class="max-w-[140px] truncate">{{ $selectedStoreName ?? 'Parduotuvė' }}</span>
                             <x-app-icon name="chevron-down" class="size-4 shrink-0 opacity-70" />
@@ -65,7 +67,7 @@
                     </div>
                 </div>
                 <div class="relative shrink-0">
-                    <button type="button" @click="sortOpen = !sortOpen" class="inline-flex h-full cursor-pointer items-center gap-2 rounded-2xl px-2 text-[16px] text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
+                    <button type="button" @click="sortOpen = !sortOpen" class="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
                         <x-app-icon name="arrow-down-up" class="size-4 shrink-0" />
                         <span class="max-w-[160px] truncate">{{ $orderOptions[$currentOrder] ?? $orderOptions['popular'] }}</span>
                         <x-app-icon name="chevron-down" class="size-4 shrink-0 opacity-70" />
@@ -139,7 +141,7 @@
                             <x-deal-card
                                 :deal="$deal"
                                 :stretch="false"
-                                class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
+                                class="deal-card-width"
                             />
                         @endforeach
                     </div>

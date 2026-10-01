@@ -49,7 +49,7 @@
     $shellClass = 'group relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border p-2.5 transition-colors sm:p-3 '
         . ($stretch ? 'h-full ' : '')
         . ($featured
-            ? 'border-2 border-[#ffdb4d] bg-[#fffbeb] hover:border-[#f0c400]'
+            ? 'border border-[#ffdb4d] bg-[#fffbeb] hover:border-[#f0c400]'
             : 'border-gray-200 bg-gray-50 hover:border-gray-300');
 
     if ($inCarousel) {
@@ -102,7 +102,7 @@
             <div class="min-h-[1.375rem] sm:min-h-[1.75rem]">
                 @if ($discountPrice > 0)
                     <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
-                        <span class="text-[22px] font-bold leading-none tabular-nums text-gray-900">{{ $euro($discountPrice) }}</span>
+                        <span class="text-xl font-bold leading-none tabular-nums text-gray-900">{{ $euro($discountPrice) }}</span>
                         @if ($showOriginal)
                             <del class="text-sm font-medium tabular-nums text-gray-400">{{ $euro($originalPrice) }}</del>
                         @endif
@@ -126,12 +126,12 @@
             {{-- 3 lines on mobile (more of the product name visible without
                  opening the card), back to 2 at sm+ where cards are smaller
                  relative to screen width and 3 lines would crowd the row. --}}
-            <p class="{{ ($discountPrice > 0 || $unitPriceLabel) ? 'mt-1.5' : '' }} line-clamp-3 max-h-[3.675rem] min-h-[3.675rem] min-w-0 overflow-hidden text-sm font-normal leading-snug text-gray-900 sm:line-clamp-2 sm:max-h-[2.45rem] sm:min-h-[2.45rem]">
+            <p class="{{ ($discountPrice > 0 || $unitPriceLabel) ? 'mt-1.5' : '' }} line-clamp-3 max-h-[3lh] min-h-[3lh] min-w-0 overflow-hidden text-sm font-normal leading-snug text-gray-900 sm:line-clamp-2 sm:max-h-[2lh] sm:min-h-[2lh]">
                 {{ $product['name'] }}
             </p>
 
             @if ($priceComparison)
-                <p class="mt-auto truncate pt-2 text-xs font-medium {{ $priceComparison['cheapest'] ? 'text-green' : 'text-gray-500' }}">{{ $priceComparison['label'] }}</p>
+                <p class="mt-auto truncate pt-2 text-xs font-medium {{ $priceComparison['cheapest'] ? 'text-dark-green' : 'text-gray-500' }}">{{ $priceComparison['label'] }}</p>
             @elseif (! $hideStoreLogos && $stores->count() > 1)
                 <div class="mt-auto flex min-w-0 items-center gap-1.5 pt-2">
                     @foreach ($stores->take(3) as $storeItem)

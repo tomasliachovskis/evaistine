@@ -5,7 +5,7 @@
      users go to their existing /favorites page, guests get prompted to log
      in. Reuses the shared passwordless auth-modal. --}}
 @auth
-    <a href="/favorites" class="{{ $class }} inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white transition-colors hover:bg-dark-green">
+    <a href="/favorites" class="{{ $class }} inline-flex shrink-0 items-center gap-2 rounded-lg border border-green bg-action px-4 py-2 text-base font-bold text-white transition-colors hover:bg-action-hover min-h-12">
         <x-app-icon name="bell" class="size-4 shrink-0" />
         <span class="sm:hidden">Sekti</span>
         <span class="hidden sm:inline">Sekti akcijas</span>
@@ -15,7 +15,7 @@
         type="button"
         x-data="{}"
         @click="$store.authModal.open = true"
-        class="{{ $class }} inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-green bg-green px-4 py-2 text-base font-bold text-white transition-colors hover:bg-dark-green"
+        class="{{ $class }} inline-flex shrink-0 items-center gap-2 rounded-lg border border-green bg-action px-4 py-2 text-base font-bold text-white transition-colors hover:bg-action-hover min-h-12"
     >
         <x-app-icon name="bell" class="size-4 shrink-0" />
         <span class="sm:hidden">Sekti</span>

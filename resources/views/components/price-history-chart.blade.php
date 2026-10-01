@@ -33,8 +33,8 @@
             <button
                 type="button"
                 @click="setStore(null)"
-                :class="activeStore === null ? 'border-green bg-green text-white' : 'border-gray-200 text-gray-700 hover:border-green/40'"
-                class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-colors"
+                :class="activeStore === null ? 'border-green bg-action text-white' : 'border-gray-200 text-gray-700 hover:border-green/40'"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-bold transition-colors min-h-12"
             >
                 Visos parduotuvės
                 <span class="text-xs font-semibold opacity-75">{{ $storeCounts->count() }}</span>
@@ -43,8 +43,8 @@
                 <button
                     type="button"
                     @click="setStore('{{ $store['slug'] }}')"
-                    :class="activeStore === '{{ $store['slug'] }}' ? 'border-green bg-green text-white' : 'border-gray-200 text-gray-700 hover:border-green/40'"
-                    class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-colors"
+                    :class="activeStore === '{{ $store['slug'] }}' ? 'border-green bg-action text-white' : 'border-gray-200 text-gray-700 hover:border-green/40'"
+                    class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-bold transition-colors min-h-12"
                 >
                     {{ $store['name'] }}
                 </button>
@@ -74,13 +74,13 @@
             :style="`left:${tooltip.x}px;top:${tooltip.y}px`"
         >
             <span x-text="tooltip.price"></span>
-            <span class="block text-[10.5px] font-medium opacity-75" x-text="tooltip.sub"></span>
+            <span class="block text-xs font-medium opacity-75" x-text="tooltip.sub"></span>
         </div>
     </div>
 
     <div class="mb-5 mt-2 flex items-center gap-3.5 text-xs text-gray-600">
-        <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full bg-green"></span>Kaina (užvesk pelę taškui)</span>
-        <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full bg-dark-green"></span>Žemiausia iki šiol</span>
+        <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full bg-action"></span>Kaina (užvesk pelę taškui)</span>
+        <span class="inline-flex items-center gap-1.5"><span class="size-2 rounded-full bg-action"></span>Žemiausia iki šiol</span>
     </div>
 
     <div class="grid max-w-md grid-cols-3 gap-3">
@@ -104,15 +104,15 @@
          Alpine on filter change: it always lists every store's full history,
          same as before filtering (only the chart/cards above narrow down). --}}
     <details class="mt-5 max-w-2xl" open>
-        <summary class="cursor-pointer text-sm font-semibold text-green hover:text-dark-green">Visi kainų įrašai lentelėje</summary>
+        <summary class="cursor-pointer text-sm font-semibold text-dark-green hover:underline">Visi kainų įrašai lentelėje</summary>
         <div class="mt-3 max-h-80 overflow-y-auto rounded-xl border border-gray-200">
             <table class="w-full border-collapse text-sm">
                 <caption class="sr-only">{{ $productName }} — kainų istorija pagal parduotuvę, nuo naujausios</caption>
                 <thead>
                     <tr class="sticky top-0 bg-white">
-                        <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Data</th>
-                        <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Parduotuvė</th>
-                        <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Kaina</th>
+                        <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Data</th>
+                        <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Parduotuvė</th>
+                        <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Kaina</th>
                     </tr>
                 </thead>
                 <tbody>

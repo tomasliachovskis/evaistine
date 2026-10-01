@@ -12,5 +12,5 @@
      pair instead of a clashing yellow+green combo — explicit user call,
      the yellow read as "primitive" here. --}}
 @if (!empty($label))
-    <span class="inline-flex shrink-0 items-center justify-center rounded-lg bg-dark-green px-4 py-2.5 text-xl font-bold leading-none tabular-nums text-white">{{ $label }}</span>
+    <span class="inline-flex shrink-0 items-center justify-center rounded-lg bg-action px-4 py-2.5 text-xl font-bold leading-none tabular-nums text-white">{{ $label }}</span>
 @endif

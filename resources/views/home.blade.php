@@ -14,7 +14,7 @@
                                 Raskite naujausias Maxima, Lidl, Rimi, Norfa, Iki ir kitų parduotuvių akcijas vienoje vietoje.
                             </p>
                         </div>
-                        <a href="/parduotuves" class="hidden shrink-0 items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 transition-colors hover:border-gray-400 hover:bg-gray-50 sm:inline-flex sm:px-4 sm:py-2">
+                        <a href="/parduotuves" class="hidden shrink-0 items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 transition-colors hover:border-gray-400 hover:bg-gray-50 sm:inline-flex sm:px-4 sm:py-2 min-h-12">
                             Žiūrėti visas
                             <x-app-icon name="chevron-right" class="size-4 opacity-70" />
                         </a>

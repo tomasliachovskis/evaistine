@@ -18,7 +18,7 @@
      the akcijos filter sheet) instead of inventing a second list style. --}}
 @php
     $topWebsites = $websites->take(8);
-    $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-[18px] leading-snug text-left transition-colors '
+    $rowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-base leading-snug text-left transition-colors '
         . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
 @endphp
 
@@ -26,11 +26,11 @@
     data-sticky-filter-bar
     x-data="{ allWebsitesOpen: false }"
     @keydown.escape.window="allWebsitesOpen = false"
-    class="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] flex items-center gap-2 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-2 py-3 min-h-[60px] sm:min-h-[52px] sm:px-[20px]"
+    class="sticky top-[calc(var(--header-h)+env(safe-area-inset-top,0px))] z-[60] flex items-center gap-2 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-2 py-1 min-h-14 sm:px-[20px]"
 >
     <nav aria-label="Svetainės" class="scroll-cards-x flex min-w-0 flex-1 flex-nowrap items-center gap-1">
         @foreach ($topWebsites as $website)
-            <a href="/kuponai/{{ $website->slug }}" data-ga-event="filter_select" data-ga-item="coupon_website:{{ $website->slug }}" data-ga-source="kuponai_chip_bar" class="inline-flex h-full shrink-0 items-center gap-2 whitespace-nowrap rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]">
+            <a href="/kuponai/{{ $website->slug }}" data-ga-event="filter_select" data-ga-item="coupon_website:{{ $website->slug }}" data-ga-source="kuponai_chip_bar" class="inline-flex min-h-12 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]">
                 @if ($website->logo_url)
                     <img src="{{ $website->logo_url }}" alt="" class="h-6 w-auto max-w-[3rem] object-contain">
                 @endif
@@ -52,11 +52,11 @@
         data-ga-event="filter_select"
         data-ga-item="coupon_website:all"
         data-ga-source="kuponai_chip_bar"
-        class="inline-flex h-full shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]"
+        class="inline-flex min-h-12 shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]"
     >
         <x-app-icon name="layout-grid" class="size-5 shrink-0" />
         <span>Visos svetainės</span>
-        <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green text-sm font-bold text-white">{{ $websites->count() }}</span>
+        <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $websites->count() }}</span>
         <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="allWebsitesOpen ? 'rotate-180' : ''" />
     </button>
 

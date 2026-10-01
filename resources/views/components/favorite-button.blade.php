@@ -13,8 +13,8 @@
         type="button"
         x-data="favoriteButton({{ $productId }}, {{ $favorited ? 'true' : 'false' }}, {{ $productNameJs }}, {{ $productImageJs }})"
         @click.stop.prevent="toggle()"
-        class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-colors"
-        :class="favorited ? 'bg-dark-green' : 'bg-green hover:bg-dark-green'"
+        class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-colors min-h-12"
+        :class="favorited ? 'bg-action' : 'bg-action hover:bg-action-hover'"
     >
         <x-app-icon name="heart" class="size-4" x-bind:class="favorited ? 'fill-white' : 'fill-none'" />
         <span x-text="favorited ? 'Sekama' : 'Sekti kainą'"></span>

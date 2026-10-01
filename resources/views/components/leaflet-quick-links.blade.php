@@ -10,7 +10,7 @@
 
     $wrapperClass = $compact
         ? 'flex w-full flex-col gap-1'
-        : 'sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-[60] mb-4 flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:min-h-[52px] sm:mb-[17px] sm:px-[20px]';
+        : 'sticky top-[calc(var(--header-h)+env(safe-area-inset-top,0px))] z-[60] mb-4 flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-1 min-h-14 sm:mb-[17px] sm:px-[20px]';
     // Same links either way — only the wrapper (sticky pill bar vs. a plain
     // compact list) and each link's own classes differ. The sticky bar is
     // sized for docking full-width under the header on a listing page; the
@@ -18,9 +18,9 @@
     // where that same shape wrapped into oversized bordered rows instead of
     // reading as a normal link list (confirmed live 2026-09-18).
     $linkClass = $compact
-        ? 'flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-green/5'
-        : 'inline-flex h-full shrink-0 items-center gap-2 rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]';
-    $iconSizeClass = $compact ? 'size-4 shrink-0' : 'size-5 shrink-0';
+        ? 'flex min-h-12 items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 transition-colors hover:bg-green-soft'
+        : 'inline-flex min-h-12 shrink-0 items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]';
+    $iconSizeClass = 'size-5 shrink-0';
 @endphp
 
 {{-- Same pill-bar language as discount-filters.blade.php's Parduotuvė/

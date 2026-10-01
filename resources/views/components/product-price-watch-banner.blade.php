@@ -90,7 +90,7 @@
     <button
         type="button"
         @click="toggle()"
-        class="flex h-11 w-full items-center justify-center gap-2 rounded-lg border-0 bg-green text-base font-bold text-white transition-colors hover:bg-dark-green disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
+        class="flex h-11 w-full items-center justify-center gap-2 rounded-lg border-0 bg-action text-base font-bold text-white transition-colors hover:bg-action-hover disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
         :disabled="busy"
     >
         <template x-if="favorited">
@@ -108,8 +108,8 @@
     <button
         type="button"
         @click="toggle()"
-        class="hidden items-center gap-2 rounded-lg border-0 px-4 py-2.5 text-sm font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
-        :class="favorited ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'bg-green text-white hover:bg-dark-green'"
+        class="hidden items-center gap-2 rounded-lg border-0 px-4 py-2.5 text-sm font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 lg:flex min-h-12"
+        :class="favorited ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'bg-action text-white hover:bg-action-hover'"
         :disabled="busy"
     >
         <x-app-icon :name="$desktopIcon" class="size-4 transition-colors" x-bind:class="favorited ? 'fill-amber-500 text-amber-500' : 'fill-none text-white'" />

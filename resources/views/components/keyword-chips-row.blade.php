@@ -34,7 +34,7 @@
                 class="flex flex-nowrap items-center gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] sm:px-0 [&::-webkit-scrollbar]:hidden"
             >
                 @foreach ($pages as $page)
-                    <a href="{{ $page['href'] }}" class="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-700 transition-colors hover:border-green/40 hover:text-dark-green">
+                    <a href="{{ $page['href'] }}" class="inline-flex min-h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-700 transition-colors hover:border-green/40 hover:text-dark-green">
                         @if (!empty($page['logo_slug']))
                             <x-store-logo :slug="$page['logo_slug']" :name="$page['title']" size="xs" />
                         @endif
@@ -51,10 +51,10 @@
             <div x-show="canRight" x-transition.opacity x-cloak class="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent"></div>
 
             {{-- Desktop arrows (touch scrolls natively on mobile). --}}
-            <button type="button" x-show="canLeft" x-cloak @click="go(-1)" aria-label="Slinkti atgal" class="absolute left-0 top-1/2 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:text-dark-green sm:flex">
+            <button type="button" x-show="canLeft" x-cloak @click="go(-1)" aria-label="Slinkti atgal" class="absolute left-0 top-1/2 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:text-dark-green sm:flex">
                 <x-app-icon name="chevron-right" class="size-4 rotate-180" />
             </button>
-            <button type="button" x-show="canRight" x-cloak @click="go(1)" aria-label="Slinkti toliau" class="absolute right-0 top-1/2 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:text-dark-green sm:flex">
+            <button type="button" x-show="canRight" x-cloak @click="go(1)" aria-label="Slinkti toliau" class="absolute right-0 top-1/2 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:text-dark-green sm:flex">
                 <x-app-icon name="chevron-right" class="size-4" />
             </button>
         </div>

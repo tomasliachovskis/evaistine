@@ -1,3 +1,5 @@
+@props(['appTitle' => null, 'backHref' => null]) {{-- accepted, unused since the app bar was dropped --}}
+
 @php
     // Mirrors discount/src/lib/header-nav.ts's isHeaderNavItemActive() family.
     $path = request()->path();
@@ -9,17 +11,23 @@
     $leafletsActive = $path === 'leidiniai';
     $cheapestActive = $path === 'pigiausios-prekes';
 
-    $navLinkClass = fn (bool $active) => 'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[11px] px-4 py-2.5 my-[7px] text-[0.95rem] font-bold transition-colors '
-        . ($active ? 'bg-green text-white' : 'text-gray-600 hover:bg-gray-100');
-    $menuItemClass = fn (bool $active) => 'flex min-h-[56px] w-full items-center gap-3.5 rounded-xl px-2.5 py-4 text-[1.05rem] font-bold transition-colors '
-        . ($active ? 'bg-green/10 text-dark-green' : 'text-gray-900 hover:bg-gray-100');
-    $headerIconClass = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-600 transition-colors hover:bg-gray-200';
+    // Large, worded controls for older readers (docs/ui-older-readers.md):
+    // every header action says what it is, not just an icon.
+    $navLinkClass = fn (bool $active) => 'inline-flex min-h-12 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 text-base font-bold transition-colors '
+        . ($active ? 'bg-action text-white' : 'text-gray-800 hover:bg-green-soft hover:text-dark-green');
+    $menuItemClass = fn (bool $active) => 'flex min-h-14 w-full items-center gap-3.5 rounded-xl px-3 py-2.5 text-lg font-bold transition-colors '
+        . ($active ? 'bg-green-soft text-dark-green' : 'text-gray-900 hover:bg-gray-100');
+    // Icon-only, borderless (explicit product decision): the title
+    // attribute and aria-label name each one.
+    $headerButtonClass = 'relative inline-flex size-12 shrink-0 items-center justify-center rounded-xl text-gray-900 transition-colors hover:bg-gray-100 hover:text-dark-green';
+    $headerIconClass = 'relative flex size-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-900 transition-colors hover:border-gray-300';
+    $isHome = $path === '/' || $path === '';
 
     // Same row style discount-filters.blade.php's store/category panels use
     // (ported from product-filter-controls.tsx's row constants) — reused
     // here so the desktop nav's Kategorijos click opens the identical modal
     // instead of its own smaller bespoke dropdown.
-    $categoryRowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[40px] text-[16px] leading-snug text-left transition-colors '
+    $categoryRowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-12 text-base leading-snug text-left transition-colors '
         . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
     // discount-filter-sections.blade.php's categories branch reads
     // offers_count; MobileNavComposer's $categories carries discounts_count
@@ -80,70 +88,68 @@
         },
     }"
     @keydown.escape.window="menuOpen = false; accountOpen = false; categoriesNavOpen = false"
+    style="view-transition-name: site-header"
     class="fixed top-0 z-50 w-full bg-white pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(15,23,42,0.06),0_4px_16px_rgba(15,23,42,0.08)]"
 >
     <div class="border-b border-gray-200 bg-white">
-        <div class="base-container flex h-14 items-center gap-4 py-2">
-            <a href="/" class="flex min-w-0 shrink-0 items-center no-underline outline-offset-2 hover:opacity-90">
-                <img src="/assets/logo.svg" alt="SuperAkcijos.lt" class="h-7 w-auto max-w-[min(178px,48vw)] object-contain object-left sm:h-8">
+        <div class="base-container flex h-16 items-center gap-3 lg:h-20 lg:gap-6">
+            {{-- Logo on every page and width (an "Atgal" app bar on phones
+                 was tried 2026-10-01 and dropped by the owner; breadcrumbs
+                 carry the way back instead). --}}
+            <a href="/" class="flex min-h-12 min-w-0 shrink-0 items-center no-underline hover:opacity-90">
+                <img src="/assets/logo.svg" alt="SuperAkcijos.lt" class="h-8 w-auto max-w-[min(200px,52vw)] object-contain object-left lg:h-7 lg:max-w-none">
             </a>
 
-            {{-- Search box shown ≥1024px (matches the shared mockup's
-                 breakpoint); below that, an icon-only trigger opening the
-                 same full-screen search overlay. --}}
-            <div class="hidden min-w-0 flex-1 lg:ml-4 lg:block">
+            {{-- Large search field from lg up; phones get the search
+                 button next to the menu, opening the same search sheet. --}}
+            <div class="hidden min-w-0 flex-1 lg:block">
                 <livewire:site-search mode="desktop" />
             </div>
 
-            <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-4">
-                {{-- Grouped with the other icon buttons (favorites, menu)
-                     on the right, next to the heart, instead of sitting
-                     alone right after the logo. --}}
+            <div class="ml-auto flex shrink-0 items-center gap-2 lg:gap-3">
                 <div class="flex items-center lg:hidden">
                     <livewire:site-search mode="mobile" />
                 </div>
 
-                {{-- Hidden on mobile per explicit product decision — login/
-                     account still reachable via the mobile slide-out menu. --}}
+                {{-- Login/account and favorites from sm up, with words;
+                     phones reach both from the menu and the bottom nav. --}}
                 <div class="relative hidden sm:block" @click.outside="accountOpen = false">
                     @auth
-                        <button type="button" @click="accountOpen = !accountOpen" class="{{ $headerIconClass }}" aria-label="Paskyra">
-                            <x-app-icon name="user" class="size-5" />
+                        <button type="button" @click="accountOpen = !accountOpen" class="{{ $headerButtonClass }}" :aria-expanded="accountOpen" aria-label="Paskyra" title="Paskyra">
+                            <x-app-icon name="user" class="size-7" />
                         </button>
-                        <div x-show="accountOpen" x-cloak class="absolute right-0 top-full z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
-                            <div class="px-2 py-1.5">
-                                <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name ?? auth()->user()->email }}</p>
-                                <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
+                        <div x-show="accountOpen" x-cloak class="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-gray-200 bg-white p-3 shadow-xl">
+                            <div class="px-2 py-2">
+                                <p class="text-base font-bold text-gray-900">{{ auth()->user()->name ?? auth()->user()->email }}</p>
+                                <p class="text-sm text-gray-600">{{ auth()->user()->email }}</p>
                             </div>
-                            <div class="my-1 border-t border-gray-200"></div>
+                            <div class="my-2 border-t border-gray-200"></div>
                             <form method="POST" action="/logout">
                                 @csrf
-                                <button type="submit" class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50">
-                                    <x-app-icon name="log-out" class="size-4" />
+                                <button type="submit" class="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-base font-semibold text-gray-900 hover:bg-gray-100">
+                                    <x-app-icon name="log-out" class="size-5" />
                                     Atsijungti
                                 </button>
                             </form>
                         </div>
                     @else
-                        <button type="button" @click="$store.authModal.open = true" class="{{ $headerIconClass }}" aria-label="Prisijungti">
-                            <x-app-icon name="user" class="size-5" />
+                        <button type="button" @click="$store.authModal.open = true" class="{{ $headerButtonClass }}" aria-label="Prisijungti" title="Prisijungti">
+                            <x-app-icon name="user" class="size-7" />
                         </button>
                     @endauth
                 </div>
 
-                {{-- Hidden on mobile — favorites already has its own entry
-                     in the mobile bottom nav, so this would be a duplicate. --}}
                 <div class="hidden sm:block">
                     @auth
-                        <a href="/favorites" class="{{ $headerIconClass }}" aria-label="Mano favoritai">
+                        <a href="/favorites" class="{{ $headerButtonClass }}" aria-label="Mėgstami" title="Mėgstami">
                             <span class="relative inline-flex">
-                                <x-app-icon name="heart" class="size-5" />
+                                <x-app-icon name="heart" class="size-7" />
                                 <livewire:favorites-badge />
                             </span>
                         </a>
                     @else
-                        <button type="button" @click="$store.authModal.open = true" class="relative {{ $headerIconClass }}" aria-label="Mano favoritai">
-                            <x-app-icon name="heart" class="size-5" />
+                        <button type="button" @click="$store.authModal.open = true" class="{{ $headerButtonClass }}" aria-label="Mėgstami" title="Mėgstami">
+                            <x-app-icon name="heart" class="size-7" />
                         </button>
                     @endauth
                 </div>
@@ -151,11 +157,13 @@
                 <button
                     type="button"
                     @click="menuOpen = !menuOpen"
-                    class="{{ $headerIconClass }}"
+                    class="{{ $headerButtonClass }}"
+                    :aria-expanded="menuOpen"
                     aria-label="Meniu"
+                    title="Meniu"
                 >
-                    <x-app-icon x-show="!menuOpen" name="equal" class="size-5" style="stroke-width:1.75" />
-                    <x-app-icon x-show="menuOpen" x-cloak name="x" class="size-5" style="stroke-width:1.75" />
+                    <x-app-icon x-show="!menuOpen" name="equal" class="size-7" style="stroke-width:2" />
+                    <x-app-icon x-show="menuOpen" x-cloak name="x" class="size-7" style="stroke-width:2" />
                 </button>
             </div>
         </div>
@@ -163,17 +171,17 @@
 
     @if (!$hideNavRow)
     <div :class="!$store.siteHeader.visible && 'lg:!hidden'" class="hidden border-b border-gray-200 bg-white lg:block">
-        <nav class="base-container flex items-center gap-2.5" aria-label="Pagrindinė navigacija">
+        <nav class="base-container flex h-16 items-center gap-2" aria-label="Pagrindinė navigacija">
             <a href="/akcijos" data-ga-event="desktop_nav_click" data-ga-item="products" class="{{ $navLinkClass($akcijosActive) }}">
-                <x-app-icon name="tag" class="size-4.5" />Visos akcijos
+                <x-app-icon name="tag" class="size-5" />Visos akcijos
             </a>
             <a href="/parduotuves" data-ga-event="desktop_nav_click" data-ga-item="stores" class="{{ $navLinkClass($storesActive) }}">
-                <x-app-icon name="store" class="size-4.5" />Parduotuvės
+                <x-app-icon name="store" class="size-5" />Parduotuvės
             </a>
             <div class="relative">
                 <button type="button" @click="categoriesNavOpen = !categoriesNavOpen" data-ga-event="desktop_nav_click" data-ga-item="categories" class="{{ $navLinkClass(false) }}">
-                    <x-app-icon name="layout-grid" class="size-4.5" />Kategorijos
-                    <span :class="categoriesNavOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-3.5" /></span>
+                    <x-app-icon name="layout-grid" class="size-5" />Kategorijos
+                    <span :class="categoriesNavOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-4" /></span>
                 </button>
                 {{-- Same centered-modal shell as discount-filters.blade.php's
                      category panel (akcijos listing pages) — reused here
@@ -195,8 +203,13 @@
                      escapes <header>'s stacking context entirely. --}}
                 <template x-teleport="body">
                     <div x-show="categoriesNavOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" @click.self="categoriesNavOpen = false">
-                        <div class="max-h-[80vh] w-full max-w-[420px] overflow-y-auto rounded-2xl bg-white p-4">
-                            <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
+                        <div class="max-h-[80vh] w-full max-w-[480px] overflow-y-auto rounded-2xl bg-white p-5">
+                            <div class="mb-3 flex items-center justify-between gap-3">
+                                <h2 class="text-2xl font-bold text-gray-900">Kategorijos</h2>
+                                <button type="button" @click="categoriesNavOpen = false" class="sheet-close" aria-label="Uždaryti">
+                                    <x-app-icon name="x" class="size-7" />
+                                </button>
+                            </div>
                             @include('components.partials.discount-filter-sections', [
                                 'facet' => 'categories',
                                 'items' => $categoriesForModal,
@@ -214,10 +227,10 @@
                 </template>
             </div>
             <a href="/leidiniai" data-ga-event="desktop_nav_click" data-ga-item="leaflets" class="{{ $navLinkClass($leafletsActive) }}">
-                <x-app-icon name="bookmark" class="size-4.5" />Leidiniai
+                <x-app-icon name="bookmark" class="size-5" />Leidiniai
             </a>
             <a href="/pigiausios-prekes" data-ga-event="desktop_nav_click" data-ga-item="cheapest" class="{{ $navLinkClass($cheapestActive) }}">
-                <x-app-icon name="shopping-bag" class="size-4.5" />Didžiausios nuolaidos
+                <x-app-icon name="shopping-bag" class="size-5" />Didžiausios nuolaidos
             </a>
         </nav>
     </div>
@@ -239,14 +252,15 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="translate-x-full"
-                class="absolute inset-y-0 right-0 flex w-full max-w-[360px] flex-col overflow-hidden bg-white shadow-xl"
+                class="absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col overflow-hidden bg-white shadow-xl"
             >
-                <div class="flex shrink-0 items-center justify-end p-3.5">
-                    <button type="button" @click="menuOpen = false" class="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100" aria-label="Uždaryti">
-                        <x-app-icon name="x" class="size-4.5" />
+                <div class="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
+                    <span class="text-xl font-bold text-gray-900">Meniu</span>
+                    <button type="button" @click="menuOpen = false" class="sheet-close" aria-label="Uždaryti">
+                        <x-app-icon name="x" class="size-7" />
                     </button>
                 </div>
-                <nav class="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4.5">
+                <nav class="min-h-0 flex-1 overflow-y-auto px-3 py-3">
                     <a href="/akcijos" @click="menuOpen = false" class="{{ $menuItemClass($akcijosActive) }}">
                         <x-app-icon name="tag" class="size-5 shrink-0" />Visos akcijos
                     </a>

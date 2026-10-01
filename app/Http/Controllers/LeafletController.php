@@ -88,9 +88,9 @@ class LeafletController extends Controller
 
         $payload = json_decode($response->getContent(), true);
         $path = "/leidinys/{$store}/{$flyerSlug}";
-        // Interactive flyer prototype (clickable products, lenses, shopping
-        // list), shown only with ?beta=1 until it is switched on for all.
-        $betaConfig = request()->boolean('beta')
+        // Interactive flyer (clickable products, filters, shopping list).
+        // Started as a ?beta=1 prototype; on for everyone since 2026-10-01.
+        $betaConfig = ! empty($payload['listing_meta']['pages'])
             ? $this->leafletBetaConfig($payload['flyer_offers'] ?? [], $payload['listing_meta']['pages'] ?? [], $store, $flyerSlug, $payload['listing_meta']['store_name'] ?? $store)
             : null;
         $breadcrumbs = $this->mapBreadcrumbs($payload['breadcrumbs']);
@@ -102,7 +102,7 @@ class LeafletController extends Controller
             'storeSlug' => $store,
             'showsDiscountsPage' => (bool) Store::where('slug', $store)->value('show_discounts_page'),
             'canonical' => CanonicalUrl::build($path),
-            'robots' => $betaConfig ? 'noindex, nofollow' : CanonicalUrl::robotsMeta($path),
+            'robots' => CanonicalUrl::robotsMeta($path),
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
             'flyerOffers' => $payload['flyer_offers'] ?? [],
@@ -144,7 +144,7 @@ class LeafletController extends Controller
                 'name' => $d['product']['name'],
                 'image' => $d['product']['image_url'],
                 'href' => '/akcijos/'.$d['product']['full_slug'],
-                'flyer_href' => "/leidinys/{$storeSlug}/{$flyerSlug}?beta=1#psl-{$d['flyer_page']}",
+                'flyer_href' => "/leidinys/{$storeSlug}/{$flyerSlug}#psl-{$d['flyer_page']}",
                 'price' => (float) ($d['discounted_price'] ?? 0),
                 'original' => (float) ($d['original_price'] ?? 0),
                 'percent' => $d['discount_percent'] ? (int) round(abs($d['discount_percent'])) : null,

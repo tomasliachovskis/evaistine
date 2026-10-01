@@ -110,8 +110,8 @@ use App\Support\ProductPageMeta;
     // amber box + Info icon, "good"/"neutral" both get a green box, but only
     // "good" gets the CircleCheck icon (neutral still shows Info).
     $dealSignalBox = [
-        'good' => ['class' => 'bg-green/5', 'text' => 'text-green', 'icon' => 'circle-check', 'iconClass' => 'text-green'],
-        'neutral' => ['class' => 'bg-green/5', 'text' => 'text-green', 'icon' => 'info', 'iconClass' => 'text-green'],
+        'good' => ['class' => 'bg-green/5', 'text' => 'text-dark-green', 'icon' => 'circle-check', 'iconClass' => 'text-dark-green'],
+        'neutral' => ['class' => 'bg-green/5', 'text' => 'text-dark-green', 'icon' => 'info', 'iconClass' => 'text-dark-green'],
         'bad' => ['class' => 'bg-amber-50', 'text' => 'text-amber-900', 'icon' => 'info', 'iconClass' => 'text-amber-700'],
     ];
 
@@ -131,6 +131,7 @@ use App\Support\ProductPageMeta;
 @endphp
 
 <x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []"
     :title="$seo['meta_title'] ?? ($product['name'] ?? 'Produktas')"
     :description="$seo['meta_description'] ?? null"
     :canonical="$canonical"
@@ -147,12 +148,12 @@ use App\Support\ProductPageMeta;
         @endif
     @endpush
 
-    <div class="base-container pb-4 pt-3">
-        <nav class="flex flex-wrap items-center gap-1" aria-label="Naršymo kelias">
+    <div class="base-container pb-2 pt-3 lg:pb-4">
+        <nav class="flex flex-wrap items-center gap-x-2" aria-label="Naršymo kelias">
             @foreach ($breadcrumbs as $index => $crumb)
-                @if ($index > 0)<x-app-icon name="arrow-right" class="size-3.5 text-gray-300" />@endif
+                @if ($index > 0)<x-app-icon name="arrow-right" class="crumb-sep" />@endif
                 @php $isLastCrumb = $index === count($breadcrumbs) - 1; @endphp
-                <a href="{{ $crumb['slug'] === '/' ? '/' : '/' . ltrim($crumb['slug'], '/') }}" class="text-sm transition-colors hover:text-green {{ $isLastCrumb ? 'font-medium text-green' : 'text-gray-600' }}">{{ $crumb['name'] }}</a>
+                <a href="{{ $crumb['slug'] === '/' ? '/' : '/' . ltrim($crumb['slug'], '/') }}" class="crumb-link {{ $isLastCrumb ? 'crumb-current' : '' }}">{{ $crumb['name'] }}</a>
             @endforeach
         </nav>
     </div>
@@ -178,7 +179,7 @@ use App\Support\ProductPageMeta;
                             @if ($product['brand'])
                                 <span class="text-sm font-semibold uppercase text-gray-500">{{ $product['brand'] }}</span>
                             @endif
-                            <h1 class="m-0 text-[1.35rem] font-semibold leading-[1.15] text-gray-900 sm:text-3xl lg:text-4xl">{{ ProductPageMeta::heroTitle($product['name'], $product['description'] ?? null) }}</h1>
+                            <h1 class="m-0 text-lg font-semibold leading-[1.15] text-gray-900 sm:text-3xl lg:text-4xl">{{ ProductPageMeta::heroTitle($product['name'], $product['description'] ?? null) }}</h1>
                         </div>
 
                         @if ($isNoActivePromotion)
@@ -190,8 +191,8 @@ use App\Support\ProductPageMeta;
                                  lg that's where the dead space next to the (now much smaller)
                                  image column was. --}}
                             @if ($bestAlternative)
-                                <div class="mt-1 hidden w-full rounded-2xl border-2 border-green/30 bg-green/5 p-4 lg:block">
-                                    <p class="text-base font-bold text-green">Radome panašų produktą su aktyvia nuolaida:</p>
+                                <div class="mt-1 hidden w-full rounded-2xl border border-green/30 bg-green/5 p-4 lg:block">
+                                    <p class="text-base font-bold text-dark-green">Radome panašų produktą su aktyvia nuolaida:</p>
                                     <div class="mt-3 grid grid-cols-2 gap-2.5 lg:grid-cols-3">
                                         @foreach ($genericAlternatives as $alt)
                                             @php
@@ -280,8 +281,8 @@ use App\Support\ProductPageMeta;
                          is its own directly clickable card (no separate button) — always at
                          least 2 up even on narrow phones (max 2 shown there), 3 from lg. --}}
                     @if ($bestAlternative)
-                        <div class="col-span-2 rounded-2xl border-2 border-green/30 bg-green/5 p-4 lg:hidden">
-                            <p class="text-base font-bold text-green">Radome panašų produktą su aktyvia nuolaida:</p>
+                        <div class="col-span-2 rounded-2xl border border-green/30 bg-green/5 p-4 lg:hidden">
+                            <p class="text-base font-bold text-dark-green">Radome panašų produktą su aktyvia nuolaida:</p>
 
                             <div class="mt-3 grid grid-cols-2 gap-2.5 lg:grid-cols-3">
                                 @foreach ($genericAlternatives as $alt)
@@ -356,7 +357,7 @@ use App\Support\ProductPageMeta;
                  uses each tab's shortLabel + a tighter sticky offset (no
                  breadcrumb/hero-stats row above it like desktop has). --}}
             <nav
-                class="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-40 border-b border-gray-200 bg-white lg:top-[calc(7.25rem+env(safe-area-inset-top,0px))]"
+                class="sticky top-[calc(var(--header-h)+0.25rem+env(safe-area-inset-top,0px))] z-40 border-b border-gray-200 bg-white lg:top-[calc(9.25rem+env(safe-area-inset-top,0px))]"
                 aria-label="Produkto skyriai"
                 x-data="{
                     activeId: '{{ $tabs[array_key_first($tabs)]['id'] }}',
@@ -398,7 +399,7 @@ use App\Support\ProductPageMeta;
         @endif
 
         @if ($hasOffers)
-            <section id="offers" class="base-container scroll-mt-32 pb-6 pt-3 sm:pt-4 lg:pt-5">
+            <section id="offers" class="base-container scroll-mt-40 pb-6 pt-3 sm:pt-4 lg:pt-5">
                 <h2 class="mb-1 text-lg font-bold text-gray-900">{{ \App\Support\ProductPageMeta::offersHeading() }}</h2>
                 <p class="mb-4 text-sm text-gray-500">Palyginome {{ $offerGroups->count() }} {{ $offerGroups->count() === 1 ? 'parduotuvės pasiūlymą' : 'parduotuvių pasiūlymus' }}.</p>
 
@@ -438,7 +439,7 @@ use App\Support\ProductPageMeta;
              is more actionable than a greyed-out past-price list, so it
              should be seen first, not after. --}}
         @if ($hasSimilar)
-            <section id="similar-products" class="scroll-mt-32 border-t border-gray-200 bg-white pb-6 pt-5 sm:py-8">
+            <section id="similar-products" class="scroll-mt-40 border-t border-gray-200 bg-white pb-6 pt-5 sm:py-8">
                 <div class="base-container">
                     <h2 class="mb-4 text-lg font-bold text-gray-900">{{ \App\Support\ProductPageMeta::similarHeading($product) }}</h2>
                     {{-- Max 2 rows on every breakpoint: 2 cols on mobile (4 items),
@@ -463,7 +464,7 @@ use App\Support\ProductPageMeta;
              covers the same ground with less repetition. --}}
 
         @if ($hasHistory)
-            <section id="kainu-istorija" class="scroll-mt-32 border-t border-gray-200 bg-white py-6 sm:py-8">
+            <section id="kainu-istorija" class="scroll-mt-40 border-t border-gray-200 bg-white py-6 sm:py-8">
                 <div class="base-container">
                     <x-price-history-chart :points="$priceHistoryPoints" :product-name="$product['name']" />
                 </div>

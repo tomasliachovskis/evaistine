@@ -25,6 +25,7 @@
 @endphp
 
 <x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []"
     :title="$pageMeta['seo']['meta_title'] ?? 'Parduotuvių akcijos ir leidiniai Lietuvoje'"
     :description="$pageMeta['seo']['meta_description'] ?? null"
     :canonical="$canonical"
@@ -52,7 +53,7 @@
             <div class="section-heading-row">
                 <h2 id="stores-list-heading" class="section-heading">Prekybos tinklai</h2>
             </div>
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5">
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 @foreach ($sortedStores as $store)
                     <x-store-card :store="$store" layout="grid" />
                 @endforeach
@@ -66,7 +67,7 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     @foreach ($withLocations as $store)
-                        <a href="/parduotuves/{{ $store['slug'] }}" class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-green hover:text-dark-green">
+                        <a href="/parduotuves/{{ $store['slug'] }}" class="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-green hover:text-dark-green min-h-12">
                             {{ $store['name'] }}
                         </a>
                     @endforeach

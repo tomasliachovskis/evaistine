@@ -126,7 +126,7 @@
             @endforeach
         </div>
         @if ($tailItems->isNotEmpty())
-            <button type="button" @click="expanded = !expanded" class="flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-[18px] font-semibold text-green text-left transition-colors hover:bg-[#f2f2f2]">
+            <button type="button" @click="expanded = !expanded" class="flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-base font-semibold text-dark-green text-left transition-colors hover:bg-[#f2f2f2]">
                 <x-app-icon name="chevron-down" class="size-5 shrink-0 transition-transform" x-bind:class="expanded ? 'rotate-180' : ''" />
                 <span x-text="expanded ? 'Rodyti mažiau' : 'Rodyti daugiau ({{ $tailItems->count() }})'"></span>
             </button>
@@ -161,7 +161,7 @@
             @endforeach
         </div>
         @if ($tailItems->isNotEmpty())
-            <button type="button" @click="expanded = !expanded" class="flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-[18px] font-semibold text-green text-left transition-colors hover:bg-[#f2f2f2]">
+            <button type="button" @click="expanded = !expanded" class="flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-base font-semibold text-dark-green text-left transition-colors hover:bg-[#f2f2f2]">
                 <x-app-icon name="chevron-down" class="size-5 shrink-0 transition-transform" x-bind:class="expanded ? 'rotate-180' : ''" />
                 <span x-text="expanded ? 'Rodyti mažiau' : 'Rodyti daugiau ({{ $tailItems->count() }})'"></span>
             </button>

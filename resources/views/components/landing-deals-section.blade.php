@@ -20,7 +20,7 @@
             </div>
             @if ($seeAllHref)
                 <div class="flex shrink-0 items-center gap-2">
-                    <a href="{{ $seeAllHref }}" class="inline-flex items-center gap-0.5 whitespace-nowrap text-sm font-medium text-green hover:text-dark-green sm:font-semibold">
+                    <a href="{{ $seeAllHref }}" class="section-link whitespace-nowrap">
                         Žiūrėti visas{{ $seeAllCount ? ' ('.number_format($seeAllCount, 0, ',', ' ').')' : '' }}
                         <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
                     </a>
@@ -36,7 +36,7 @@
                     </div>
                 @endforeach
             </div>
-            <a href="/akcijos" data-ga-event="load_more_click" data-ga-source="home_landing" class="mt-3 flex h-10 w-full items-center justify-center rounded-lg border border-green bg-white text-sm font-bold text-green transition-colors hover:bg-green/5 hover:text-dark-green sm:hidden">
+            <a href="/akcijos" data-ga-event="load_more_click" data-ga-source="home_landing" class="mt-3 flex min-h-12 w-full items-center justify-center rounded-lg border border-green bg-white text-sm font-bold text-dark-green transition-colors hover:bg-green/5 hover:text-dark-green sm:hidden">
                 Rodyti daugiau
             </a>
         @else
@@ -62,7 +62,7 @@
                 <template x-if="pageCount > 1">
                     <div class="mt-2 flex items-center justify-center gap-1.5 sm:hidden">
                         <template x-for="index in pageCount" :key="index">
-                            <span :class="index - 1 === activePage ? 'size-2 rounded-full bg-green' : 'size-1.5 rounded-full bg-gray-300'"></span>
+                            <span :class="index - 1 === activePage ? 'size-2 rounded-full bg-action' : 'size-1.5 rounded-full bg-gray-300'"></span>
                         </template>
                     </div>
                 </template>

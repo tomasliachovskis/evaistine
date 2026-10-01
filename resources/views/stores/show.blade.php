@@ -1,4 +1,5 @@
 <x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []"
     :title="$title"
     :description="$description"
     :canonical="$canonical"
@@ -35,9 +36,9 @@
                     <button
                         type="button"
                         @click="find()"
-                        class="inline-flex items-center gap-2 text-sm font-medium text-dark-green hover:underline"
+                        class="inline-flex min-h-12 items-center gap-2 rounded-xl bg-green-soft px-4 text-base font-bold text-dark-green hover:bg-green-soft-border"
                     >
-                        <x-app-icon name="map-pin" class="size-4" />
+                        <x-app-icon name="map-pin" class="size-5" />
                         Rasti artimiausią {{ mb_strtolower($store->name) }} parduotuvę
                     </button>
                 </template>

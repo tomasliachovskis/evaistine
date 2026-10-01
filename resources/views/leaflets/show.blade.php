@@ -27,6 +27,7 @@
 @endphp
 
 <x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []"
     :title="$seo['meta_title'] ?? ($seo['seo_title'] ?? $flyer['title'])"
     :description="$seo['meta_description'] ?? ($seo['seo_description'] ?? null)"
     :canonical="$canonical"
@@ -182,7 +183,9 @@
         >
             @if (!empty($pages))
                 <div class="order-1 min-w-0 lg:order-2">
-                    @if ($betaConfig)
+                    {{-- Instruction, search and filters only when this
+                         leaflet has clickable products. --}}
+                    @if ($betaConfig && ! empty($betaConfig['hotspots']))
                         @include('leaflets.partials.beta.toolbar')
                     @endif
                     <div
@@ -240,7 +243,7 @@
                                             >
                                                 <span
                                                     x-show="inList(h.id)"
-                                                    class="pointer-events-none absolute -right-2 -top-2 flex size-7 items-center justify-center rounded-full border-2 border-white bg-dark-green text-white shadow"
+                                                    class="pointer-events-none absolute -right-2 -top-2 flex size-7 items-center justify-center rounded-full border border-white bg-action text-white shadow"
                                                 ><x-app-icon name="check" class="size-4" /></span>
                                             </button>
                                         </template>
@@ -276,7 +279,7 @@
                             @click="prev()"
                             x-show="hasPrev()"
                             aria-label="Ankstesnis puslapis"
-                            class="absolute left-2 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
+                            class="absolute left-2 top-1/2 flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
                         >
                             <x-app-icon name="chevron-right" class="size-4 rotate-180" />
                         </button>
@@ -285,7 +288,7 @@
                             @click="next()"
                             x-show="hasNext()"
                             aria-label="Kitas puslapis"
-                            class="absolute right-2 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
+                            class="absolute right-2 top-1/2 flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
                         >
                             <x-app-icon name="chevron-right" class="size-4" />
                         </button>
@@ -293,7 +296,7 @@
                             type="button"
                             @click="toggleFullscreen()"
                             :aria-label="fullscreen ? 'Uždaryti pilną ekraną' : 'Pilnas ekranas'"
-                            class="absolute right-2 top-2 flex size-8 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
+                            class="absolute right-2 top-2 flex size-12 items-center justify-center rounded-lg border border-gray-200 bg-white/90 text-gray-700 shadow-sm hover:bg-white"
                         >
                             <x-app-icon x-show="!fullscreen" name="maximize" class="size-4" />
                             <x-app-icon x-show="fullscreen" name="x" class="size-4" />
@@ -330,10 +333,10 @@
                  shows both pages at a readable size. --}}
             <div class="order-2 flex min-w-0 flex-col gap-3 lg:order-1 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
                 <div class="min-w-0">
-                    <nav class="flex flex-wrap items-center gap-1 text-xs text-gray-500" aria-label="Naršymo kelias">
+                    <nav class="flex flex-wrap items-center gap-x-2" aria-label="Naršymo kelias">
                         @foreach ($breadcrumbs as $index => $crumb)
-                            @if ($index > 0)<x-app-icon name="arrow-right" class="size-3 text-gray-300" />@endif
-                            <a href="{{ $crumb['href'] }}" class="transition-colors hover:text-green {{ $canonical === $crumb['href'] ? 'font-medium text-green' : '' }}">{{ $crumb['name'] }}</a>
+                            @if ($index > 0)<x-app-icon name="arrow-right" class="crumb-sep" />@endif
+                            <a href="{{ $crumb['href'] }}" class="crumb-link {{ $canonical === $crumb['href'] ? 'crumb-current' : '' }}">{{ $crumb['name'] }}</a>
                         @endforeach
                     </nav>
                     <h1 class="mt-2 text-xl font-bold leading-tight">{{ $flyer['title'] }}</h1>
@@ -349,7 +352,7 @@
                     <button
                         type="button"
                         @click="openList()"
-                        class="hidden min-h-12 shrink-0 items-center gap-2 rounded-xl border-2 border-dark-green bg-white px-4 text-lg font-bold text-dark-green hover:bg-green-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30 lg:inline-flex"
+                        class="hidden min-h-12 shrink-0 items-center gap-2 rounded-xl bg-green-soft px-4 text-lg font-bold text-dark-green hover:bg-green-soft-border focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30 lg:inline-flex"
                     >
                         <x-app-icon name="shopping-basket" class="size-6" />
                         Pirkinių sąrašas
@@ -449,7 +452,7 @@
                                         :context-store-slug="$storeSlug"
                                         :compare-stores="true"
                                         source="flyer_offers"
-                                        class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
+                                        class="deal-card-width"
                                     />
                                 @endforeach
                             </div>

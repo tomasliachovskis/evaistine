@@ -21,14 +21,14 @@
                     type="button"
                     x-ref="cardClose"
                     @click="closeCard()"
-                    class="inline-flex min-h-12 items-center gap-1.5 rounded-lg border-2 border-gray-400 px-4 text-lg font-semibold text-font hover:border-dark-green focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
+                    class="sheet-close"
+                    aria-label="Uždaryti"
                 >
-                    <x-app-icon name="x" class="size-5" />
-                    Uždaryti
+                    <x-app-icon name="x" class="size-7" />
                 </button>
             </div>
 
-            <div class="mx-auto overflow-hidden rounded-xl border-2 border-gray-300 bg-gray-50" :style="magnifierStyle(selected())" role="img" :aria-label="'Prekė leidinyje: ' + selected().name"></div>
+            <div class="mx-auto overflow-hidden rounded-xl border border-gray-200 bg-gray-50" :style="magnifierStyle(selected())" role="img" :aria-label="'Prekė leidinyje: ' + selected().name"></div>
 
             <h2 id="leaflet-card-title" class="mt-4 text-2xl font-bold leading-snug text-font" x-text="selected().name"></h2>
 
@@ -63,7 +63,7 @@
                 type="button"
                 @click="toggleList(selected())"
                 class="mt-5 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-xl text-lg font-bold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40"
-                :class="inList(selected().id) ? 'border-2 border-dark-green bg-green-soft text-dark-green' : 'bg-dark-green text-white hover:bg-green'"
+                :class="inList(selected().id) ? 'bg-green-soft text-dark-green' : 'bg-action text-white hover:bg-action-hover'"
             >
                 <x-app-icon x-show="!inList(selected().id)" name="plus" class="size-6" />
                 <x-app-icon x-show="inList(selected().id)" name="check" class="size-6" />
@@ -76,7 +76,7 @@
                         type="button"
                         x-data="favoriteButton(h.product_id, false, h.name, h.image)"
                         @click.stop.prevent="toggle()"
-                        class="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border-2 border-gray-400 px-4 text-lg font-semibold text-font hover:border-dark-green focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
+                        class="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 text-lg font-semibold text-font hover:border-gray-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
                     >
                         <x-app-icon name="heart" class="size-5" x-bind:class="favorited ? 'fill-red-500 text-red-500' : 'fill-none'" />
                         <span x-text="favorited ? 'Kaina sekama' : 'Sekti kainą'"></span>
@@ -84,7 +84,7 @@
                 </template>
                 <a
                     :href="selected().href"
-                    class="inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-gray-400 px-4 text-lg font-semibold text-font hover:border-dark-green focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
+                    class="inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-4 text-lg font-semibold text-font hover:border-gray-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
                 >
                     Visa informacija
                     <x-app-icon name="chevron-right" class="size-5" />
@@ -101,7 +101,7 @@
     x-show="list.length > 0 && !selectedId && !listOpen"
     x-cloak
     @click="openList()"
-    class="fixed inset-x-3 bottom-20 z-50 flex min-h-14 items-center justify-center gap-2 rounded-xl bg-dark-green px-4 text-lg font-bold text-white shadow-lg lg:hidden"
+    class="fixed inset-x-3 bottom-20 z-50 flex min-h-14 items-center justify-center gap-2 rounded-xl bg-action px-4 text-lg font-bold text-white shadow-lg lg:hidden"
 >
     <x-app-icon name="shopping-basket" class="size-6" />
     <span x-text="'Pirkinių sąrašas: ' + list.length + ' ' + productWord(list.length) + ', ' + euro(listTotal())"></span>
@@ -133,9 +133,8 @@
                 <h2 id="shopping-list-title" class="text-2xl font-bold text-font">Pirkinių sąrašas</h2>
                 <p class="mt-1 text-base text-gray-600">Sąrašas saugomas šiame įrenginyje.</p>
             </div>
-            <button type="button" @click="closeList()" class="inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-lg border-2 border-gray-400 px-4 text-lg font-semibold text-font hover:border-dark-green">
-                <x-app-icon name="x" class="size-5" />
-                Uždaryti
+            <button type="button" @click="closeList()" class="sheet-close" aria-label="Uždaryti">
+                <x-app-icon name="x" class="size-7" />
             </button>
         </div>
 
@@ -151,8 +150,8 @@
                                 role="checkbox"
                                 :aria-checked="item.checked"
                                 @click="toggleChecked(item.id)"
-                                class="flex size-8 shrink-0 items-center justify-center rounded-md border-2"
-                                :class="item.checked ? 'border-dark-green bg-dark-green text-white' : 'border-gray-500 bg-white'"
+                                class="flex size-12 shrink-0 items-center justify-center rounded-md border"
+                                :class="item.checked ? 'border-action bg-action text-white' : 'border-gray-500 bg-white'"
                                 :aria-label="(item.checked ? 'Nupirkta: ' : 'Nenupirkta: ') + item.name"
                             ><x-app-icon x-show="item.checked" name="check" class="size-5" /></button>
                             <div class="min-w-0 flex-1">
@@ -164,7 +163,7 @@
                             </div>
                             <div class="flex shrink-0 flex-col items-end gap-1">
                                 <span class="text-lg font-bold tabular-nums text-font" x-text="euro(item.price)"></span>
-                                <button type="button" @click="removeFromList(item.id)" class="min-h-10 text-base font-semibold text-dark-green underline underline-offset-2 hover:no-underline">Išimti</button>
+                                <button type="button" @click="removeFromList(item.id)" class="min-h-12 text-base font-semibold text-dark-green underline underline-offset-2 hover:no-underline">Išimti</button>
                             </div>
                         </div>
                     </template>
@@ -178,11 +177,11 @@
                 <span class="text-2xl font-extrabold tabular-nums text-font" x-text="euro(listTotal())"></span>
             </div>
             <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                <button type="button" @click="printList()" class="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-dark-green px-4 text-lg font-bold text-white hover:bg-green">
+                <button type="button" @click="printList()" class="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-action px-4 text-lg font-bold text-white hover:bg-action-hover">
                     <x-app-icon name="printer" class="size-5" />
                     Spausdinti
                 </button>
-                <button type="button" @click="shareList()" class="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border-2 border-gray-400 px-4 text-lg font-semibold text-font hover:border-dark-green">
+                <button type="button" @click="shareList()" class="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 text-lg font-semibold text-font hover:border-gray-300">
                     <x-app-icon name="share-2" class="size-5" />
                     Siųsti į telefoną
                 </button>

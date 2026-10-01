@@ -3,7 +3,7 @@
 @php
     $colorClass = match ($color) {
         'white' => 'bg-white/25 text-white',
-        'green' => 'bg-green/10 text-green',
+        'green' => 'bg-green/10 text-dark-green',
         default => 'bg-gray-200 text-gray-600',
     };
 @endphp

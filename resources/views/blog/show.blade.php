@@ -1,4 +1,5 @@
-<x-layouts.app :title="$title" :description="$description" :canonical="$canonical" :og-image="$ogImage" :og-type="$ogType">
+<x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []" :title="$title" :description="$description" :canonical="$canonical" :og-image="$ogImage" :og-type="$ogType">
     @push('head')
         <script type="application/ld+json">
             {!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}

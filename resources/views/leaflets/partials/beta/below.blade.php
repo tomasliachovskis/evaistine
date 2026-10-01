@@ -6,7 +6,7 @@
         type="button"
         @click="prev()"
         :disabled="!hasPrev()"
-        class="inline-flex min-h-12 items-center gap-1.5 rounded-lg border-2 border-gray-400 bg-white px-4 text-lg font-semibold text-font hover:border-dark-green disabled:invisible focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
+        class="inline-flex min-h-12 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 text-lg font-semibold text-font hover:border-gray-300 disabled:invisible focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
     >
         <x-app-icon name="chevron-right" class="size-5 rotate-180" />
         <span class="hidden sm:inline">Ankstesnis puslapis</span><span class="sm:hidden">Atgal</span>
@@ -16,7 +16,7 @@
         type="button"
         @click="next()"
         :disabled="!hasNext()"
-        class="inline-flex min-h-12 items-center gap-1.5 rounded-lg bg-dark-green px-4 text-lg font-bold text-white hover:bg-green disabled:invisible focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40"
+        class="inline-flex min-h-12 items-center gap-1.5 rounded-lg bg-action px-4 text-lg font-bold text-white hover:bg-action-hover disabled:invisible focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40"
     >
         <span class="hidden sm:inline">Kitas puslapis</span><span class="sm:hidden">Toliau</span>
         <x-app-icon name="chevron-right" class="size-5" />
@@ -31,7 +31,7 @@
     <div class="flex flex-wrap gap-3">
         <template x-for="h in spreadHotspots()" :key="h.id">
             <div
-                class="flex w-full items-center gap-3 rounded-xl border-2 bg-white p-3 lg:w-[calc(50%-0.375rem)]"
+                class="flex w-full items-center gap-3 rounded-xl border bg-white p-3 lg:w-[calc(50%-0.375rem)]"
                 :class="filtering() && !isMatch(h) ? 'border-gray-200 opacity-50' : (hoveredId === h.id ? 'border-green' : 'border-gray-300')"
                 @mouseenter="hoveredId = h.id"
                 @mouseleave="hoveredId = null"
@@ -47,7 +47,7 @@
                     type="button"
                     @click="toggleList(h)"
                     class="inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-lg px-3 text-base font-bold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40"
-                    :class="inList(h.id) ? 'border-2 border-dark-green bg-green-soft text-dark-green' : 'bg-dark-green text-white hover:bg-green'"
+                    :class="inList(h.id) ? 'bg-green-soft text-dark-green' : 'bg-action text-white hover:bg-action-hover'"
                     :aria-label="(inList(h.id) ? 'Išimti iš sąrašo: ' : 'Įdėti į sąrašą: ') + h.name"
                 >
                     <x-app-icon x-show="!inList(h.id)" name="plus" class="size-5" />

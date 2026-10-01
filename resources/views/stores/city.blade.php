@@ -1,4 +1,5 @@
 <x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []"
     :title="$title"
     :description="$description"
     :canonical="$canonical"
@@ -35,7 +36,7 @@
                 @if ($offersCount > 0)
                     <a
                         href="/akcijos/{{ $store->slug }}"
-                        class="inline-flex w-fit items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 hover:border-green hover:text-green"
+                        class="inline-flex w-fit items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 hover:border-green hover:text-dark-green"
                     >
                         <x-app-icon name="tag" class="size-4" />
                         Žiūrėti {{ $store->name }} akcijas ({{ number_format($offersCount, 0, ',', ' ') }})
@@ -44,7 +45,7 @@
                 @if ($leafletsCount > 0)
                     <a
                         href="/leidinys/{{ $store->slug }}"
-                        class="inline-flex w-fit items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 hover:border-green hover:text-green"
+                        class="inline-flex w-fit items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 hover:border-green hover:text-dark-green"
                     >
                         <x-app-icon name="bookmark" class="size-4" />
                         Žiūrėti {{ $store->name }} {{ $store->slug === 'iki' ? 'leidynius' : 'leidinius' }} ({{ $leafletsCount }})
@@ -60,7 +61,7 @@
                         <p class="font-semibold text-gray-900">{{ $location['address'] }}</p>
                         @if (!empty($location['phone']))
                             <p class="mt-1 text-sm text-gray-600">
-                                <a href="tel:{{ $location['phone'] }}" class="hover:text-green">{{ $location['phone'] }}</a>
+                                <a href="tel:{{ $location['phone'] }}" class="hover:text-dark-green">{{ $location['phone'] }}</a>
                             </p>
                         @endif
                         @if ($location['hours_summary'])

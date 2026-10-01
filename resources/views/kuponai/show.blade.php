@@ -7,6 +7,7 @@
 @endphp
 
 <x-layouts.app
+    :breadcrumbs="$breadcrumbs ?? []"
     title="{{ $website->name }} nuolaidų kodai ir kuponai"
     description="Patikrinti {{ $website->name }} nuolaidų kodai ir aktualios akcijos. Sutaupykite naudodami galiojančius kuponus."
     :canonical="$canonical"
@@ -27,13 +28,13 @@
         {{-- Same visual language as <x-leaflet-quick-links> (copied class
              strings — that component is worded around leidinys/store, not
              reusable verbatim for a coupon website). --}}
-        <div class="flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-3 min-h-[60px] sm:min-h-[52px] sm:px-[20px]">
-            <a href="/kuponai" class="inline-flex h-full shrink-0 items-center gap-2 rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]">
+        <div class="flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-4 py-1 min-h-14 sm:px-[20px]">
+            <a href="/kuponai" class="inline-flex h-full shrink-0 items-center gap-2 rounded-2xl px-2 text-base font-semibold text-gray-900 hover:bg-[#dedede]">
                 <x-app-icon name="arrow-right" class="size-5 shrink-0 rotate-180" />
                 <span>Visi kuponai</span>
             </a>
             @if ($website->url)
-                <a href="{{ $website->url }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-full shrink-0 items-center gap-2 rounded-2xl px-2 text-[18px] font-semibold text-gray-900 hover:bg-[#dedede]">
+                <a href="{{ $website->url }}" target="_blank" rel="noopener noreferrer" class="inline-flex h-full shrink-0 items-center gap-2 rounded-2xl px-2 text-base font-semibold text-gray-900 hover:bg-[#dedede]">
                     <x-app-icon name="tag" class="size-5 shrink-0" />
                     <span>{{ $website->name }} svetainė</span>
                 </a>
@@ -44,7 +45,7 @@
             <span class="font-bold text-gray-900">Rūšiuoti:</span>
             @foreach ($orderOptions as $value => $label)
                 @php $href = "/kuponai/{$website->slug}" . ($value === 'best' ? '' : "?order={$value}"); @endphp
-                <a href="{{ $href }}" class="{{ $order === $value ? 'font-bold text-green' : 'font-medium text-gray-600 hover:text-gray-900' }}">{{ $label }}</a>
+                <a href="{{ $href }}" class="inline-flex min-h-12 items-center rounded-xl px-3 {{ $order === $value ? 'bg-action font-bold text-white' : 'font-semibold text-gray-800 hover:bg-gray-100' }}">{{ $label }}</a>
             @endforeach
         </div>
 
@@ -66,13 +67,13 @@
             @endif
         @endif
 
-        <section id="kaip-panaudoti" class="scroll-mt-24 rounded-xl border border-gray-200 bg-white p-4 sm:p-5" aria-labelledby="how-to-heading">
+        <section id="kaip-panaudoti" class="scroll-mt-32 rounded-xl border border-gray-200 bg-white p-4 sm:p-5" aria-labelledby="how-to-heading">
             <h2 id="how-to-heading" class="text-base font-extrabold text-gray-900 sm:text-lg">Kaip panaudoti {{ $website->name }} nuolaidos kodą?</h2>
             <p class="mt-2 text-sm leading-relaxed text-gray-600 sm:text-base">
                 Paspaudus mygtuką „Rodyti kodą“, kodas bus parodytas ir automatiškai nukopijuotas į iškarpinę.
                 Jį reikia įrašyti į atitinkamą laukelį {{ $website->name }} krepšelyje apsiperkant
                 @if ($website->url)
-                    <a href="{{ $website->url }}" target="_blank" rel="noopener noreferrer" class="font-bold text-green hover:text-dark-green">{{ $website->url }}</a>.
+                    <a href="{{ $website->url }}" target="_blank" rel="noopener noreferrer" class="font-bold text-dark-green hover:underline">{{ $website->url }}</a>.
                 @else
                     svetainėje.
                 @endif

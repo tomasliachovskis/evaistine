@@ -28,11 +28,11 @@
                 <a href="/privatumo-politika" class="underline">Skaityti išsamiau.</a>
             </span>
         </p>
-        <div class="mt-2 flex gap-2 sm:mt-4 sm:gap-4">
-            <button type="button" @click="setConsent('accepted')" class="rounded-md bg-green-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800 sm:px-4 sm:py-2 sm:text-sm">
+        <div class="mt-3 flex flex-wrap gap-3 sm:mt-4">
+            <button type="button" @click="setConsent('accepted')" class="inline-flex min-h-12 items-center rounded-xl bg-action px-5 text-base font-bold text-white hover:bg-action-hover">
                 Leisti visus slapukus
             </button>
-            <button type="button" @click="setConsent('necessary')" class="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-900 hover:bg-gray-50 sm:px-4 sm:py-2 sm:text-sm">
+            <button type="button" @click="setConsent('necessary')" class="inline-flex min-h-12 items-center rounded-xl border border-gray-200 px-5 text-base font-semibold text-gray-900 hover:border-gray-300">
                 Tik būtini slapukai
             </button>
         </div>

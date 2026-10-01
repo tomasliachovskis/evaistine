@@ -31,11 +31,11 @@
         <div class="mb-1.5 flex flex-wrap items-center gap-2.5">
             <span class="text-sm font-bold uppercase tracking-wide text-gray-500">{{ $isCode ? 'Nuolaidos kodas' : 'Nuolaida' }}</span>
             @if ($coupon->is_exclusive)
-                <span class="inline-flex items-center rounded-full bg-green/10 px-2.5 py-1 text-sm font-bold text-green">Tik pas mus</span>
+                <span class="inline-flex items-center rounded-full bg-green/10 px-2.5 py-1 text-sm font-bold text-dark-green">Tik pas mus</span>
             @endif
             @if ($coupon->is_verified)
                 <span class="inline-flex items-center gap-1 text-sm font-medium text-gray-500">
-                    <x-app-icon name="circle-check" class="size-4.5 text-green" />Patvirtinta
+                    <x-app-icon name="circle-check" class="size-4.5 text-dark-green" />Patvirtinta
                 </span>
             @endif
         </div>
@@ -52,7 +52,7 @@
                 <span>{{ number_format($coupon->usage_count, 0, ',', ' ') }}x panaudotas</span>
             @endif
             @if ($showWebsiteLink)
-                <a href="/kuponai/{{ $coupon->website->slug }}" class="font-bold text-green hover:text-dark-green">Visi kuponai iš {{ $coupon->website->name }}</a>
+                <a href="/kuponai/{{ $coupon->website->slug }}" class="inline-flex min-h-12 items-center font-bold text-dark-green underline underline-offset-4 hover:no-underline">Visi kuponai iš {{ $coupon->website->name }}</a>
             @endif
         </div>
 
@@ -84,7 +84,7 @@
                         }
                         if (link) { window.open(link, '_blank', 'noopener,noreferrer'); }
                     "
-                    class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-green bg-white px-4 py-3.5 text-base font-bold text-dark-green transition-colors hover:bg-green/5"
+                    class="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-green bg-white px-4 py-3.5 text-base font-bold text-dark-green transition-colors hover:bg-green/5"
                 >
                     <span x-text="!revealed ? 'Rodyti kodą' : (copied ? 'Nukopijuota!' : code)"></span>
                 </button>
@@ -94,7 +94,7 @@
                 href="{{ $link ?? '#' }}"
                 target="_blank"
                 rel="noopener noreferrer nofollow sponsored"
-                class="flex w-full items-center justify-center gap-2 rounded-lg bg-green px-4 py-3.5 text-base font-bold text-white transition-colors hover:bg-dark-green"
+                class="flex w-full items-center justify-center gap-2 rounded-lg bg-action px-4 py-3.5 text-base font-bold text-white transition-colors hover:bg-action-hover"
             >
                 Parodyti nuolaidą
             </a>

@@ -5,8 +5,8 @@
          primary action here, not an afterthought. --}}
     <div class="relative overflow-hidden border-b border-gray-100 bg-green/5">
         <div class="base-container relative z-10 mx-auto flex flex-col items-center gap-4 py-6 text-center sm:py-8">
-            <span class="inline-flex items-center gap-1.5 text-sm font-extrabold uppercase tracking-wide text-green">
-                <span class="size-1.5 rounded-full bg-green"></span>
+            <span class="inline-flex items-center gap-1.5 text-sm font-extrabold uppercase tracking-wide text-dark-green">
+                <span class="size-1.5 rounded-full bg-action"></span>
                 Akcijos ir nuolaidos Lietuvoje
             </span>
             <h1 class="max-w-2xl font-extrabold text-gray-900">Kur pigiausia pirkti — palyginome už tave</h1>
@@ -19,7 +19,7 @@
             <form
                 method="get"
                 action=""
-                class="flex w-full max-w-xl items-center gap-2 rounded-full border-2 border-gray-200 bg-white p-1.5 pl-5 shadow-sm"
+                class="flex w-full max-w-xl items-center gap-2 rounded-full border border-gray-200 bg-white p-1.5 pl-5 shadow-sm"
                 x-data="{ q: '' }"
                 @submit.prevent="if (q.trim()) window.location = '/akcijos/paieska/' + encodeURIComponent(q.trim())"
             >
@@ -30,7 +30,7 @@
                     placeholder="Pienas, kava, kiaulienos nugarinė…"
                     class="min-w-0 flex-1 border-none bg-transparent text-base outline-none sm:text-lg"
                 >
-                <button type="submit" class="shrink-0 rounded-full bg-green px-5 py-3 text-base font-bold text-white transition-colors hover:bg-dark-green">
+                <button type="submit" class="shrink-0 rounded-full bg-action px-5 py-3 text-base font-bold text-white transition-colors hover:bg-action-hover">
                     Ieškoti
                 </button>
             </form>
@@ -40,7 +40,7 @@
                  itself would land on for these terms. --}}
             <div class="hidden flex-wrap items-center justify-center gap-2 sm:flex">
                 @foreach (['kava' => 'Kava', 'sviestas' => 'Sviestas', 'pienas' => 'Pienas', 'kiausiniai' => 'Kiaušiniai'] as $slug => $label)
-                    <a href="/akcijos/{{ $slug }}" class="rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green">
+                    <a href="/akcijos/{{ $slug }}" class="rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green min-h-12 inline-flex items-center">
                         {{ $label }}
                     </a>
                 @endforeach
@@ -63,11 +63,11 @@
             <div class="flex w-full max-w-xl flex-col items-center gap-2">
                 <div class="scroll-cards-x flex w-full items-center justify-start gap-2 sm:justify-center sm:flex-wrap">
                     @foreach (['maxima', 'lidl', 'iki', 'rimi', 'norfa'] as $slug)
-                        <a href="/akcijos/{{ $slug }}" data-ga-event="filter_select" data-ga-item="store:{{ $slug }}" data-ga-source="home_trust_row" class="flex h-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 transition-colors hover:border-green/40">
+                        <a href="/akcijos/{{ $slug }}" data-ga-event="filter_select" data-ga-item="store:{{ $slug }}" data-ga-source="home_trust_row" class="flex min-h-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 transition-colors hover:border-green/40">
                             <x-store-logo :slug="$slug" size="sm" />
                         </a>
                     @endforeach
-                    <a href="/parduotuves" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="home_trust_row" class="shrink-0 whitespace-nowrap px-2 text-xs font-semibold text-gray-400 transition-colors hover:text-green">+20 kitų</a>
+                    <a href="/parduotuves" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="home_trust_row" class="inline-flex min-h-12 shrink-0 items-center whitespace-nowrap px-3 text-base font-semibold text-dark-green underline underline-offset-4 hover:no-underline">+20 kitų</a>
                 </div>
             </div>
         </div>
@@ -93,7 +93,7 @@
                                     <p class="text-lg font-semibold text-gray-600">
                                         {{ $item['label'] }}
                                     </p>
-                                    <a href="{{ $item['href'] }}" class="section-link shrink-0 text-sm">
+                                    <a href="{{ $item['href'] }}" class="section-link">
                                         Žiūrėti visas{{ !empty($item['matching_offers_count']) ? ' ('.number_format($item['matching_offers_count'], 0, ',', ' ').')' : '' }}
                                         <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
                                     </a>
@@ -124,7 +124,7 @@
             <div>
                 <div class="section-heading-row">
                     <h2 class="section-heading-lg">Parduotuvių tinklai</h2>
-                    <a href="/parduotuves" class="section-link text-base">
+                    <a href="/parduotuves" class="section-link">
                         Žiūrėti visas
                         <x-app-icon name="chevron-right" class="size-4 opacity-80" />
                     </a>
@@ -176,7 +176,7 @@
                 <div>
                     <div class="section-heading-row">
                         <h2 class="section-heading-lg">Naujausi akcijų leidiniai</h2>
-                        <a href="/leidiniai" class="section-link text-base">
+                        <a href="/leidiniai" class="section-link">
                             Žiūrėti visus
                             <x-app-icon name="chevron-right" class="size-4 opacity-80" />
                         </a>
@@ -204,14 +204,14 @@
                                 </div>
                                 <div class="flex items-center gap-1.5">
                                     <x-store-logo :slug="$leaflet['store_slug']" :name="$leaflet['store_name']" size="xs" />
-                                    <span class="text-[0.78em] font-semibold text-gray-500">{{ $leaflet['store_name'] }}</span>
+                                    <span class="text-sm font-semibold text-gray-500">{{ $leaflet['store_name'] }}</span>
                                 </div>
                                 <p class="line-clamp-2 text-[0.9em] font-semibold leading-tight text-gray-900">{{ $leaflet['title'] ?? $leaflet['store_name'] }}</p>
                                 <span @class([
-                                    'text-[0.78em] font-semibold',
+                                    'text-sm font-semibold',
                                     'text-gray-400' => $isExpired,
                                     'text-red-600' => !$isExpired && $days !== null && $days <= 2,
-                                    'text-green' => !$isExpired && ($days === null || $days > 2),
+                                    'text-dark-green' => !$isExpired && ($days === null || $days > 2),
                                 ])>
                                     {{ $isExpired ? 'Nebegalioja' : ($days !== null ? "Galioja dar {$days} d." : 'Galioja') }}
                                 </span>

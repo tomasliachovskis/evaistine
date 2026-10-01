@@ -8,13 +8,13 @@
     <section aria-labelledby="leaflets-carousel-heading" class="min-w-0 p-2 max-sm:-mx-4 max-sm:px-4 sm:p-3">
         <div class="mb-2.5 flex items-center justify-between gap-2 sm:mb-3">
             <div class="flex items-center gap-1.5 min-w-0">
-                <x-app-icon name="newspaper" class="size-4 shrink-0 text-green sm:hidden" />
-                <h2 id="leaflets-carousel-heading" class="text-[0.95rem] font-semibold leading-tight text-gray-900 sm:text-2xl sm:font-extrabold sm:leading-snug">
+                <x-app-icon name="newspaper" class="size-4 shrink-0 text-dark-green sm:hidden" />
+                <h2 id="leaflets-carousel-heading" class="text-sm font-semibold leading-tight text-gray-900 sm:text-2xl sm:font-extrabold sm:leading-snug">
                     {{ $title }}
                 </h2>
             </div>
             @if ($seeAllHref)
-                <a href="{{ $seeAllHref }}" class="inline-flex shrink-0 items-center gap-0.5 text-sm font-medium text-green hover:text-dark-green sm:font-semibold">
+                <a href="{{ $seeAllHref }}" class="inline-flex shrink-0 items-center gap-0.5 text-sm font-medium text-dark-green hover:underline sm:font-semibold">
                     Žiūrėti visus
                     <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
                 </a>
