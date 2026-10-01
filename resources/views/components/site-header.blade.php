@@ -190,7 +190,7 @@
                             <span class="flex-1 text-left">Kategorijos</span>
                             <span :class="categoriesMenuOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-4" /></span>
                         </button>
-                        <div x-show="categoriesMenuOpen" x-cloak class="pl-2 pb-1">
+                        <div x-show="categoriesMenuOpen" x-cloak>
                             <x-category-links-list :categories="$categories" />
                         </div>
                     </div>
@@ -208,7 +208,7 @@
                             <span class="flex-1 text-left">Populiarios prekės</span>
                             <span :class="keywordsOpen && 'rotate-180'" class="transition-transform"><x-app-icon name="chevron-down" class="size-4" /></span>
                         </button>
-                        <div x-show="keywordsOpen" x-cloak class="pl-8 pb-1">
+                        <div x-show="keywordsOpen" x-cloak>
                             <x-product-keyword-links-list />
                         </div>
                     </div>
