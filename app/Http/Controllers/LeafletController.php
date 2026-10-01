@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Models\Store;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
+use App\Support\FoodCategorySlugs;
 use App\Support\ItemListSchema;
 use App\Support\PriceComparison;
 use App\Support\UnitPrice;
@@ -90,7 +91,7 @@ class LeafletController extends Controller
         // Interactive flyer prototype (clickable products, lenses, shopping
         // list), shown only with ?beta=1 until it is switched on for all.
         $betaConfig = request()->boolean('beta')
-            ? $this->leafletBetaConfig($payload['flyer_offers'] ?? [], $store, $flyerSlug, $payload['listing_meta']['store_name'] ?? $store)
+            ? $this->leafletBetaConfig($payload['flyer_offers'] ?? [], $payload['listing_meta']['pages'] ?? [], $store, $flyerSlug, $payload['listing_meta']['store_name'] ?? $store)
             : null;
         $breadcrumbs = $this->mapBreadcrumbs($payload['breadcrumbs']);
 
@@ -126,60 +127,63 @@ class LeafletController extends Controller
      * Hotspots (offers with a known page and box) plus the lens chips for
      * the interactive flyer viewer.
      */
-    private function leafletBetaConfig(array $offers, string $storeSlug, string $flyerSlug, string $storeName): array
+    private function leafletBetaConfig(array $offers, array $pages, string $storeSlug, string $flyerSlug, string $storeName): array
     {
+        // The page image per page, for the card's magnifier (a zoomed crop
+        // of the product straight from the flyer page).
+        $pageImages = collect($pages)->mapWithKeys(fn ($p) => [(int) $p['page_number'] => $p['image_url']]);
+
         $hotspots = collect($offers)
             ->filter(fn ($d) => ! empty($d['flyer_page']) && is_array($d['flyer_box'] ?? null) && count($d['flyer_box']) === 4)
-            ->map(function ($d) use ($storeSlug, $flyerSlug, $storeName) {
-                $comparison = PriceComparison::forDeal($d, $storeSlug);
+            ->map(fn ($d) => [
+                'id' => $d['id'],
+                'product_id' => $d['product']['id'],
+                'page' => (int) $d['flyer_page'],
+                'page_image' => $pageImages[(int) $d['flyer_page']] ?? null,
+                'box' => array_map('intval', $d['flyer_box']),
+                'name' => $d['product']['name'],
+                'image' => $d['product']['image_url'],
+                'href' => '/akcijos/'.$d['product']['full_slug'],
+                'flyer_href' => "/leidinys/{$storeSlug}/{$flyerSlug}?beta=1#psl-{$d['flyer_page']}",
+                'price' => (float) ($d['discounted_price'] ?? 0),
+                'original' => (float) ($d['original_price'] ?? 0),
+                'percent' => $d['discount_percent'] ? (int) round(abs($d['discount_percent'])) : null,
+                'unit' => UnitPrice::label($d['unit_price'] ?? null, $d['unit_price_basis'] ?? null),
+                'category' => $d['product']['category']['slug'] ?? null,
+                'comparison' => PriceComparison::forDeal($d, $storeSlug),
+                'signal' => $d['deal_signal'] ?? null,
+                'store' => $storeName,
+            ])
+            ->values();
+
+        // At most 4 filters, in plain words: cheapest here, big discounts,
+        // and the flyer's 2 most common food categories. More choices at
+        // once is harder to scan, especially for older readers.
+        $categoryFilters = $hotspots
+            ->filter(fn ($h) => in_array($h['category'], FoodCategorySlugs::FOOD, true))
+            ->groupBy('category')
+            ->map(function ($group, $slug) use ($offers) {
+                $name = collect($offers)->firstWhere('product.category.slug', $slug)['product']['category']['name'] ?? $slug;
 
                 return [
-                    'id' => $d['id'],
-                    'product_id' => $d['product']['id'],
-                    'page' => (int) $d['flyer_page'],
-                    'box' => array_map('intval', $d['flyer_box']),
-                    'name' => $d['product']['name'],
-                    'image' => $d['product']['image_url'],
-                    'href' => '/akcijos/'.$d['product']['full_slug'],
-                    'flyer_href' => "/leidinys/{$storeSlug}/{$flyerSlug}?beta=1#psl-{$d['flyer_page']}",
-                    'price' => (float) ($d['discounted_price'] ?? 0),
-                    'original' => (float) ($d['original_price'] ?? 0),
-                    'percent' => $d['discount_percent'] ? (int) round(abs($d['discount_percent'])) : null,
-                    'unit' => UnitPrice::label($d['unit_price'] ?? null, $d['unit_price_basis'] ?? null),
-                    'category' => $d['product']['category']['slug'] ?? null,
-                    'comparison' => $comparison,
-                    'signal' => $d['deal_signal'] ?? null,
-                    'store' => $storeName,
-                    'store_slug' => $storeSlug,
-                    'search' => mb_strtolower($d['product']['name']),
+                    'key' => 'cat:'.$slug,
+                    'label' => ProductController::SHORT_CATEGORY_LABELS[$name] ?? $name,
+                    'count' => $group->count(),
                 ];
             })
-            ->values();
-
-        $categoryLenses = $hotspots
-            ->filter(fn ($h) => $h['category'])
-            ->groupBy('category')
-            ->map(fn ($group, $slug) => [
-                'key' => 'cat:'.$slug,
-                'label' => (function () use ($offers, $slug) {
-                    $name = collect($offers)->firstWhere('product.category.slug', $slug)['product']['category']['name'] ?? $slug;
-
-                    return ProductController::SHORT_CATEGORY_LABELS[$name] ?? $name;
-                })(),
-                'count' => $group->count(),
-            ])
             ->sortByDesc('count')
-            ->take(6)
+            ->take(2)
             ->values();
 
-        $specialLenses = collect([
-            ['key' => 'cheapest', 'label' => 'Pigiausia', 'count' => $hotspots->filter(fn ($h) => $h['comparison']['cheapest'] ?? false)->count()],
-            ['key' => 'big', 'label' => 'Nuolaida nuo 40 %', 'count' => $hotspots->filter(fn ($h) => ($h['percent'] ?? 0) >= 40)->count()],
-        ])->filter(fn ($l) => $l['count'] > 0);
+        $specialFilters = collect([
+            ['key' => 'cheapest', 'label' => 'Pigiausios', 'count' => $hotspots->filter(fn ($h) => $h['comparison']['cheapest'] ?? false)->count()],
+            ['key' => 'big', 'label' => 'Didelės nuolaidos', 'count' => $hotspots->filter(fn ($h) => ($h['percent'] ?? 0) >= 40)->count()],
+        ])->filter(fn ($f) => $f['count'] > 0);
 
         return [
             'hotspots' => $hotspots->all(),
-            'lenses' => $specialLenses->merge($categoryLenses)->values()->all(),
+            'lenses' => $specialFilters->merge($categoryFilters)->values()->all(),
+            'store' => $storeName,
         ];
     }
 

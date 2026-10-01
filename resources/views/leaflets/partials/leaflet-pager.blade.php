@@ -10,8 +10,8 @@
         <button
             type="button"
             @click="currentPage = {{ $page['page_number'] }}"
-            :class="isShown({{ $page['page_number'] }}) ? 'border-green bg-green text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-green/40'"
-            class="relative flex min-h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-colors"
+            :class="isShown({{ $page['page_number'] }}) ? '{{ ! empty($beta) ? 'border-dark-green bg-dark-green' : 'border-green bg-green' }} text-white' : '{{ ! empty($beta) ? 'border-gray-400 text-font' : 'border-gray-200 text-gray-700' }} bg-white hover:border-green/40'"
+            class="relative flex items-center justify-center rounded-lg border font-bold transition-colors {{ ! empty($beta) ? 'min-h-12 min-w-12 border-2 px-2.5 text-lg' : 'min-h-10 min-w-10 px-2 text-sm' }}"
         >{{ $page['page_number'] }}@if (! empty($beta))<span
                 x-show="filtering() && pageMatchCount({{ $page['page_number'] }}) > 0"
                 x-cloak
@@ -30,17 +30,17 @@
                  actually is, or just the plain "…" when currentPage is
                  already one of the static buttons. --}}
             <template x-if="currentPage > 5 && currentPage < {{ $lastPage }}">
-                <span class="px-1 text-sm font-bold text-gray-400">…</span>
+                <span class="px-1 font-bold {{ ! empty($beta) ? 'text-lg text-gray-600' : 'text-sm text-gray-400' }}">…</span>
             </template>
             <template x-if="currentPage > 5 && currentPage < {{ $lastPage }}">
                 <button
                     type="button"
-                    class="flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-green bg-green px-2 text-sm font-bold text-white"
+                    class="flex items-center justify-center rounded-lg border font-bold text-white {{ ! empty($beta) ? 'min-h-12 min-w-12 border-2 border-dark-green bg-dark-green px-2.5 text-lg' : 'min-h-10 min-w-10 border-green bg-green px-2 text-sm' }}"
                     x-text="currentPage"
                 ></button>
             </template>
             <template x-if="!(currentPage > 5 && currentPage < {{ $lastPage }})">
-                <span class="px-1 text-sm font-bold text-gray-400">…</span>
+                <span class="px-1 font-bold {{ ! empty($beta) ? 'text-lg text-gray-600' : 'text-sm text-gray-400' }}">…</span>
             </template>
         @endif
     @endforeach
