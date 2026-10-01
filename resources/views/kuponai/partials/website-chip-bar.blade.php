@@ -56,7 +56,7 @@
     >
         <x-app-icon name="layout-grid" class="size-5 shrink-0" />
         <span>Visos svetainės</span>
-        <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $websites->count() }}</span>
+        <span class="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-action px-2 text-sm font-bold tabular-nums text-white">{{ $websites->count() }}</span>
         <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="allWebsitesOpen ? 'rotate-180' : ''" />
     </button>
 

@@ -194,7 +194,7 @@
                             <x-app-icon name="store" class="size-5 shrink-0" />
                             <span class="truncate">{{ $activeStoreName ? "Parduotuvė: {$activeStoreName}" : 'Parduotuvės' }}</span>
                             @if ($storeBadgeCount > 0)
-                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $storeBadgeCount }}</span>
+                                <span class="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-action px-2 text-sm font-bold tabular-nums text-white">{{ $storeBadgeCount }}</span>
                             @endif
                             <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'store' ? 'rotate-180' : ''" />
                         </button>
@@ -204,7 +204,7 @@
                             <x-app-icon name="layout-grid" class="size-5 shrink-0" />
                             <span class="truncate">{{ $activeCategoryName ? "Kategorija: {$activeCategoryName}" : 'Kategorijos' }}</span>
                             @if ($categoryBadgeCount > 0)
-                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $categoryBadgeCount }}</span>
+                                <span class="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-action px-2 text-sm font-bold tabular-nums text-white">{{ $categoryBadgeCount }}</span>
                             @endif
                             <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="$wire.openPanel === 'category' ? 'rotate-180' : ''" />
                         </button>
@@ -246,7 +246,7 @@
                             <x-app-icon name="filter" class="size-6 shrink-0" />
                             <span class="truncate">{{ $mobileFilterLabel }}</span>
                             @if ($activeCount > 0)
-                                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $activeCount }}</span>
+                                <span class="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-action px-2 text-sm font-bold tabular-nums text-white">{{ $activeCount }}</span>
                             @endif
                             <x-app-icon name="chevron-down" class="size-5 shrink-0 text-gray-500 transition-transform sm:size-4" x-bind:class="$wire.openPanel === 'combined' ? 'rotate-180' : ''" />
                         </button>

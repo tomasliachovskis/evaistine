@@ -146,7 +146,7 @@
                 aria-label="Meniu"
                 title="Meniu"
             >
-                <x-app-icon x-show="!menuOpen" name="equal" class="size-7" style="stroke-width:2" />
+                <x-app-icon x-show="!menuOpen" name="menu" class="size-7" style="stroke-width:2" />
                 <x-app-icon x-show="menuOpen" x-cloak name="x" class="size-7" style="stroke-width:2" />
             </button>
         </div>

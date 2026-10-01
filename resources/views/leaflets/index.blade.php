@@ -159,8 +159,8 @@
                 class="inline-flex min-h-12 min-w-0 shrink cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl px-2 text-base font-semibold text-gray-900 hover:bg-[#dedede] sm:shrink-0 sm:px-3"
             >
                 <x-app-icon name="store" class="size-5 shrink-0" />
-                <span class="min-w-0 truncate"><span class="sm:hidden">Parduotuvės</span><span class="hidden sm:inline">Visos parduotuvės</span></span>
-                <span class="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-action text-sm font-bold text-white">{{ $storeChips->count() }}</span>
+                <span class="min-w-0 truncate">Parduotuvės</span>
+                <span class="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-action px-2 text-sm font-bold tabular-nums text-white">{{ $storeChips->count() }}</span>
                 <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="allStoresOpen ? 'rotate-180' : ''" />
             </button>
 

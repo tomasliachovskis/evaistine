@@ -68,6 +68,11 @@
             <path d="M18 6 6 18" />
             <path d="m6 6 12 12" />
             @break
+        @case('menu')
+            <line x1="4" x2="20" y1="6" y2="6" />
+            <line x1="4" x2="20" y1="12" y2="12" />
+            <line x1="4" x2="20" y1="18" y2="18" />
+            @break
         @case('plus')
             <path d="M5 12h14" />
             <path d="M12 5v14" />
