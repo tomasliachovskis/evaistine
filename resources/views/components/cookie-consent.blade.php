@@ -28,12 +28,14 @@
                 <a href="/privatumo-politika" class="underline">Skaityti išsamiau.</a>
             </span>
         </p>
-        <div class="mt-3 flex flex-wrap gap-3 sm:mt-4">
-            <button type="button" @click="setConsent('accepted')" class="inline-flex min-h-12 items-center rounded-xl bg-action px-5 text-base font-bold text-white hover:bg-action-hover">
-                Leisti visus slapukus
+        {{-- Side by side with short labels on phones (stacked, the bar
+             covered about a third of the screen). --}}
+        <div class="mt-3 flex gap-2 sm:mt-4 sm:gap-3">
+            <button type="button" @click="setConsent('accepted')" class="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-action px-3 text-base font-bold text-white hover:bg-action-hover sm:flex-none sm:px-5">
+                <span class="sm:hidden">Leisti visus</span><span class="hidden sm:inline">Leisti visus slapukus</span>
             </button>
-            <button type="button" @click="setConsent('necessary')" class="inline-flex min-h-12 items-center rounded-xl border border-gray-200 px-5 text-base font-semibold text-gray-900 hover:border-gray-300">
-                Tik būtini slapukai
+            <button type="button" @click="setConsent('necessary')" class="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border border-gray-200 px-3 text-base font-semibold text-gray-900 hover:border-gray-300 sm:flex-none sm:px-5">
+                <span class="sm:hidden">Tik būtini</span><span class="hidden sm:inline">Tik būtini slapukai</span>
             </button>
         </div>
     </div>
