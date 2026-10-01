@@ -279,9 +279,15 @@
                  available at once), sharing the exact same shell — only one
                  is ever open at a time ($wire.openPanel). --}}
             @if ($showStoreFilter)
-                <div x-show="$wire.openPanel === 'store'" x-cloak class="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" @click.self="$wire.openPanel = null">
-                    <div class="max-h-[82vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-h-[80vh] sm:w-full sm:max-w-[420px] sm:rounded-2xl">
-                        <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Parduotuvės</div>
+                <div x-show="$wire.openPanel === 'store'" x-cloak class="sheet-backdrop z-[70]" @click.self="$wire.openPanel = null">
+                    <div class="sheet-panel px-5 pb-5">
+                        <div class="sheet-handle"></div>
+                        <div class="mb-3 mt-3 flex items-center justify-between gap-3 sm:mt-5">
+                            <h2 class="text-2xl font-bold text-gray-900">Parduotuvės</h2>
+                            <button type="button" @click="$wire.openPanel = null" class="sheet-close" aria-label="Uždaryti">
+                                <x-app-icon name="x" class="size-7" />
+                            </button>
+                        </div>
                         @include('components.partials.discount-filter-sections', [
                             'facet' => 'stores',
                             'items' => $allStores,
@@ -307,9 +313,15 @@
                 </div>
             @endif
             @if ($showCategoryFilter)
-                <div x-show="$wire.openPanel === 'category'" x-cloak class="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" @click.self="$wire.openPanel = null">
-                    <div class="max-h-[82vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-h-[80vh] sm:w-full sm:max-w-[420px] sm:rounded-2xl">
-                        <div class="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-400">Kategorija</div>
+                <div x-show="$wire.openPanel === 'category'" x-cloak class="sheet-backdrop z-[70]" @click.self="$wire.openPanel = null">
+                    <div class="sheet-panel px-5 pb-5">
+                        <div class="sheet-handle"></div>
+                        <div class="mb-3 mt-3 flex items-center justify-between gap-3 sm:mt-5">
+                            <h2 class="text-2xl font-bold text-gray-900">Kategorijos</h2>
+                            <button type="button" @click="$wire.openPanel = null" class="sheet-close" aria-label="Uždaryti">
+                                <x-app-icon name="x" class="size-7" />
+                            </button>
+                        </div>
                         @include('components.partials.discount-filter-sections', [
                             'facet' => 'categories',
                             'items' => $allCategories,

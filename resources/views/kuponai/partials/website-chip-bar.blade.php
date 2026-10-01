@@ -61,12 +61,13 @@
     </button>
 
     <template x-teleport="body">
-        <div x-show="allWebsitesOpen" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" @click.self="allWebsitesOpen = false">
-            <div class="max-h-[80vh] w-full max-w-[420px] overflow-y-auto rounded-2xl bg-white p-4">
-                <div class="mb-1.5 flex items-center justify-between">
-                    <span class="text-xs font-bold uppercase tracking-wide text-gray-400">Svetainė</span>
-                    <button type="button" @click="allWebsitesOpen = false" class="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-                        <x-app-icon name="x" class="size-5" />
+        <div x-show="allWebsitesOpen" x-cloak x-back-closes="allWebsitesOpen" class="sheet-backdrop z-[70]" @click.self="allWebsitesOpen = false">
+            <div class="sheet-panel px-5 pb-5">
+                <div class="sheet-handle"></div>
+                <div class="mb-3 mt-3 flex items-center justify-between gap-3 sm:mt-5">
+                    <h2 class="text-2xl font-bold text-gray-900">Svetainės</h2>
+                    <button type="button" @click="allWebsitesOpen = false" class="sheet-close" aria-label="Uždaryti">
+                        <x-app-icon name="x" class="size-7" />
                     </button>
                 </div>
                 @include('components.partials.discount-filter-sections', [
