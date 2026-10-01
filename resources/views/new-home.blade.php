@@ -117,6 +117,9 @@
                         @endforeach
                     </div>
                 </div>
+                @if ($loop->first)
+                    <x-signup-inline-card />
+                @endif
             @endforeach
 
             {{-- Store row: the 5 main chains, real discount counts. Same

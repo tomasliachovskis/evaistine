@@ -140,7 +140,6 @@
     <x-auth-modal />
     <x-price-watch-modal />
     <x-cookie-consent />
-    <x-signup-savings-popup />
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('authModal', {

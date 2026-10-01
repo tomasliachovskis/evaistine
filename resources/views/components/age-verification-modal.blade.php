@@ -1,6 +1,6 @@
 {{-- Legal age gate for the alkoholiniai-gerimai category (LT law: alcohol
      deals can't be shown before confirming the visitor is 20+). Same
-     mechanism as <x-cookie-consent>/<x-signup-savings-popup> — plain Alpine
+     mechanism as <x-cookie-consent> — plain Alpine
      x-data, persisted via vanilla document.cookie, safe under
      PageHtmlCache since the markup is identical for every visitor and only
      Alpine (client-side) decides whether to show it. Unlike those two,
