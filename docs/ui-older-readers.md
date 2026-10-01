@@ -6,7 +6,7 @@ Most people reading leaflets on superakcijos.lt are older. The interactive leafl
 
 ## Rules
 
-- **Text:** nothing under 16px. The Tailwind scale is shifted up one step in `resources/css/app.css` (`@theme`), so existing classes grew without editing templates:
+- **Text:** nothing under 16px. Page titles are 28px on phones and 32px from sm, section headings 24/28px. The Tailwind scale is shifted up one step in `resources/css/app.css` (`@theme`), so existing classes grew without editing templates:
 
   | Class | Size |
   |---|---|
@@ -30,9 +30,16 @@ Most people reading leaflets on superakcijos.lt are older. The interactive leafl
 
 ## Shared pieces
 
-- **`site-header`:** the logo on every page. A phone app bar ("Atgal" + title) was tried and dropped by the owner; breadcrumbs stay visible on phones. `x-layouts.app` still accepts `:breadcrumbs` / `app-title` / `back-href`, but they are not used.
+- **`site-header`:** one row, 56px on phones and 72px from lg (it used to be two rows, 144px). In order:
+  - logo;
+  - a categories icon that opens the categories sheet;
+  - text links with counts in brackets, from lg ("Akcijos (17 366)", "Leidiniai (28)", "Parduotuvės (24)"), the active one underlined in green;
+  - the search field (an icon below xl);
+  - favourites and menu as icons.
+
+  Account, "Didžiausios nuolaidos" and popular products are in the menu. The breadcrumbs stay visible on phones.
 - **`mobile-bottom-nav`:** four worded tabs (Pradžia, Akcijos, Leidiniai, Stebimos), always visible.
-- **`--header-h`** (CSS variable): 4rem on phones, 5rem from lg. Sticky bars dock at `top-[calc(var(--header-h)+env(safe-area-inset-top,0px))]`.
+- **`--header-h`** (CSS variable): 3.5rem on phones, 4.5rem from lg. Sticky bars dock at `top-[calc(var(--header-h)+env(safe-area-inset-top,0px))]`.
 - **Store cards (`x-store-card`):** two buttons, "Leidiniai N" and "Akcijos N", with the counts inside the buttons rather than on separate lines.
 - **Popups:** `.sheet-backdrop` / `.sheet-panel` / `.sheet-handle` / `.sheet-head` / `.sheet-close`. A bottom sheet on phones, a centered card from sm up. Add `x-back-closes="openExpression"` (Alpine directive in `resources/js/app.js`) so Back closes it.
 - **Other classes:**

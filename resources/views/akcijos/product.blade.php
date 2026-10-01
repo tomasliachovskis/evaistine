@@ -179,7 +179,7 @@ use App\Support\ProductPageMeta;
                             @if ($product['brand'])
                                 <span class="text-sm font-semibold uppercase text-gray-500">{{ $product['brand'] }}</span>
                             @endif
-                            <h1 class="m-0 text-lg font-semibold leading-[1.15] text-gray-900 sm:text-3xl lg:text-4xl">{{ ProductPageMeta::heroTitle($product['name'], $product['description'] ?? null) }}</h1>
+                            <h1 class="m-0 text-xl font-semibold leading-tight text-gray-900 sm:text-2xl lg:text-3xl">{{ ProductPageMeta::heroTitle($product['name'], $product['description'] ?? null) }}</h1>
                         </div>
 
                         @if ($isNoActivePromotion)
@@ -357,7 +357,7 @@ use App\Support\ProductPageMeta;
                  uses each tab's shortLabel + a tighter sticky offset (no
                  breadcrumb/hero-stats row above it like desktop has). --}}
             <nav
-                class="sticky top-[calc(var(--header-h)+0.25rem+env(safe-area-inset-top,0px))] z-40 border-b border-gray-200 bg-white lg:top-[calc(9.25rem+env(safe-area-inset-top,0px))]"
+                class="sticky top-[calc(var(--header-h)+env(safe-area-inset-top,0px))] z-40 border-b border-gray-200 bg-white"
                 aria-label="Produkto skyriai"
                 x-data="{
                     activeId: '{{ $tabs[array_key_first($tabs)]['id'] }}',

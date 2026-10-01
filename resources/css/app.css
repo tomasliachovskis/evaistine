@@ -11,10 +11,9 @@
    utility classes (bg-background, text-font, text-green, base-container,
    section-card, ...) resolve to the exact same values as the Next.js site. */
 :root {
-    /* Height of the site header's top row (site-header.blade.php): sticky
-       bars dock right under it. The lg nav row below it slides away while
-       a sticky bar is docked. */
-    --header-h: 4rem;
+    /* Height of the site header (one row, site-header.blade.php): sticky
+       bars dock right under it and <main> starts below it. */
+    --header-h: 3.5rem;
     --green: #09a952;
     --dark-green: #044923;
     --green-soft: #e7f6ed;
@@ -195,11 +194,11 @@ body {
     /* Bare <h1>title</h1> is enough everywhere — weight/color live here once
        instead of every page re-adding its own font-semibold/text-gray-900. */
     h1 {
-        @apply text-3xl sm:text-4xl font-bold leading-tight tracking-tight text-gray-900;
+        @apply text-2xl sm:text-3xl font-bold leading-tight tracking-tight text-gray-900;
     }
 
     h2 {
-        @apply text-2xl sm:text-3xl font-bold leading-tight tracking-[-1%];
+        @apply text-xl sm:text-2xl font-bold leading-tight tracking-[-1%];
     }
 
     h3 {
@@ -228,7 +227,7 @@ body {
        size (home page comparison/store/leaflet sections, pigiausios-prekes
        group headings) instead of each picking its own one-off size. */
     .section-heading-lg {
-        @apply text-2xl font-extrabold leading-tight text-gray-900 sm:text-3xl sm:leading-snug;
+        @apply text-xl font-extrabold leading-tight text-gray-900 sm:text-2xl sm:leading-snug;
     }
 
     .section-heading-row {
@@ -377,7 +376,7 @@ body {
 
 @media (min-width: 64rem) {
     :root {
-        --header-h: 5rem;
+        --header-h: 4.5rem;
     }
 }
 

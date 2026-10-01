@@ -5,11 +5,10 @@
         <button
             type="button"
             wire:click="$set('open', true)"
-            class="relative flex h-14 w-full max-w-none min-w-0 items-center rounded-xl border border-gray-200 bg-white pr-4 pl-12 text-left text-lg transition-colors hover:border-gray-300"
+            class="relative flex h-12 w-full max-w-none min-w-0 items-center rounded-xl bg-gray-100 pr-4 pl-12 text-left text-base transition-colors hover:bg-gray-200"
         >
             <x-app-icon name="search" class="pointer-events-none absolute left-4 size-6 text-gray-700" />
-            <span class="truncate text-gray-600">Ieškoti prekės, parduotuvės ar leidinio</span>
-            <span class="ml-auto hidden shrink-0 rounded-lg bg-action px-4 py-1.5 text-base font-bold text-white xl:inline">Ieškoti</span>
+            <span class="truncate text-gray-600">Ieškoti prekės ar parduotuvės</span>
         </button>
 
         {{-- Teleported to <body>: <header> is `fixed` + `z-50`, its own
