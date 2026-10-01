@@ -6,6 +6,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CheapestProductsController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\FavoritesController;
+use App\Http\Controllers\HomeBetaController;
 use App\Http\Controllers\LeafletController;
 use App\Http\Controllers\ListingDealsPartialController;
 use App\Http\Controllers\NewHomeController;
@@ -40,6 +41,8 @@ Route::get('/pigiausios-prekes', [CheapestProductsController::class, 'index']);
 // "Variant B" is now the live homepage at "/" — redirect the old review URL
 // so it doesn't serve as a duplicate-content second copy of "/".
 Route::redirect('/nauja-pradzia', '/', 301);
+// Simpler homepage for older readers, under review next to "/" (noindex).
+Route::get('/pradzia-beta', [HomeBetaController::class, 'index']);
 
 Route::get('/robots.txt', [SitemapController::class, 'robots']);
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap']);
