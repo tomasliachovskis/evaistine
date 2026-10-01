@@ -235,7 +235,7 @@ body {
     }
 
     .section-link {
-        @apply inline-flex min-h-12 shrink-0 items-center gap-1 text-lg font-semibold text-dark-green underline decoration-2 underline-offset-4 transition-colors hover:text-green;
+        @apply inline-flex min-h-12 min-w-0 items-center gap-1 text-lg font-semibold text-dark-green underline decoration-2 underline-offset-4 transition-colors hover:text-green;
     }
 
     /* Deal card width in flex-wrap listings (not CSS grid, see

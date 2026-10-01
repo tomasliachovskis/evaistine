@@ -43,7 +43,7 @@
                                     <span class="text-[1.05em] font-bold text-gray-900">
                                         {{ $item['label'] }}
                                     </span>
-                                    <a href="{{ $item['href'] }}" class="section-link shrink-0 text-[0.85em]">
+                                    <a href="{{ $item['href'] }}" class="section-link text-right">
                                         Žiūrėti visas{{ !empty($item['matching_offers_count']) ? ' ('.number_format($item['matching_offers_count'], 0, ',', ' ').')' : '' }}
                                         <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
                                     </a>

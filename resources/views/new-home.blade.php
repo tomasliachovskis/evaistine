@@ -5,9 +5,10 @@
          primary action here, not an afterthought. --}}
     <div class="relative overflow-hidden border-b border-gray-100 bg-green/5">
         <div class="base-container relative z-10 mx-auto flex flex-col items-center gap-4 py-6 text-center sm:py-8">
-            <span class="inline-flex items-center gap-1.5 text-sm font-extrabold uppercase tracking-wide text-dark-green">
-                <span class="size-1.5 rounded-full bg-action"></span>
-                Akcijos ir nuolaidos Lietuvoje
+            {{-- Dot inline with the text, so it stays with the first word
+                 when the line wraps on narrow phones. --}}
+            <span class="text-sm font-extrabold uppercase tracking-wide text-dark-green">
+                <span class="mr-1.5 inline-block size-1.5 rounded-full bg-action align-middle"></span>Akcijos ir nuolaidos Lietuvoje
             </span>
             <h1 class="max-w-2xl font-extrabold text-gray-900">Kur pigiausia pirkti — palyginome už tave</h1>
             <p class="max-w-xl text-base leading-snug text-gray-600 sm:text-lg">

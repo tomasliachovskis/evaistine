@@ -45,12 +45,12 @@
         </h1>
 
         @if (!empty($deals) || $selectedStore)
-            <div class="mt-4 flex w-full items-center justify-between gap-2 rounded-2xl bg-[#e8e8e8] px-4 min-h-[40px]" x-data="{ sortOpen: false, storeOpen: false }" @click.outside="sortOpen = false; storeOpen = false">
+            <div class="mt-4 flex w-full items-center justify-between gap-1 rounded-2xl bg-[#e8e8e8] px-2 min-h-14 sm:gap-2 sm:px-4" x-data="{ sortOpen: false, storeOpen: false }" @click.outside="sortOpen = false; storeOpen = false">
                 <div class="flex min-w-0 flex-1 items-center gap-2">
-                    <div class="relative shrink-0">
-                        <button type="button" @click="storeOpen = !storeOpen" class="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="storeOpen">
+                    <div class="relative min-w-0">
+                        <button type="button" @click="storeOpen = !storeOpen" class="inline-flex min-h-12 min-w-0 max-w-full cursor-pointer items-center gap-2 rounded-xl px-2 sm:px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="storeOpen">
                             <x-app-icon name="store" class="size-4 shrink-0" />
-                            <span class="max-w-[140px] truncate">{{ $selectedStoreName ?? 'Parduotuvė' }}</span>
+                            <span class="min-w-0 truncate sm:max-w-[140px]">{{ $selectedStoreName ?? 'Parduotuvė' }}</span>
                             <x-app-icon name="chevron-down" class="size-4 shrink-0 opacity-70" />
                         </button>
                         <div x-show="storeOpen" x-cloak class="absolute left-0 top-full z-30 mt-1.5 max-h-[360px] min-w-[240px] overflow-y-auto rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
@@ -67,10 +67,10 @@
                     </div>
                 </div>
                 <div class="relative shrink-0">
-                    <button type="button" @click="sortOpen = !sortOpen" class="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
+                    <button type="button" @click="sortOpen = !sortOpen" aria-label="Rūšiuoti" class="inline-flex min-h-12 min-w-12 cursor-pointer items-center justify-center gap-2 rounded-xl sm:px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]" aria-haspopup="listbox" :aria-expanded="sortOpen">
                         <x-app-icon name="arrow-down-up" class="size-4 shrink-0" />
-                        <span class="max-w-[160px] truncate">{{ $orderOptions[$currentOrder] ?? $orderOptions['popular'] }}</span>
-                        <x-app-icon name="chevron-down" class="size-4 shrink-0 opacity-70" />
+                        <span class="hidden max-w-[160px] truncate sm:inline">{{ $orderOptions[$currentOrder] ?? $orderOptions['popular'] }}</span>
+                        <x-app-icon name="chevron-down" class="hidden size-4 shrink-0 opacity-70 sm:block" />
                     </button>
                     <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
                         @foreach ($orderOptions as $value => $label)

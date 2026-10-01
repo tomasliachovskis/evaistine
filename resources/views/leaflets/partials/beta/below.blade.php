@@ -1,22 +1,22 @@
 {{-- Under the viewer: big labelled page buttons (the round arrows on the
      image are easy to miss and hard to hit), then the products of the
      current page(s) as readable rows, each with its own add button. --}}
-<div class="mt-4 flex items-center justify-between gap-3">
+<div class="mt-4 flex items-center justify-between gap-2">
     <button
         type="button"
         @click="prev()"
         :disabled="!hasPrev()"
-        class="inline-flex min-h-12 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 text-lg font-semibold text-font hover:border-gray-300 disabled:invisible focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
+        class="inline-flex min-h-12 shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 text-lg font-semibold sm:gap-1.5 sm:px-4 text-font hover:border-gray-300 disabled:invisible focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
     >
         <x-app-icon name="chevron-right" class="size-5 rotate-180" />
         <span class="hidden sm:inline">Ankstesnis puslapis</span><span class="sm:hidden">Atgal</span>
     </button>
-    <p class="text-center text-lg font-semibold text-font" x-text="pagesLabel()" aria-live="polite"></p>
+    <p class="min-w-0 text-center text-base font-semibold text-font sm:text-lg" x-text="pagesLabel()" aria-live="polite"></p>
     <button
         type="button"
         @click="next()"
         :disabled="!hasNext()"
-        class="inline-flex min-h-12 items-center gap-1.5 rounded-lg bg-action px-4 text-lg font-bold text-white hover:bg-action-hover disabled:invisible focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40"
+        class="inline-flex min-h-12 shrink-0 items-center gap-1 rounded-lg bg-action px-3 text-lg font-bold sm:gap-1.5 sm:px-4 text-white hover:bg-action-hover disabled:invisible focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/40"
     >
         <span class="hidden sm:inline">Kitas puslapis</span><span class="sm:hidden">Toliau</span>
         <x-app-icon name="chevron-right" class="size-5" />

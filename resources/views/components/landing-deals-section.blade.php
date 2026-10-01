@@ -20,7 +20,7 @@
             </div>
             @if ($seeAllHref)
                 <div class="flex shrink-0 items-center gap-2">
-                    <a href="{{ $seeAllHref }}" class="section-link whitespace-nowrap">
+                    <a href="{{ $seeAllHref }}" class="section-link text-right">
                         Žiūrėti visas{{ $seeAllCount ? ' ('.number_format($seeAllCount, 0, ',', ' ').')' : '' }}
                         <x-app-icon name="chevron-right" class="size-3.5 opacity-80" />
                     </a>
