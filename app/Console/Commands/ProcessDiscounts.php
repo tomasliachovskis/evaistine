@@ -412,7 +412,53 @@ class ProcessDiscounts extends Command
         }
 
         if ($this->discountExists($product->id, $store->id, $startAt, $endAt)) {
+            // The same offer is often already there from the store's own
+            // e-shop scraper. Without this the flyer row was simply dropped,
+            // so the flyer page listed only the few offers the e-shop
+            // doesn't carry. Link the existing discount to this flyer
+            // instead; one already linked to another flyer keeps that one.
+            if ($tempDiscount->store_flyer_id !== null) {
+                Discount::query()
+                    ->where('product_id', $product->id)
+                    ->where('store_id', $store->id)
+                    ->where('start_at', $startAt)
+                    ->where('end_at', $endAt)
+                    ->whereNull('store_flyer_id')
+                    ->update([
+                        'store_flyer_id' => $tempDiscount->store_flyer_id,
+                        'flyer_page' => $tempDiscount->flyer_page,
+                    ]);
+            }
+
             return true;
+        }
+
+        // Same offer at the same price, only the dates differ (the e-shop
+        // and the flyer often publish different validity windows): take
+        // the flyer's dates and link it, instead of a second discount for
+        // the same product. Only an unlinked (e-shop) discount or one from
+        // this same flyer — another flyer's discount keeps its own dates.
+        if ($tempDiscount->store_flyer_id !== null) {
+            $sameOffer = Discount::query()
+                ->where('product_id', $product->id)
+                ->where('store_id', $store->id)
+                ->whereRaw('ABS(discounted_price - ?) < 0.005', [$normalizedDiscountedPrice])
+                ->where(fn ($q) => $q->whereNull('store_flyer_id')->orWhere('store_flyer_id', $tempDiscount->store_flyer_id))
+                ->orderBy('id')
+                ->first();
+
+            if ($sameOffer) {
+                $sameOffer->updateQuietly([
+                    'start_at' => $startAt,
+                    'end_at' => $endAt,
+                    'store_flyer_id' => $tempDiscount->store_flyer_id,
+                    'flyer_page' => $sameOffer->store_flyer_id === null ? $tempDiscount->flyer_page : $sameOffer->flyer_page,
+                ]);
+                $this->markDiscountExists($product->id, $store->id, $startAt, $endAt);
+                $this->touchedStoreIds[$store->id] = true;
+
+                return true;
+            }
         }
 
         Discount::withoutEvents(function () use (
@@ -434,6 +480,7 @@ class ProcessDiscounts extends Command
                 'product_id' => $product->id,
                 'store_id' => $store->id,
                 'store_flyer_id' => $tempDiscount->store_flyer_id,
+                'flyer_page' => $tempDiscount->flyer_page,
                 'product_url' => $tempDiscount->product_url,
                 'original_price' => $normalizedOriginalPrice,
                 'discounted_price' => $normalizedDiscountedPrice,

@@ -127,6 +127,7 @@
                     if ($event.key === 'ArrowLeft') currentPage = Math.max(1, currentPage - 1);
                     if ($event.key === 'Escape' && fullscreen && !document.fullscreenElement && !document.webkitFullscreenElement) fullscreen = false;
                 "
+                @leaflet-goto.window="currentPage = $event.detail; $refs.viewerFrame.scrollIntoView({ behavior: 'smooth', block: 'center' })"
                 @fullscreenchange.window="fullscreen = !!document.fullscreenElement"
                 @webkitfullscreenchange.window="fullscreen = !!document.webkitFullscreenElement"
             @endif
@@ -291,20 +292,44 @@
              each linking to its product page. Flex-wrap, not CSS grid (see
              livewire/discount-filters.blade.php). --}}
         @if (!empty($flyerOffers))
-            <section class="mt-8" aria-labelledby="flyer-offers-heading">
+            <section class="mt-8" aria-labelledby="flyer-offers-heading" x-data>
                 <h2 id="flyer-offers-heading" class="section-heading mb-3">
                     Šio leidinio akcijos
                     <span class="font-normal text-gray-500">({{ $flyerOffersTotal }})</span>
                 </h2>
-                <div class="flex w-full flex-wrap gap-2 sm:gap-3">
-                    @foreach ($flyerOffers as $deal)
-                        <x-deal-card
-                            :deal="$deal"
-                            :stretch="false"
-                            :context-store-slug="$storeSlug"
-                            source="flyer_offers"
-                            class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
-                        />
+                {{-- Grouped by the flyer page each offer was printed on, in
+                     the flyer's own order (see getStoreLeaflet()). Offers
+                     with no known page come last, under no page heading. --}}
+                <div class="flex flex-col gap-6">
+                    @foreach (collect($flyerOffers)->groupBy(fn ($d) => $d['flyer_page'] ?? 0) as $flyerPage => $pageOffers)
+                        <div>
+                            @if ($flyerPage > 0)
+                                <div class="mb-2 flex items-center justify-between gap-3">
+                                    <h3 class="text-sm font-semibold text-gray-900">{{ $flyerPage }} puslapis</h3>
+                                    @if (!empty($pages))
+                                        <button
+                                            type="button"
+                                            @click="$dispatch('leaflet-goto', {{ $flyerPage }})"
+                                            class="section-link"
+                                        >
+                                            Žiūrėti leidinyje
+                                            <x-app-icon name="chevron-right" class="size-3.5" />
+                                        </button>
+                                    @endif
+                                </div>
+                            @endif
+                            <div class="flex w-full flex-wrap gap-2 sm:gap-3">
+                                @foreach ($pageOffers as $deal)
+                                    <x-deal-card
+                                        :deal="$deal"
+                                        :stretch="false"
+                                        :context-store-slug="$storeSlug"
+                                        source="flyer_offers"
+                                        class="w-[calc(50%-0.25rem)] sm:w-[calc(33.333%-0.5rem)] lg:w-[calc(25%-0.5625rem)] xl:w-[calc(20%-0.6rem)]"
+                                    />
+                                @endforeach
+                            </div>
+                        </div>
                     @endforeach
                 </div>
                 @if ($flyerOffersTotal > count($flyerOffers) && $showsDiscountsPage)

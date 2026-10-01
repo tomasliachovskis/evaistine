@@ -16,6 +16,7 @@ class Discount extends Model
         'product_id',
         'store_id',
         'store_flyer_id',
+        'flyer_page',
         'original_price',
         'discounted_price',
         'discount_percent',

@@ -19,6 +19,7 @@ class DiscountTemp extends Model
         'product_url',
         'store',
         'store_flyer_id',
+        'flyer_page',
         'original_price',
         'discounted_price',
         'discount_percent',

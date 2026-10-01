@@ -32,7 +32,7 @@ class ProductController extends Controller
     private const PER_PAGE = 20;
 
     // Offers listed as text on a single flyer page (see getStoreLeaflet()).
-    private const FLYER_OFFERS_LIMIT = 120;
+    private const FLYER_OFFERS_LIMIT = 400;
 
     protected $formatter;
 
@@ -1599,20 +1599,22 @@ class ProductController extends Controller
             // Offers Gemini extracted from this exact flyer (store_flyer_id,
             // set by PdfFlyerProcessingService), so the page carries
             // crawlable product names and prices, not only page images.
-            // Priced offers first (blanket "-30% visai avalynei" rows have
-            // no price), then biggest discount; capped since some flyers
+            // In the flyer's own order: by page (flyer_page), then by id,
+            // which follows Gemini's reading order within a page. Rows
+            // without a page (extracted before flyer_page existed and not
+            // matched by the backfill) go last. Capped since some flyers
             // hold 300+.
             $flyerDiscounts = Discount::with(['store', 'product.category', 'product.discounts.store'])
                 ->where('store_flyer_id', $flyer->id)
                 ->where(fn ($q) => $q->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay()))
-                ->orderByRaw('CASE WHEN discounted_price > 0 THEN 0 ELSE 1 END')
-                ->orderByRaw('COALESCE(discount_percent, 0) DESC')
+                ->orderByRaw('flyer_page IS NULL')
+                ->orderBy('flyer_page')
                 ->orderBy('id')
                 ->get();
             $flyerOffers = $flyerDiscounts
                 ->unique('product_id')
                 ->take(self::FLYER_OFFERS_LIMIT)
-                ->map(fn ($discount) => $this->formatter->formatListDiscount($discount))
+                ->map(fn ($discount) => $this->formatter->formatListDiscount($discount) + ['flyer_page' => $discount->flyer_page])
                 ->values()
                 ->all();
             $flyerOffersTotal = $flyerDiscounts->unique('product_id')->count();

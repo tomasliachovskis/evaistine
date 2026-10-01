@@ -168,7 +168,7 @@ class PdfFlyerProcessingService
                         Log::channel('flyer')->info("Saving discounts from page {$currentPageNumber} to database...",
                             ['count' => $discountCount]);
                         $savedCount = $this->saveToDiscountTemp($result['discounts'], $store, $validityDates,
-                            $originalImagePath, $storeFlyerId);
+                            $originalImagePath, $storeFlyerId, $pageNum);
                         $totalSavedCount += $savedCount;
                         Log::channel('flyer')->info("Page {$currentPageNumber} discounts saved",
                             ['saved' => $savedCount, 'extracted' => $discountCount]);
@@ -1207,7 +1207,8 @@ Return ONLY valid JSON. No explanations. No markdown.
         Store $store,
         ?array $validityDates,
         ?string $pageImagePath = null,
-        ?int $storeFlyerId = null
+        ?int $storeFlyerId = null,
+        ?int $flyerPage = null
     ): int {
         Log::channel('flyer')->info('Starting to save discounts to database',
             ['total' => count($discounts), 'page_image_path' => $pageImagePath]);
@@ -1279,6 +1280,7 @@ Return ONLY valid JSON. No explanations. No markdown.
                     'image_url' => null,
                     'store' => $store->name,
                     'store_flyer_id' => $storeFlyerId,
+                    'flyer_page' => $flyerPage,
                     'original_price' => $validated['original_price'] ?? 0,
                     'discounted_price' => $validated['discounted_price'] ?? 0,
                     'discount_percent' => $discountPercent ?? 0,
