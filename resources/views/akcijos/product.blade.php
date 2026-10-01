@@ -100,7 +100,7 @@ use App\Support\ProductPageMeta;
     // tab's icon/shortLabel entirely.
     $tabs = array_filter([
         $hasOffers ? ['id' => 'offers', 'label' => 'Kainos parduotuvėse', 'shortLabel' => 'Kainos', 'icon' => 'shopping-bag'] : null,
-        $hasSimilar ? ['id' => 'similar-products', 'label' => 'Panašūs produktai', 'shortLabel' => 'Panašūs produktai', 'icon' => 'layout-grid'] : null,
+        $hasSimilar ? ['id' => 'similar-products', 'label' => 'Panašūs produktai', 'shortLabel' => 'Panašūs', 'icon' => 'layout-grid'] : null,
         $hasHistory ? ['id' => 'kainu-istorija', 'label' => 'Kainų istorija', 'shortLabel' => 'Istorija', 'icon' => 'clock'] : null,
         $hasAbout ? ['id' => 'about', 'label' => 'Apie produktą', 'shortLabel' => 'Apie', 'icon' => 'info'] : null,
         $hasFaq ? ['id' => 'faq', 'label' => 'DUK', 'shortLabel' => 'DUK', 'icon' => 'help-circle'] : null,
@@ -404,7 +404,7 @@ use App\Support\ProductPageMeta;
                 }"
             >
                 <div class="base-container">
-                    <ul class="-mb-px flex gap-1 overflow-x-auto [scrollbar-width:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
+                    <ul class="-mb-px flex justify-between gap-0.5 overflow-x-auto sm:justify-start [scrollbar-width:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
                         @foreach ($tabs as $tab)
                             <li class="shrink-0">
                                 <a
@@ -413,9 +413,9 @@ use App\Support\ProductPageMeta;
                                     data-ga-event="product_tab_click"
                                     data-ga-source="{{ $tab['id'] }}"
                                     :class="activeId === '{{ $tab['id'] }}' ? 'border-green text-dark-green' : 'border-transparent text-gray-600 hover:border-green/30 hover:text-dark-green'"
-                                    class="inline-flex items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:gap-2 sm:px-4"
+                                    class="inline-flex min-h-12 items-center gap-1.5 border-b-2 px-2.5 text-sm font-medium transition-colors sm:gap-2 sm:px-4"
                                 >
-                                    <x-app-icon :name="$tab['icon']" class="size-4 shrink-0 opacity-80" />
+                                    <x-app-icon :name="$tab['icon']" class="hidden size-4 shrink-0 opacity-80 sm:block" />
                                     <span class="whitespace-nowrap sm:hidden">{{ $tab['shortLabel'] }}</span>
                                     <span class="hidden whitespace-nowrap sm:inline">{{ $tab['label'] }}</span>
                                 </a>
