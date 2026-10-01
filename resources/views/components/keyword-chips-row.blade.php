@@ -1,62 +1,40 @@
 @props(['pages', 'ariaLabel' => 'Susiję pasiūlymai', 'title' => null])
 
-{{-- Related keyword-page links (e.g. "Makaronai", "Aliejus") as a single
-     horizontally-scrollable row — explicit product decision: one line,
-     scrollable, instead of wrap-to-2-rows + "Rodyti daugiau". Kept lighter
-     than the hero stat pills above it (smaller chips, count as plain text),
-     with an edge fade + desktop arrows so it reads as scrollable instead of
-     just cut off. --}}
-@if (!empty($pages))
-    <div
-        x-data="{
-            canLeft: false,
-            canRight: false,
-            update() {
-                const track = $refs.track;
-                this.canLeft = track.scrollLeft > 4;
-                this.canRight = track.scrollLeft + track.clientWidth < track.scrollWidth - 4;
-            },
-            go(direction) {
-                $refs.track.scrollBy({ left: direction * $refs.track.clientWidth * 0.8, behavior: 'smooth' });
-            },
-        }"
-        x-init="$nextTick(() => update())"
-        @resize.window.debounce.100ms="update()"
-    >
+{{-- Related keyword-page links (e.g. "Makaronai", "Aliejus"). Wrapped rows
+     with a "Rodyti visas" button: the first 4 on phones (two even
+     columns), 12 from sm. This
+     used to be one sideways-scrolling row with arrows, which older readers
+     didn't scroll; the chips also looked like the stat pills above them.
+     Now green link text, with the count in brackets ("Dešrelės (100)") so
+     the number reads as a count. --}}
+@php
+    $mobileLimit = 4;
+    $desktopLimit = 12;
+    $count = count($pages);
+@endphp
+
+@if ($count > 0)
+    <div x-data="{ all: false }">
         @if ($title)
-            <p class="mb-2 text-sm font-semibold text-gray-700">{{ $title }}</p>
+            <p class="mb-2 text-base font-semibold text-gray-700">{{ $title }}</p>
         @endif
-        <div class="relative -mx-4 sm:mx-0">
-            <nav
-                x-ref="track"
-                @scroll.debounce.50ms="update()"
-                aria-label="{{ $title ?? $ariaLabel }}"
-                class="flex flex-nowrap items-center gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] sm:px-0 [&::-webkit-scrollbar]:hidden"
-            >
-                @foreach ($pages as $page)
-                    <a href="{{ $page['href'] }}" class="inline-flex min-h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-700 transition-colors hover:border-green/40 hover:text-dark-green">
-                        @if (!empty($page['logo_slug']))
-                            <x-store-logo :slug="$page['logo_slug']" :name="$page['title']" size="xs" />
-                        @endif
-                        {{ $page['title'] }}
-                        @if (!empty($page['matching_offers_count']))
-                            <span class="text-xs font-medium tabular-nums text-gray-400">{{ number_format($page['matching_offers_count'], 0, ',', ' ') }}</span>
-                        @endif
-                    </a>
-                @endforeach
-            </nav>
-
-            {{-- Edge fades: only while there's more to scroll that way. --}}
-            <div x-show="canLeft" x-transition.opacity x-cloak class="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-background to-transparent"></div>
-            <div x-show="canRight" x-transition.opacity x-cloak class="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent"></div>
-
-            {{-- Desktop arrows (touch scrolls natively on mobile). --}}
-            <button type="button" x-show="canLeft" x-cloak @click="go(-1)" aria-label="Slinkti atgal" class="absolute left-0 top-1/2 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:text-dark-green sm:flex">
-                <x-app-icon name="chevron-right" class="size-4 rotate-180" />
-            </button>
-            <button type="button" x-show="canRight" x-cloak @click="go(1)" aria-label="Slinkti toliau" class="absolute right-0 top-1/2 hidden size-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:text-dark-green sm:flex">
-                <x-app-icon name="chevron-right" class="size-4" />
-            </button>
-        </div>
+        <nav aria-label="{{ $title ?? $ariaLabel }}" class="flex flex-wrap items-center gap-2">
+            @foreach ($pages as $page)
+                <a href="{{ $page['href'] }}"
+                   @if ($loop->index >= $desktopLimit) x-show="all" x-cloak @elseif ($loop->index >= $mobileLimit) :class="all ? '' : 'max-sm:hidden!'" @endif
+                   class="inline-flex min-h-12 w-[calc(50%-0.25rem)] items-center gap-1.5 rounded-xl bg-white px-3.5 py-1.5 text-base leading-snug sm:w-auto sm:py-0 font-semibold text-dark-green ring-1 ring-gray-200 transition-colors hover:bg-green/5 hover:ring-green/40">
+                    @if (!empty($page['logo_slug']))
+                        <x-store-logo :slug="$page['logo_slug']" :name="$page['title']" size="xs" />
+                    @endif
+                    <span>{{ $page['title'] }}@if (!empty($page['matching_offers_count'])) <span class="whitespace-nowrap font-normal tabular-nums text-gray-500">({{ number_format($page['matching_offers_count'], 0, ',', ' ') }})</span>@endif</span>
+                </a>
+            @endforeach
+            @if ($count > $mobileLimit)
+                <button type="button" x-show="!all" @click="all = true" class="{{ $count > $desktopLimit ? 'inline-flex' : 'inline-flex sm:hidden' }} min-h-12 items-center gap-1 rounded-xl px-3 text-base font-bold text-gray-900 underline underline-offset-4 hover:text-dark-green">
+                    Rodyti visas ({{ $count }})
+                    <x-app-icon name="chevron-down" class="size-5" />
+                </button>
+            @endif
+        </nav>
     </div>
 @endif
