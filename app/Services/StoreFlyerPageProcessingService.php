@@ -115,6 +115,9 @@ class StoreFlyerPageProcessingService
                 $imagick->resizeImage(400, 0, \Imagick::FILTER_LANCZOS, 1);
             }
 
+            if ($imagick->getImageColorspace() === \Imagick::COLORSPACE_CMYK) {
+                $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+            }
             $imagick->setImageFormat('webp');
             $imagick->setImageCompressionQuality(75);
             $imagick->stripImage();
@@ -160,6 +163,9 @@ class StoreFlyerPageProcessingService
                 $imagick->resizeImage($maxWidth, 0, \Imagick::FILTER_LANCZOS, 1);
             }
 
+            if ($imagick->getImageColorspace() === \Imagick::COLORSPACE_CMYK) {
+                $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+            }
             $imagick->setImageFormat('webp');
             $imagick->setImageCompressionQuality($quality);
             $imagick->stripImage();
@@ -255,6 +261,15 @@ class StoreFlyerPageProcessingService
                 $imagick->resizeImage(1400, 0, \Imagick::FILTER_LANCZOS, 1);
             }
 
+            // Print-master PDFs (Elimart) render as CMYK, which WebP can't
+            // hold. And spatie/pdf-to-image only knows jpg/png, so for a
+            // .webp path getImageData() already did setFormat('jpg'), which
+            // wins over setImageFormat() below: every page was written as
+            // a JPEG named .webp (found 2026-10-02, ~2.5x the size).
+            if ($imagick->getImageColorspace() === \Imagick::COLORSPACE_CMYK) {
+                $imagick->transformImageColorspace(\Imagick::COLORSPACE_SRGB);
+            }
+            $imagick->setFormat('webp');
             $imagick->setImageFormat('webp');
             $imagick->setImageCompressionQuality(78);
             $imagick->stripImage();
