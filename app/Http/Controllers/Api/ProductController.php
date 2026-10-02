@@ -1260,9 +1260,11 @@ class ProductController extends Controller
                     'seo_description' => $entity->description,
                     // No date/issue-number in the title anymore — see
                     // meta_description instead.
+                    // "katalogai" in the title, not "leidiniai" (owner's
+                    // call, 2026-10-02); the H1 keeps "leidiniai".
                     'meta_title' => $entity->showsDiscountsPage()
-                        ? "Naujausi {$entity->name} akcijų {$leafletNounPlural}"
-                        : "{$entity->name} akcijos ir naujausi {$leafletNounPlural}",
+                        ? "Naujausi {$entity->name} akcijų katalogai"
+                        : "{$entity->name} akcijos ir naujausi katalogai",
                     'meta_description' => $metaDescription,
                     // A store without its own offers page (/akcijos/{slug}
                     // 301s here) has its offers only in the leaflets, so
