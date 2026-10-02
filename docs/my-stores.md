@@ -36,15 +36,17 @@ Not applied when:
   - the separate pills;
   - the phone-only "Filtrai" sheet.
 - **Where:** category, keyword and store pages, and the `/akcijos` hub.
-- **Store list on multi-store pages (category, keyword, hub):** the same logo tiles as the "Mano parduotuvės" picker (`<x-store-pick-tile>`). Each tap updates the list. It has:
+- **Store list on multi-store pages (category, keyword, hub):** the same logo tiles as the "Mano parduotuvės" picker (`<x-store-pick-tile>`). Taps only tick (Alpine `picked`, no request); "Rodyti pažymėtas (N)" loads the list once (owner: reloading after every tap was slow). It has:
   - "Visos parduotuvės": all stores for this visit;
-  - "Rodyti N pasiūlymų";
+  - "Rodyti pažymėtas (N)" / "Rodyti visas parduotuves";
   - "Išsaugoti kaip mano parduotuves";
   - "Rodyti tik mano: …".
 - **SEO:** tiles stay `<a href>` to the store+category page, so crawlers still follow them; the tap is intercepted.
 - **Store and store+category pages:** the same tiles with the current store marked. A tap opens that store's page.
-- **Search results (`akcijos/search.blade.php`):** the same bar and tiles. It isn't Livewire, so each tile is a link with that store added or removed. `#parduotuves` reopens the sheet after the reload.
-- **`/leidiniai`:** the store sheet uses the same tiles too, each with its active leaflet count, opening that store's leaflets.
+- **Search results (`akcijos/search.blade.php`):** the same bar and tiles, ticked locally; "Rodyti" loads `?store=` once (it isn't Livewire).
+- **Loader:** while the list updates, a "Ieškome pasiūlymų…" card covers the list and the "Parduotuvės" button shows a spinner. It's set around each `$wire` call (`run()`), not with `wire:loading` (see `PageHtmlCache`). After "Rodyti" or a sort the bar scrolls into view, so the loader is visible on phones. Taps that load a new page (category links, search) show it too; `pageshow` clears it after "back".
+- **`/leidiniai`:** the same bar ("Parduotuvė" + "Rikiuoti", not pinned) and a store tile sheet (`<x-leaflet-store-sheet>`), each tile with its leaflet count and opening that store's leaflets. `/leidinys/{store}` is unchanged on purpose (owner).
+- **Shared markup:** `<x-nav-bar>` (the light green box) and `<x-nav-bar-button>` (label + white button, or a link with `href`) are used by listings, search and `/leidiniai`. Change the bar there, not per page.
 - **Category links:** they keep the stores shown (`?store=`), so switching category doesn't drop them.
 
 ## Known limits

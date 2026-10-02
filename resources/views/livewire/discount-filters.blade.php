@@ -89,17 +89,49 @@
      needing its own matching bottom margin. --}}
 <div
     class="mt-6 flex w-full flex-col max-sm:gap-1"
-    @if ($multiStore)
-        {{-- "Mano parduotuvės": apply the saved stores right after load,
-             unless the URL already picks stores or the visitor chose
-             "Rodyti visas" for this visit. --}}
-        x-data="{
+    {{-- busy: the list is being updated, shown as a "Ieškome pasiūlymų…" card
+         over the list. Set around each filter/sort request (run()) and on
+         taps that load a new page (category links). Multi-store pages also
+         apply "Mano parduotuvės" right after load, unless the URL already
+         picks stores or "Rodyti visas" was chosen for this visit. --}}
+    x-data="{
+        busy: false,
+        // Runs a Livewire call with the loader on until it's done. With
+        // reveal, scrolls the bar to the top first so the loader and the new
+        // list are in view (on phones the list starts below the fold).
+        run(call, reveal = false) {
+            this.busy = true;
+            if (reveal) this.$root.querySelector('[data-sticky-filter-bar]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return call().finally(() => { this.busy = false; });
+        },
+        @if ($multiStore)
             sameAsMine() {
                 return $wire.storeFilter.split(',').filter(Boolean).sort().join(',') === $store.myStores.filterValue();
             },
             applyMine() {
                 if (!$store.myStores.active()) return;
-                $wire.applyStores($store.myStores.filterValue());
+                this.run(() => $wire.applyStores($store.myStores.filterValue()));
+            },
+            // The store sheet's ticks: marked here only (instant), applied
+            // in one request on 'Rodyti' (owner: the list reloading after
+            // every tap was slow).
+            picked: [],
+            openStores() {
+                this.picked = this.checkedStores();
+                $wire.openPanel = 'store';
+            },
+            togglePicked(slug) {
+                this.picked = this.picked.includes(slug) ? this.picked.filter((s) => s !== slug) : [...this.picked, slug];
+            },
+            applyPicked() {
+                $wire.openPanel = null;
+                const value = [...this.picked].sort().join(',');
+                if (value === this.checkedStores().sort().join(',')) return;
+                if (!value) {
+                    this.showAllStores();
+                    return;
+                }
+                this.run(() => $wire.applyStores(value), true);
             },
             // 1 pasiūlymą, 2 pasiūlymus, 10 pasiūlymų, 21 pasiūlymą.
             offersLabel(n) {
@@ -122,19 +154,24 @@
             checkedStores() {
                 return $wire.storeFilter.split(',').filter(Boolean);
             },
-            toggleStoreRow(slug) {
-                $wire.toggleStore(slug);
-            },
             // Back to every store: a fresh load of the page without ?store,
             // so pages with carousels (the /akcijos hub) get them back.
             showAllStores() {
+                this.busy = true;
                 $store.myStores.setShowAll(true);
                 const url = new URL(location.href);
                 url.searchParams.delete('store');
                 location.href = url.pathname + url.search;
             },
-        }"
-        x-init="if (!new URL(location.href).searchParams.has('store') && !$store.myStores.showAll) applyMine()"
+        @endif
+    }"
+    x-init="
+        @if ($multiStore)
+            if (!new URL(location.href).searchParams.has('store') && !$store.myStores.showAll) applyMine();
+        @endif
+    "
+    @pageshow.window="busy = false"
+    @if ($multiStore)
         @my-stores-changed.window="$store.myStores.active() ? applyMine() : ($wire.storeFilter && showAllStores())"
     @endif
 >
@@ -149,8 +186,8 @@
                     ?? ($storeNames->isEmpty() ? 'Visos parduotuvės'
                         : ($storeNames->count() > 3 ? $storeNames->take(2)->implode(', ') . ' ir dar ' . ($storeNames->count() - 2) : $storeNames->implode(', ')));
                 $categoryButtonText = $activeCategoryName ?? 'Visos kategorijos';
-                $navButtonClass = 'flex min-h-12 w-full min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border border-gray-300 bg-white px-4 text-left text-lg font-bold text-gray-900 transition-colors hover:border-gray-400';
-                $navLabelClass = 'text-base font-semibold text-gray-700';
+                $storeValueText = $multiStore ? "busy ? 'Ieškome pasiūlymų…' : storeLabel()" : null;
+                $storeButtonClick = $multiStore ? 'openStores()' : "\$wire.openPanel = 'store'";
             @endphp
             {{-- One navigation bar for every offer listing (owner's request,
                  2026-10-02): each facet is a labelled button that says in
@@ -163,58 +200,61 @@
                  covered too much of the list, and phones never pinned it.
                  relative z-30 keeps the sort dropdown above the cards (their heart button is z-20).
                  data-sticky-filter-bar: see site-header.blade.php. --}}
-            <div
+            <x-nav-bar
                 data-sticky-filter-bar
-                class="relative z-30 mb-4 flex w-full flex-col gap-3 rounded-2xl border border-gray-300 bg-[#ececec] p-3 sm:flex-row sm:items-end sm:gap-4 sm:px-4"
+                class="scroll-mt-[calc(var(--header-h)+0.75rem)]"
                 x-data="{ sortOpen: false }"
-                @click.outside="sortOpen = false"
+                x-on:click.outside="sortOpen = false"
             >
                 @if ($showStoreFilter)
-                    <div class="flex min-w-0 flex-col gap-1 sm:flex-1">
-                        <span class="{{ $navLabelClass }}">{{ $activeStoreSlug ? 'Parduotuvė' : 'Parduotuvės' }}</span>
-                        <button type="button" @click="$wire.openPanel = 'store'" class="{{ $navButtonClass }}" aria-haspopup="dialog">
-                            <x-app-icon name="store" class="size-6 shrink-0 text-dark-green" />
-                            <span class="min-w-0 flex-1 truncate" @if ($multiStore) x-text="storeLabel()" @endif>{{ $storeButtonText }}</span>
-                            <x-app-icon name="chevron-down" class="size-5 shrink-0 text-gray-500" />
-                        </button>
-                    </div>
+                    <x-nav-bar-button
+                        :label="$activeStoreSlug ? 'Parduotuvė' : 'Parduotuvės'"
+                        :value-text="$storeValueText"
+                        x-on:click="{{ $storeButtonClick }}"
+                        aria-haspopup="dialog"
+                    >
+                        <x-slot:leading>
+                            <x-app-icon x-show="!busy" name="store" class="size-6 shrink-0 text-dark-green" />
+                            <span x-show="busy" x-cloak class="size-6 shrink-0 animate-spin rounded-full border-[3px] border-green-soft border-t-action"></span>
+                        </x-slot:leading>
+                        {{ $storeButtonText }}
+                    </x-nav-bar-button>
                 @endif
                 @if ($showCategoryFilter)
-                    <div class="flex min-w-0 flex-col gap-1 sm:flex-1">
-                        <span class="{{ $navLabelClass }}">Kategorija</span>
-                        <button type="button" @click="$wire.openPanel = 'category'" class="{{ $navButtonClass }}" aria-haspopup="dialog">
-                            <x-app-icon name="layout-grid" class="size-6 shrink-0 text-dark-green" />
-                            <span class="min-w-0 flex-1 truncate">{{ $categoryButtonText }}</span>
-                            <x-app-icon name="chevron-down" class="size-5 shrink-0 text-gray-500" />
-                        </button>
-                    </div>
+                    <x-nav-bar-button label="Kategorija" icon="layout-grid" x-on:click="$wire.openPanel = 'category'" aria-haspopup="dialog">
+                        {{ $categoryButtonText }}
+                    </x-nav-bar-button>
                 @endif
                 @if ($showSort)
-                    <div class="relative flex min-w-0 flex-col gap-1 sm:w-64 sm:shrink-0">
-                        <span class="{{ $navLabelClass }}">Rikiuoti</span>
-                        <button type="button" @click="sortOpen = !sortOpen" class="{{ $navButtonClass }}" aria-haspopup="listbox" :aria-expanded="sortOpen">
-                            <x-app-icon name="arrow-down-up" class="size-6 shrink-0 text-dark-green" />
-                            <span class="min-w-0 flex-1 truncate">{{ $orderOptions[$order] }}</span>
-                            <x-app-icon name="chevron-down" class="size-5 shrink-0 text-gray-500" />
-                        </button>
-                        <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 w-full min-w-[260px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
-                            @foreach ($orderOptions as $value => $label)
-                                <button type="button" wire:click="setOrder('{{ $value }}')" @click="sortOpen = false; window.trackGaEvent && window.trackGaEvent('sort_change', { sort_value: '{{ $value }}' })" class="{{ $rowClass($order === $value) }}">
-                                    <x-app-icon :name="$orderIcons[$value]" class="size-5 shrink-0 opacity-90" />
-                                    {{ $label }}
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
+                    <x-nav-bar-button
+                        label="Rikiuoti"
+                        icon="arrow-down-up"
+                        wrapper-class="relative flex min-w-0 flex-col gap-1 sm:w-64 sm:shrink-0"
+                        x-on:click="sortOpen = !sortOpen"
+                        aria-haspopup="listbox"
+                        x-bind:aria-expanded="sortOpen"
+                    >
+                        {{ $orderOptions[$order] }}
+                        <x-slot:after>
+                            <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 w-full min-w-[260px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                                @foreach ($orderOptions as $value => $orderLabel)
+                                    <button type="button" @click="run(() => $wire.setOrder('{{ $value }}'), true); sortOpen = false; window.trackGaEvent && window.trackGaEvent('sort_change', { sort_value: '{{ $value }}' })" class="{{ $rowClass($order === $value) }}">
+                                        <x-app-icon :name="$orderIcons[$value]" class="size-5 shrink-0 opacity-90" />
+                                        {{ $orderLabel }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </x-slot:after>
+                    </x-nav-bar-button>
                 @endif
-            </div>
+            </x-nav-bar>
 
             {{-- Store list: bottom sheet on phones, centered on desktop.
-                 Multi-store pages: tick the stores to show, the list updates
-                 as you tap. A store's own pages: pick another store to open
+                 Multi-store pages: tick the stores to show, "Rodyti" loads
+                 the list. A store's own pages: pick another store to open
                  its page. --}}
             @if ($showStoreFilter)
-                <div x-show="$wire.openPanel === 'store'" x-cloak class="sheet-backdrop z-[70]" @click.self="$wire.openPanel = null">
+                <div x-show="$wire.openPanel === 'store'" x-cloak class="sheet-backdrop z-[70]" @click.self="$wire.openPanel = null" @click="if (!$event.defaultPrevented && $event.target.closest('a[href]')) { $wire.openPanel = null; busy = true; }">
                     <div class="sheet-panel px-5 pb-5">
                         <div class="sheet-handle"></div>
                         <div class="mb-3 mt-3 flex items-center justify-between gap-3 sm:mt-5">
@@ -228,14 +268,14 @@
                         @endif
                         @if ($multiStore)
                             {{-- Same tiles as the "Mano parduotuvės" picker
-                                 (owner's preference). Each tap updates the
-                                 list; tiles stay links to the store's page
-                                 for crawlers. --}}
+                                 (owner's preference). Taps only tick here;
+                                 "Rodyti" loads the list once. Tiles stay
+                                 links to the store's page for crawlers. --}}
                             <button
                                 type="button"
-                                @click="showAllStores()"
+                                @click="picked = []"
                                 class="mb-2.5 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-bold transition-colors"
-                                :class="checkedStores().length ? 'border-gray-200 bg-white text-gray-900 hover:border-gray-300' : 'border-action bg-green-soft text-dark-green'"
+                                :class="picked.length ? 'border-gray-200 bg-white text-gray-900 hover:border-gray-300' : 'border-action bg-green-soft text-dark-green'"
                             >
                                 <x-app-icon name="store" class="size-5" />
                                 Visos parduotuvės
@@ -246,8 +286,8 @@
                                         :slug="$storeOption['slug']"
                                         :name="$storeOption['name']"
                                         :href="$storeHrefFor($storeOption['slug'])"
-                                        checked="checkedStores().includes('{{ $storeOption['slug'] }}')"
-                                        toggle="toggleStoreRow('{{ $storeOption['slug'] }}')"
+                                        checked="picked.includes('{{ $storeOption['slug'] }}')"
+                                        toggle="togglePicked('{{ $storeOption['slug'] }}')"
                                     />
                                 @endforeach
                             </div>
@@ -277,15 +317,15 @@
                             <div class="sticky bottom-0 -mx-5 mt-3 flex flex-col gap-2 border-t border-gray-200 bg-white px-5 pt-3">
                                 <button
                                     type="button"
-                                    @click="$wire.openPanel = null"
-                                    class="flex min-h-12 w-full items-center justify-center rounded-xl bg-action px-4 text-lg font-bold text-white hover:bg-action-hover"
-                                    x-text="'Rodyti ' + offersLabel(Number($wire.pagination.total ?? 0))"
+                                    @click="applyPicked()"
+                                    class="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-action px-4 text-lg font-bold text-white hover:bg-action-hover"
+                                    x-text="picked.length ? 'Rodyti pažymėtas (' + picked.length + ')' : 'Rodyti visas parduotuves'"
                                 >Rodyti</button>
-                                {{-- Keep the stores ticked here as "Mano parduotuvės". --}}
+                                {{-- Keep the ticked stores as "Mano parduotuvės" (and show them). --}}
                                 <button
                                     type="button"
-                                    x-show="$wire.storeFilter && !sameAsMine()"
-                                    @click="$store.myStores.set(checkedStores()); $wire.openPanel = null"
+                                    x-show="picked.length && [...picked].sort().join(',') !== $store.myStores.filterValue()"
+                                    @click="$wire.openPanel = null; $store.myStores.set(picked)"
                                     class="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-base font-bold text-dark-green ring-1 ring-green-soft-border hover:bg-green-soft"
                                 >
                                     <x-app-icon name="check" class="size-5" />
@@ -294,8 +334,8 @@
                                 {{-- Back to the saved stores after "Visos" or other ticks. --}}
                                 <button
                                     type="button"
-                                    x-show="$store.myStores.active() && !sameAsMine()"
-                                    @click="$store.myStores.setShowAll(false); applyMine(); $wire.openPanel = null"
+                                    x-show="$store.myStores.active() && [...picked].sort().join(',') !== $store.myStores.filterValue()"
+                                    @click="picked = [...$store.myStores.slugs]; $store.myStores.setShowAll(false); applyPicked()"
                                     class="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-base font-bold text-dark-green ring-1 ring-green-soft-border hover:bg-green-soft"
                                 >
                                     <x-app-icon name="store" class="size-5" />
@@ -313,7 +353,7 @@
                 </div>
             @endif
             @if ($showCategoryFilter)
-                <div x-show="$wire.openPanel === 'category'" x-cloak class="sheet-backdrop z-[70]" @click.self="$wire.openPanel = null">
+                <div x-show="$wire.openPanel === 'category'" x-cloak class="sheet-backdrop z-[70]" @click.self="$wire.openPanel = null" @click="if (!$event.defaultPrevented && $event.target.closest('a[href]')) { $wire.openPanel = null; busy = true; }">
                     <div class="sheet-panel px-5 pb-5">
                         <div class="sheet-handle"></div>
                         <div class="mb-3 mt-3 flex items-center justify-between gap-3 sm:mt-5">
@@ -338,7 +378,15 @@
 
         @php $current = (int) ($pagination['current_page'] ?? 1); $last = (int) ($pagination['last_page'] ?? 1); @endphp
 
-        <div wire:loading.class="opacity-50" wire:target="toggleStore,toggleCategory,setOrder,toggleCard,togglePlus,applyStores" class="flex w-full min-w-0 flex-col transition-opacity">
+        <div class="relative flex w-full min-w-0 flex-col">
+            {{-- Loader while the list updates (see busy on the root). The card
+                 is sticky so it stays in view on a long list. --}}
+            <div x-show="busy" x-cloak class="absolute inset-0 z-30 flex justify-center rounded-2xl bg-background/75" role="status" aria-live="polite">
+                <div class="sticky top-[calc(var(--header-h)+6rem)] mt-16 flex h-fit items-center gap-3 rounded-2xl bg-white px-6 py-4 text-lg font-bold text-gray-900 shadow-lg ring-1 ring-gray-200">
+                    <span class="size-7 shrink-0 animate-spin rounded-full border-4 border-green-soft border-t-action"></span>
+                    Ieškome pasiūlymų…
+                </div>
+            </div>
             @if ($showCarousels)
                 {{-- wire:ignore keeps carousel HTML across sort updates; carouselHtml
                      is cleared in dehydrate() so the deal payload stays out of

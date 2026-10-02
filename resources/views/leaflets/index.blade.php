@@ -90,31 +90,8 @@
             />
         </div>
 
-        {{-- Same sticky pill-bar language as discount-filters.blade.php's
-             filter bar / leaflet-quick-links.blade.php — was a plain
-             unstickied chip row before, now docks under the header on
-             scroll like every other listing-page filter bar. Flat link
-             pills (no own border/background) instead of
-             <x-keyword-chips-row>'s bordered white chips — those read as a
-             second, nested pill design once placed inside this bar.
-
-             Same "top N visible + full list in a modal" split as
-             kuponai/partials/website-chip-bar.blade.php, with a
-             narrower-screens-show-fewer taper: 2 chips always visible
-             (guaranteed to fit next to "Visos parduotuvės" even on a small
-             phone), a 3rd from 400px up, and the remaining top-5 (desktop
-             cap) from sm+ (640px) up — real store-name lengths vary too
-             much to know exactly how many fit at a given width without
-             measuring at runtime, so this approximates it with breakpoints
-             rather than a JS overflow measurement (no precedent for that
-             elsewhere in the chip-bar patterns this is based on). The modal
-             always lists every store regardless of breakpoint, reusing
-             discount-filter-sections.blade.php like the header's
-             Kategorijos dropdown and the akcijos filter sheet. --}}
         @php
-            $topStoreChips = $storeChips->take(5);
-            // Sorting: the same dropdown as the product listings' sort
-            // button (discount-filters.blade.php), as links over ?order=.
+            // Sorting: links over ?order=, shown like the listings' sort.
             $leafletOrder = request('order', 'best');
             $leafletOrderOptions = [
                 'best' => 'Populiariausi',
@@ -124,89 +101,33 @@
             $storeChipRowClass = fn (bool $active) => 'flex w-full cursor-pointer items-center gap-2 rounded-2xl px-3 min-h-[48px] text-base leading-snug text-left transition-colors '
                 . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
         @endphp
-        <div
-            data-sticky-filter-bar
-            x-data="{ allStoresOpen: false, sortOpen: false }"
-            @keydown.escape.window="allStoresOpen = false; sortOpen = false"
-            class="sticky top-[calc(var(--header-h)+env(safe-area-inset-top,0px))] z-[60] flex items-center gap-1 rounded-2xl border border-gray-300 bg-[#e8e8e8] px-2 py-1 min-h-14 sm:gap-2 sm:px-[20px]"
-        >
-            <nav aria-label="Parduotuvės" class="scroll-cards-x flex min-w-0 flex-1 flex-nowrap items-center gap-1 max-sm:hidden">
-                @foreach ($topStoreChips as $chip)
-                    @php
-                        // Phones show only the "Visos parduotuvės" picker
-                        // (owner's request): chips there were cut off.
-                        $chipVisibilityClass = 'hidden sm:inline-flex';
-                    @endphp
-                    <a href="{{ $chip['href'] }}" data-ga-event="filter_select" data-ga-item="store:{{ $chip['slug'] }}" data-ga-source="leidiniai_chip_bar" class="{{ $chipVisibilityClass }} min-h-12 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-base font-semibold text-gray-900 hover:bg-[#dedede]">
-                        @if (!empty($chip['logo_slug']))
-                            <x-store-logo :slug="$chip['logo_slug']" :name="$chip['title']" size="xs" />
-                        @endif
-                        <span>{{ $chip['title'] }}{{ !empty($chip['matching_offers_count']) ? ' (' . $chip['matching_offers_count'] . ')' : '' }}</span>
-                    </a>
-                @endforeach
-            </nav>
-
-            {{-- Pinned outside the scrollable nav, same recipe as
-                 discount-filters.blade.php's Parduotuvė/Kategorija toolbar
-                 buttons — always visible, and on mobile it's the only
-                 element in the bar (nav above is hidden there). --}}
-            <button
-                type="button"
-                @click="allStoresOpen = true"
-                data-ga-event="filter_select"
-                data-ga-item="store:all"
-                data-ga-source="leidiniai_chip_bar"
-                class="inline-flex min-h-12 min-w-0 shrink cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl px-2 text-base font-semibold text-gray-900 hover:bg-[#dedede] sm:shrink-0 sm:px-3"
-            >
-                <x-app-icon name="store" class="size-5 shrink-0" />
-                <span class="min-w-0 truncate">Parduotuvės</span>
-                <span class="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-action px-2 text-sm font-bold tabular-nums text-white">{{ $storeChips->count() }}</span>
-                <x-app-icon name="chevron-down" class="size-4 shrink-0 text-gray-500 transition-transform" x-bind:class="allStoresOpen ? 'rotate-180' : ''" />
-            </button>
-
-            <template x-teleport="body">
-                <div x-show="allStoresOpen" x-cloak x-back-closes="allStoresOpen" class="sheet-backdrop z-[70]" @click.self="allStoresOpen = false">
-                    <div class="sheet-panel px-5 pb-5">
-                        <div class="sheet-handle"></div>
-                        <div class="mb-3 mt-3 flex items-center justify-between gap-3 sm:mt-5">
-                            <h2 class="text-2xl font-bold text-gray-900">Parduotuvės</h2>
-                            <button type="button" @click="allStoresOpen = false" class="sheet-close" aria-label="Uždaryti">
-                                <x-app-icon name="x" class="size-7" />
-                            </button>
-                        </div>
-                        {{-- Same store tiles as every other store picker
-                             (<x-store-pick-tile>); each opens that store's
-                             leaflets. --}}
-                        <div class="flex flex-wrap gap-2.5">
-                            @foreach ($storeChips as $chip)
-                                <x-store-pick-tile
-                                    :slug="$chip['logo_slug'] ?? $chip['slug']"
-                                    :name="$chip['title']"
-                                    :href="'/leidinys/' . $chip['slug']"
-                                    :checkbox="false"
-                                    :note="! empty($chip['matching_offers_count']) ? $chip['matching_offers_count'] . ' ' . \App\Support\LithuanianPlural::leafletWord((int) $chip['matching_offers_count']) : null"
-                                    data-ga-event="filter_select"
-                                    :data-ga-item="'store:' . $chip['slug']"
-                                    data-ga-source="leidiniai_all_stores_modal"
-                                />
+        {{-- The same navigation bar as the offer listings (<x-nav-bar>, not
+             pinned): "Parduotuvė" opens the store tiles, "Rikiuoti" the
+             order. Replaced the pinned gray bar with top-5 store chips. --}}
+        <div x-data="{ storeOpen: false, sortOpen: false }" @keydown.escape.window="storeOpen = false; sortOpen = false">
+            <x-nav-bar class="!mb-0" x-on:click.outside="sortOpen = false">
+                <x-nav-bar-button label="Parduotuvė" icon="store" x-on:click="storeOpen = true" aria-haspopup="dialog" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="leidiniai_nav_bar">
+                    Visos parduotuvės
+                </x-nav-bar-button>
+                <x-nav-bar-button
+                    label="Rikiuoti"
+                    icon="arrow-down-up"
+                    wrapper-class="relative flex min-w-0 flex-col gap-1 sm:w-64 sm:shrink-0"
+                    x-on:click="sortOpen = !sortOpen"
+                    aria-haspopup="listbox"
+                    x-bind:aria-expanded="sortOpen"
+                >
+                    {{ $leafletOrderOptions[$leafletOrder] ?? 'Populiariausi' }}
+                    <x-slot:after>
+                        <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 w-full min-w-[260px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
+                            @foreach ($leafletOrderOptions as $value => $orderLabel)
+                                <a href="{{ $value === 'best' ? '/leidiniai' : '/leidiniai?order=' . $value }}" class="{{ $storeChipRowClass($leafletOrder === $value) }}">{{ $orderLabel }}</a>
                             @endforeach
                         </div>
-                    </div>
-                </div>
-            </template>
-
-            <div class="relative ml-auto shrink-0" @click.outside="sortOpen = false">
-                <button type="button" @click="sortOpen = !sortOpen" class="inline-flex min-h-12 min-w-12 cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-semibold text-gray-900 hover:bg-[#dedede] sm:px-3" aria-haspopup="listbox" :aria-expanded="sortOpen" aria-label="Rūšiuoti">
-                    <x-app-icon name="arrow-down-up" class="size-5 shrink-0" />
-                    <span class="hidden truncate sm:inline">{{ $leafletOrderOptions[$leafletOrder] ?? 'Populiariausi' }}</span>
-                    <x-app-icon name="chevron-down" class="hidden size-5 shrink-0 opacity-70 sm:block" />
-                </button>
-                <div x-show="sortOpen" x-cloak class="absolute right-0 top-full z-30 mt-1.5 min-w-[240px] rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg">
-                    @foreach ($leafletOrderOptions as $value => $label)
-                        <a href="{{ $value === 'best' ? '/leidiniai' : '/leidiniai?order=' . $value }}" class="{{ $storeChipRowClass($leafletOrder === $value) }}">{{ $label }}</a>
-                    @endforeach
-                </div>
-            </div>
+                    </x-slot:after>
+                </x-nav-bar-button>
+            </x-nav-bar>
+            <x-leaflet-store-sheet open="storeOpen" />
         </div>
 
         @if (empty($leaflets))
