@@ -47,7 +47,7 @@
         @endif
     @endpush
 
-    <main class="base-container pt-3 sm:pt-4 {{ $betaConfig ? 'pb-40 lg:pb-8' : 'pb-6 sm:pb-8' }}">
+    <main class="base-container pt-0 pb-6 sm:pb-8 lg:pt-4">
         {{-- The leaflet page image is the whole point of this page — it used
              to render after a full-width breadcrumb/H1/dates/pill-bar stack,
              squeezed into a 7fr/3fr column beside a "Kiti leidiniai"
@@ -69,6 +69,7 @@
                     @if ($betaConfig) ...window.leafletBeta(@js($betaConfig)), @endif
                     currentPage: 1, totalPages: {{ count($pages) }}, fullscreen: false, touchStartX: null,
                     viewerHeight: null,
+                    viewerFitsScreen: true,
                     // Pages beyond the first two are loading='lazy' and
                     // hidden (x-show) until picked — the browser only starts
                     // fetching them once shown, so jumping to e.g. page 5
@@ -103,6 +104,36 @@
                     // fill everything below it down to a small bottom margin.
                     sizeViewer() {
                         if (this.fullscreen || !this.$refs.viewerFrame) return;
+                        // Phones and tablets: the viewer sits flush under the
+                        // header and, with the page bar under it, fills the
+                        // screen exactly down to the bottom nav (like
+                        // manoakcijos.lt), so the flyer page never has to be
+                        // scrolled into view. clientHeight, not innerHeight
+                        // or visualViewport: those shrink while pinch-zoomed
+                        // or as the iOS URL bar moves, resizing the flyer.
+                        if (!this.wide) {
+                            const frame = this.$refs.viewerFrame;
+                            const top = frame.getBoundingClientRect().top + window.scrollY;
+                            const nav = document.querySelector('[data-bottom-nav]');
+                            const navHeight = nav && getComputedStyle(nav).display !== 'none' ? nav.getBoundingClientRect().height : 0;
+                            const bar = this.$refs.pagerBar;
+                            const barHeight = bar ? bar.getBoundingClientRect().height + parseFloat(getComputedStyle(bar).marginTop || 0) : 0;
+                            const available = Math.max(320, Math.floor(document.documentElement.clientHeight - top - navHeight - barHeight));
+                            // The page is always fitted to the full screen
+                            // width (like manoakcijos.lt): the frame takes
+                            // the shown page's own height, so there are no
+                            // gray bands beside or above it. Until the image
+                            // has loaded its size is unknown; fill the screen.
+                            const img = frame.querySelector(`[data-page-img='${this.currentPage}']`);
+                            const pageHeight = img && img.naturalWidth ? Math.round(frame.clientWidth * img.naturalHeight / img.naturalWidth) : null;
+                            this.viewerHeight = pageHeight || available;
+                            // Pinned (no vertical drag) when the whole page
+                            // fits on screen. On a short phone a page taller
+                            // than the screen has to scroll, or its bottom
+                            // could never be seen.
+                            this.viewerFitsScreen = !pageHeight || pageHeight <= available;
+                            return;
+                        }
                         // Beta puts the instruction, search and filters
                         // above the flyer, so 'space left below the frame'
                         // shrank it to the 320px floor. Size it to the full
@@ -120,7 +151,7 @@
                     init() {
                         const wideQuery = window.matchMedia('(min-width: 1024px)');
                         this.wide = wideQuery.matches;
-                        wideQuery.addEventListener('change', (e) => { this.wide = e.matches; });
+                        wideQuery.addEventListener('change', (e) => { this.wide = e.matches; this.$nextTick(() => this.sizeViewer()); });
                         // #psl-N (product pages link to the page an offer
                         // is printed on) opens that page.
                         const hashPage = parseInt((location.hash.match(/^#psl-(\d+)$/) || [])[1], 10);
@@ -136,6 +167,10 @@
                             });
                         });
                         window.addEventListener('resize', () => this.sizeViewer());
+                        // Pages can differ in size (a landscape spread among
+                        // portrait pages), and on phones the frame takes the
+                        // shown page's height.
+                        this.$watch('currentPage', () => this.$nextTick(() => this.sizeViewer()));
                         if (this.beta) this.betaInit();
                         // Pseudo-fullscreen (see toggleFullscreen) doesn't get
                         // the browser's own scroll lock, so lock the page
@@ -176,18 +211,19 @@
                     if ($event.key === 'ArrowLeft') prev();
                     if ($event.key === 'Escape' && fullscreen && !document.fullscreenElement && !document.webkitFullscreenElement) fullscreen = false;
                 "
-                @leaflet-goto.window="currentPage = $event.detail; $refs.viewerFrame.scrollIntoView({ behavior: 'smooth', block: 'center' })"
+                @leaflet-goto.window="currentPage = $event.detail; $refs.viewerFrame.scrollIntoView({ behavior: 'smooth', block: wide ? 'center' : 'start' })"
                 @fullscreenchange.window="fullscreen = !!document.fullscreenElement"
                 @webkitfullscreenchange.window="fullscreen = !!document.webkitFullscreenElement"
             @endif
         >
             @if (!empty($pages))
-                <div class="order-1 min-w-0 lg:order-2">
-                    {{-- Phones: the title row sits under the viewer, so say
-                         whose leaflet this is and until when right above it.
-                         Otherwise an older reader lands on a bare page image
-                         without knowing if it's still valid. --}}
-                    <div class="mb-2 flex min-h-12 items-center gap-3 lg:hidden">
+                {{-- Phones and tablets: the flyer comes first, flush under
+                     the header and edge to edge, then the page bar, then
+                     whose leaflet it is, the search and the filters
+                     (order-* below). Desktop keeps the DOM order
+                     (lg:order-none): toolbar, viewer, page bar. --}}
+                <div class="order-1 flex min-w-0 flex-col lg:order-2 lg:block">
+                    <div class="order-3 mt-3 flex min-h-12 items-center gap-3 lg:hidden">
                         <x-store-logo :slug="$storeSlug" :name="$storeName" size="sm" class="shrink-0" />
                         <span class="h-6 w-px shrink-0 bg-gray-300"></span>
                         @if ($dateRange)
@@ -199,12 +235,20 @@
                     {{-- Instruction, search and filters only when this
                          leaflet has clickable products. --}}
                     @if ($betaConfig && ! empty($betaConfig['hotspots']))
-                        @include('leaflets.partials.beta.toolbar')
+                        <div class="order-4 mt-3 lg:mt-0">
+                            @include('leaflets.partials.beta.toolbar')
+                        </div>
                     @endif
+                    {{-- touch-action: pinch-zoom on phones, so a drag on the
+                         flyer no longer scrolls the page up and down under
+                         the finger (it is pinned in place); the swipe
+                         handlers below still flip pages and pinch-zoom still
+                         works. Only when the page fits on screen (see
+                         sizeViewer()). --}}
                     <div
                         x-ref="viewerFrame"
-                        class="relative flex h-[75vh] items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
-                        :style="fullscreen ? 'height: 100dvh' : (viewerHeight ? `height: ${viewerHeight}px` : '')"
+                        class="relative order-1 -mx-4 flex h-[75vh] scroll-mt-[var(--header-h)] items-center justify-center overflow-hidden overscroll-contain bg-gray-100 sm:-mx-5 lg:mx-0 lg:rounded-xl lg:border lg:border-gray-200 lg:bg-gray-50"
+                        :style="(fullscreen ? 'height: 100dvh' : (viewerHeight ? `height: ${viewerHeight}px` : '')) + (wide ? '' : (viewerFitsScreen ? ';touch-action: pinch-zoom' : ';touch-action: pan-y pinch-zoom'))"
                         {{-- Important modifiers: the static 'relative' otherwise
                              wins over 'fixed' in the compiled CSS order, so the
                              pseudo-fullscreen overlay never left the page flow. --}}
@@ -239,7 +283,8 @@
                                         class="block h-full w-full object-contain"
                                         :class="{ 'object-right': pageAlign({{ $pageNumber }}) === 'right', 'object-left': pageAlign({{ $pageNumber }}) === 'left' }"
                                         loading="{{ $pageNumber <= 3 ? 'eager' : 'lazy' }}"
-                                        @load="loadedPages[{{ $pageNumber }}] = true{{ $pageNumber === 1 ? '; portrait = $el.naturalHeight >= $el.naturalWidth' : '' }}; $nextTick(() => measure())"
+                                        data-page-img="{{ $pageNumber }}"
+                                        @load="loadedPages[{{ $pageNumber }}] = true{{ $pageNumber === 1 ? '; portrait = $el.naturalHeight >= $el.naturalWidth' : '' }}; $nextTick(() => { sizeViewer(); measure(); })"
                                         x-on:error="loadedPages[{{ $pageNumber }}] = true"
                                     >
                                     <div class="absolute" :style="overlayStyle({{ $pageNumber }})">
@@ -273,7 +318,8 @@
                                     class="block h-full w-auto object-contain"
                                     :class="[spread().length > 1 ? 'max-w-[50%]' : 'max-w-full', fullscreen && 'max-h-full', fullscreen && spread().length === 1 && 'mx-auto']"
                                     loading="{{ $page['page_number'] <= 3 ? 'eager' : 'lazy' }}"
-                                    @load="loadedPages[{{ $page['page_number'] }}] = true{{ $page['page_number'] === 1 ? '; portrait = $el.naturalHeight >= $el.naturalWidth' : '' }}"
+                                    data-page-img="{{ $page['page_number'] }}"
+                                    @load="loadedPages[{{ $page['page_number'] }}] = true{{ $page['page_number'] === 1 ? '; portrait = $el.naturalHeight >= $el.naturalWidth' : '' }}; $nextTick(() => sizeViewer())"
                                     x-on:error="loadedPages[{{ $page['page_number'] }}] = true"
                                 >
                             @endforeach
@@ -323,8 +369,9 @@
 
                     {{-- Mobile only — desktop shows this same pager in the
                          rail, right under the date range, instead (see
-                         below). --}}
-                    <div class="mt-3 lg:hidden">
+                         below). Without the beta page bar this is the bar
+                         sizeViewer() leaves room for under the flyer. --}}
+                    <div class="{{ $betaConfig ? 'order-6' : 'order-2' }} mt-3 lg:hidden" @unless ($betaConfig) x-ref="pagerBar" @endunless>
                         @include('leaflets.partials.leaflet-pager', ['pages' => $pages, 'beta' => (bool) $betaConfig])
                     </div>
                 </div>

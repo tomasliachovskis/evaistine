@@ -1,7 +1,11 @@
 {{-- Under the viewer: big labelled page buttons (the round arrows on the
      image are easy to miss and hard to hit), then the products of the
-     current page(s) as readable rows, each with its own add button. --}}
-<div class="mt-4 flex items-center justify-between gap-2">
+     current page(s) as readable rows, each with its own add button.
+     On phones this bar sits right under the flyer and the two fill the
+     screen (sizeViewer() measures it via x-ref="pagerBar"), so it also
+     carries the shopping list button that used to float over the flyer. --}}
+<div x-ref="pagerBar" class="order-2 mt-2 flex flex-col gap-2 lg:mt-4">
+<div class="flex items-center justify-between gap-2">
     <button
         type="button"
         @click="prev()"
@@ -22,8 +26,19 @@
         <x-app-icon name="chevron-right" class="size-5" />
     </button>
 </div>
+<button
+    type="button"
+    x-show="list.length > 0"
+    x-cloak
+    @click="openList()"
+    class="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-green-soft px-4 text-lg font-bold text-dark-green hover:bg-green-soft-border focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30 lg:hidden"
+>
+    <x-app-icon name="shopping-basket" class="size-6" />
+    <span class="whitespace-nowrap" x-text="'Sąrašas: ' + list.length + ' ' + productWord(list.length) + ', ' + euro(listTotal())"></span>
+</button>
+</div>
 
-<section x-show="spreadHotspots().length > 0" x-cloak class="mt-6" aria-labelledby="spread-products-heading">
+<section x-show="spreadHotspots().length > 0" x-cloak class="order-5 mt-6" aria-labelledby="spread-products-heading">
     <h2 id="spread-products-heading" class="mb-3 text-xl font-bold text-font">
         <span x-text="spread().length > 1 ? 'Šių puslapių prekės' : 'Šio puslapio prekės'"></span>
         <span class="font-normal text-gray-600" x-text="'(' + spreadHotspots().length + ')'"></span>

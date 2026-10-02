@@ -52,6 +52,9 @@
                 ['currentPage', 'wide', 'fullscreen', 'viewerHeight', 'portrait'].forEach((key) => this.$watch(key, remeasure));
                 window.addEventListener('resize', remeasure);
                 this.$watch('currentPage', () => { if (this.selectedId) this.closeCard(); });
+                // The list button in the phone page bar comes and goes,
+                // changing the bar's height the viewer leaves room for.
+                this.$watch('list', () => this.$nextTick(() => this.sizeViewer()));
                 window.addEventListener('storage', (e) => { if (e.key === LIST_KEY) this.list = readList(); });
                 // Back button closes whatever overlay is open.
                 window.addEventListener('popstate', () => {

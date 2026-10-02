@@ -54,6 +54,7 @@
         },
     }"
     x-cloak
+    data-bottom-nav
     style="view-transition-name: bottom-nav"
     class="fixed inset-x-0 bottom-0 z-40 border-t-2 border-gray-200 bg-white shadow-[0_-4px_20px_rgba(15,23,42,0.08)] sm:hidden"
     aria-label="Mobili navigacija"

@@ -94,26 +94,13 @@
     </template>
 </div>
 
-{{-- Phones: the list as a labelled bar above the bottom menu (desktop has
-     the same button next to the title). --}}
-<button
-    type="button"
-    x-show="list.length > 0 && !selectedId && !listOpen"
-    x-cloak
-    @click="openList()"
-    class="fixed inset-x-3 bottom-20 z-50 flex min-h-14 items-center justify-center gap-2 rounded-xl bg-action px-4 text-lg font-bold text-white shadow-lg lg:hidden"
->
-    <x-app-icon name="shopping-basket" class="size-6" />
-    <span x-text="'Pirkinių sąrašas: ' + list.length + ' ' + productWord(list.length) + ', ' + euro(listTotal())"></span>
-</button>
-
 {{-- Confirmation of every list change, with undo. --}}
 <div
     x-show="toast"
     x-cloak
     x-transition.opacity
     role="status"
-    class="fixed inset-x-3 bottom-36 z-[70] mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl bg-font px-4 py-3 text-lg text-white shadow-lg lg:bottom-8"
+    class="fixed inset-x-3 bottom-24 z-[70] mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl bg-font px-4 py-3 text-lg text-white shadow-lg lg:bottom-8"
 >
     <span x-text="toast?.message"></span>
     <button type="button" x-show="toast?.undoable" @click="undo()" class="min-h-12 shrink-0 rounded-lg px-3 font-bold text-[#ffdb4d] underline underline-offset-4 hover:no-underline">Atšaukti</button>
