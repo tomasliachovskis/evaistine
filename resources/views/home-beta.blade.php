@@ -74,21 +74,23 @@
         @endif
 
         {{-- The one call to action: follow prices. Guests open the shared
-             sign-in sheet, signed-in readers go to their followed list. --}}
-        <section x-data class="flex flex-col gap-4 rounded-3xl bg-dark-green p-6 text-white sm:flex-row sm:items-center sm:gap-7 sm:p-10">
-            <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 sm:size-[4.5rem]">
-                <x-app-icon name="bell" class="size-7 fill-none text-[#ffdb4d] sm:size-9" />
+             sign-in sheet, signed-in readers go to their followed list.
+             Light green, same look as the product page's signup card
+             (<x-signup-inline-card>), not a dark slab. --}}
+        <section x-data class="flex flex-col gap-4 rounded-3xl border border-green/30 bg-green/5 p-6 sm:flex-row sm:items-center sm:gap-7 sm:p-10">
+            <span class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 ring-green/20 sm:size-[4.5rem]">
+                <x-app-icon name="bell" class="size-7 fill-none text-dark-green sm:size-9" />
             </span>
             <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-                <h2 class="m-0 text-xl font-extrabold tracking-tight text-white sm:text-2xl">Pranešime, kai atpigs</h2>
-                <p class="m-0 text-base leading-relaxed text-white/85 sm:text-lg">Pažymėkite, ką perkate dažnai. Kai kaina nukris, parašysime el. paštu.</p>
+                <h2 class="m-0 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">Pranešime, kai atpigs</h2>
+                <p class="m-0 text-base leading-relaxed text-gray-700 sm:text-lg">Pažymėkite, ką perkate dažnai. Kai kaina nukris, parašysime el. paštu.</p>
             </div>
             @guest
-                <button type="button" @click="$store.authModal.open = true" class="flex min-h-14 shrink-0 items-center justify-center rounded-2xl bg-white px-7 text-lg font-extrabold text-dark-green hover:bg-green-soft">
+                <button type="button" @click="$store.authModal.open = true" class="flex min-h-14 shrink-0 items-center justify-center rounded-2xl bg-action px-7 text-lg font-extrabold text-white hover:bg-action-hover">
                     Sekti kainas nemokamai
                 </button>
             @else
-                <a href="/favorites" class="flex min-h-14 shrink-0 items-center justify-center rounded-2xl bg-white px-7 text-lg font-extrabold text-dark-green hover:bg-green-soft">
+                <a href="/favorites" class="flex min-h-14 shrink-0 items-center justify-center rounded-2xl bg-action px-7 text-lg font-extrabold text-white hover:bg-action-hover">
                     Mano stebimos prekės
                 </a>
             @endguest
