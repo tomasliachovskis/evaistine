@@ -215,6 +215,12 @@
 
                     <div class="my-2 border-t border-gray-200"></div>
 
+                    <button type="button" @click="menuOpen = false; $store.myStores.sheetOpen = true" class="{{ $menuItemClass(false) }}">
+                        <x-app-icon name="store" class="size-5 shrink-0" />
+                        <span class="flex-1 text-left">Mano parduotuvės</span>
+                        <span x-show="$store.myStores.active()" x-cloak class="text-base font-semibold tabular-nums text-gray-500" x-text="'(' + $store.myStores.slugs.length + ')'"></span>
+                    </button>
+
                     @auth
                         <a href="/favorites" @click="menuOpen = false" class="{{ $menuItemClass(false) }}">
                             <x-app-icon name="heart" class="size-5 shrink-0" />Stebimos prekės

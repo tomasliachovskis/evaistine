@@ -109,7 +109,7 @@
                 >
                     @if ($isStoreHeader)
                         <x-slot:cta>
-                            <x-store-subscribe-button />
+                            <x-store-subscribe-button :slug="$listingMeta['store_slug']" />
                         </x-slot:cta>
                     @endif
                 </x-type-hero>
@@ -275,7 +275,8 @@
                 :show-sort="$showSort"
                 :active-store-slug="$activeStoreSlug"
                 :active-category-slug="$activeCategorySlug"
-                :show-filters="$headerType === 'category' || $headerType === 'store_category' || $headerType === 'store' || $isKeyword"
+                :show-filters="$headerType === 'category' || $headerType === 'store_category' || $headerType === 'store' || $isKeyword || $filtersPrimarySlug === null"
+                :multi-store="! in_array($headerType, ['store', 'store_category'], true)"
                 :key="'filters-'.$basePath"
             />
         @endif

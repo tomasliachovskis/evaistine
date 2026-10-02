@@ -70,7 +70,7 @@
                 :title="$pageTitle"
             >
                 <x-slot:cta>
-                    <x-store-subscribe-button />
+                    <x-store-subscribe-button :slug="$storeSlug" />
                 </x-slot:cta>
             </x-type-hero>
             <x-hero-stats :freshness="$freshnessLabel" />

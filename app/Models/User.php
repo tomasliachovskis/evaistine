@@ -22,6 +22,7 @@ class User extends Authenticatable implements FilamentUser
         'oauth_provider',
         'oauth_provider_id',
         'price_watch_unsubscribed_at',
+        'preferred_store_slugs',
     ];
 
     protected $hidden = [
@@ -33,6 +34,7 @@ class User extends Authenticatable implements FilamentUser
         'email_verified_at' => 'datetime',
         'is_admin' => 'boolean',
         'price_watch_unsubscribed_at' => 'datetime',
+        'preferred_store_slugs' => 'array',
     ];
 
     public function canAccessPanel(Panel $panel): bool

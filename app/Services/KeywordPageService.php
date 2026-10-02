@@ -225,7 +225,17 @@ class KeywordPageService
         // A filter (?store=, ?card=...) narrowing to nothing just renders an
         // empty grid — those URLs are noindex anyway, and a 404 here also
         // broke the Livewire filter request.
-        $filtered = $this->applyCollectionFilters($allDiscounts, $filters);
+        // The listing fetch stops at MAX_LISTING_FETCH hits across all
+        // stores, so on a very large keyword page a store filter ("Mano
+        // parduotuvės") applied to that set could miss its own matches.
+        // Then fetch again with the stores in the Meilisearch filter.
+        $source = $allDiscounts;
+        $storeSlugs = array_values(array_filter(array_map('trim', explode(',', (string) ($filters['store'] ?? '')))));
+        if ($storeSlugs !== [] && ! $noOffers && $this->countMatchingOffers($page) > self::MAX_LISTING_FETCH - self::MEILISEARCH_FETCH_BUFFER) {
+            $storeIds = Store::whereIn('slug', $storeSlugs)->pluck('id')->all();
+            $source = $this->collectMatchingDiscountsCollection($page, $storeIds);
+        }
+        $filtered = $this->applyCollectionFilters($source, $filters);
         $sorted = $this->sortDiscounts($filtered, (string) ($filters['order'] ?? 'popular'));
         $filteredTotal = $sorted->count();
 
@@ -698,14 +708,14 @@ class KeywordPageService
         });
     }
 
-    private function collectMatchingDiscountsCollection(KeywordPage $page): Collection
+    private function collectMatchingDiscountsCollection(KeywordPage $page, array $storeIds = []): Collection
     {
         $limit = min(
             max($this->countMatchingOffers($page) + self::MEILISEARCH_FETCH_BUFFER, self::PER_PAGE),
             self::MAX_LISTING_FETCH,
         );
 
-        $discounts = $this->fetchDisplayedDiscountsFromMeilisearch($page, $limit);
+        $discounts = $this->fetchDisplayedDiscountsFromMeilisearch($page, $limit, $storeIds);
 
         if ($discounts->isEmpty()) {
             $discounts = $this->fallbackCollectDisplayedDiscounts($page, $limit);
@@ -780,7 +790,7 @@ class KeywordPageService
         return $page->slug;
     }
 
-    private function fetchDisplayedDiscountsFromMeilisearch(KeywordPage $page, ?int $maxResults = null): Collection
+    private function fetchDisplayedDiscountsFromMeilisearch(KeywordPage $page, ?int $maxResults = null, array $storeIds = []): Collection
     {
         $limit = $maxResults ?? self::MAX_LISTING_FETCH;
 
@@ -790,6 +800,9 @@ class KeywordPageService
         }
 
         $filters = $this->buildMeilisearchFilters($this->resolveCategoryIds($page));
+        if ($storeIds !== []) {
+            $filters['store_ids'] = $storeIds;
+        }
 
         try {
             $results = $this->meilisearchService->search(

@@ -1,24 +1,22 @@
-@props(['class' => ''])
+@props(['slug', 'class' => ''])
 
-{{-- Ported from store-subscribe-button.tsx — not a real per-store follow
-     backend (there's no StoreFavorite model), it's just a CTA: logged-in
-     users go to their existing /favorites page, guests get prompted to log
-     in. Reuses the shared passwordless auth-modal. --}}
-@auth
-    <a href="/favorites" class="{{ $class }} inline-flex shrink-0 items-center gap-2 rounded-lg border border-green bg-action px-4 py-2 text-base font-bold text-white transition-colors hover:bg-action-hover min-h-12">
-        <x-app-icon name="bell" class="size-4 shrink-0" />
-        <span class="sm:hidden">Sekti</span>
-        <span class="hidden sm:inline">Sekti akcijas</span>
-    </a>
-@else
-    <button
-        type="button"
-        x-data="{}"
-        @click="$store.authModal.open = true"
-        class="{{ $class }} inline-flex shrink-0 items-center gap-2 rounded-lg border border-green bg-action px-4 py-2 text-base font-bold text-white transition-colors hover:bg-action-hover min-h-12"
-    >
-        <x-app-icon name="bell" class="size-4 shrink-0" />
-        <span class="sm:hidden">Sekti</span>
-        <span class="hidden sm:inline">Sekti akcijas</span>
-    </button>
-@endauth
+{{-- On a store's own pages (/akcijos/{store}, /leidinys/{store}): adds the
+     store to "Mano parduotuvės" or takes it off (see the myStores Alpine
+     store in layouts/app.blade.php). Was a "Sekti akcijas" button that only
+     linked to /favorites or the login sheet, with no per-store follow
+     behind it. Works without an account. --}}
+<button
+    type="button"
+    x-data
+    @click="$store.myStores.toggle(@js($slug))"
+    :aria-pressed="$store.myStores.has(@js($slug))"
+    :title="$store.myStores.has(@js($slug)) ? 'Tarp mano parduotuvių. Paspauskite, kad išimtumėte.' : 'Pridėti prie mano parduotuvių'"
+    class="{{ $class }} inline-flex min-h-12 shrink-0 items-center gap-2 rounded-lg border px-4 py-2 text-base font-bold transition-colors"
+    :class="$store.myStores.has(@js($slug)) ? 'border-green-soft-border bg-green-soft text-dark-green hover:bg-green-soft-border' : 'border-green bg-action text-white hover:bg-action-hover'"
+>
+    <x-app-icon x-show="!$store.myStores.has('{{ $slug }}')" name="plus" class="size-5 shrink-0" />
+    <x-app-icon x-show="$store.myStores.has('{{ $slug }}')" x-cloak name="check" class="size-5 shrink-0" />
+    {{-- Short on every screen: the + / check icon and the green or light
+         fill say whether it's added. --}}
+    <span>Mano parduotuvė</span>
+</button>

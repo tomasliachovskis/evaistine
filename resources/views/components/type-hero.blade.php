@@ -19,11 +19,10 @@
     </div>
 
     @isset($cta)
-        {{-- Hidden on mobile: with the stats row above now packed onto one
-             line to fit small screens, a full-width follow button underneath
-             just adds height back — kept for sm+ where it sits inline beside
-             the hero instead of stacked below it. --}}
-        <div class="hidden w-full shrink-0 sm:block sm:w-auto">
+        {{-- Store pages' "Mano parduotuvė" button. Shown on phones too
+             (it was hidden there while it was only a link to the login
+             sheet), as a compact button under the title. --}}
+        <div class="mt-2 shrink-0 sm:mt-0">
             {{ $cta }}
         </div>
     @endisset

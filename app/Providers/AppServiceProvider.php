@@ -29,6 +29,6 @@ class AppServiceProvider extends ServiceProvider
             \Barryvdh\Debugbar\Facades\Debugbar::disable();
         }
 
-        View::composer(['components.mobile-bottom-nav', 'components.site-header'], MobileNavComposer::class);
+        View::composer(['components.mobile-bottom-nav', 'components.site-header', 'components.my-stores-sheet'], MobileNavComposer::class);
     }
 }

@@ -286,7 +286,11 @@ class AkcijosController extends Controller
         // behavior (categories-only / stores-only respectively).
         $headerTypeForFilters = $listingMeta['type'] ?? null;
         $showCategoryFilter = $filtersMode !== 'keyword';
-        $showStoreFilter = $filtersMode === 'keyword' || $headerTypeForFilters === 'category' || $headerTypeForFilters === 'store_category' || $headerTypeForFilters === 'store';
+        // The /akcijos hub (no primary slug) gets the store filter too, so
+        // the same navigation bar (Parduotuvės / Kategorija) is on every
+        // listing (2026-10-02).
+        $isHub = $filtersMode === 'discounts' && $filtersPrimarySlug === null;
+        $showStoreFilter = $isHub || $filtersMode === 'keyword' || $headerTypeForFilters === 'category' || $headerTypeForFilters === 'store_category' || $headerTypeForFilters === 'store';
         $showSort = $headerTypeForFilters !== 'store';
         $activeCategorySlug = $headerTypeForFilters === 'store_category' ? $filtersSecondarySlug : ($headerTypeForFilters === 'category' ? $filtersPrimarySlug : null);
         $activeStoreSlug = ($headerTypeForFilters === 'store_category' || $headerTypeForFilters === 'store')

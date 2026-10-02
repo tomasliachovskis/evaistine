@@ -174,22 +174,23 @@
                                 <x-app-icon name="x" class="size-7" />
                             </button>
                         </div>
-                        @include('components.partials.discount-filter-sections', [
-                            'facet' => 'stores',
-                            'items' => $storeChips->map(fn ($chip) => [
-                                'slug' => $chip['slug'],
-                                'name' => $chip['title'],
-                                'offers_count' => $chip['matching_offers_count'],
-                            ])->all(),
-                            'activeSlug' => null,
-                            'hrefFor' => fn ($slug) => "/leidinys/{$slug}",
-                            'rowClass' => $storeChipRowClass,
-                            'gaSource' => 'leidiniai_all_stores_modal',
-                            // Full directory, not a page-scoped filter — show
-                            // every store immediately, same reasoning as
-                            // site-header's Kategorijos modal.
-                            'visibleLimit' => $storeChips->count(),
-                        ])
+                        {{-- Same store tiles as every other store picker
+                             (<x-store-pick-tile>); each opens that store's
+                             leaflets. --}}
+                        <div class="flex flex-wrap gap-2.5">
+                            @foreach ($storeChips as $chip)
+                                <x-store-pick-tile
+                                    :slug="$chip['logo_slug'] ?? $chip['slug']"
+                                    :name="$chip['title']"
+                                    :href="'/leidinys/' . $chip['slug']"
+                                    :checkbox="false"
+                                    :note="! empty($chip['matching_offers_count']) ? $chip['matching_offers_count'] . ' ' . \App\Support\LithuanianPlural::leafletWord((int) $chip['matching_offers_count']) : null"
+                                    data-ga-event="filter_select"
+                                    :data-ga-item="'store:' . $chip['slug']"
+                                    data-ga-source="leidiniai_all_stores_modal"
+                                />
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </template>

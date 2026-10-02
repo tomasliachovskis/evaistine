@@ -139,6 +139,7 @@
 
     <x-auth-modal />
     <x-price-watch-modal />
+    <x-my-stores-sheet />
     <x-cookie-consent />
     <script>
         document.addEventListener('alpine:init', () => {
@@ -147,6 +148,63 @@
             });
             Alpine.store('priceWatchModal', {
                 open: false,
+            });
+            // "Mano parduotuvės": the stores this visitor shops at. Kept in
+            // localStorage (works without an account) and, when signed in,
+            // in users.preferred_store_slugs too, which wins on load so the
+            // choice follows the user to other devices. Offer listings apply
+            // it in the browser (livewire/discount-filters.blade.php), since
+            // guest pages are cached per URL and never see it server-side.
+            Alpine.store('myStores', {
+                KEY: 'superakcijos_parduotuves_v1',
+                SHOW_ALL_KEY: 'superakcijos_visos_parduotuves',
+                signedIn: @json(auth()->check()),
+                slugs: [],
+                names: {},
+                sheetOpen: false,
+                // "Rodyti visas": all stores for the rest of this visit.
+                showAll: false,
+                init() {
+                    let saved = [];
+                    try { saved = JSON.parse(localStorage.getItem(this.KEY) || '[]'); } catch (e) {}
+                    const account = @json(auth()->user()?->preferred_store_slugs);
+                    if (Array.isArray(account)) {
+                        saved = account;
+                        this.writeLocal(account);
+                    } else if (this.signedIn && Array.isArray(saved) && saved.length) {
+                        this.saveAccount(saved);
+                    }
+                    this.slugs = Array.isArray(saved) ? saved.filter((s) => typeof s === 'string') : [];
+                    try { this.showAll = sessionStorage.getItem(this.SHOW_ALL_KEY) === '1'; } catch (e) {}
+                },
+                active() { return this.slugs.length > 0; },
+                has(slug) { return this.slugs.includes(slug); },
+                filterValue() { return [...this.slugs].sort().join(','); },
+                name(slug) { return this.names[slug] || slug; },
+                set(slugs) {
+                    this.slugs = [...new Set(slugs)];
+                    this.writeLocal(this.slugs);
+                    if (this.signedIn) this.saveAccount(this.slugs);
+                    this.setShowAll(false);
+                    window.dispatchEvent(new CustomEvent('my-stores-changed', { detail: this.slugs }));
+                },
+                toggle(slug) {
+                    this.set(this.has(slug) ? this.slugs.filter((s) => s !== slug) : [...this.slugs, slug]);
+                },
+                setShowAll(on) {
+                    this.showAll = on;
+                    try { on ? sessionStorage.setItem(this.SHOW_ALL_KEY, '1') : sessionStorage.removeItem(this.SHOW_ALL_KEY); } catch (e) {}
+                },
+                writeLocal(slugs) {
+                    try { localStorage.setItem(this.KEY, JSON.stringify(slugs)); } catch (e) {}
+                },
+                saveAccount(slugs) {
+                    fetch('/mano-parduotuves', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '' },
+                        body: JSON.stringify({ stores: slugs }),
+                    }).catch(() => {});
+                },
             });
         });
     </script>

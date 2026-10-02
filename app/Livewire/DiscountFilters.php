@@ -62,6 +62,11 @@ class DiscountFilters extends Component
     #[Locked]
     public bool $showSort = true;
 
+    // Lists offers from several stores (not a store or store+category page),
+    // so the visitor's "Mano parduotuvės" choice applies here.
+    #[Locked]
+    public bool $multiStore = false;
+
     #[Url(as: 'order', except: 'popular')]
     public string $order = 'popular';
 
@@ -102,8 +107,9 @@ class DiscountFilters extends Component
 
     public bool $showCarousels = false;
 
-    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, string $carouselHtml = '', bool $showCarousels = false, bool $showStoreFilter = false, bool $showCategoryFilter = false, ?string $activeStoreSlug = null, ?string $activeCategorySlug = null, bool $showFilters = true): void
+    public function mount(string $mode, ?string $primarySlug, ?string $secondarySlug, array $initialDeals, array $initialPagination, string $carouselHtml = '', bool $showCarousels = false, bool $showStoreFilter = false, bool $showCategoryFilter = false, ?string $activeStoreSlug = null, ?string $activeCategorySlug = null, bool $showFilters = true, bool $multiStore = false): void
     {
+        $this->multiStore = $multiStore;
         $this->mode = $mode;
         $this->primarySlug = $primarySlug;
         $this->secondarySlug = $secondarySlug;
@@ -157,6 +163,26 @@ class DiscountFilters extends Component
     public function toggleStore(string $slug): void
     {
         $this->storeFilter = $this->toggleInCommaList($this->storeFilter, $slug);
+        $this->page = 1;
+        $this->showCarousels = false;
+        $this->refreshResults();
+    }
+
+    // "Mano parduotuvės": the browser sends the saved stores right after
+    // load (the page HTML is cached per URL for guests, so the server never
+    // sees the choice on the first render). Empty clears the store filter.
+    public function applyStores(string $slugs): void
+    {
+        if (! $this->multiStore) {
+            return;
+        }
+
+        $clean = array_slice(array_values(array_unique(array_filter(
+            array_map('trim', explode(',', $slugs)),
+            fn ($slug) => preg_match('/^[a-z0-9-]{1,100}$/', $slug) === 1,
+        ))), 0, 12);
+
+        $this->storeFilter = implode(',', $clean);
         $this->page = 1;
         $this->showCarousels = false;
         $this->refreshResults();
