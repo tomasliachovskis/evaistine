@@ -91,9 +91,9 @@
     class="mt-6 flex w-full flex-col max-sm:gap-1"
     {{-- busy: the list is being updated, shown as a "Ieškome pasiūlymų…" card
          over the list. Set around each filter/sort request (run()) and on
-         taps that load a new page (category links). Multi-store pages also
-         apply "Mano parduotuvės" right after load, unless the URL already
-         picks stores or "Rodyti visas" was chosen for this visit. --}}
+         taps that load a new page (category links). Multi-store pages get
+         "Mano parduotuvės" applied by the server (App\Support\MyStores);
+         the browser applies them after load only if that didn't happen. --}}
     x-data="{
         busy: false,
         // Runs a Livewire call with the loader on until it's done. With
@@ -167,7 +167,7 @@
     }"
     x-init="
         @if ($multiStore)
-            if (!new URL(location.href).searchParams.has('store') && !$store.myStores.showAll) applyMine();
+            if (!new URL(location.href).searchParams.has('store') && !$store.myStores.showAll && !sameAsMine()) applyMine();
         @endif
     "
     @pageshow.window="busy = false"

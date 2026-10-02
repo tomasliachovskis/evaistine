@@ -152,12 +152,14 @@
             // "Mano parduotuvės": the stores this visitor shops at. Kept in
             // localStorage (works without an account) and, when signed in,
             // in users.preferred_store_slugs too, which wins on load so the
-            // choice follows the user to other devices. Offer listings apply
-            // it in the browser (livewire/discount-filters.blade.php), since
-            // guest pages are cached per URL and never see it server-side.
+            // choice follows the user to other devices. Mirrored into a
+            // cookie so offer listings render already filtered on the first
+            // request (App\Support\MyStores); the browser only re-filters
+            // when the cookie wasn't there yet.
             Alpine.store('myStores', {
                 KEY: 'superakcijos_parduotuves_v1',
                 SHOW_ALL_KEY: 'superakcijos_visos_parduotuves',
+                COOKIE: @js(\App\Support\MyStores::COOKIE),
                 signedIn: @json(auth()->check()),
                 slugs: [],
                 names: {},
@@ -175,7 +177,10 @@
                         this.saveAccount(saved);
                     }
                     this.slugs = Array.isArray(saved) ? saved.filter((s) => typeof s === 'string') : [];
+                    // Existing choices (saved before the cookie existed) too.
+                    this.writeCookie(this.COOKIE, this.filterValue(), true);
                     try { this.showAll = sessionStorage.getItem(this.SHOW_ALL_KEY) === '1'; } catch (e) {}
+                    this.writeCookie(this.SHOW_ALL_KEY, this.showAll ? '1' : '', false);
                 },
                 active() { return this.slugs.length > 0; },
                 has(slug) { return this.slugs.includes(slug); },
@@ -194,9 +199,17 @@
                 setShowAll(on) {
                     this.showAll = on;
                     try { on ? sessionStorage.setItem(this.SHOW_ALL_KEY, '1') : sessionStorage.removeItem(this.SHOW_ALL_KEY); } catch (e) {}
+                    this.writeCookie(this.SHOW_ALL_KEY, on ? '1' : '', false);
                 },
                 writeLocal(slugs) {
                     try { localStorage.setItem(this.KEY, JSON.stringify(slugs)); } catch (e) {}
+                    this.writeCookie(this.COOKIE, [...slugs].sort().join(','), true);
+                },
+                // Empty value deletes it. Without keep, a session cookie
+                // (gone when the browser closes, like sessionStorage).
+                writeCookie(name, value, keep) {
+                    const age = !value ? '; max-age=0' : (keep ? '; max-age=31536000' : '');
+                    document.cookie = name + '=' + encodeURIComponent(value) + '; path=/; SameSite=Lax' + age;
                 },
                 saveAccount(slugs) {
                     fetch('/mano-parduotuves', {

@@ -55,9 +55,9 @@
              (livewire/discount-filters.blade.php): labelled buttons that say
              what's shown. Plain links here (this page isn't Livewire), so
              each store tile links to the results with that store added or
-             removed. "Mano parduotuvės" are applied with a redirect to
-             ?store= unless the URL already picks stores or "Visos" was
-             chosen for this visit. --}}
+             removed. "Mano parduotuvės" are applied by the server
+             (App\Support\MyStores); the redirect to ?store= below only runs
+             when that didn't happen (no cookie yet). --}}
         @php
             // Crawler links only: a tap just ticks (see picked below).
             $storeToggleHref = fn (string $slug) => $storeHref($slug);

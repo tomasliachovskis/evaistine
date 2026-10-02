@@ -17,6 +17,7 @@ use App\Support\ProductPageMeta;
 use App\Support\ProductSchema;
 use App\Support\ContentFreshness;
 use App\Support\LithuanianDate;
+use App\Support\MyStores;
 use App\Services\HomePageMetaService;
 use App\Support\CacheVersion;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -49,6 +50,7 @@ class AkcijosController extends Controller
         // (getBestDiscountsByCategory(), the no-store version of the method
         // renderDiscountsListing() uses) — shown whenever no category/store
         // filter is active, same condition as a store page's carousels.
+        MyStores::applyToRequest($request);
         $payload = json_decode($api->getAllDiscounts()->getContent(), true);
 
         $sections = [];
@@ -86,6 +88,8 @@ class AkcijosController extends Controller
         // config/stores.php — leaflet-only stores (Jysk, Senukai, Avon...)
         // used to 404 here while the site itself linked to them.
         if ($slug2 === null && KeywordPage::published()->where('slug', $slug1)->exists()) {
+            MyStores::applyToRequest($request);
+
             return $this->renderKeyword($request, $keywordApi, $slug1);
         }
 
@@ -103,6 +107,11 @@ class AkcijosController extends Controller
         }
 
         if ($store || Category::where('slug', $slug1)->exists()) {
+            // Category pages list every store: "Mano parduotuvės" apply.
+            if (! $store) {
+                MyStores::applyToRequest($request);
+            }
+
             return $this->renderDiscountsListing($request, $api, $slug1, null);
         }
 
@@ -156,6 +165,7 @@ class AkcijosController extends Controller
 
     public function search(Request $request, ProductController $api, string $query)
     {
+        MyStores::applyToRequest($request);
         $response = $api->search($request, $query);
         $payload = json_decode($response->getContent(), true);
 
@@ -228,7 +238,7 @@ class AkcijosController extends Controller
         $breadcrumbs = $payload['breadcrumbs'] ?? [];
         $seo = $payload['seo'] ?? [];
         $listingMeta = $payload['listing_meta'] ?? null;
-        $query = $request->query();
+        $query = MyStores::urlQuery($request);
 
         $faqItems = $listingMeta['sections']['faq'] ?? [];
         $deals = $data['data'] ?? [];

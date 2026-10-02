@@ -12,6 +12,8 @@ class EncryptCookies extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // Written by the browser in plain text (see App\Support\MyStores).
+        \App\Support\MyStores::COOKIE,
+        \App\Support\MyStores::SHOW_ALL_COOKIE,
     ];
 }

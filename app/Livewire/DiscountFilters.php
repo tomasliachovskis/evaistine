@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Http\Controllers\Api\KeywordPageController;
 use App\Http\Controllers\Api\ProductController;
 use App\Support\ListingDealsFetcher;
+use App\Support\MyStores;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -168,21 +169,16 @@ class DiscountFilters extends Component
         $this->refreshResults();
     }
 
-    // "Mano parduotuvės": the browser sends the saved stores right after
-    // load (the page HTML is cached per URL for guests, so the server never
-    // sees the choice on the first render). Empty clears the store filter.
+    // "Mano parduotuvės" changed in the sheet, or the first page view
+    // before the browser had mirrored them into the cookie that
+    // MyStores::applyToRequest() reads. Empty clears the store filter.
     public function applyStores(string $slugs): void
     {
         if (! $this->multiStore) {
             return;
         }
 
-        $clean = array_slice(array_values(array_unique(array_filter(
-            array_map('trim', explode(',', $slugs)),
-            fn ($slug) => preg_match('/^[a-z0-9-]{1,100}$/', $slug) === 1,
-        ))), 0, 12);
-
-        $this->storeFilter = implode(',', $clean);
+        $this->storeFilter = implode(',', MyStores::clean($slugs));
         $this->page = 1;
         $this->showCarousels = false;
         $this->refreshResults();
