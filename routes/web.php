@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CheapestProductsController;
 use App\Http\Controllers\CouponController;
+use App\Http\Controllers\EmailSubscriptionController;
 use App\Http\Controllers\MyStoresController;
 use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\HomeBetaController;
@@ -105,6 +106,16 @@ Route::post('/login', [AuthController::class, 'sendMagicLink'])->middleware(['th
 Route::get('/auth/magic-link/{token}', [AuthController::class, 'verifyMagicLink']);
 Route::post('/login/code', [AuthController::class, 'verifyLoginCode'])->middleware('throttle:10,1,login-code');
 Route::post('/mano-parduotuves', [MyStoresController::class, 'update'])->middleware(['auth', 'throttle:30,1']);
+
+// Email notifications without an account (EmailSubscriptionController): the
+// token is the key of each subscriber's settings page, linked from every
+// email. noindex via the settings view.
+Route::post('/pranesimai', [EmailSubscriptionController::class, 'subscribe'])->middleware('throttle:5,1,email-subscribe');
+Route::get('/pranesimai', [EmailSubscriptionController::class, 'mine'])->middleware('auth');
+Route::get('/pranesimai/patvirtinti/{token}', [EmailSubscriptionController::class, 'confirm']);
+Route::get('/pranesimai/{token}', [EmailSubscriptionController::class, 'settings']);
+Route::post('/pranesimai/{token}', [EmailSubscriptionController::class, 'update'])->middleware('throttle:20,1');
+Route::post('/pranesimai/{token}/atsisakyti', [EmailSubscriptionController::class, 'unsubscribe'])->middleware('throttle:20,1');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/auth/{provider}/redirect', [AuthController::class, 'redirectToProvider'])->whereIn('provider', ['google', 'facebook']);
 Route::get('/auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->whereIn('provider', ['google', 'facebook']);

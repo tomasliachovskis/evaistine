@@ -207,6 +207,20 @@ class Kernel extends ConsoleKernel
             ->twiceDaily(9, 17)
             ->withoutOverlapping(30)
             ->environments(['production']);
+
+        // Email subscribers (EmailSubscriber, /pranesimai): the Thursday
+        // "Šios savaitės akcijos" email, when stores have published that
+        // week's leaflets, and "Naujas leidinys" twice a day, after the
+        // morning and afternoon flyer imports. Only confirmed subscribers.
+        $schedule->command('weekly-digest:send')
+            ->weeklyOn(4, '10:00')
+            ->withoutOverlapping(60)
+            ->environments(['production']);
+
+        $schedule->command('leaflets:notify-subscribers')
+            ->twiceDaily(10, 18)
+            ->withoutOverlapping(30)
+            ->environments(['production']);
     }
 
     /**

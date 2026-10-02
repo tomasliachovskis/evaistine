@@ -98,5 +98,6 @@
 
         {{-- Same leaflet row as the live homepage. --}}
         <x-home-latest-leaflets :leaflets="$latestLeaflets" />
+        <x-email-signup class="mt-8" />
     </div>
 </x-layouts.app>

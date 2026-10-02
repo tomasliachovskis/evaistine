@@ -68,7 +68,14 @@
         categoryOpen: false, sort: 'default', sortOpen: false,
         categoryNames: { @foreach ($categoryFilterOptions as $option) '{{ $option['slug'] }}': @js($option['name']), @endforeach },
     }">
-        <h1 class="mb-5 text-3xl font-extrabold text-gray-900 sm:text-4xl">Stebimos prekės</h1>
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <h1 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">Stebimos prekės</h1>
+            {{-- Which emails come and for which stores (EmailSubscriptionController::mine). --}}
+            <a href="/pranesimai" class="inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-base font-bold text-dark-green underline underline-offset-4 hover:no-underline">
+                <x-app-icon name="mail" class="size-5" />
+                Pranešimai el. paštu
+            </a>
+        </div>
 
         @if ($savingsSummary['total_savings'] > 0)
             <div class="mb-6 flex items-center gap-4 rounded-2xl border border-green bg-green/10 p-4">

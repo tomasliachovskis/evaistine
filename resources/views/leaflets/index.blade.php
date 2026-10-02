@@ -172,5 +172,6 @@
                 </div>
             @endforeach
         @endif
+        <x-email-signup />
     </div>
 </x-layouts.app>

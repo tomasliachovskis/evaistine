@@ -225,6 +225,9 @@
                         <a href="/favorites" @click="menuOpen = false" class="{{ $menuItemClass(false) }}">
                             <x-app-icon name="heart" class="size-5 shrink-0" />Stebimos prekės
                         </a>
+                        <a href="/pranesimai" @click="menuOpen = false" class="{{ $menuItemClass(false) }}">
+                            <x-app-icon name="mail" class="size-5 shrink-0" />Pranešimai el. paštu
+                        </a>
                     @else
                         <button type="button" @click="menuOpen = false; $store.authModal.open = true" class="{{ $menuItemClass(false) }}">
                             <x-app-icon name="heart" class="size-5 shrink-0" />Stebimos prekės

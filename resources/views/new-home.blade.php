@@ -163,6 +163,7 @@
 
 
             <x-home-latest-leaflets :leaflets="$latestLeaflets" />
+            <x-email-signup class="mt-8" />
 
             <div class="flex flex-wrap gap-x-6 gap-y-2 border-t border-gray-200 pt-5 text-base text-gray-600">
                 <span><strong class="text-gray-900 tabular-nums">{{ $stats['total_deals_label'] }}</strong> aktyvios akcijos</span>
