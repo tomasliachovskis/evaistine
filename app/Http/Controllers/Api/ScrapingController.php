@@ -15,6 +15,7 @@ use App\Support\FlyerStorage;
 use App\Support\WorkingHoursParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -142,8 +143,15 @@ class ScrapingController extends Controller
             // sites don't), so it stays optional and the title/date match
             // below remains the fallback for those.
             'source_id' => 'nullable|string',
-            'pdf' => 'required|file|mimetypes:application/pdf|max:61440',
+            'pdf' => 'required_without:pdf_source_url|file|mimetypes:application/pdf|max:61440',
+            // PDFs over 40MB (Elimart's print masters are 54-65MB) come as
+            // the store's own URL instead, downloaded below.
+            'pdf_source_url' => 'nullable|url|starts_with:https://',
         ]);
+
+        if (! $request->hasFile('pdf') && ! $this->isPublicHttpsUrl($validated['pdf_source_url'] ?? '')) {
+            return response()->json(['error' => 'pdf_source_url must be a public https URL'], 422);
+        }
 
         $store = Store::whereRaw('LOWER(name) = ?', [mb_strtolower($validated['store'])])->first();
 
@@ -252,10 +260,80 @@ class ScrapingController extends Controller
         // --pending independently reads the same file straight from this
         // row's pdf_url to run Gemini discount extraction — no separate
         // storage/app/flyers-incoming/ upload needed for either.
+        $pdfFile = $request->hasFile('pdf')
+            ? $request->file('pdf')->getRealPath()
+            : $this->downloadPdf($validated['pdf_source_url']);
+
+        if ($pdfFile === null) {
+            $flyer->delete();
+
+            return response()->json(['error' => 'Could not download a PDF from pdf_source_url'], 422);
+        }
+
         $path = FlyerStorage::pdfPathForFlyer($store, $flyer->slug);
-        Storage::disk('public')->put($path, file_get_contents($request->file('pdf')->getRealPath()));
+        $stream = fopen($pdfFile, 'rb');
+        Storage::disk('public')->put($path, $stream);
+        if (is_resource($stream)) {
+            fclose($stream);
+        }
+
+        if (! $request->hasFile('pdf')) {
+            @unlink($pdfFile);
+        }
 
         return response()->json($flyer, 201);
+    }
+
+    // This endpoint has no auth, so a URL to download must be https and
+    // resolve only to public addresses (no localhost, private network or
+    // cloud metadata IPs).
+    private function isPublicHttpsUrl(string $url): bool
+    {
+        $parts = parse_url($url);
+        if (($parts['scheme'] ?? null) !== 'https' || empty($parts['host'])) {
+            return false;
+        }
+
+        $ips = gethostbynamel($parts['host']) ?: [];
+
+        return $ips !== [] && collect($ips)->every(fn ($ip) => filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        ) !== false);
+    }
+
+    // Streams the PDF to a temp file. Redirects are not followed (they could
+    // point somewhere private). Returns null unless it's a real PDF of at
+    // most 200MB.
+    private function downloadPdf(string $url): ?string
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'flyer_pdf_');
+
+        try {
+            $response = Http::timeout(300)
+                ->withOptions(['allow_redirects' => false])
+                ->sink($tmp)
+                ->get($url);
+        } catch (\Throwable $e) {
+            @unlink($tmp);
+
+            return null;
+        }
+
+        $handle = fopen($tmp, 'rb');
+        $magic = $handle ? fread($handle, 5) : '';
+        if ($handle) {
+            fclose($handle);
+        }
+
+        if (! $response->successful() || $magic !== '%PDF-' || filesize($tmp) > 200 * 1024 * 1024) {
+            @unlink($tmp);
+
+            return null;
+        }
+
+        return $tmp;
     }
 
     public function extractFlyerInfo(Request $request, FlyerCoverInfoExtractor $extractor)

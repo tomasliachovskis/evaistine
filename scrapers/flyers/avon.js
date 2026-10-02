@@ -25,8 +25,7 @@ import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo 
 // etc are all ignored) and the only smaller variant the site itself
 // serves is a blurry 385x500 nav-thumbnail. So each page is downscaled
 // and re-encoded locally via a Chromium canvas (same "render then
-// screenshot smaller" idea as _shared.js's own compressPdfByRasterizing,
-// just done directly on images instead of PDF pages) before assembly —
+// screenshot smaller" idea, done directly on images) before assembly —
 // brings the whole leaflet down to ~25-30MB.
 const ROOT_URL = 'https://lt.avon-brochure.com/';
 

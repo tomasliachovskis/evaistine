@@ -68,16 +68,9 @@ export async function imagesToPdf(imageBuffers) {
     return Buffer.from(await pdfDoc.save());
 }
 
-// Rebuilds an oversized source PDF (over the backend's 60MB cap — see
-// submitFlyer below) into a much smaller one by rasterizing each page as a
-// JPEG and reassembling, rather than just skipping it. Works for any PDF
-// Chromium can render inline (no Content-Disposition:attachment) — same
-// technique as the cover-only screenshot used elsewhere (e.g. kubas.js),
-// just driven page-by-page via the `#page=N` viewer fragment. pdf-lib reads
-// the page count without needing to rasterize anything itself.
-//
-// Screenshotting Chrome's own built-in PDF viewer is a real race: its
-// `#page=N` navigation resolves 'domcontentloaded' almost instantly (that's
+// Used by renderFirstPdfPageToJpeg() below (cover OCR only). Screenshotting
+// Chrome's own built-in PDF viewer is a real race: its `#page=N` navigation
+// resolves 'domcontentloaded' almost instantly (that's
 // just the viewer shell), well before the PDF's own bytes finish streaming
 // in and decoding — a fixed short sleep after that can fire while the
 // viewer is still showing its loading chrome (toolbar/sidebar) over a blank
@@ -105,42 +98,8 @@ function screenshotIsLikelyBlank(buffer, { quality }) {
     return buffer.length < MIN_PLAUSIBLE_BYTES;
 }
 
-export async function compressPdfByRasterizing(pdfUrl, pdfBuffer, { quality = 80, viewport = { width: 1200, height: 1600, deviceScaleFactor: 2 } } = {}) {
-    const pageCount = (await PDFDocument.load(pdfBuffer, { ignoreEncryption: true })).getPageCount();
-    const browser = await launchBrowser();
-
-    try {
-        const page = await browser.newPage();
-        await page.setViewport(viewport);
-
-        const buffers = [];
-        for (let n = 1; n <= pageCount; n++) {
-            // toolbar=0/navpanes=0/scrollbar=0 are standard PDF-open params
-            // Chrome's built-in viewer also honors — without them every
-            // screenshot includes the viewer's own toolbar and thumbnail
-            // sidebar baked permanently into the page image.
-            await page.goto(`${pdfUrl}#page=${n}&toolbar=0&navpanes=0&scrollbar=0`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-            await sleep(n === 1 ? 6000 : 3000);
-
-            let screenshot = await page.screenshot({ type: 'jpeg', quality });
-            if (screenshotIsLikelyBlank(screenshot, { quality })) {
-                console.log(`Page ${n}/${pageCount} looks blank (still rendering?) — waiting longer and retrying once`);
-                await sleep(6000);
-                screenshot = await page.screenshot({ type: 'jpeg', quality });
-            }
-
-            buffers.push(screenshot);
-        }
-
-        return imagesToPdf(buffers);
-    } finally {
-        await browser.close();
-    }
-}
-
-// Screenshots just page 1 of a real, directly-downloadable PDF (same
-// Chrome-viewer-race handling as compressPdfByRasterizing above, just for
-// one page) — used to get a cover image for extractCoverInfo() when a
+// Screenshots just page 1 of a real, directly-downloadable PDF (with the
+// Chrome-viewer-race handling above) — used to get a cover image for extractCoverInfo() when a
 // scraper never builds its leaflet from a per-page image array to begin
 // with (it just fetches one whole PDF file), so there's no buffers[0]
 // already lying around.
@@ -206,10 +165,10 @@ export async function submitFlyer({
     validTo,
     pdfBuffer,
     filename = 'leidinys.pdf',
-    // The original hosted URL `pdfBuffer` was fetched from, if any — needed
-    // to rasterize-and-shrink an oversized PDF (Chromium re-renders it page
-    // by page from this URL). Omit for PDFs already built from page images
-    // (imagesToPdf), which are never this large to begin with.
+    // The original hosted URL `pdfBuffer` was fetched from, if any. A PDF
+    // over 40MB is sent as this URL instead of uploaded, and the backend
+    // downloads the original itself. Omit for PDFs built from page images
+    // (imagesToPdf), which are never that large.
     sourcePdfUrl,
     // Stable per-document ID from the source platform (Yumpu/Issuu docId,
     // dcatalog guid, resolved PDF URL, issue number, ...) — the backend uses
@@ -219,29 +178,6 @@ export async function submitFlyer({
     // on title/dates for those.
     sourceId,
 }) {
-    // A handful of stores' source PDFs are high-res print masters past the
-    // backend's 60MB hard cap (first hit: Elimart, 61MB) — rasterize and
-    // rebuild as a much smaller JPEG-based PDF only for those, rather than
-    // reject or silently fail. Screenshotting each page is a real race
-    // (Chromium's own PDF viewer can still be mid-render when the
-    // screenshot fires, capturing its loading chrome instead of the page —
-    // seen live on Grustė's 34MB "gėrimų gidas": a blank white page under
-    // the viewer's own toolbar/sidebar, stored and served as if it were
-    // real content), so this is worth avoiding whenever the original
-    // genuinely already fits — 40MB (not 20MB) leaves real buffer under the
-    // 60MB cap while letting every file between 20-40MB pass through as its
-    // real, correct self instead of risking that race for no reason.
-    const RESIZE_THRESHOLD_BYTES = 40 * 1024 * 1024;
-    if (pdfBuffer.length > RESIZE_THRESHOLD_BYTES && sourcePdfUrl) {
-        console.log(`[${store}] ${title || ''}: PDF is ${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB — rasterizing to shrink it`);
-        try {
-            pdfBuffer = await compressPdfByRasterizing(sourcePdfUrl, pdfBuffer);
-            console.log(`[${store}] ${title || ''}: rasterized down to ${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB`);
-        } catch (error) {
-            console.error(`[${store}] ${title || ''}: rasterizing failed (${error.message}) — submitting original`);
-        }
-    }
-
     const form = new FormData();
     form.append('store', store);
     if (title) form.append('title', title);
@@ -253,17 +189,21 @@ export async function submitFlyer({
     // literal string "null", which would fail the backend's date validation.
     if (validFrom) form.append('valid_from', validFrom);
     if (validTo) form.append('valid_to', validTo);
-    form.append('pdf', new Blob([pdfBuffer], { type: 'application/pdf' }), filename);
-
-    // The backend's `max:61440` (60MB) file-size validation rejects a
-    // request expecting JSON with a redirect instead of a 422 — which
-    // otherwise surfaces here as a silent-looking "HTTP 200 {}" that's easy
-    // to mistake for success. Check client-side first for a clear failure —
-    // reachable if rasterizing above didn't happen (no sourcePdfUrl) or
-    // didn't get it under the cap.
+    // Some stores' PDFs are print masters near or past the backend's 60MB
+    // upload cap (Elimart: 54-65MB). Anything over 40MB goes as a URL when
+    // there is one, and the backend downloads the original; it renders the
+    // pages itself, so nothing is lost. (This used to screenshot Chrome's
+    // PDF viewer page by page instead, which stored the viewer's own
+    // background and the same page over and over: Elimart, 2026-10.)
+    const SEND_AS_URL_BYTES = 40 * 1024 * 1024;
     const MAX_PDF_BYTES = 60 * 1024 * 1024;
-    if (pdfBuffer.length > MAX_PDF_BYTES) {
-        console.error(`[${store}] ${title || ''}: PDF is ${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB, over the backend's 60MB cap — skipping`);
+    if (pdfBuffer.length <= SEND_AS_URL_BYTES || (pdfBuffer.length <= MAX_PDF_BYTES && !sourcePdfUrl)) {
+        form.append('pdf', new Blob([pdfBuffer], { type: 'application/pdf' }), filename);
+    } else if (sourcePdfUrl) {
+        console.log(`[${store}] ${title || ''}: PDF is ${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB, sending its URL for the backend to download`);
+        form.append('pdf_source_url', sourcePdfUrl);
+    } else {
+        console.error(`[${store}] ${title || ''}: PDF is ${(pdfBuffer.length / 1024 / 1024).toFixed(1)}MB, over the backend's 60MB cap and no source URL — skipping`);
         return { skipped: true, reason: 'pdf_too_large' };
     }
 

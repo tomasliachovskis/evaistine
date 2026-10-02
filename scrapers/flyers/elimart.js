@@ -10,7 +10,7 @@ import { fetchBuffer, submitFlyer, extractCoverInfo, renderFirstPdfPageToJpeg } 
 // converges on just the current + still-valid ones.
 const LISTING_URL = 'https://www.elimart.lt/leidiniai';
 
-function findLeaflets(html) {
+export function findLeaflets(html) {
     const pdfRe = /href="(https:\/\/irp\.cdn-website\.com\/75553b5e\/files\/uploaded\/[^"]+\.pdf)"/g;
     const dateRe = /(\d{4})[.\-_ ]?(\d{2})[.\-_ ]?(\d{2})\s*[-–]\s*(?:(\d{4})[.\-_]?)?(\d{2})[.\-_]?(\d{2})/;
     const leaflets = [];
@@ -22,12 +22,21 @@ function findLeaflets(html) {
             ? headingBlocks[headingBlocks.length - 1][1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
             : '';
 
-        const dateMatch = heading.match(dateRe);
+        // The archive also links other PDFs (a job-candidate privacy
+        // policy was stored as a "leaflet" once). Leaflets say so in the
+        // heading or the filename ("Elimart+Tau+Nr.10.pdf").
+        const filename = decodeURIComponent(match[1].split('/').pop()).replace(/\+/g, ' ');
+        if (!/leidin|tau/i.test(heading) && !/leidin|tau|\d{4}[._ -]\d{2}[._ -]\d{2}/i.test(filename)) {
+            continue;
+        }
+
+        // Older entries carry the dates only in the filename
+        // ("2024_04_24_-_2024_05_07.pdf", "2025.04.07_-_05.04.pdf").
+        const filenameDates = filename.replace(/[_ ]*[-–][_ ]*/g, '-').replace(/[_ ]+/g, '.');
+        const dateMatch = heading.match(dateRe) || filenameDates.match(dateRe);
 
         if (!dateMatch) {
-            // No date in the heading (themed catalog?) — still collect it,
-            // cover OCR gets a chance to find a date below before this is
-            // given up on entirely.
+            // No date anywhere: cover OCR gets a chance below.
             leaflets.push({ url: match[1], validFrom: null, validTo: null });
             continue;
         }
@@ -43,7 +52,8 @@ function findLeaflets(html) {
     return leaflets;
 }
 
-(async () => {
+// Not when imported (scrapers/flyers/elimart.js is also loaded by tests).
+if (process.argv[1]?.endsWith('elimart.js')) (async () => {
     const html = await (await fetch(LISTING_URL)).text();
     const today = new Date().toISOString().slice(0, 10);
     // The backend would skip expired ones anyway, but filtering here avoids
@@ -69,7 +79,11 @@ function findLeaflets(html) {
                     validFrom = coverInfo.validFrom;
                     validTo = coverInfo.validTo;
                 } else {
-                    console.log(`No date in heading or cover OCR for "${filename}" — submitting without dates`);
+                    // Every real Elimart leaflet is dated. An undated one
+                    // would never expire (an old 2024 leaflet stayed on the
+                    // site this way), so skip it.
+                    console.log(`No date in heading, filename or cover OCR for "${filename}" — skipping`);
+                    continue;
                 }
             }
 

@@ -11,7 +11,7 @@ import { launchBrowser, fetchBuffer, submitFlyer, extractCoverInfo } from './_sh
 // an exact day-level validity range, and there's no other date text
 // anywhere on the site for this leaflet — so the cover page is rendered to
 // an image with Puppeteer (single #page=1 screenshot, same technique as
-// _shared.js's compressPdfByRasterizing) and read via the backend's cover-OCR
+// _shared.js's renderFirstPdfPageToJpeg) and read via the backend's cover-OCR
 // endpoint, same as Camelia/Aibė.
 const LISTING_URL = 'https://svarosprekes.lt/pdfviewer/leidinys/';
 
