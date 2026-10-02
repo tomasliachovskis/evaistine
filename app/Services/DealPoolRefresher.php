@@ -166,6 +166,10 @@ class DealPoolRefresher
         $rows = CuratedDeal::query()
             ->whereNull('store_id')
             ->where('scope', 'global_category')
+            // Scored picks only: the carousel fill-up rows
+            // (HomeDealPoolService::fillCategory(), no deal_score) are there
+            // so a thin carousel isn't empty, not "best deals" for the home.
+            ->whereNotNull('deal_score')
             ->orderBy('category_id')
             ->orderBy('position')
             ->get(['category_id', 'position', 'discount_id', 'deal_score']);

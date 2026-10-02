@@ -92,7 +92,65 @@ class HomeDealPoolService
         // that one store.
         $maxPerStore = $storeId === null ? max(2, (int) ceil($limit / 2)) : PHP_INT_MAX;
 
-        return collect($this->applyFamilyCap($candidates, $limit, 1, $maxPerStore));
+        $picked = $this->applyFamilyCap($candidates, $limit, 1, $maxPerStore);
+
+        return collect([...$picked, ...$this->fillCategory($categoryId, $storeId, $picked, $limit - count($picked), $maxPerStore)]);
+    }
+
+    /**
+     * Tops a thin category carousel up to $missing more cards (owner's rule,
+     * 2026-10-02): full-catalog stores (Ermitažas, Vynoteka, Thomas Philipps)
+     * often have only 1-2 discounts in a category, so the carousel showed one
+     * card next to "Žiūrėti visas (6)". After the scored pick it takes the
+     * remaining discounts by biggest discount, then products without a
+     * discount by lowest price. No family cap here (a second flavour beats
+     * an empty slot), but one card per product and the same per-store cap
+     * on global carousels.
+     *
+     * @param  list<Discount>  $picked
+     * @return list<Discount>
+     */
+    private function fillCategory(int $categoryId, ?int $storeId, array $picked, int $missing, int $maxPerStore): array
+    {
+        if ($missing <= 0) {
+            return [];
+        }
+
+        $pickedIds = array_map(fn (Discount $d) => $d->id, $picked);
+        $productIds = array_map(fn (Discount $d) => $d->product_id, $picked);
+        $storeCounts = array_count_values(array_map(fn (Discount $d) => $d->store_id, $picked));
+
+        $candidates = Discount::query()
+            ->select('discounts.*')
+            ->join('products', 'products.id', '=', 'discounts.product_id')
+            ->with(['product.category', 'product.discounts.store', 'product.discountHistories.store', 'store'])
+            ->where('products.category_id', $categoryId)
+            ->when($storeId, fn ($query) => $query->where('discounts.store_id', $storeId))
+            ->whereNotIn('discounts.id', $pickedIds ?: [0])
+            ->where('discounts.discounted_price', '>', 0)
+            ->orderByRaw('COALESCE(discounts.discount_percent, 0) > 0 DESC')
+            ->orderByDesc('discounts.discount_percent')
+            ->orderBy('discounts.discounted_price')
+            ->limit($missing * 4)
+            ->get();
+
+        $filled = [];
+        foreach ($candidates as $discount) {
+            if (count($filled) >= $missing) {
+                break;
+            }
+            if (in_array($discount->product_id, $productIds, true)) {
+                continue;
+            }
+            if (($storeCounts[$discount->store_id] ?? 0) >= $maxPerStore) {
+                continue;
+            }
+            $filled[] = $discount;
+            $productIds[] = $discount->product_id;
+            $storeCounts[$discount->store_id] = ($storeCounts[$discount->store_id] ?? 0) + 1;
+        }
+
+        return $filled;
     }
 
     /**
