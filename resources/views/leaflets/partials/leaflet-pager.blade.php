@@ -1,47 +1,32 @@
-{{-- Shared between leaflets/show.blade.php's two pager placements (desktop:
-     in the rail below the date range; mobile: below the image instead) —
-     same buttons/click handlers either way, reading/writing the enclosing
-     x-data's currentPage (lifted up to the outer grid so both placements
-     and the viewer share one Alpine scope). --}}
-@php $lastPage = count($pages); @endphp
-<div class="flex flex-wrap items-center gap-1.5">
-    @foreach ($pages as $page)
-        @continue($page['page_number'] > 5 && $page['page_number'] !== $lastPage)
-        <button
-            type="button"
-            @click="currentPage = {{ $page['page_number'] }}"
-            :class="isShown({{ $page['page_number'] }}) ? '{{ ! empty($beta) ? 'border-action bg-action' : 'border-green bg-action' }} text-white' : '{{ ! empty($beta) ? 'border-gray-400 text-font' : 'border-gray-200 text-gray-700' }} bg-white hover:border-green/40'"
-            class="relative flex items-center justify-center rounded-lg border font-bold transition-colors min-h-12 min-w-12 border px-2.5 text-lg"
-        >{{ $page['page_number'] }}@if (! empty($beta))<span
-                x-show="filtering() && pageMatchCount({{ $page['page_number'] }}) > 0"
-                x-cloak
-                class="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-[#ffdb4d] px-1 text-xs font-bold leading-5 text-gray-900"
-                x-text="pageMatchCount({{ $page['page_number'] }})"
-            ></span>@endif</button>
-
-        @if ($page['page_number'] === 5 && $lastPage > 6)
-            {{-- Prev/next arrows, swipe, and the keyboard shortcuts can land
-                 currentPage anywhere in the truncated gap (6..lastPage-1),
-                 not just on one of the statically-rendered 1-5/last buttons
-                 — confirmed live 2026-09-18: arriving on e.g. page 23 left
-                 no button highlighted at all, since 23 was never rendered.
-                 Reactive middle button (Alpine, not Blade — currentPage is
-                 client-only state): shows "… N …" for whichever page that
-                 actually is, or just the plain "…" when currentPage is
-                 already one of the static buttons. --}}
-            <template x-if="currentPage > 5 && currentPage < {{ $lastPage }}">
-                <span class="px-1 font-bold {{ ! empty($beta) ? 'text-lg text-gray-600' : 'text-sm text-gray-400' }}">…</span>
-            </template>
-            <template x-if="currentPage > 5 && currentPage < {{ $lastPage }}">
-                <button
-                    type="button"
-                    class="flex items-center justify-center rounded-lg border font-bold text-white min-h-12 min-w-12 bg-green-soft bg-action px-2.5 text-lg"
-                    x-text="currentPage"
-                ></button>
-            </template>
-            <template x-if="!(currentPage > 5 && currentPage < {{ $lastPage }})">
-                <span class="px-1 font-bold {{ ! empty($beta) ? 'text-lg text-gray-600' : 'text-sm text-gray-400' }}">…</span>
-            </template>
-        @endif
-    @endforeach
-</div>
+{{-- Page buttons in the leaflet page's side column, like manoakcijos.lt:
+     the first and last page and the ones around the current page, with
+     "…" for the gaps (1 … 4 [5] 6 … 12). Built in Alpine from currentPage
+     (pagerItems() in leaflets/show.blade.php), since the current page is
+     client-side state. With the beta layer, a yellow badge counts the
+     search/filter matches on that page. --}}
+<nav class="flex flex-wrap items-center gap-1.5" aria-label="Leidinio puslapiai">
+    <template x-for="item in pagerItems()" :key="item.key">
+        <span class="contents">
+            <span x-show="item.page === null" class="flex min-h-12 min-w-8 items-center justify-center text-lg font-bold text-gray-600">…</span>
+            <button
+                type="button"
+                x-show="item.page !== null"
+                @click="currentPage = item.page"
+                :aria-current="item.page === currentPage ? 'page' : null"
+                :aria-label="item.page + ' puslapis'"
+                class="relative flex min-h-12 min-w-12 items-center justify-center rounded-lg px-2.5 text-lg font-bold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
+                :class="item.page === currentPage ? 'bg-font text-white' : 'bg-gray-100 text-font hover:bg-gray-200'"
+            >
+                <span x-text="item.page"></span>
+                @if (! empty($beta))
+                    <span
+                        x-show="filtering() && pageMatchCount(item.page) > 0"
+                        x-cloak
+                        class="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-[#ffdb4d] px-1 text-xs font-bold leading-5 text-gray-900"
+                        x-text="pageMatchCount(item.page)"
+                    ></span>
+                @endif
+            </button>
+        </span>
+    </template>
+</nav>

@@ -49,12 +49,9 @@
 
             betaInit() {
                 const remeasure = () => this.$nextTick(() => requestAnimationFrame(() => this.measure()));
-                ['currentPage', 'wide', 'fullscreen', 'viewerHeight', 'portrait'].forEach((key) => this.$watch(key, remeasure));
+                ['currentPage', 'wide', 'fullscreen', 'viewerHeight'].forEach((key) => this.$watch(key, remeasure));
                 window.addEventListener('resize', remeasure);
                 this.$watch('currentPage', () => { if (this.selectedId) this.closeCard(); });
-                // The list button in the phone page bar comes and goes,
-                // changing the bar's height the viewer leaves room for.
-                this.$watch('list', () => this.$nextTick(() => this.sizeViewer()));
                 window.addEventListener('storage', (e) => { if (e.key === LIST_KEY) this.list = readList(); });
                 // Back button closes whatever overlay is open.
                 window.addEventListener('popstate', () => {
@@ -70,9 +67,8 @@
             // ---- Page geometry ---------------------------------------
 
             // Where the page image's content actually renders inside its
-            // wrapper: object-contain letterboxes it, differently in the
-            // spread (left page pushed right, right page pushed left) and on
-            // phones (fitted by width). Hotspots are positioned inside it.
+            // wrapper: object-contain letterboxes it, centered. Hotspots are
+            // positioned inside it.
             measure() {
                 const rects = {};
                 this.$root.querySelectorAll('[data-page-wrap]').forEach((wrap) => {
@@ -85,16 +81,9 @@
                     const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight);
                     const w = img.naturalWidth * scale;
                     const h = img.naturalHeight * scale;
-                    const align = this.pageAlign(page);
-                    const x = align === 'right' ? W - w : (align === 'left' ? 0 : (W - w) / 2);
-                    rects[page] = { x, y: (H - h) / 2, w, h };
+                    rects[page] = { x: (W - w) / 2, y: (H - h) / 2, w, h };
                 });
                 this.rects = rects;
-            },
-
-            pageAlign(page) {
-                if (this.spread().length < 2) return 'center';
-                return page === this.spread()[0] ? 'right' : 'left';
             },
 
             overlayStyle(page) {
@@ -145,11 +134,6 @@
                 return this.hotspots
                     .filter((h) => pages.includes(h.page))
                     .sort((a, b) => (a.page - b.page) || (a.box[0] - b.box[0]) || (a.box[1] - b.box[1]));
-            },
-
-            pagesLabel() {
-                const pages = this.spread();
-                return (pages.length > 1 ? `${pages[0]} ir ${pages[1]} puslapis` : `${pages[0]} puslapis`) + ` iš ${this.totalPages}`;
             },
 
             // ---- Search and filters ----------------------------------

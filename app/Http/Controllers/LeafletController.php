@@ -109,6 +109,7 @@ class LeafletController extends Controller
             'flyerOffersTotal' => $payload['flyer_offers_total'] ?? 0,
             'flyerOffersIntro' => $payload['flyer_offers_intro'] ?? null,
             'betaConfig' => $betaConfig,
+            'sidebarLeaflets' => $this->sidebarLeaflets($payload['listing_meta'], $store),
             'flyerOffersSchema' => ! empty($payload['flyer_offers']) ? ItemListSchema::build(
                 ($payload['seo']['seo_title'] ?? 'Leidinys').' – akcijos',
                 collect($payload['flyer_offers'])->map(fn ($d) => [
@@ -121,6 +122,30 @@ class LeafletController extends Controller
                 $payload['flyer_offers_total'] ?? null
             ) : null,
         ]);
+    }
+
+    /**
+     * "Taip pat žiūrėkite kitus leidinius" in the leaflet page's side
+     * column: this store's other current leaflets first, then one current
+     * leaflet per other store (the main chains first), up to 6.
+     */
+    private function sidebarLeaflets(array $listingMeta, string $storeSlug): array
+    {
+        $limit = 6;
+        $currentSlug = $listingMeta['flyer']['slug'] ?? null;
+
+        $sameStore = collect($listingMeta['leaflets'] ?? [])
+            ->filter(fn ($l) => ($l['slug'] ?? null) !== $currentSlug && ($l['status'] ?? null) !== 'expired')
+            ->map(fn ($l) => $l + ['store_name' => $listingMeta['store_name'] ?? $storeSlug, 'store_slug' => $storeSlug]);
+
+        $mainStores = ['maxima', 'norfa', 'lidl', 'rimi', 'iki'];
+        $otherStores = collect(json_decode(app(ProductController::class)->getAllLeaflets()->getContent(), true)['leaflets'] ?? [])
+            ->filter(fn ($l) => ($l['status'] ?? null) !== 'expired' && ($l['store_slug'] ?? null) !== $storeSlug)
+            ->groupBy('store_slug')
+            ->map(fn ($leaflets) => $leaflets->first())
+            ->sortBy(fn ($l) => ($i = array_search($l['store_slug'], $mainStores, true)) === false ? count($mainStores) : $i);
+
+        return $sameStore->concat($otherStores)->take($limit)->values()->all();
     }
 
     /**
