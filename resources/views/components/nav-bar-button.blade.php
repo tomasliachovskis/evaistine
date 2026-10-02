@@ -19,7 +19,7 @@
         @elseif ($icon)
             <x-app-icon :name="$icon" class="size-6 shrink-0 text-dark-green" />
         @endif
-        <span class="min-w-0 flex-1 truncate" @if ($valueText) x-text="{{ $valueText }}" @endif>{{ $slot }}</span>
+        <span data-nav-value class="min-w-0 flex-1 truncate" @if ($valueText) x-text="{{ $valueText }}" @endif>{{ $slot }}</span>
         <x-app-icon :name="$href ? 'arrow-right' : 'chevron-down'" class="size-5 shrink-0 text-gray-500" />
     @if ($href)
         </a>

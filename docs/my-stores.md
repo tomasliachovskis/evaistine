@@ -30,6 +30,7 @@ Not applied when:
 
 `livewire/discount-filters.blade.php`, since 2026-10-02. The bar has three labelled buttons: "Parduotuvės", "Kategorija" and "Rikiuoti". Each says in words what is shown, e.g. "Mano: Maxima, Lidl" or "Duonos gaminiai", and opens its list.
 - **Layout:** in the page above the list, not pinned (2026-10-02, it covered too much of the list). One row on desktop, stacked full-width buttons on phones.
+- **Folding on phones:** a "Filtrai" header folds the stacked buttons (~346px) to one summary line (~84px), e.g. "Mano: Norfa · Mėsa ir žuvis · Populiariausi". Remembered in `localStorage['superakcijos_filtrai_suskleisti']`. Desktop is always open (`<x-nav-bar>`).
 - **It replaced:**
   - the green "Rodomos tik jūsų parduotuvės" bar;
   - the "Perkate tik keliose parduotuvėse?" line;
