@@ -32,6 +32,10 @@ class AuthController extends Controller
 
     private const MAGIC_LINK_TTL_MINUTES = 30;
 
+    // Wrong code entries allowed per mailed code before it stops working
+    // (a new email has to be requested). 5 tries out of a million codes.
+    private const MAX_CODE_ATTEMPTS = 5;
+
     public function rememberPendingFavorite(Request $request): JsonResponse
     {
         $request->validate(['product_id' => 'required|integer']);
@@ -80,7 +84,11 @@ class AuthController extends Controller
 
     // Passwordless login: no registration flow, no password field. A user
     // enters their email, we mail them a single-use link that logs them in,
-    // creating the account automatically the first time it's used.
+    // creating the account automatically the first time it's used. The same
+    // email carries a 6-digit code that can be typed into the login window
+    // instead: on phones the link often opens in another browser (the mail
+    // app's own), which logs that browser in and leaves the window the
+    // reader started in logged out. Either one works; using one uses both.
     public function sendMagicLink(Request $request): RedirectResponse|JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -94,13 +102,16 @@ class AuthController extends Controller
             return $this->validationFailed($request, $validator);
         }
 
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
         $link = MagicLoginLink::create([
             'email' => $request->email,
             'token' => str()->random(64),
+            'code_hash' => Hash::make($code),
             'expires_at' => now()->addMinutes(self::MAGIC_LINK_TTL_MINUTES),
         ]);
 
-        Mail::to($link->email)->send(new MagicLinkMail(url("/auth/magic-link/{$link->token}")));
+        Mail::to($link->email)->send(new MagicLinkMail(url("/auth/magic-link/{$link->token}"), $code));
 
         if ($request->wantsJson()) {
             return response()->json(['sent' => true]);
@@ -125,6 +136,64 @@ class AuthController extends Controller
             return redirect('/?login=1&magic_link_expired=1');
         }
 
+        return $this->loginWithLink($request, $link);
+    }
+
+    // The code from the same email, typed into the login window. Checked
+    // against the newest code mailed to this address only, so requesting a
+    // new email retires the older code.
+    public function verifyLoginCode(Request $request): RedirectResponse|JsonResponse
+    {
+        $request->merge(['code' => preg_replace('/\D/', '', (string) $request->input('code'))]);
+
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'code' => 'required|digits:6',
+        ], [
+            'email.required' => 'Įveskite el. paštą.',
+            'email.email' => 'Neteisingas el. pašto formatas.',
+            'code.required' => 'Įveskite kodą iš laiško.',
+            'code.digits' => 'Kodą sudaro 6 skaitmenys.',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationFailed($request, $validator);
+        }
+
+        $link = MagicLoginLink::where('email', $request->email)
+            ->whereNotNull('code_hash')
+            ->latest('id')
+            ->first();
+
+        if (! $link || ! $link->isValid() || $link->code_attempts >= self::MAX_CODE_ATTEMPTS) {
+            return $this->codeFailed($request, 'Šis kodas nebegalioja. Paspauskite „Siųsti naują laišką“.');
+        }
+
+        if (! Hash::check($request->code, $link->code_hash)) {
+            $link->increment('code_attempts');
+            $left = self::MAX_CODE_ATTEMPTS - $link->code_attempts;
+
+            return $this->codeFailed($request, $left > 0
+                ? 'Neteisingas kodas. Patikrinkite laišką ir bandykite dar kartą.'
+                : 'Per daug bandymų. Paspauskite „Siųsti naują laišką“.');
+        }
+
+        return $this->loginWithLink($request, $link);
+    }
+
+    private function codeFailed(Request $request, string $message): RedirectResponse|JsonResponse
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['errors' => ['code' => [$message]]], 422);
+        }
+
+        return back()->withErrors(['code' => $message])->withInput($request->only('email'));
+    }
+
+    // Marks the link (and with it its code) used, then logs in the owner of
+    // its email, creating the account the first time.
+    private function loginWithLink(Request $request, MagicLoginLink $link): RedirectResponse|JsonResponse
+    {
         $link->update(['used_at' => now()]);
 
         $user = User::firstOrCreate(

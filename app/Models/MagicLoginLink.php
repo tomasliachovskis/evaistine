@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class MagicLoginLink extends Model
 {
-    protected $fillable = ['email', 'token', 'expires_at', 'used_at', 'redirect_to'];
+    protected $fillable = ['email', 'token', 'code_hash', 'code_attempts', 'expires_at', 'used_at', 'redirect_to'];
+
+    protected $hidden = ['code_hash'];
 
     protected $casts = [
         'expires_at' => 'datetime',

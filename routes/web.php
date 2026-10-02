@@ -102,6 +102,7 @@ Route::get('/login', function () {
 Route::post('/auth/pending-favorite', [AuthController::class, 'rememberPendingFavorite']);
 Route::post('/login', [AuthController::class, 'sendMagicLink'])->middleware(['throttle:6,1,magic-link-burst', 'throttle:50,1440,magic-link-daily']);
 Route::get('/auth/magic-link/{token}', [AuthController::class, 'verifyMagicLink']);
+Route::post('/login/code', [AuthController::class, 'verifyLoginCode'])->middleware('throttle:10,1,login-code');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/auth/{provider}/redirect', [AuthController::class, 'redirectToProvider'])->whereIn('provider', ['google', 'facebook']);
 Route::get('/auth/{provider}/callback', [AuthController::class, 'handleProviderCallback'])->whereIn('provider', ['google', 'facebook']);

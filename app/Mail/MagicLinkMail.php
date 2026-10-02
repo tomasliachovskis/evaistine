@@ -10,13 +10,13 @@ class MagicLinkMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public string $loginUrl)
+    public function __construct(public string $loginUrl, public ?string $code = null)
     {
     }
 
     public function build(): self
     {
-        return $this->subject('Prisijungimo nuoroda - SuperAkcijos')
+        return $this->subject($this->code ? "Prisijungimo kodas {$this->code} - SuperAkcijos" : 'Prisijungimo nuoroda - SuperAkcijos')
             ->view('emails.magic-link');
     }
 }

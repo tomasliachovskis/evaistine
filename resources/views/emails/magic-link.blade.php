@@ -28,6 +28,12 @@
                                 </td>
                             </tr>
                         </table>
+                        @if (! empty($code))
+                            <p style="margin:28px 0 8px; font-size:15px; line-height:1.6; color:#4b5563;">
+                                Arba įveskite šį kodą svetainėje, prisijungimo lange:
+                            </p>
+                            <p style="margin:0; font-size:34px; font-weight:700; letter-spacing:6px; color:#111827; font-family:'Courier New',Courier,monospace;">{{ substr($code, 0, 3) }} {{ substr($code, 3) }}</p>
+                        @endif
                         <p style="margin:24px 0 0; font-size:13px; line-height:1.6; color:#9ca3af;">
                             Jei nuorodos neprašėte, tiesiog ignoruokite šį laišką.
                         </p>

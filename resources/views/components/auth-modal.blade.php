@@ -17,6 +17,12 @@
         submitting: false,
         sent: false,
         errors: {},
+        // The address the email went to, for the code step and 'send again'.
+        email: '',
+        code: '',
+        codeErrors: {},
+        checking: false,
+        resent: false,
         firstError(errors) {
             const values = Object.values(errors);
             return values.length ? values[0][0] : null;
@@ -41,17 +47,64 @@
                     this.submitting = false;
                     return;
                 }
+                this.email = new FormData(form).get('email');
+                this.code = '';
+                this.codeErrors = {};
                 this.submitting = false;
                 this.sent = true;
+                this.$nextTick(() => this.$refs.codeInput?.focus());
             } catch (e) {
                 this.submitting = false;
             }
+        },
+        // The 6-digit code from the same email, entered here so the login
+        // happens in this window (the link often opens in another browser
+        // on phones). Using it also uses the link, and vice versa.
+        async submitCode() {
+            if (this.checking) return;
+            this.checking = true;
+            this.codeErrors = {};
+            this.resent = false;
+            try {
+                const res = await fetch('/login/code', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '' },
+                    body: JSON.stringify({ email: this.email, code: this.code }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+                this.codeErrors = data.errors || { code: [res.status === 429 ? 'Per daug bandymų. Palaukite minutę.' : 'Nepavyko. Bandykite dar kartą.'] };
+            } catch (e) {
+                this.codeErrors = { code: ['Nepavyko. Bandykite dar kartą.'] };
+            }
+            this.checking = false;
+        },
+        async resend() {
+            if (this.submitting) return;
+            this.submitting = true;
+            this.codeErrors = {};
+            try {
+                const body = new FormData();
+                body.append('email', this.email);
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '' },
+                    body,
+                });
+                this.resent = res.ok;
+                if (!res.ok) this.codeErrors = { code: [res.status === 429 ? 'Per daug laiškų. Palaukite minutę.' : 'Nepavyko išsiųsti. Bandykite dar kartą.'] };
+                this.code = '';
+            } catch (e) {}
+            this.submitting = false;
         },
     }"
     x-show="$store.authModal.open"
     x-cloak
     @keydown.escape.window="$store.authModal.open = false"
-    @open-auth-modal.window="$store.authModal.open = true; sent = false; errors = {}"
+    @open-auth-modal.window="$store.authModal.open = true; sent = false; errors = {}; codeErrors = {}; resent = false"
     x-back-closes="$store.authModal.open"
     class="sheet-backdrop"
     style="display: none;"
@@ -67,9 +120,41 @@
 
         <div class="space-y-4 px-6 py-5">
             <template x-if="sent">
-                <div class="space-y-2 rounded-lg border border-green/30 bg-green/5 px-4 py-4 text-center">
-                    <p class="text-sm font-semibold text-gray-900">Nuoroda išsiųsta!</p>
-                    <p class="text-sm text-gray-600">Patikrinkite savo el. paštą ir paspauskite nuorodą, kad prisijungtumėte. Ji galioja 30 minučių.</p>
+                <div class="space-y-4">
+                    <div class="space-y-1 rounded-lg border border-green/30 bg-green/5 px-4 py-4">
+                        <p class="text-lg font-semibold text-gray-900">Laiškas išsiųstas</p>
+                        <p class="text-base text-gray-700">Išsiuntėme laišką į <span class="font-semibold break-all" x-text="email"></span>. Jame yra 6 skaitmenų kodas ir nuoroda. Jie galioja 30 minučių.</p>
+                    </div>
+
+                    <form @submit.prevent="submitCode()" class="space-y-3">
+                        <label for="login-code" class="block text-lg font-semibold text-gray-900">Įveskite kodą iš laiško</label>
+                        <input
+                            id="login-code"
+                            x-ref="codeInput"
+                            x-model="code"
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="one-time-code"
+                            maxlength="7"
+                            placeholder="000 000"
+                            class="min-h-14 w-full rounded-lg border border-gray-300 px-3 text-center text-3xl font-bold tracking-[0.3em] tabular-nums placeholder:text-gray-300 focus:border-dark-green focus:outline-none focus-visible:ring-4 focus-visible:ring-dark-green/30"
+                        >
+                        <template x-if="firstError(codeErrors)">
+                            <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-base text-red-700" role="alert" x-text="firstError(codeErrors)"></p>
+                        </template>
+                        <p x-show="resent" class="rounded-lg bg-green-soft px-3 py-2.5 text-base font-semibold text-dark-green" role="status">Naujas laiškas išsiųstas. Įveskite naują kodą.</p>
+                        <button type="submit" :disabled="checking" class="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-action text-lg font-bold text-white shadow-sm transition-colors hover:bg-action-hover disabled:cursor-not-allowed disabled:opacity-60">
+                            <span x-show="checking" class="size-4 shrink-0 animate-spin rounded-full border border-white/40 border-t-white"></span>
+                            Prisijungti
+                        </button>
+                    </form>
+
+                    <p class="text-base text-gray-600">Arba tiesiog paspauskite nuorodą laiške.</p>
+
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" @click="resend()" :disabled="submitting" class="min-h-12 rounded-lg px-3 text-base font-semibold text-dark-green underline underline-offset-4 hover:no-underline disabled:opacity-60">Siųsti naują laišką</button>
+                        <button type="button" @click="sent = false; codeErrors = {}; resent = false" class="min-h-12 rounded-lg px-3 text-base font-semibold text-dark-green underline underline-offset-4 hover:no-underline">Pakeisti el. paštą</button>
+                    </div>
                 </div>
             </template>
 
@@ -108,7 +193,7 @@
                         <button type="submit" :disabled="submitting" class="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-action text-sm font-semibold text-white shadow-sm transition-colors hover:bg-action-hover disabled:cursor-not-allowed disabled:opacity-60">
                             <span x-show="submitting" class="size-4 shrink-0 animate-spin rounded-full border border-white/40 border-t-white"></span>
                             <x-app-icon name="mail" class="size-4" x-show="!submitting" />
-                            Atsiųsti prisijungimo nuorodą
+                            Atsiųsti prisijungimo laišką
                         </button>
                     </form>
                 </div>
