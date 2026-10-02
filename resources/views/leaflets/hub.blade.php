@@ -15,7 +15,9 @@
     // "Visi {Store} akcijų leidiniai" — no validity date or year in the H1
     // (real per-leaflet dates now live in the meta description instead, see
     // ProductController::generateSeoData()'s 'store_leaflet' case).
-    $pageTitle = 'Visi ' . $storeName . ' akcijų ' . $leafletNounPlural;
+    // Stores without an offers page: "{Store} akcijos ir akcijų leidiniai"
+    // (ProductController::generateSeoData()'s 'store_leaflet' case).
+    $pageTitle = $seo['h1'] ?? ('Visi ' . $storeName . ' akcijų ' . $leafletNounPlural);
     $leafletDescription = $listingMeta['leaflet_description'] ?? null;
     $content = $listingMeta['content'] ?? [];
     $aboutParagraphs = $content['about']['paragraphs'] ?? [];

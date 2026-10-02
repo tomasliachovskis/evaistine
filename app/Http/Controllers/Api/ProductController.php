@@ -1241,7 +1241,9 @@ class ProductController extends Controller
                 if ($currentFlyer) {
                     $currentLabel = $currentFlyer->metaLabel();
 
-                    $metaDescription = "Dabar galioja „{$currentLabel}“. Peržiūrėkite katalogą ir kitus naujausius „{$entity->name}“ akcijų {$leafletNounAccusativePlural}.";
+                    $metaDescription = $entity->showsDiscountsPage()
+                        ? "Dabar galioja „{$currentLabel}“. Peržiūrėkite katalogą ir kitus naujausius „{$entity->name}“ akcijų {$leafletNounAccusativePlural}."
+                        : "Dabar galioja „{$currentLabel}“. Peržiūrėkite {$entity->name} akcijas ir kitus naujausius akcijų {$leafletNounAccusativePlural}.";
                 } else {
                     // No currently-valid flyer found at all — fall back to
                     // the previous generic validity-range sentence (same
@@ -1258,8 +1260,16 @@ class ProductController extends Controller
                     'seo_description' => $entity->description,
                     // No date/issue-number in the title anymore — see
                     // meta_description instead.
-                    'meta_title' => "Naujausi {$entity->name} akcijų {$leafletNounPlural}",
+                    'meta_title' => $entity->showsDiscountsPage()
+                        ? "Naujausi {$entity->name} akcijų {$leafletNounPlural}"
+                        : "{$entity->name} akcijos ir naujausi {$leafletNounPlural}",
                     'meta_description' => $metaDescription,
+                    // A store without its own offers page (/akcijos/{slug}
+                    // 301s here) has its offers only in the leaflets, so
+                    // this page is the one for "{store} akcijos" searches.
+                    'h1' => $entity->showsDiscountsPage()
+                        ? "Visi {$entity->name} akcijų {$leafletNounPlural}"
+                        : "{$entity->name} akcijos ir akcijų {$leafletNounPlural}",
                 ];
             case 'store':
                 // limit=2: title/H1 only ever use the first (best) category
