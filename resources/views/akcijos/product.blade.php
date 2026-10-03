@@ -300,6 +300,23 @@ use App\Support\ProductPageMeta;
                         </div>
                     </div>
 
+                    {{-- Mobile/tablet: same banner, its own full-width row spanning both
+                         grid columns (a grid SIBLING of the image/title columns, not nested
+                         in the narrow title column, which looked squeezed). Right under the
+                         price, before the alternative card: after that card it sat low on
+                         phones, under the cookie banner and near the bottom nav (presses
+                         fell from ~20 to 3 a day, 2026-10-02). --}}
+                    <div class="col-span-full pt-1 lg:hidden">
+                        <x-product-price-watch-banner
+                            :product-id="$product['id']"
+                            :favorited="\App\Support\FavoritedProducts::has($product['id'])"
+                            :product-name="$product['name']"
+                            :product-image="$product['image_url'] ?? null"
+                            :category-name="$product['category']['name'] ?? ''"
+                            :variant="$isNoActivePromotion ? 'noOffers' : 'offersHero'"
+                        />
+                    </div>
+
                     {{-- MOCKUP (idea #10), redesigned for an older (50-60+) audience — below
                          lg only (lg:hidden): a grid SIBLING of the image/title columns
                          (col-span-2, same pattern as the price-watch banner below), not nested
@@ -359,21 +376,6 @@ use App\Support\ProductPageMeta;
                         </div>
                     @endif
 
-                    {{-- Mobile/tablet: same banner, its own full-width row spanning both
-                         grid columns below image+title (product-hero.tsx: col-span-2
-                         col-start-1 row-start-2 ... lg:hidden) — a grid SIBLING of the
-                         image/title columns, not nested inside the narrow title column,
-                         which is what looked squeezed/collapsed there. --}}
-                    <div class="col-span-full pt-1 lg:hidden">
-                        <x-product-price-watch-banner
-                            :product-id="$product['id']"
-                            :favorited="\App\Support\FavoritedProducts::has($product['id'])"
-                            :product-name="$product['name']"
-                            :product-image="$product['image_url'] ?? null"
-                            :category-name="$product['category']['name'] ?? ''"
-                            :variant="$isNoActivePromotion ? 'noOffers' : 'offersHero'"
-                        />
-                    </div>
                 </div>
             </div>
         </div>
