@@ -25,6 +25,7 @@ use App\Rules\StoreRules\MaximaRules;
 use App\Rules\StoreRules\NorfaRules;
 use App\Rules\StoreRules\RimiRules;
 use App\Rules\StoreRules\SilasRules;
+use App\Rules\StoreRules\DefaultRules;
 use App\Rules\StoreRules\ThomasPhilippsRules;
 use App\Rules\StoreRules\VynotekaRules;
 use App\Services\DealPoolRefresher;
@@ -991,7 +992,7 @@ class ProcessDiscounts extends Command
             case 'Ermitažas':
                 return new ErmitazasRules($tempDiscount);
             default:
-                throw new \Exception("No rules found for store: {$storeName}");
+                return new DefaultRules($tempDiscount);
         }
     }
 

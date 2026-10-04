@@ -23,7 +23,7 @@ Based on onboarding Gulbelė, Vynoteka, and Thomas Philipps. Do these in order �
 
 1. Add a migration that inserts into `stores` (copy an existing one, e.g. `database/migrations/2026_06_16_120000_add_gulbele_store.php`): sets `name` + `slug` only. Check for an existing row by slug first (idempotent `up()`), and delete-by-slug in `down()`. Run with `sail artisan migrate`.
 2. Create `App\Rules\StoreRules\{Store}Rules extends BaseStoreRules {}` (empty — every store's rules class is a passthrough today; only override `normalizePrice`/`normalizeDiscount`/`validate` if this store's raw price/discount strings need special handling).
-3. In `App\Console\Commands\ProcessDiscounts::getStoreRules()`: add the `use` import and a `case '{StoreName}': return new {Store}Rules($tempDiscount);`. **Mandatory** — an unmatched store name throws and aborts the whole `discounts:process` run.
+3. In `App\Console\Commands\ProcessDiscounts::getStoreRules()`: add the `use` import and a `case '{StoreName}': return new {Store}Rules($tempDiscount);`. An unmatched store name falls back to the passthrough `DefaultRules` (it used to throw, which failed every row of flyer-only stores like Elimart once they were opted into Gemini extraction), so this step only matters when the store needs custom normalization.
 4. In `App\Console\Commands\ProcessScrapingFlow`: add the store name to `$expectedStores` and the scraper filename to `$scrapers`.
 
 ### 2. Write the scraper (`scrapers/{store}.js`)
