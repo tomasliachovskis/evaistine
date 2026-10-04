@@ -247,3 +247,65 @@ imbieras. Patikrinta ir realiai gyva: `/akcijos/oro-gaiviklis` ir `/akcijos/marg
 
 Iš viso keyword pages dabar: **275** (buvo 240).
 
+
+---
+
+## Iteracija 11 — Ahrefs + prod katalogo duomenys (2026-10-04)
+
+Metodika: (1) iš prod `keyword_pages` (276, iš jų 243 publikuoti) surinkau visus `title`/`search_terms`;
+(2) `kw-akcija.csv` + `ahrefs-export-*.csv` (Ahrefs, LT) frazes išvaliau nuo "akcija/kaina/maxima/iki/..."
+ir sugrupavau pagal produkto frazę; (3) prod DB suskaičiavau, kiek prekių su **šiuo metu galiojančia
+nuolaida** atitinka frazę, ir dar iš kitos pusės — dažniausius produktų tipus tarp ~12 000 aktyvių
+nuolaidų, kurių neapima jokie esami puslapiai.
+
+Pastabos dėl volume: Ahrefs failai yra "maxima/akcija" seed'o eksportai, todėl jų skaičiai — tik
+"X maxima"/"X akcija" variantų suma, ne gryno žodžio paieškos (pvz. sardinės: gryna 4400, Ahrefs
+variantai 1250). Kur volume "—", Ahrefs failuose frazės nėra, o tai **nereiškia, kad paieškų nėra** —
+prieš kuriant verta patikrinti gryną žodį. GSC API raktas (`gen-lang-client-*.json`) nebeegzistuoja
+nei Downloads, nei `~/.config/claude-seo/`, todėl GSC užklausų šį kartą nenaudojau.
+
+### A — yra ir paieškų, ir prekių (rekomenduoju kurti)
+
+| Keyword | Gryna paieška/mėn (ankstesnė iteracija) | Ahrefs "maxima/akcija" variantai | Akt. nuolaidų | Parduotuvės | Kategorija | Pastaba |
+|---|---|---|---|---|---|---|
+| sardinės | 4400 | 1250 | 6 | maxima, cia, vynoteka | mesa-ir-zuvis | Patvirtinta iteracijoje 3, bet į galutinį sąrašą nepateko — liko nesukurta |
+| kombucha | 2400 | 200 | 10 | rimi, maxima, norfa, epromo | gerimai-kava-arbata | Iteracijoje 5 atmesta (buvo 3 aktyvios), dabar 10 |
+| humusas | 1600 | 100 | 8 | rimi, promo-cash-carry | bakaleja | Iteracijoje 8 atmesta (0 aktyvių), dabar 8; beveik vien RIMI PLANET |
+| lėkštės | — | 310 | 95 | rimi, maxima, gulbele, promo | namu-ukio-ir-laisvalaikio-prekes | Daug prekių; exclude "skraidanti", popierinės? |
+| tunas | — | 180 | 47 (34 maisto) | rimi, maxima, gulbele, gruste +2 | mesa-ir-zuvis | Reikia exclude `ėdal`, `kač`, `šun` (gyvūnų ėdalas su tunu) |
+| granola | — | 200 | 20 | maxima, rimi, norfa, gulbele | bakaleja | Exclude `jogurt` (jogurtai su granola) |
+| datulės | — | 100 | 20 | rimi, maxima, aibe, vynoteka | bakaleja | Exclude `batonėl`, `sirup` |
+| philadelphia sūris | — | 120 | 13 | rimi, silas, kubas, gulbele | pieno-produktai-ir-kiausiniai | Brand+type puslapis kaip `hellmanns-majonezas` |
+
+### B — daug prekių su nuolaida, paieškos neištirtos (patikrinti gryną žodį prieš kuriant)
+
+| Keyword | Akt. nuolaidų | Parduotuvės | Kategorija | Pastaba |
+|---|---|---|---|---|
+| pėdkelnės | 97 | maxima, rimi, norfa, silas | kosmetika-ir-higiena | IMMAGINE, SEVEN LEMON |
+| dubenėliai / dubenys | 76 | rimi, maxima | namu-ukio-ir-laisvalaikio-prekes | Exclude gyvūnų dubenėliai |
+| šluostės | 74 | maxima, rimi, norfa, gulbele | buitine-chemija-valymo-priemones | Mikropluošto, Swiffer, Spontex |
+| kojinės | 64 | maxima, rimi, norfa, aibe +1 | namu-ukio-ir-laisvalaikio-prekes | |
+| puodeliai | 47 | rimi, maxima, promo | namu-ukio-ir-laisvalaikio-prekes | Ahrefs "maxima puodeliai" 60 |
+| vienkartinės pirštinės | 41 (dalis darbinės/žieminės) | 6 parduotuvės | buitine-chemija-valymo-priemones | Iteracijoje 1: 210/mėn, 0 aktyvių — dabar yra; reikia tikslesnių terms |
+| saliamis | 33 | 9 parduotuvės | mesa-ir-zuvis | `desra` puslapis apima tik "vytinta/virta dešra" |
+| plaukų lakas | 27 | rimi, maxima | kosmetika-ir-higiena | |
+| sultinys | 26 | 7 parduotuvės | bakaleja | Exclude "SULTINGA" (gėrimas) |
+| skėčiai | 23 | maxima, rimi | namu-ukio-ir-laisvalaikio-prekes | Sezoninis (ruduo) |
+| riestainiai | 22 | 7 parduotuvės | duonos-gaminiai | |
+| gira | 19 | rimi, maxima, aibe, gulbele | gerimai-kava-arbata | Sezoninis (vasara) |
+| veido serumas | 17 | rimi, maxima, gulbele | kosmetika-ir-higiena | |
+| sausi pusryčiai | 13 | 4 parduotuvės | bakaleja | |
+| pelėsinis sūris | 11 | 6 parduotuvės | pieno-produktai-ir-kiausiniai | |
+| paakių kremas | 11 | rimi, maxima | kosmetika-ir-higiena | |
+
+### Atmesta
+
+- **chia sėklos** (4400 + 860): "chia" atitikmenys daugiausia klaidingi (Chianti vynas, Nescafé Macchiato), realių chia sėklų su nuolaida ~2.
+- **linų sėmenys** (590 + 300), **viskis** (310, tik 3 akt., vien Rimi), **dulkių siurblys** (200, 3 akt.), **prosecco** (3 akt.), **degtinė** (160, 9 akt. vien Rimi), **virdulys** (220, 7 akt.), **stalo žaidimai** (120, 6 akt. vien Gulbelė) — per mažai aktyvių nuolaidų.
+- **greitai paruošiami makaronai** (29 akt.) — iteracijoje 10 paieška tik 90/mėn.
+- **daiktadėžės**, **aromatinės žvakės** — prekių yra, bet vien Maxima.
+- Jau apima esami puslapiai: vytintas/serrano kumpis → `kumpis`; antiperspirantas → `dezodorantas`; skalbimo gelis → `skalbiklis`; čederio sūris → `suris` (cheddar); džemas ≈ `uogiene`.
+- Didžioji dalis Ahrefs "nepadengtų" frazių — ne produktai: parduotuvių adresai/miestai, darbo laikas, sąskaitos faktūros, karjera, vaistų prekių ženklai (Livosil, Detralex, Essentiale), kurių mūsų kataloge nėra.
+
+**Kitas žingsnis**: vartotojas pasirenka; kūrimas — kaip `saslykai` (JSON `database/data/`, deploy,
+`keywords:import-manual --apply` prod'e, patikrinti rodomas prekes ir pridėti `exclude_terms`).
