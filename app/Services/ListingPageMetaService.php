@@ -23,6 +23,10 @@ class ListingPageMetaService
 
     private const MIN_TOP_PRODUCT_PRICE = 5.0;
 
+    // How recently a leaflet must have been uploaded to count as a store's
+    // "newest" at the top of /leidiniai.
+    private const FRESH_LEAFLET_DAYS = 5;
+
     public function __construct(
         private PageFreshnessService $freshnessService,
         private StoreFlyerTitleBuilder $flyerTitleBuilder,
@@ -277,9 +281,9 @@ class ListingPageMetaService
     public function buildAllLeaflets(): array
     {
         // Mirrors buildLeaflets() but across every store at once, for the
-        // /leidiniai index page. sort_order is per-store (0 = current), so
-        // ordering globally by it still groups each store's current leaflet
-        // first, tie-broken by valid_from desc.
+        // /leidiniai index page. ordered() (per-store sort_order, then
+        // valid_from desc) only decides which current leaflet per store gets
+        // the "new" status below; the final order is set at the end.
         $leaflets = StoreFlyer::query()
             ->active()
             ->ready()
@@ -292,6 +296,8 @@ class ListingPageMetaService
                 $item = $this->flyerTitleBuilder->toListingArray($flyer, $flyer->store);
                 $item['store_name'] = $flyer->store->name;
                 $item['store_slug'] = $flyer->store->slug;
+                $item['flyer_id'] = $flyer->id;
+                $item['uploaded_at'] = $flyer->created_at?->toIso8601String() ?? '';
 
                 return $item;
             })
@@ -310,31 +316,37 @@ class ListingPageMetaService
             }
 
             return $leaflet;
-        })
-            // Expired leaflets pushed to the end — sortBy is stable (PHP 8+),
-            // so within "still valid" and "expired" each keeps the ordered()
-            // relative order (per-store sort_order, then valid_from desc)
-            // instead of expired leaflets from an early-sort_order store
-            // interleaving with active leaflets from a later one.
-            ->sortBy(fn (array $leaflet) => $leaflet['status'] === 'expired' ? 1 : 0)
-            ->values();
+        });
 
-        // Group the stores themselves into the same editorial order the
-        // /leidiniai toolbar now uses (App\Support\StoreListPriority) —
-        // named chains first, then everyone else by active-leaflet count —
-        // instead of leaving them in whatever order the flat query
-        // happened to fetch rows in. Per-store internal order (current
-        // leaflet first, then history) is preserved by the groupBy below.
-        $byStore = $leaflets->groupBy('store_slug');
-        $storeOrder = \App\Support\StoreListPriority::sortKeepingZero(
-            $byStore->map(fn ($group, $slug) => [
-                'slug' => $slug,
-                'discounts_count' => $group->where('status', '!=', 'expired')->count(),
-            ])->values()->all()
-        );
+        // Order: the newest leaflet uploaded in the last 5 days of each main
+        // chain (Maxima, Lidl, Iki, Rimi, Norfa, in that order), then the
+        // newest recent one of every other store, then everything else by
+        // upload date. Expired leaflets go last. uploaded_at is ISO 8601,
+        // so string comparison sorts by time.
+        $byUploadDesc = fn ($items) => $items->sortByDesc('uploaded_at')->values();
 
-        return collect($storeOrder)
-            ->flatMap(fn (array $store) => $byStore[$store['slug']])
+        [$expired, $current] = $leaflets->partition(fn (array $leaflet) => $leaflet['status'] === 'expired');
+        $current = $byUploadDesc($current);
+
+        $freshSince = now()->subDays(self::FRESH_LEAFLET_DAYS)->toIso8601String();
+        $newestFreshByStore = $current
+            ->filter(fn (array $leaflet) => $leaflet['uploaded_at'] >= $freshSince)
+            ->groupBy('store_slug')
+            ->map(fn ($group) => $group->first());
+
+        $mainChains = array_slice(\App\Support\StoreListPriority::PRIORITY_SLUGS, 0, 5);
+        $mainNewest = collect($mainChains)
+            ->map(fn (string $slug) => $newestFreshByStore->get($slug))
+            ->filter();
+        $otherNewest = $byUploadDesc($newestFreshByStore->except($mainChains));
+
+        $picked = $mainNewest->concat($otherNewest);
+        $pickedIds = $picked->pluck('flyer_id')->all();
+        $rest = $current->reject(fn (array $leaflet) => in_array($leaflet['flyer_id'], $pickedIds, true));
+
+        return $picked
+            ->concat($rest)
+            ->concat($byUploadDesc($expired))
             ->values()
             ->all();
     }

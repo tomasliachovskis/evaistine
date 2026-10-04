@@ -49,9 +49,9 @@ class HomeController extends Controller
         // by discount count.
         $stores = \App\Support\StoreListPriority::sort($stores);
 
-        // buildAllLeaflets() is already ordered current-per-store first, newest
-        // valid_from first within that (StoreFlyer::scopeOrdered()), with
-        // expired ones pushed to the end — but "pushed to the end" still
+        // buildAllLeaflets() is already ordered the main chains' newest
+        // leaflet first, then other stores' newest, then the rest by upload
+        // date, with expired ones pushed to the end — but "pushed to the end" still
         // means an expired leaflet could land in the first 10 for a store
         // whose current leaflet isn't ready yet. The homepage should only
         // ever tease genuinely current leaflets, so filter expired out

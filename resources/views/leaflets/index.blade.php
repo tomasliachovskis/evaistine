@@ -145,9 +145,9 @@
                 $expiredLeaflets = array_values(array_filter($leaflets, fn ($l) => ($l['status'] ?? null) === 'expired'));
 
                 // 'best' (Populiariausi) keeps buildAllLeaflets()'s own
-                // editorial order (StoreListPriority-grouped, current
-                // leaflet first per store) — only re-sort for the other two
-                // explicit choices.
+                // order (the main chains' newest of the last 5 days, then
+                // other stores' newest, then the rest by upload date) —
+                // only re-sort for the other two explicit choices.
                 if ($leafletOrder === 'newest') {
                     $activeLeaflets = collect($activeLeaflets)->sortByDesc('valid_from')->values()->all();
                 } elseif ($leafletOrder === 'old') {
