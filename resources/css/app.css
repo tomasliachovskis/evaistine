@@ -14,10 +14,12 @@
     /* Height of the site header (one row, site-header.blade.php): sticky
        bars dock right under it and <main> starts below it. */
     --header-h: 3.5rem;
-    --green: #0f8b8d;
-    --dark-green: #0a4f52;
-    --green-soft: #e6f4f4;
-    --green-soft-border: #bfe3e3;
+    /* Token names predate the navy palette: "green" is the mid-blue accent
+       (borders, tints), "dark-green" the navy for text links and the footer. */
+    --green: #2b5ba8;
+    --dark-green: #0f234a;
+    --green-soft: #eef2f8;
+    --green-soft-border: #d3ddec;
     --font-color: #262626;
     --white: #fff;
     --container: 1168px;
@@ -111,10 +113,18 @@
     --text-4xl: 2.5rem;
     --text-4xl--line-height: 3rem;
 
-    /* Filled buttons and active tabs: the brand teal darkened just
-       enough for white text (5.7:1). dark-green stays for text links. */
-    --color-action: #0b7275;
-    --color-action-hover: #095c5f;
+    /* Filled buttons and active tabs: navy, white text 12.7:1.
+       dark-green stays for text links. */
+    --color-action: #13306a;
+    --color-action-hover: #0f234a;
+
+    /* Discount badges (<x-discount-badge>, deal cards, leaflet pins):
+       raspberry with white text (6.5:1), so offers stand out from the
+       navy UI. deal-soft/deal-strong frame a highlighted deal card. */
+    --color-deal: #b5125e;
+    --color-deal-foreground: #ffffff;
+    --color-deal-soft: #fdf0f6;
+    --color-deal-strong: #8f0e4a;
 
     --color-gray-400: #6b7280;
     --color-gray-500: #4b5563;

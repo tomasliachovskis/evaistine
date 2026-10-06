@@ -34,7 +34,7 @@
         : null;
 
     // Featured (e.g. price-compare-card's "Gera kaina" match) reuses the
-    // site's one existing accent yellow (#ffdb4d, already the discount-%
+    // discount badge's deal color (--color-deal, already the discount-%
     // and no-price-fallback badge color) as a border/tint instead of the
     // plain gray-200/gray-50 shell, so the standout card doesn't introduce a
     // second accent color.
@@ -49,7 +49,7 @@
     $shellClass = 'group relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border p-2.5 transition-colors sm:p-3 '
         . ($stretch ? 'h-full ' : '')
         . ($featured
-            ? 'border border-[#ffdb4d] bg-[#fffbeb] hover:border-[#f0c400]'
+            ? 'border border-deal bg-deal-soft hover:border-deal-strong'
             : 'border-gray-200 bg-gray-50 hover:border-gray-300');
 
     if ($inCarousel) {
@@ -113,7 +113,7 @@
                     {{-- Ported from the product page hero's same fallback — some
                          flyer-scraped offers (multi-variant packs, "7 rūšių")
                          never get a clean per-item price, only a discount %. --}}
-                    <span class="inline-flex items-center rounded-lg bg-[#ffdb4d] px-2 py-1 text-sm font-bold leading-none tabular-nums text-gray-900">
+                    <span class="inline-flex items-center rounded-lg bg-deal px-2 py-1 text-sm font-bold leading-none tabular-nums text-deal-foreground">
                         Sutaupyk iki {{ (int) round($discountPercent) }}%
                     </span>
                 @endif

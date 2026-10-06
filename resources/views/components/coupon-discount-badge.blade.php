@@ -7,7 +7,7 @@
      than the product-grid badge) to match the rest of the coupon card —
      this section targets a 50+ audience.
 
-     Uses dark-green (not the product-grid badge's yellow #ffdb4d) so the
+     Uses dark-green (not the product-grid badge's deal color) so the
      badge and the CTA button below it read as one cohesive green-branded
      pair instead of a clashing yellow+green combo — explicit user call,
      the yellow read as "primitive" here. --}}

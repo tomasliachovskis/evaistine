@@ -66,7 +66,7 @@
                                     @foreach ($item['leading_deals'] as $index => $deal)
                                         <div class="relative">
                                             @if ($index === $cheapestIndex)
-                                                <span class="absolute left-2 top-2 z-20 inline-flex items-center rounded-md bg-[#ffdb4d] px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wide text-gray-900">Gera kaina</span>
+                                                <span class="absolute left-2 top-2 z-20 inline-flex items-center rounded-md bg-deal px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wide text-deal-foreground">Gera kaina</span>
                                             @endif
                                             <x-deal-card :deal="$deal" source="pigiausios-prekes" :featured="$index === $cheapestIndex" />
                                         </div>

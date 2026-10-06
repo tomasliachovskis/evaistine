@@ -11,7 +11,7 @@
         <td align="center">
             <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb;">
                 <tr>
-                    <td style="background-color:#0a4f52; padding:24px 32px;">
+                    <td style="background-color:#0f234a; padding:24px 32px;">
                         <img src="https://evaistine.lt/assets/logo-white.svg" alt="eVaistine.lt" width="133" height="22" style="display:block; height:22px; width:178px; max-width:178px; border:0;">
                     </td>
                 </tr>
@@ -23,7 +23,7 @@
                         </p>
                         <table role="presentation" cellpadding="0" cellspacing="0">
                             <tr>
-                                <td style="border-radius:10px; background-color:#0b7275;">
+                                <td style="border-radius:10px; background-color:#13306a;">
                                     <a href="{{ $confirmUrl }}" target="_blank" style="display:inline-block; padding:14px 28px; font-size:17px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:10px;">Taip, noriu gauti</a>
                                 </td>
                             </tr>

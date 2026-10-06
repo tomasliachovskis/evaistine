@@ -22,7 +22,7 @@
                     <span
                         x-show="filtering() && pageMatchCount(item.page) > 0"
                         x-cloak
-                        class="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-[#ffdb4d] px-1 text-xs font-bold leading-5 text-gray-900"
+                        class="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-deal px-1 text-xs font-bold leading-5 text-deal-foreground"
                         x-text="pageMatchCount(item.page)"
                     ></span>
                 @endif

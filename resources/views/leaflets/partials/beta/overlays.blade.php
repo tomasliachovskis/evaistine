@@ -35,7 +35,7 @@
             <div class="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <span class="text-price-hero font-extrabold tabular-nums text-font" x-text="euro(selected().price)"></span>
                 <span x-show="selected().original > selected().price" class="text-lg text-gray-600">buvo <span class="tabular-nums line-through" x-text="euro(selected().original)"></span></span>
-                <span x-show="selected().percent" class="rounded-md bg-[#ffdb4d] px-2 py-0.5 text-lg font-bold text-font" x-text="'-' + selected().percent + ' %'"></span>
+                <span x-show="selected().percent" class="rounded-md bg-deal px-2 py-0.5 text-lg font-bold text-deal-foreground" x-text="'-' + selected().percent + ' %'"></span>
             </div>
             <p x-show="selected().unit" class="mt-1 text-lg text-gray-600" x-text="selected().unit"></p>
 

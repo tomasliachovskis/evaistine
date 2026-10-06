@@ -40,7 +40,7 @@
                 <h2 class="text-xl font-bold">Kokius laiškus siųsti?</h2>
 
                 <label class="{{ $toggleClass }} {{ $user ? '' : 'opacity-60' }}" x-data="{ on: @js($user && ! $user->price_watch_unsubscribed_at) }" :class="on ? 'border-action bg-green-soft' : 'border-gray-200'">
-                    <input type="checkbox" name="wants_price_drops" value="1" class="mt-1 size-6 shrink-0 accent-[#0b7275]" x-model="on" @disabled(! $user)>
+                    <input type="checkbox" name="wants_price_drops" value="1" class="mt-1 size-6 shrink-0 accent-[#13306a]" x-model="on" @disabled(! $user)>
                     <span>
                         <span class="block text-lg font-bold text-gray-900">Atpigo sekamos prekės</span>
                         <span class="block text-base text-gray-700">
@@ -54,7 +54,7 @@
                 </label>
 
                 <label class="{{ $toggleClass }}" x-data="{ on: @js((bool) $subscriber->wants_weekly) }" :class="on ? 'border-action bg-green-soft' : 'border-gray-200'">
-                    <input type="checkbox" name="wants_weekly" value="1" class="mt-1 size-6 shrink-0 accent-[#0b7275]" x-model="on">
+                    <input type="checkbox" name="wants_weekly" value="1" class="mt-1 size-6 shrink-0 accent-[#13306a]" x-model="on">
                     <span>
                         <span class="block text-lg font-bold text-gray-900">Savaitės santrauka</span>
                         <span class="block text-base text-gray-700">Kas ketvirtadienį: nauji leidiniai ir geriausios jūsų parduotuvių akcijos.</span>
@@ -62,7 +62,7 @@
                 </label>
 
                 <label class="{{ $toggleClass }}" x-data="{ on: @js((bool) $subscriber->wants_new_leaflets) }" :class="on ? 'border-action bg-green-soft' : 'border-gray-200'">
-                    <input type="checkbox" name="wants_new_leaflets" value="1" class="mt-1 size-6 shrink-0 accent-[#0b7275]" x-model="on">
+                    <input type="checkbox" name="wants_new_leaflets" value="1" class="mt-1 size-6 shrink-0 accent-[#13306a]" x-model="on">
                     <span>
                         <span class="block text-lg font-bold text-gray-900">Naujas leidinys</span>
                         <span class="block text-base text-gray-700">Kai jūsų parduotuvė išleidžia naują leidinį.</span>

@@ -4,7 +4,7 @@
             @foreach ($this->getRuns() as $run)
                 @php
                     [$bg, $fg] = match ($run['color']) {
-                        'success' => ['#d5efef', '#15803d'],
+                        'success' => ['#dfe7f3', '#15803d'],
                         'danger' => ['#fee2e2', '#b91c1c'],
                         'warning' => ['#fef3c7', '#b45309'],
                         default => ['#f3f4f6', '#4b5563'],

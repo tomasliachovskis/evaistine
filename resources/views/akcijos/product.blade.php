@@ -257,7 +257,7 @@ use App\Support\ProductPageMeta;
                                             @endif
                                         </div>
                                     @elseif ($heroPriceSlotPct !== null)
-                                        <span class="inline-flex w-fit max-w-full items-center justify-center rounded-lg bg-[#ffdb4d] px-2 py-1 text-xl font-bold leading-none tabular-nums text-gray-900 sm:text-2xl">Sutaupyk iki {{ $heroPriceSlotPct }}%</span>
+                                        <span class="inline-flex w-fit max-w-full items-center justify-center rounded-lg bg-deal px-2 py-1 text-xl font-bold leading-none tabular-nums text-deal-foreground sm:text-2xl">Sutaupyk iki {{ $heroPriceSlotPct }}%</span>
                                     @endif
                                     {{-- Where and until when, right under the price: older
                                          readers otherwise had to scroll to "Kainos

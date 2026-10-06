@@ -16,7 +16,7 @@
         <td align="center">
             <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb;">
                 <tr>
-                    <td style="background-color:#0a4f52; padding:24px 32px;">
+                    <td style="background-color:#0f234a; padding:24px 32px;">
                         <img src="https://evaistine.lt/assets/logo-white.svg" alt="eVaistine.lt" width="133" height="22" style="display:block; height:22px; width:178px; max-width:178px; border:0;">
                     </td>
                 </tr>
@@ -48,7 +48,7 @@
                                                 <p style="margin:0 0 4px; font-size:14px; font-weight:700; text-transform:uppercase; color:#6b7280;">{{ $leaflet['store_name'] }}</p>
                                                 <p style="margin:0 0 4px; font-size:17px; font-weight:700; line-height:1.35; color:#111827;">{{ $leaflet['title'] }}</p>
                                                 @if ($leaflet['dates'])
-                                                    <p style="margin:0; font-size:15px; color:#0a4f52;">Galioja {{ $leaflet['dates'] }}</p>
+                                                    <p style="margin:0; font-size:15px; color:#0f234a;">Galioja {{ $leaflet['dates'] }}</p>
                                                 @endif
                                             </td>
                                         </tr>
@@ -86,7 +86,7 @@
                                                 <p style="margin:0; font-size:20px; font-weight:800; color:#111827;">
                                                     {{ $discount->discounted_price ? $euro($discount->discounted_price) : '' }}
                                                     @if ($percent)
-                                                        <span style="display:inline-block; margin-left:6px; padding:2px 8px; border-radius:6px; background-color:#ffdb4d; font-size:15px; font-weight:800; color:#111827;">-{{ $percent }}%</span>
+                                                        <span style="display:inline-block; margin-left:6px; padding:2px 8px; border-radius:6px; background-color:#b5125e; font-size:15px; font-weight:800; color:#ffffff;">-{{ $percent }}%</span>
                                                     @endif
                                                 </p>
                                                 <p style="margin:4px 0 0; font-size:14px; color:#6b7280;">{{ $discount->store?->name }}</p>
@@ -103,7 +103,7 @@
                     <td style="padding:12px 32px 28px;">
                         <table role="presentation" cellpadding="0" cellspacing="0">
                             <tr>
-                                <td style="border-radius:10px; background-color:#0b7275;">
+                                <td style="border-radius:10px; background-color:#13306a;">
                                     <a href="{{ $track($allOffersUrl, 'all_offers') }}" target="_blank" style="display:inline-block; padding:14px 26px; font-size:17px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:10px;">Visos jūsų parduotuvių akcijos</a>
                                 </td>
                             </tr>
