@@ -782,58 +782,8 @@ class ProcessDiscounts extends Command
             return null;
         }
 
-        $productName = strtolower($tempDiscount->name);
-        $petKeywords = ['šunų', 'ėdalas', 'kačių', 'gyvūnų'];
-
-        foreach ($petKeywords as $keyword) {
-            if (mb_strpos($productName, $keyword) !== false) {
-                return 619;
-            }
-        }
-
-        // "Alkoholiniai gėrimai" (id 401) kept the pre-split root id, but a
-        // couple of stores (Čia, Koops — store ids 3 and 5) only ever send
-        // the old ambiguous coarse label "Alkoholiniai ir nealkoholiniai
-        // gėrimai" with no separate non-alcoholic string to map instead.
-        // Since the mapper alone can't disambiguate, fall back to the same
-        // name-keyword heuristic used for the one-time product split
-        // (2026_09_08_090000_split_alcoholic_nonalcoholic_drinks_category.php)
-        // so future scrapes under this label still land correctly.
-        if (mb_stripos($tempDiscount->category, 'alkoholiniai ir nealkoholiniai') !== false) {
-            $isExplicitlyNonAlc = mb_strpos($productName, 'nealk') !== false || mb_strpos($productName, 'neal.') !== false;
-
-            // "Gazuotas"/"gaz." alone isn't a safe non-alc signal — real
-            // alcoholic products are sometimes described that way too (found
-            // live: "Gazuotas aromatizuotas vyno kokteilis ALITA LIMONCELLO",
-            // "PARTY... gazuotas alaus kokteilis" — both alcoholic, no "nealk"
-            // prefix). Only trust it when the name doesn't also read as an
-            // alcoholic cocktail/wine-drink/spirit.
-            $alcoholicOverride = !$isExplicitlyNonAlc && (
-                mb_strpos($productName, 'kokteilis') !== false
-                || mb_strpos($productName, 'vyno gėrimas') !== false
-                || mb_strpos($productName, 'alkoholin') !== false
-            );
-
-            if (!$alcoholicOverride) {
-                $nonAlcKeywords = [
-                    'nealk', 'neal.', 'pepsi', 'cola', 'fanta', 'sprite', 'rc cola',
-                    'red bull', 'dynami', 'natakhtari', 'mountain dew', 'schweppes',
-                    'mirinda', '7up', 'krynka', 'gir', 'energ', 'gaiv',
-                    'mineralinis vanduo', 'sultys', 'limonad', 'tonik', 'laimon',
-                    'sodos vanduo', 'soda', 'izotonin', 'funkcinis ger', 'funkcinis gėr',
-                    'gazuot', 'gaz.', 'sodavand', 'vitafruit', 'zandukeli', 'arbata',
-                ];
-
-                foreach ($nonAlcKeywords as $keyword) {
-                    if (mb_strpos($productName, $keyword) !== false) {
-                        return 397; // Nealkoholiniai gėrimai
-                    }
-                }
-            }
-        }
-
         $categoryName = $tempDiscount->category;
-        $storeCategory = str_replace(['https://iki.lt/'], '', $categoryName);
+        $storeCategory = $categoryName;
 
         if (isset($this->categoriesByName[$categoryName])) {
             return $this->categoriesByName[$categoryName];

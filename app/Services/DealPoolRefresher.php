@@ -47,27 +47,6 @@ class DealPoolRefresher
 
     private const HOME_FOOD_MAX_PER_CATEGORY = 6;
 
-    /**
-     * Same hand-picked display order ProductController::buildBestByCategorySections()
-     * used to hardcode — kept here now that this is where categories are
-     * iterated for the persisted carousels.
-     */
-    private const CATEGORY_CAROUSEL_ORDER = [
-        'bakaleja',
-        'gerimai-kava-arbata',
-        'pieno-produktai-ir-kiausiniai',
-        'mesa-ir-zuvis',
-        'duonos-gaminiai',
-        'saldumynai-ir-uzkandziai',
-        'saldytas-maistas-ir-ledai',
-        'vaisiai-ir-darzoves',
-        'kosmetika-ir-higiena',
-        'buitine-chemija-valymo-priemones',
-        'namu-ukio-ir-laisvalaikio-prekes',
-        'gyvunu-prekes',
-        'vaiku-ir-kudikiu-prekes',
-        'augalai-geles',
-    ];
 
     public function __construct(
         private HomeDealPoolService $pool,
@@ -304,16 +283,19 @@ class DealPoolRefresher
      */
     private function carouselCategories(): Collection
     {
+        // Carousel order = config('categories.roots') display order.
+        $order = array_values(config('categories.roots', []));
+
         return Category::whereNull('parent_id')
             ->where('hide', false)
             ->withCount('discounts')
             ->having('discounts_count', '>', 0)
             ->orderBy('name')
             ->get(['id', 'name', 'slug'])
-            ->sortBy(function (Category $category) {
-                $position = array_search($category->slug, self::CATEGORY_CAROUSEL_ORDER, true);
+            ->sortBy(function (Category $category) use ($order) {
+                $position = array_search($category->slug, $order, true);
 
-                return $position === false ? count(self::CATEGORY_CAROUSEL_ORDER) : $position;
+                return $position === false ? count($order) : $position;
             })
             ->values();
     }

@@ -40,9 +40,8 @@ Tools kept in the repo:
 - `storage/app/seed-test-products.php` + `storage/app/test-products.json`
   (not in git): the local test data.
 
-Suggested next step: phase 2, the 12 root categories (seed + icons +
-mapper prompt + dropping the grocery ids in `resolveCategoryId()`), then the
-Eurovaistinė scraper. The phased roadmap with time estimates is in
+Suggested next step: the Eurovaistinė e-shop scraper (phase 3), or the
+ailment layer (rest of phase 2). The phased roadmap with time estimates is in
 `docs/evaistine.md` ("Roadmap"); open items are under "Next" below.
 
 ## Done (2026-10-06)
@@ -61,15 +60,16 @@ Eurovaistinė scraper. The phased roadmap with time estimates is in
       categories, price comparison across four chains.
 - [x] `/parduotuves` -> `/vaistines`, "parduotuvė" -> "vaistinė" in all UI,
       meta and GPT text; `PharmacyName::phrase()` for chain names.
+- [x] Categories (2026-10-07): 12 roots seeded, `config/categories.php` for
+      names/case forms/popular, GPT mapping prompts for pharmacies, grocery
+      category ids dropped from `resolveCategoryId()`. **No category icons**
+      (owner dropped them): icons and grocery category images removed, UI is
+      text only.
 - [x] Test suite green (289 tests): the 125 failures were one data migration
       that used the deleted `EnergyDrinkCategory`.
 
 ## Next
 
-- [ ] **Categories**: seed the 12 root categories from `docs/evaistine.md`
-      with SVG icons, adapt the `categories:map-mappers` GPT prompt, and drop
-      the grocery category ids hardcoded in `ProcessDiscounts::resolveCategoryId()`
-      (pets `619`, the alcoholic/non-alcoholic split).
 - [ ] **Ailment layer**: `product_ailments` table, mapping from each
       pharmacy's own ailment categories (Gintarinė, Benu, Apotheka) plus GPT
       for the rest, `/nuo/{ailment}` pages on the shared listing template.

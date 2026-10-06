@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\Discount;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -10,11 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class HomeDealPoolService
 {
-    private const EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS = [
-        'namu-ukio-ir-laisvalaikio-prekes',
-    ];
 
-    private const POPULAR_CATEGORY_IDS = [1, 52, 121, 352, 380];
 
     private const CANDIDATE_LIMIT = 600;
 
@@ -180,7 +177,7 @@ class HomeDealPoolService
         return $this->pickDiversePool(
             $candidates,
             null,
-            self::EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS,
+            config('categories.excluded_top_product_slugs', []),
             $maxPerCategory,
             $limit
         );
@@ -188,7 +185,7 @@ class HomeDealPoolService
 
     private function scoredCandidatesQuery(?int $excludeId): Builder
     {
-        $popularIds = implode(',', self::POPULAR_CATEGORY_IDS);
+        $popularIds = implode(',', Category::popularIds() ?: [0]);
         $today = Carbon::today()->toDateString();
         $urgencyCutoff = Carbon::now()->copy()->addDays(3)->toDateTimeString();
 
@@ -530,7 +527,7 @@ class HomeDealPoolService
     {
         $percent = min((float) ($discount->discount_percent ?? 0), 70);
         $saved = max((float) $discount->original_price - (float) $discount->discounted_price, 0);
-        $popular = in_array($discount->product?->category_id, self::POPULAR_CATEGORY_IDS, true) ? 15 : 0;
+        $popular = in_array($discount->product?->category_id, Category::popularIds(), true) ? 15 : 0;
 
         return $percent * 2 + $saved * 3 + $popular;
     }

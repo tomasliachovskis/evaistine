@@ -96,7 +96,6 @@
         @endif
         @foreach ($headItems as $category)
             {!! $openRow($category['slug']) !!}
-                <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-5 shrink-0 opacity-70" onerror="this.style.display='none'">
                 <span class="min-w-0 flex-1 truncate text-lg">{{ $category['name'] }}</span>
                 @if (isset($category['offers_count']))
                     <span class="shrink-0 text-base font-normal text-gray-400">{{ number_format($category['offers_count'], 0, ',', ' ') }}</span>
@@ -117,7 +116,6 @@
         <div x-show="expanded" class="contents">
             @foreach ($tailItems as $category)
                 {!! $openRow($category['slug']) !!}
-                    <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-5 shrink-0 opacity-70" onerror="this.style.display='none'">
                     <span class="min-w-0 flex-1 truncate text-lg">{{ $category['name'] }}</span>
                     @if (isset($category['offers_count']))
                         <span class="shrink-0 text-base font-normal text-gray-400">{{ number_format($category['offers_count'], 0, ',', ' ') }}</span>

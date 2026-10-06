@@ -119,7 +119,7 @@ class ProductController extends Controller
     private function buildBestByCategorySectionsFromPool(?int $storeId, string $scope)
     {
         // Ordered by id (not category_id) to preserve DealPoolRefresher's
-        // hand-picked CATEGORY_CAROUSEL_ORDER display order: rows for a full
+        // config('categories.roots') display order: rows for a full
         // refresh are always bulk-inserted in one pass, category-by-category
         // in that order, so ascending id reflects it — category_id ASC would
         // silently re-sort sections into numeric category-id order instead.
@@ -444,7 +444,7 @@ class ProductController extends Controller
             case 'price_discount_proc_max':
                 return $query->orderByRaw('discount_percent DESC');
             case 'popular':
-                return $query->orderByRaw('CASE WHEN products.category_id IN (1, 52, 121, 352, 380) THEN 0 ELSE 1 END');
+                return $query->orderByRaw('CASE WHEN products.category_id IN (' . implode(',', \App\Models\Category::popularIds() ?: [0]) . ') THEN 0 ELSE 1 END');
             default:
                 return $query;
         }
@@ -1186,11 +1186,11 @@ class ProductController extends Controller
                 // Shortened category name ("Buitinė chemija" not "Buitinė
                 // chemija, valymo priemonės") plus genitive/dative case —
                 // same maps/helper already built for the store/store_category
-                // pages this session (see SHORT_CATEGORY_LABELS's comment for
+                // pages this session (see config/categories.php short_labels for
                 // why the raw DB name breaks mid-sentence grammar).
                 $categoryShortName = $this->shortenCategoryName($entity->name);
                 $categoryGenitive = self::categoryGenitiveLabel($entity->name);
-                $categoryDative = self::CATEGORY_DATIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
+                $categoryDative = config('categories.dative_labels')[$categoryShortName] ?? mb_strtolower($categoryShortName);
 
                 // Some listings are full-catalog (price-only, no discount_percent
                 // on any row) rather than discount-only — MAX(discount_percent)
@@ -1277,7 +1277,7 @@ class ProductController extends Controller
                 // limit=2: title/H1 only ever use the first (best) category
                 // (see $topCategory below), but the description has enough
                 // character budget for a second one — see
-                // SHORT_CATEGORY_LABELS's comment for why the length math
+                // config/categories.php short_labels for why the length math
                 // only works with shortened names.
                 $topCategories = $this->getTopDiscountCategoriesForStore($entity->id, 2);
                 $topCategory = $topCategories[0] ?? null;
@@ -1338,7 +1338,7 @@ class ProductController extends Controller
 
                 // Dative plural ("akcijos duonos gaminiams") instead of the
                 // old nominative-juxtaposition ("akcija duonos gaminiai") —
-                // see CATEGORY_DATIVE_LABELS's comment. Computed for both
+                // see config/categories.php dative_labels. Computed for both
                 // branches below (including the zero-offer one) so the H1
                 // built from it in AkcijosController reads grammatically
                 // correct either way. Store name stays plain nominative
@@ -1348,10 +1348,11 @@ class ProductController extends Controller
                 // natural Lithuanian declension (Ikea, Jysk, AVS, Thomas
                 // Philipps) — not worth the risk of an awkward-sounding form.
                 $categoryShortName = $this->shortenCategoryName($secondaryEntity->name);
-                $categoryDative = self::CATEGORY_DATIVE_LABELS[$categoryShortName] ?? mb_strtolower($categoryShortName);
+                $categoryDative = config('categories.dative_labels')[$categoryShortName] ?? mb_strtolower($categoryShortName);
                 // Genitive for the title ("Maxima duonos gaminių akcijos") —
-                // see CATEGORY_GENITIVE_LABELS's comment.
-                $categoryGenitive = self::categoryGenitiveLabel($entity->name);
+                // see config/categories.php genitive_labels. The category is
+                // $secondaryEntity here ($entity is the store).
+                $categoryGenitive = self::categoryGenitiveLabel($secondaryEntity->name);
                 // Concrete illustrative item examples (dative plural, e.g.
                 // "duonai, bandelėms ir kruasanams" for Duonos gaminiai) —
                 // explicit product decision to use hand-written, specific
@@ -1361,7 +1362,7 @@ class ProductController extends Controller
                 // repeated. Falls back to the plain category dative if a
                 // category has no examples authored yet. mb_ucfirst since
                 // it opens the description sentence.
-                $categoryItemExamples = mb_ucfirst(self::CATEGORY_ITEM_EXAMPLES[$categoryShortName] ?? $categoryDative);
+                $categoryItemExamples = mb_ucfirst(config('categories.item_examples')[$categoryShortName] ?? $categoryDative);
                 // "Benu vaistinėje", "Camelia vaistinėje", "Eurovaistinėje".
                 $storePhrase = \App\Support\PharmacyName::phrase($entity->name, 'locative');
 
@@ -1399,8 +1400,8 @@ class ProductController extends Controller
                     // Consumed by AkcijosController for the H1.
                     'category_dative_label' => $categoryDative,
                     'meta_title' => $maxDiscount > 0
-                        ? "{$entity->name} {$categoryGenitive} akcijos iki {$endDateGenitive}"
-                        : "{$entity->name} {$categoryGenitive} akcijos",
+                        ? \App\Support\PharmacyName::phrase($entity->name, 'genitive') . " {$categoryGenitive} akcijos iki {$endDateGenitive}"
+                        : \App\Support\PharmacyName::phrase($entity->name, 'genitive') . " {$categoryGenitive} akcijos",
                     // Item examples + store lead the sentence, discount %
                     // right after — explicit product decision.
                     'meta_description' => $maxDiscount > 0
@@ -2382,118 +2383,22 @@ class ProductController extends Controller
         return (int) (floor($percent / 10) * 10);
     }
 
-    // A handful of root categories are stored as long "X ir Y prekės"-style
-    // names — fine as a category-page/breadcrumb name, but they blow a meta
-    // description's ~140-150 char budget once two of them have to appear
-    // side by side alongside the store name, "iki X%" for each, the offer
-    // count, and a CTA. Character-length testing during SEO research showed
-    // 2 categories only fit the recommended length with these shortened —
-    // a generic "split on comma/'ir'" rule breaks grammar for names with no
-    // comma (e.g. splitting "Vaikų ir kūdikių prekės" on " ir " would drop
-    // "prekės" entirely), so this is a small curated map instead. Categories
-    // not listed here either already have a comma (handled by the fallback
-    // explode(',', ...) below) or are already short enough as-is.
-    public const SHORT_CATEGORY_LABELS = [
-        'Pieno produktai ir kiaušiniai' => 'Pieno produktai',
-        'Šaldytas maistas ir ledai' => 'Šaldyti produktai',
-        'Vaikų ir kūdikių prekės' => 'Vaikų prekės',
-        'Saldumynai ir užkandžiai' => 'Saldumynai',
-        'Alkoholiniai gėrimai' => 'Alkoholis',
-        'Kosmetika ir higiena' => 'Kosmetika',
-        'Namų ūkio ir laisvalaikio prekės' => 'Namų prekės',
-    ];
-
-    // Lithuanian dative plural case ("akcijos duonos gaminiams", not the
-    // grammatically broken "akcija duonos gaminiai" nominative-juxtaposition
-    // the old store_category seo_title produced) for the 16 root
-    // categories. Same reasoning as KeywordPage::grammar_dative
-    // (app/Models/KeywordPage.php:18) — with this few, fixed categories and
-    // no existing grammar column on `categories`, a small hand-verified map
-    // is the right level of effort, not a migration or a declension
-    // algorithm. Keyed by the SAME short name shortenCategoryName() already
-    // produces, so one lookup covers both the shortened and full-name cases.
-    private const CATEGORY_DATIVE_LABELS = [
-        'Vaisiai ir daržovės' => 'vaisiams ir daržovėms',
-        'Pieno produktai' => 'pieno produktams',
-        'Duonos gaminiai' => 'duonos gaminiams',
-        'Mėsa ir žuvis' => 'mėsai ir žuviai',
-        'Šaldyti produktai' => 'šaldytiems produktams',
-        'Bakalėja' => 'bakalėjai',
-        'Vaikų prekės' => 'vaikų prekėms',
-        'Saldumynai' => 'saldumynams',
-        'Gėrimai' => 'gėrimams',
-        'Nealkoholiniai gėrimai' => 'nealkoholiniams gėrimams',
-        'Alkoholis' => 'alkoholiui',
-        'Kosmetika' => 'kosmetikai',
-        'Buitinė chemija' => 'buitinei chemijai',
-        'Namų prekės' => 'namų prekėms',
-        'Gyvūnų prekės' => 'gyvūnų prekėms',
-        'Augalai' => 'augalams',
-    ];
-
-    // Lithuanian genitive plural case ("duonos gaminių akcijos") — used in
-    // the store_category title. Same "small fixed set, hand-verified"
-    // reasoning as CATEGORY_DATIVE_LABELS; the two maps coexist because
-    // the title (genitive) and H1 (dative) need different cases for the
-    // same category.
-    private const CATEGORY_GENITIVE_LABELS = [
-        'Vaisiai ir daržovės' => 'vaisių ir daržovių',
-        'Pieno produktai' => 'pieno produktų',
-        'Duonos gaminiai' => 'duonos gaminių',
-        'Mėsa ir žuvis' => 'mėsos ir žuvies',
-        'Šaldyti produktai' => 'šaldytų produktų',
-        'Bakalėja' => 'bakalėjos',
-        'Vaikų prekės' => 'vaikų prekių',
-        'Saldumynai' => 'saldumynų',
-        'Gėrimai' => 'gėrimų',
-        'Nealkoholiniai gėrimai' => 'nealkoholinių gėrimų',
-        'Alkoholis' => 'alkoholio',
-        'Kosmetika' => 'kosmetikos',
-        'Buitinė chemija' => 'buitinės chemijos',
-        'Namų prekės' => 'namų prekių',
-        'Gyvūnų prekės' => 'gyvūnų prekių',
-        'Augalai' => 'augalų',
-    ];
-
-
-    // Concrete, hand-written illustrative item-type examples (dative
-    // plural, natural "X, Y ir Z" list form) per root category, e.g.
-    // "duonai, bandelėms ir kruasanams" for Duonos gaminiai — used in the
-    // store_category meta description so it names specific kinds of items
-    // instead of just repeating the category name. Explicit product
-    // decision over pulling real per-discount product names from the DB:
-    // these are stable, always-representative examples of what the
-    // category contains, not tied to whichever products happen to be
-    // discounted right now. Same "small fixed set, hand-verified"
-    // reasoning as CATEGORY_DATIVE_LABELS.
-    private const CATEGORY_ITEM_EXAMPLES = [
-        'Vaisiai ir daržovės' => 'vaisiams, daržovėms ir žalumynams',
-        'Pieno produktai' => 'pienui, sūriams ir jogurtams',
-        'Duonos gaminiai' => 'duonai, bandelėms ir kruasanams',
-        'Mėsa ir žuvis' => 'mėsai, žuviai ir dešrelėms',
-        'Šaldyti produktai' => 'šaldytoms daržovėms, picoms ir ledams',
-        'Bakalėja' => 'makaronams, ryžiams ir konservams',
-        'Vaikų prekės' => 'sauskelnėms, maisto mišiniams ir žaislams',
-        'Saldumynai' => 'šokoladui, saldainiams ir traškučiams',
-        'Gėrimai' => 'kavai, arbatai ir sultims',
-        'Nealkoholiniai gėrimai' => 'vandeniui, limonadui ir sultims',
-        'Alkoholis' => 'vynui, alui ir degtinei',
-        'Kosmetika' => 'šampūnams, kremams ir dantų pastoms',
-        'Buitinė chemija' => 'valikliams, skalbikliams ir servetėlėms',
-        'Namų prekės' => 'indams, žvakėms ir tekstilei',
-        'Gyvūnų prekės' => 'šunų ir kačių maistui bei priežiūros priemonėms',
-        'Augalai' => 'gėlėms, trąšoms ir vazonams',
-    ];
-
-    // Shared by getTopDiscountCategoriesForStore() and the store_category
-    // SEO case — a handful of root categories are stored as long "X ir Y
-    // prekės"-style names (see SHORT_CATEGORY_LABELS's own comment); this
-    // is the one place that shortening logic lives now.
-    private function shortenCategoryName(string $name): string
+    // Category short names and Lithuanian case forms (genitive, dative,
+    // item examples) live in config/categories.php, keyed by short name.
+    public static function shortCategoryLabel(string $name): string
     {
         $name = trim($name);
 
-        return self::SHORT_CATEGORY_LABELS[$name] ?? trim(explode(',', $name)[0]);
+        return config('categories.short_labels')[$name] ?? trim(explode(',', $name)[0]);
+    }
+
+    // Shared by getTopDiscountCategoriesForStore() and the store_category
+    // SEO case — a handful of root categories are stored as long "X ir Y
+    // prekės"-style names (see config/categories.php short_labels); this
+    // is the one place that shortening logic lives now.
+    private function shortenCategoryName(string $name): string
+    {
+        return self::shortCategoryLabel($name);
     }
 
     // "mėsos ir žuvies" for a root category's full DB name, lowercased
@@ -2501,9 +2406,9 @@ class ProductController extends Controller
     // Shared with ListingPageMetaService's category intro copy.
     public static function categoryGenitiveLabel(string $name): string
     {
-        $short = self::SHORT_CATEGORY_LABELS[trim($name)] ?? trim(explode(',', trim($name))[0]);
+        $short = self::shortCategoryLabel($name);
 
-        return self::CATEGORY_GENITIVE_LABELS[$short] ?? mb_strtolower($short);
+        return config('categories.genitive_labels')[$short] ?? mb_strtolower($short);
     }
 
     // "Which root categories have this store's best discounts, and what are

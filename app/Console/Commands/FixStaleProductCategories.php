@@ -122,22 +122,14 @@ class FixStaleProductCategories extends Command
         return (int) array_key_first($votes);
     }
 
-    // Mirrors ProcessDiscounts::resolveCategoryId() exactly (pet-keyword
-    // override, categoriesByName direct hit, then exact/2-part/1-part
+    // Mirrors ProcessDiscounts::resolveCategoryId() exactly (categoriesByName
+    // direct hit, then exact/2-part/1-part
     // mapper fallback) — deliberately not shared code, this command is a
     // one-time-use maintenance tool, not part of the regular pipeline.
     private function resolveCategoryId(string $productName, string $categoryName, Store $store): ?int
     {
-        $productNameLower = strtolower($productName);
-        $petKeywords = ['šunų', 'ėdalas', 'kačių', 'gyvūnų'];
 
-        foreach ($petKeywords as $keyword) {
-            if (mb_strpos($productNameLower, $keyword) !== false) {
-                return 619;
-            }
-        }
-
-        $storeCategory = str_replace(['https://iki.lt/'], '', $categoryName);
+        $storeCategory = $categoryName;
 
         if (isset($this->categoriesByName[$categoryName])) {
             return $this->categoriesByName[$categoryName];

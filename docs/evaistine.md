@@ -46,7 +46,7 @@ inflected from `config('stores.name_forms')`; add a new chain there too.
 Internal identifiers (`StoreController`, `MyStores`, the
 `evaistine_parduotuves*` cookie and localStorage keys) were left as they are.
 
-## Categories (planned)
+## Categories (seeded 2026-10-07, no icons)
 
 Researched on Eurovaistinė, Gintarinė, Camelia, Benu, Apotheka and
 vaistai.lt. All of them agree on about eight product-type groups. Products
@@ -65,6 +65,13 @@ product types:
 10. Ortopedija ir kompresinės prekės
 11. Akių priežiūra ir optika
 12. Sportas, svorio kontrolė, arbatos ir spec. maistas
+
+Seeded by `2026_10_07_100000_seed_pharmacy_root_categories`. Their short
+names, genitive and dative forms, item examples, display order and popular
+set are in `config/categories.php` (read by `ProductController`,
+`DealPoolRefresher`, `HomeDealPoolService`, `HomePageSectionsService`,
+`CategoryMappingService`). Categories are shown without icons: the owner
+dropped them, so lists and cards are text only.
 
 A second layer, by ailment (skausmas, peršalimas ir imunitetas, virškinimas,
 sąnariai...), is planned as its own `product_ailments` table with
@@ -115,11 +122,11 @@ nullable. Without it every real scraper row was rejected.
 |---|---|---|---|
 | 0 | Fork, own Sail stack, DB, ports; block prod paths | 0.5–1 | done |
 | 1 | Remove grocery stores/scrapers/logic; main chains config | 1–2 | done |
-| 2 | 12 root categories, icons, mapper prompt; ailment layer | 1 + 1.5–2 | next |
+| 2 | 12 root categories, mapper prompt (no icons); ailment layer | 1 + 1.5–2 | roots done, ailments next |
 | 3 | E-shop scrapers (Eurovaistinė, Gintarinė, Camelia, Benu, Apotheka, N vaistinė), ~0.5–1 each | 4–6 | |
 | 4 | Cross-pharmacy matching (EAN, strength/count/form normalization) | 1–2 | |
 | 5 | Copy and SEO: GPT prompts, meta templates, schema, static pages, emails | 2–3 | |
-| 6 | Design: palette, logo, favicon, OG images, hero, category icons | 1–2 | palette/logo done |
+| 6 | Design: palette, logo, favicon, OG images, hero | 1–2 | palette/logo done |
 | 7 | Pharmacy keyword pages | 1–2 | |
 | 8 | Legal: prescription rules, disclaimer, no treatment claims | 0.5 + lawyer | |
 | 9 | Full scrape, deploy, GSC, sitemap, IndexNow | 1 | |

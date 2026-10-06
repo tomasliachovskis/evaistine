@@ -12,10 +12,6 @@ use Illuminate\Support\Collection;
 
 class HomePageSectionsService
 {
-    private const EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS = [
-        'namu-ukio-ir-laisvalaikio-prekes',
-    ];
-
     private const MIN_TOP_PRODUCT_PRICE = 5.0;
 
     /** @var DiscountResponseFormatter */
@@ -179,7 +175,7 @@ class HomePageSectionsService
             ->whereNotNull('discounts.discounted_price')
             ->where('discounts.discounted_price', '>=', self::MIN_TOP_PRODUCT_PRICE)
             ->whereHas('product.category', function ($categoryQuery) {
-                $categoryQuery->whereNotIn('slug', self::EXCLUDED_TOP_PRODUCT_CATEGORY_SLUGS);
+                $categoryQuery->whereNotIn('slug', config('categories.excluded_top_product_slugs', []));
             });
     }
 

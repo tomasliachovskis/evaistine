@@ -31,12 +31,7 @@
             <div x-ref="track" @scroll.passive="update()" class="scroll-cards-x flex items-stretch gap-2 py-1 sm:gap-3">
                 @foreach ($categories as $category)
                     <a href="{{ $category['category_href'] }}" class="group relative flex w-[152px] max-w-[152px] shrink-0 flex-col items-center rounded-xl border border-gray-200 bg-white px-3 py-3 text-center transition-all hover:border-green/40 hover:shadow-sm sm:w-[196px] sm:max-w-[196px] sm:px-4 sm:py-5">
-                        <div class="relative shrink-0">
-                            <div class="flex size-24 items-center justify-center overflow-hidden rounded-full bg-gray-50 sm:size-28">
-                                <img src="/assets/products/{{ $category['category_slug'] }}.png" alt="" class="size-[4.5rem] object-contain transition-transform group-hover:scale-105 sm:size-20">
-                            </div>
-                        </div>
-                        <p class="mt-3 line-clamp-2 w-full text-sm font-semibold leading-snug text-gray-900 group-hover:text-dark-green">
+                        <p class="line-clamp-2 w-full text-sm font-semibold leading-snug text-gray-900 group-hover:text-dark-green">
                             {{ $category['category_name'] }}
                         </p>
                         <p class="mt-1.5 text-xs text-gray-500 sm:text-sm">

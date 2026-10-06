@@ -128,10 +128,8 @@
             </div>
 
             {{-- Category slider: same horizontal snap-scroll pattern as the
-                 stores row above. Icons rendered grayscale — this row is a
-                 quick-nav strip, not a place to compete visually with the
-                 real product photos in the sections around it, so icons
-                 stay plain black/white instead of their default full color. --}}
+                 stores row above. Text-only cards: categories have no icons
+                 (owner's decision, 2026-10-07). --}}
             @if (count($categories))
                 <div>
                     <h2 class="section-heading-lg">Kategorijos</h2>
@@ -143,10 +141,7 @@
                             @foreach ($categories as $category)
                                 <a href="/akcijos/{{ $category['slug'] }}"
                                    @if ($loop->index >= 6) :class="all ? 'flex' : 'max-sm:hidden'" @endif
-                                   class="flex min-h-12 w-full items-center gap-3 rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm sm:w-[168px] sm:shrink-0 sm:snap-start sm:flex-col sm:gap-2 sm:p-3 sm:text-center">
-                                    <div class="flex shrink-0 items-center justify-center sm:h-[80px] sm:w-full">
-                                        <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="size-8 shrink-0 grayscale sm:size-12" onerror="this.style.display='none'">
-                                    </div>
+                                   class="flex min-h-12 w-full items-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm sm:min-h-20 sm:w-[168px] sm:shrink-0 sm:snap-start sm:justify-center sm:p-3 sm:text-center">
                                     <span class="text-base font-bold leading-snug text-gray-900 sm:line-clamp-2 sm:text-sm">{{ $category['name'] }}</span>
                                 </a>
                             @endforeach

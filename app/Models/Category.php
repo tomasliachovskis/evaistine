@@ -50,4 +50,21 @@ class Category extends Model
     {
         return $this->hasMany(Coupon::class);
     }
+
+    /** @var array<int, int>|null */
+    private static ?array $popularIds = null;
+
+    /**
+     * Ids of config('categories.popular_slugs'), looked up once per request
+     * (deal scoring calls this per discount).
+     *
+     * @return array<int, int>
+     */
+    public static function popularIds(): array
+    {
+        return self::$popularIds ??= self::whereIn('slug', config('categories.popular_slugs', []))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
 }

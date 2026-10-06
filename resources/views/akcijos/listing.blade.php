@@ -102,7 +102,7 @@
         @if ($isRichHeader)
             <div class="mb-2 flex flex-col gap-4 sm:mb-4">
                 <x-type-hero
-                    :icon-src="$isStoreHeader ? '/assets/stores/' . $listingMeta['store_slug'] . '.svg' : '/assets/categories/' . $listingMeta['category_slug'] . '.svg'"
+                    :icon-src="$isStoreHeader ? '/assets/stores/' . $listingMeta['store_slug'] . '.svg' : null"
                     :title="$pageTitle"
                     :subtitle="$listingMeta['intro']['description'] ?? null"
                     :hide-subtitle-on-mobile="true"
@@ -169,7 +169,6 @@
                 <x-type-hero
                     :title="$pageTitle"
                     :subtitle="$listingMeta['intro']['short_description'] ?? ($listingMeta['intro']['description'] ?? null)"
-                    :icon-src="$heroCategorySlug ? '/assets/categories/'.$heroCategorySlug.'.svg' : null"
                     :hide-subtitle-on-mobile="true"
                 >
                     @unless ($heroCategorySlug)
@@ -544,7 +543,6 @@
                                         <tr class="bg-white">
                                             <td class="p-3">
                                                 <a href="/akcijos/{{ $listingMeta['store_slug'] }}/{{ $row['slug'] }}" class="flex min-w-0 items-center gap-2.5 font-semibold text-gray-900 hover:text-dark-green">
-                                                    <img src="/assets/categories/{{ $row['slug'] }}.svg" alt="" class="size-6 shrink-0 object-contain" onerror="this.style.visibility='hidden'">
                                                     <span class="min-w-0 leading-snug">{{ $row['name'] }}</span>
                                                 </a>
                                             </td>

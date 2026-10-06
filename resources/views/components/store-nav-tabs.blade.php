@@ -56,7 +56,6 @@
                     <div class="min-h-0 flex-1 overflow-y-auto p-2">
                         @foreach ($categories as $category)
                             <a href="{{ $category['href'] ?? '/akcijos/' . $storeSlug . '/' . $category['slug'] }}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 min-h-12">
-                                <img src="/assets/categories/{{ $category['slug'] }}.svg" alt="" class="h-5 w-5 shrink-0 opacity-70" onerror="this.style.display='none'">
                                 <span class="min-w-0 flex-1 truncate">{{ $category['name'] }}</span>
                                 <span class="shrink-0 text-xs text-gray-400">{{ number_format($category['offers_count'] ?? 0, 0, ',', ' ') }}</span>
                             </a>

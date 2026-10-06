@@ -192,7 +192,7 @@ class LeafletController extends Controller
 
                 return [
                     'key' => 'cat:'.$slug,
-                    'label' => ProductController::SHORT_CATEGORY_LABELS[$name] ?? $name,
+                    'label' => config('categories.short_labels')[$name] ?? $name,
                     'count' => $group->count(),
                 ];
             })
