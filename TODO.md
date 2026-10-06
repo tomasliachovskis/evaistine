@@ -68,6 +68,8 @@ ailment layer (rest of phase 2). The phased roadmap with time estimates is in
 - [x] URL structure (2026-10-07): products `/p/{slug}` without category,
       flat listings `/{slug}`, `/paieska/{q}`; slug collision rule. See
       `docs/evaistine.md`.
+- [x] 15 pharmacies (2026-10-07): 8 online pharmacies from VVKT's
+      remote-sale list added with real logos; grocery logos removed.
 - [x] Test suite green (289 tests): the 125 failures were one data migration
       that used the deleted `EnergyDrinkCategory`.
 
@@ -78,7 +80,10 @@ ailment layer (rest of phase 2). The phased roadmap with time estimates is in
       for the rest, `/nuo/{ailment}` pages on the shared listing template.
 - [ ] **E-shop scrapers**, full catalog with EAN, skipping prescription items:
       Eurovaistinė (product JSON is in the category page HTML), Gintarinė,
-      Camelia, Benu, Apotheka, N vaistinė. Watch for Cloudflare.
+      Camelia, Benu, Apotheka, N vaistinė, then the online pharmacies added
+      2026-10-07: InternetineVaistine.lt, Mano vaistinė, Piliulė,
+      Universiteto vaistinė, Ąžuolyno vaistinė, Rx vaistinė, LSMU vaistinė,
+      100 metų vaistinė. Watch for Cloudflare.
 - [ ] **Cross-pharmacy matching**: EAN first; name normalization for
       strength (`400 mg`), count (`N20`) and form (tabletės, sirupas).
 - [ ] **Unit price for pharmacy goods**: €/l on 10 ml drops is meaningless;

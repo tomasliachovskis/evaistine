@@ -11,7 +11,10 @@ return [
     'store_names' => [
         'eurovaistinė', 'eurovaistine', 'gintarinė', 'gintarine', 'camelia', 'benu',
         'apotheka', 'n vaistinė', 'nvaistine', 'ramunėlės', 'ramuneles', 'vaistinė', 'vaistine',
-        'vaistinės', 'vaistines', 'pigu', 'leidinys', 'leidiniai', 'katalogas', 'flyer',
+        'vaistinės', 'vaistines', 'internetinevaistine', 'internetinė vaistinė', 'internetine vaistine',
+        'mano vaistinė', 'manovaistine', 'piliulė', 'piliule', 'universiteto vaistinė', 'universitetovaistine',
+        'ąžuolyno', 'azuolyno', 'rx vaistinė', 'rx-vaistine', 'lsmu', '100 metų', '100metu',
+        'pigu', 'leidinys', 'leidiniai', 'katalogas', 'flyer',
     ],
 
     'skip_term_groups' => [

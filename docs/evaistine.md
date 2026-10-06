@@ -15,20 +15,47 @@ price-watch emails, keyword pages.
 
 ## Stores
 
-Seven pharmacy chains (`config/stores.php`). The main chains, in display
-order, are `config('stores.main_slugs')`, read through
+15 pharmacies (`config/stores.php`, with each one's website). The main
+chains, in display order, are `config('stores.main_slugs')`, read through
 `StoreListPriority::mainSlugs()` everywhere a "main stores first" order is
-needed:
+needed: Eurovaistinė, Gintarinė vaistinė, Camelia, Benu vaistinė, Apotheka.
 
-1. Eurovaistinė
-2. Gintarinė vaistinė
-3. Camelia
-4. Benu vaistinė
-5. Apotheka
+| Pharmacy | Slug | Kind | Company (VVKT) |
+|---|---|---|---|
+| Eurovaistinė | `eurovaistine` | chain + e-shop | AZETA VAISTINĖ / Eurovaistinė |
+| Gintarinė vaistinė | `gintarine-vaistine` | chain + e-shop | Gintarinė vaistinė (EUROAPOTHECA group) |
+| Camelia | `camelia` | chain + e-shop | Nemuno vaistinė |
+| Benu vaistinė | `benu-vaistine` | chain + e-shop | BENU Vaistinė Lietuva |
+| Apotheka | `apotheka` | chain + e-shop | Apotheka Pharma Vaistinė |
+| N vaistinė | `nvaistine` | chain (in Norfa) + e-shop | Norfos vaistinė |
+| Ramunėlės vaistinė | `ramuneles-vaistine` | chain | Ramunėlės vaistinė |
+| InternetineVaistine.lt | `internetine-vaistine` | online | Panpharmacy vaistinė |
+| Mano vaistinė | `mano-vaistine` | online, ~37 independent pharmacies | Mano vaistinė |
+| Piliulė | `piliule` | online | R. Losinskajos vaistinė |
+| Universiteto vaistinė | `universiteto-vaistine` | online | Universiteto vaistinė |
+| Ąžuolyno vaistinė | `azuolyno-vaistine` | online | Ąžuolyno vaistinė |
+| Rx vaistinė | `rx-vaistine` | online | Rx vaistinė |
+| LSMU vaistinė | `lsmu-vaistine` | online | Lietuvos sveikatos mokslų universitetas |
+| 100 metų vaistinė | `100-metu-vaistine` | online | Ramunėlės vaistinė (second brand) |
 
-Plus N vaistinė and Ramunėlės vaistinė. Each has a leaflet scraper in
-`scrapers/flyers/`. E-shop scrapers don't exist yet (`config/scrapers.php` is
-empty).
+Sources (checked 2026-10-07): VVKT's official list of pharmacies allowed to
+sell medicines remotely
+(vvkt.lrv.lt/lt/farmacine-licencijuojama-veikla_pagr_menu/nuotolinio-platinimo-vaistines/),
+the largest pharmacy companies by revenue (infocloud.lt), manovaistine.lt's
+member list. Left out on purpose: Parapharm (homeopathy) and Biofitus
+(mostly supplements), niche; Esra and Rovifarma, physical only with no
+website, so no prices; Mano vaistinė's members, whose prices are the shared
+manovaistine.lt shop; Asfarma (site down) and Vaistinė plius ("coming
+soon"). Recheck the VVKT list before launch.
+
+The 7 chains have leaflet scrapers in `scrapers/flyers/`. E-shop scrapers
+don't exist yet (`config/scrapers.php` is empty). Until a store has offers,
+the `/vaistines` directory shows its card with a "Leidiniai" button.
+
+A new pharmacy needs: a migration (name, slug, `show_discounts_page`), its
+entry in `config('stores.stores')` with the website, case forms in
+`config('stores.name_forms')` if the name contains "vaistinė" (a unit test
+fails otherwise), and its real logo at `public/assets/stores/{slug}.svg`.
 
 Eurovaistinė's category pages carry the full product JSON in the HTML (name,
 EAN in `sku`, `price`/`regularPrice` in cents, `ev_large` image, `slug`).
