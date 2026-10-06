@@ -12,7 +12,7 @@ They choose on the settings page (`/pranesimai/{token}`):
 | Savaitės santrauka | Thursday 10:00: new leaflets + the best offers of their stores | `weekly-digest:send` |
 | Naujas leidinys | 10:00 and 18:00: leaflets of their stores added since the last email | `leaflets:notify-subscribers` |
 
-The stores come from "Mano parduotuvės" at signup and can be changed on the settings page. With no stores picked, the emails cover Maxima, Norfa, Lidl, Rimi and Iki (`EmailSubscriber::DEFAULT_STORES`).
+The stores come from "Mano parduotuvės" at signup and can be changed on the settings page. With no stores picked, the emails cover the main pharmacy chains (`config('stores.main_slugs')`: Eurovaistinė, Gintarinė, Camelia, Benu, Apotheka).
 
 ## How it works
 

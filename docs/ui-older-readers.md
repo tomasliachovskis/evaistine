@@ -22,8 +22,9 @@ Most people reading leaflets on evaistine.lt are older. The interactive leaflet 
   Don't use `text-[Npx]`.
 - **Controls:** 48px tall at least (`min-h-12` / `size-12`). Buttons carry a word next to their icon. The exceptions (owner's decision): the header's account, favourites and menu buttons, and every close button (`.sheet-close`, a plain X). Those are icon only, without a border, with `aria-label`.
 - **Colors:**
-  - **Filled buttons and active tabs:** `bg-action` (`#07843f`, white text 4.8:1), hover `bg-action-hover`.
-  - **Text links:** `text-dark-green` (`#044923`). Plain `text-green` and white-on-`bg-green` are too low contrast (about 3:1).
+  - **Filled buttons and active tabs:** `bg-action` (navy `#13306a`, white text 12.7:1), hover `bg-action-hover`.
+  - **Text links:** `text-dark-green` (navy `#0f234a`; the token names are left over from superakcijos' green). Keep `text-green` (mid-blue accent, 6.6:1) for borders and tints, not body links.
+  - **Discount badges:** `bg-deal text-deal-foreground` (raspberry `#b5125e`, white text 6.5:1).
   - **Greys:** `gray-400` and `gray-500` are darkened in the theme.
 - **Focus:** a 3px outline on every link and control (base rule in `app.css`).
 - **No surprises:** nothing jumps or changes on its own. Popups close with the phone's Back button. No popup opens by itself on a timer: the old 10-second signup popup became `<x-signup-inline-card>`, a card in the page flow (home page, product page).

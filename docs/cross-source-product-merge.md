@@ -1,6 +1,6 @@
 # Merging flyer vs e-shop duplicates (`products:merge-duplicates --cross-source`)
 
-How we find and merge products that exist twice for the same store: once created from the store's flyer (Gemini extraction) and once from its e-shop scraper. First full run on production: 2026-09-29, 159 pairs merged.
+How we find and merge products that exist twice for the same store: once created from the store's flyer (Gemini extraction) and once from its e-shop scraper. Built on superakcijos.lt (first production run 2026-09-29, 159 grocery pairs merged); the examples and numbers below are from there. Pharmacies hit the same case when a chain has both a leaflet and an e-shop scraper.
 
 ---
 

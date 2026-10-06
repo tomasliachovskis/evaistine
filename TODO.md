@@ -1,85 +1,66 @@
 # TODO
 
-Running list of planned work and ideas. Not a sprint board — just a place to
-write things down before they're lost. Check items off or delete them once
-done; add context/rationale inline rather than just a bare title.
+Running list for eVaistine.lt. Not a sprint board — check items off or
+delete them once done, and add context inline rather than a bare title.
+Project decisions are in `docs/evaistine.md`.
 
-## SEO / content
+## Done (2026-10-06)
 
-- [x] **Scraper unit pricing** (done 2026-09-08): `unit_price`/`unit_price_basis`/
-      `unit_price_estimated` columns added to `discount_temp`/`discounts`.
-      Real store-published values now captured for Rimi, Lidl, Iki, Norfa,
-      Gulbelė, Vynoteka, Barbora/Maxima, plus flyer extraction (Rimi, Lidl,
-      Iki, Norfa, Gulbelė, Aibė, Šilas, Grustė, Promo Cash&Carry — all
-      verified against real pages). Thomas Philipps has no real source
-      anywhere (checked live site + flyer) — pack-size-derived fallback
-      (`ProcessDiscounts::resolveUnitPrice()`) covers it and any other row
-      missing a real value. Not yet checked: Čia, Express Market, Koops,
-      Kubas — checked 2026-09-08: Koops and Kubas print real unit price
-      (Koops 12/16, Kubas 11/11 verified against the real flyer page);
-      Čia and Express Market don't (only pack sizes) — pack-size fallback
-      covers those two. No code changes needed, existing
-      `PdfFlyerProcessingService` already handles all 4 correctly.
-      `PriceIndexService` now
-      wired (`resolveUnitPrice()`) to prefer these columns, falling back
-      to its own name-regex `parseUnitPrice()` only when a row has
-      neither.
-- [ ] **Image proxy for product photos**: product hero images hotlink the
-      scraped store's own CDN (`DiscountResponseFormatter::resolveProductImageUrl()`)
-      — no resize/WebP/local caching. Found via Clarity: LCP 3.5–7.8s on product
-      pages. Plan: queue job to download+convert to WebP via `intervention/image`
-      (already used for flyer PDFs), store under `storage/app/public/products/`,
-      reuse the existing `image_from_flyer` symlink convention. Partial mitigation
-      already shipped (`fetchpriority="high"`, `loading="eager"`, `aspect-square`
-      on the hero `<img>`) — this would fix the actual root cause.
-- [ ] **Merged product-row comparison view**: taupulis.lt shows one row per
-      product with all stores' current prices side by side (e.g. "Persikai
-      PARAGUAYO: €1.99 / €3.49 / €3.49"), vs. our current one-card-per-store+product
-      layout on `/akcijos/{category}`. Worth prototyping for category pages —
-      genuinely better UX for "which store has this cheapest right now", and it's
-      the one thing they do better than us (they otherwise only cover 3 stores
-      vs our 47, and are a pure client-rendered SPA with zero crawlable links).
+- [x] Fork superakcijos.lt into `/Users/tomas/www/vaistines` with its own
+      Sail stack, DB and ports; scrapers, deploy and Meilisearch can't reach
+      superakcijos production.
+- [x] Keep only the seven pharmacy chains; remove grocery scrapers, rules
+      classes, generic grocery products and the energy-drink override; one
+      `config('stores.main_slugs')` list for "main chains first".
+- [x] Domain and brand `evaistine.lt` / `eVaistine.lt`; new logo, favicon,
+      navy palette with raspberry discount badges.
+- [x] Fresh-DB schema aligned with production (`discount_temp.store`,
+      nullable prices and dates).
+- [x] Local test data: 31 real Eurovaistinė products in three test
+      categories, price comparison across four chains.
 
-## Price index (`/kainu-indeksas`)
+## Next
 
-- [ ] Schedule `price-index:snapshot` in `Kernel.php` (weekly, e.g. Monday
-      morning) — currently manual-only.
-- [ ] Decide a review/publish gate before this goes live in production nav —
-      currently built and tested locally only, not deployed, not linked from
-      anywhere on the site.
-- [x] **Expand candidate basket** (done 2026-09-08): `CANDIDATE_ITEM_SLUGS`
-      grown from 16 to 34 items, modeled on pricer.lt's own monthly
-      "pigiausias krepšelis" — see conversation for the cross-check against
-      `generic_products`. Also added real per-item payable price (not just
-      the normalized €/kg/l/10vnt figure) to the page's item table, so a
-      reader can sanity-check e.g. a suspiciously cheap normalized price
-      against the real product/pack.
-- [ ] **Maxima/Lidl/Rimi flyer backlog blocks real basket coverage**: checked
-      2026-09-08 — these 3 stores have 211/213/150 flyer pages respectively
-      already downloaded and page-image-converted (`StoreFlyer`/
-      `StoreFlyerPage`, `processing_status=ready`), but only a handful were
-      ever run through `PdfFlyerProcessingService::processPdf()`'s actual
-      Gemini discount extraction (Lidl 9, Rimi 16 — from manual testing
-      this session; Maxima 0). `ProcessPdfFlyerJob` (runs every minute) only
-      picks up *newly arriving* PDFs from `flyers-incoming/` — it does not
-      retroactively process this already-downloaded backlog, so it won't
-      fix itself. Confirmed live: of Maxima's 2918 active discounts matched
-      to a generic_product, only ~20 are food — the rest are non-food
-      (notebooks, shampoo, deodorant, cat food, diapers, sunscreen — a back-
-      to-school/hygiene sale wave), which is why Maxima/Lidl/Rimi basket
-      coverage is currently only 2/34, 3/34, 4/34 vs. Iki 23/34, Norfa
-      19/34. Running the 574-page backlog through real extraction (real
-      Gemini API cost/time) should substantially fill this gap — deferred,
-      not started.
+- [ ] **Test suite**: 125 of 278 tests failed on the fresh DB before the
+      schema alignment. Re-run, then fix the grocery-specific assertions.
+- [ ] **Categories**: seed the 12 root categories from `docs/evaistine.md`
+      with SVG icons, adapt the `categories:map-mappers` GPT prompt, and drop
+      the grocery category ids hardcoded in `ProcessDiscounts::resolveCategoryId()`
+      (pets `619`, the alcoholic/non-alcoholic split).
+- [ ] **Ailment layer**: `product_ailments` table, mapping from each
+      pharmacy's own ailment categories (Gintarinė, Benu, Apotheka) plus GPT
+      for the rest, `/nuo/{ailment}` pages on the shared listing template.
+- [ ] **E-shop scrapers**, full catalog with EAN, skipping prescription items:
+      Eurovaistinė (product JSON is in the category page HTML), Gintarinė,
+      Camelia, Benu, Apotheka, N vaistinė. Watch for Cloudflare.
+- [ ] **Cross-pharmacy matching**: EAN first; name normalization for
+      strength (`400 mg`), count (`N20`) and form (tabletės, sirupas).
+- [ ] **Unit price for pharmacy goods**: €/l on 10 ml drops is meaningless;
+      use €/vnt (per tablet/capsule) where the pack count is known.
+- [ ] **Copy and SEO**: rewrite the home hero (still lists Maxima, Lidl...
+      and grocery search examples), listing titles ("Visos vitaminai ir
+      maisto papildai akcijos" grammar), GPT prompts in
+      `DescriptionGenerationService`, `ListingPageMetaService`,
+      `HomePageMetaService` and `KeywordPage*`, hand-written chain copy in
+      `ListingPageMetaService::getPriorityStore*()`, and the domain strings
+      hardcoded across services (centralize on `CanonicalUrl`). No treatment
+      advice or health claims (YMYL).
+- [ ] **Keyword pages**: pharmacy keyword list (active substances, product
+      types, brands), import with `ImportManualKeywordPagesCommand`. The
+      header nav (`config/header_nav.php`) already links slugs that don't
+      exist yet.
+- [ ] **Offer origin label**: product pages say "Eurovaistinė kainų
+      leidinys" for e-shop prices until the chain is in `config/scrapers.php`.
+- [ ] **Store brand colors** in `config('stores.brand_colors')`, from each
+      chain's real logo.
+- [ ] **Legal**: disclaimer text, check what may be shown for medicines.
+- [ ] **Production**: GitHub repo, server, nginx vhost, `deploy.sh` for the
+      new server (remove the guard lines), Meilisearch index, GSC property,
+      sitemap, IndexNow key.
 
-## News articles (`/naujienos`)
+## Ideas carried over from superakcijos
 
-- [ ] Build Type A: a weekly leaflet/deals roundup sourced from our own DB
-      data (no external search needed) — the other half of the original
-      pricer.lt-inspired plan; Type B (external Bing-News-grounded articles)
-      is built, Type A was deprioritized this session.
-- [ ] Decide a review/publish workflow for `NewsArticleService` drafts —
-      currently everything lands as `status=draft`, nothing auto-publishes.
-- [ ] Once there's a steady flow of fresh drafts, tighten `news:generate`'s
-      `--max-age-days` back down from 7 to 3 (widened for initial seeding).
-- [ ] Schedule `news:generate` in `Kernel.php` — currently manual-only.
+- [ ] **Image proxy for product photos**: cache/resize hero images locally
+      instead of hotlinking pharmacy CDNs, for LCP and SEO.
+- [ ] **Merged product-row comparison view**: one row per product with every
+      pharmacy's price side by side, instead of one card per offer.

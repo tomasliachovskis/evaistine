@@ -5,6 +5,8 @@ description: Playbook for generating or revising GPT-written SEO copy for store/
 
 # SEO content generation playbook
 
+> Written for superakcijos.lt (groceries). For eVaistine.lt the same mechanics apply, plus two pharmacy rules: the copy is health-related (YMYL), so no treatment advice, dosing, efficacy or health claims, and prescription medicines are never mentioned or promoted. Examples below are grocery ones.
+
 Distilled from the `/leidinys/{store}` content project — several real correction cycles (too thin → too padded → wrong intent → stale data baked into evergreen copy → headings that didn't match the real reference page → sections too thin) are captured here so they don't have to be rediscovered.
 
 ## 1. Reuse the existing infra, don't reinvent it

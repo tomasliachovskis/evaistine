@@ -1,5 +1,7 @@
 # "Mano parduotuvės" (2026-10-02)
 
+Built on superakcijos.lt; the store and category names in the examples are grocery ones.
+
 A visitor picks the stores they shop at, and the offer listings that mix several stores show only those stores.
 
 ## Where the choice lives

@@ -1,100 +1,51 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# eVaistine.lt
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Price comparison for Lithuanian pharmacies: non-prescription medicines,
+vitamins and supplements, cosmetics, hygiene, mother-and-baby and medical
+goods across Eurovaistinė, Gintarinė vaistinė, Camelia, Benu, Apotheka,
+N vaistinė and Ramunėlės vaistinė.
 
-## About Laravel
+Laravel 11 + Blade/Alpine/Livewire, Filament admin, Node/Puppeteer scrapers.
+Forked from superakcijos.lt (groceries); `docs/evaistine.md` covers what
+changed and why.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Local setup
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+The app runs in Sail with its own project name and ports, so it can run next
+to superakcijos:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Service | Port |
+|---|---|
+| App | http://localhost:8081 |
+| MySQL (`vaistines`) | 3307 |
+| Redis | 6380 |
+| Mailhog | 1026 / http://localhost:8026 |
+| Vite | 5175 |
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## Commands
-
-### Generate Descriptions
-
-Generate compelling descriptions for stores and categories using ChatGPT API:
-
-```bash
-# Generate description for a specific store
-sail artisan descriptions:generate store --id=1
-
-# Generate descriptions for all stores
-sail artisan descriptions:generate store --all
-
-# Generate description for a specific category
-sail artisan descriptions:generate category --id=1
-
-# Generate descriptions for all categories
-sail artisan descriptions:generate category --all
+```
+cp .env.example .env            # already has COMPOSE_PROJECT_NAME=vaistines and these ports
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan key:generate
+./vendor/bin/sail artisan migrate
+./vendor/bin/sail npm run build
 ```
 
-The command analyzes active discounts, best deals, valid dates, and product information to create SEO-friendly descriptions in Lithuanian.
+Test data: `docs/evaistine.md`, "Local test data".
 
-### Bulk Map Categories
+## Pipeline
 
-Map product categories using ChatGPT API:
+1. Scrapers (`scrapers/*.js` e-shops, `scrapers/flyers/*.js` leaflets) POST
+   rows to `/api/scrapers`, which stores them in `discount_temp`.
+2. `artisan discounts:process` turns them into `products` and `discounts`,
+   matching products by EAN first.
+3. `artisan cache:clear-discounts` refreshes the listing caches.
 
-```bash
-# Map categories for specific store
-sail artisan categories:bulk-map Norfa
+## Docs
 
-# Map categories for all supported stores
-sail artisan categories:bulk-map
-```
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-test-favorites@example.com / Test1234!, 
+- `CLAUDE.md`: working rules and the store onboarding checklist.
+- `docs/evaistine.md`: project decisions.
+- `docs/ui-older-readers.md`: type scale, controls, colors.
+- `docs/email-notifications.md`, `docs/my-stores.md`,
+  `docs/cross-source-product-merge.md`: how those features work.
+- `docs/superakcijos-legacy/`: the grocery site's SEO and keyword research.
+- `TODO.md`: what's next.

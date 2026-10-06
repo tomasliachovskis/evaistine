@@ -57,7 +57,7 @@ rekomendacijos remiasi TIK jų realiais title/description, surinktais tiesiai i�
 ### `/akcijos/{store}` — dabar: `Šilas -50% akcija rugsėjį – 91+ pasiūlymų`
 Visi 4 autoritetai: `{STORE} akcijos | {Site}` arba `{STORE} savaitinis akcijų leidinys Nr.{N} | {datos}`
 — **jokio %, DIDŽIOSIOMIS, arba Nr.+data vietoj %.**
-- **Rekomendacija**: `{STORE} akcijos – Nr.{issue}, {count}+ pasiūlymų | eVaistine.lt`
+- **Rekomendacija**: `{STORE} akcijos – Nr.{issue}, {count}+ pasiūlymų | SuperAkcijos.lt`
   (DIDŽIOSIOMIS, Nr. vietoj %, live count — mišinys iš to, ką VISI 4 autoritetai daro).
   Alternatyva, jei nori išlaikyti savo % eksperimentą: bent grąžinti DIDŽIOSIOMIS raides,
   paliekant % — tai vienintelis elementas, kur MES nukrypom nuo VISŲ keturių vienbalsiai.
@@ -65,7 +65,7 @@ Visi 4 autoritetai: `{STORE} akcijos | {Site}` arba `{STORE} savaitinis akcijų 
 ### `/leidinys/{store}` — dabar: `Šilas naujas savaitės leidinys, Nr.37 2026.09.08`
 Tiksliai atitinka `raskakcija.lt`/`akcijos.lt` formatą (Nr.+data) — **NEKEISTI formato**,
 tik apsvarstyti DIDŽIOSIOMIS store pavadinimą dėl §"Ką matome" punkto 1.
-- **Rekomendacija**: `ŠILAS naujas savaitės leidinys, Nr.37 2026.09.08 | eVaistine.lt`
+- **Rekomendacija**: `ŠILAS naujas savaitės leidinys, Nr.37 2026.09.08 | SuperAkcijos.lt`
   (vienintelis pakeitimas — registras).
 
 ### `/akcijos/{category}` (pvz. pieno produktai) — dabar: `Pieno produktai ir kiaušiniai akcijos – pigiausios kainos, iki 55% nuolaidos`
@@ -86,11 +86,11 @@ kategorija, tik su store pavadinimu DIDŽIOSIOMIS title'e.
   šiam store. Title → `MAXIMA akcijos: Pieno produktai ir kiaušiniai – iki 35% nuolaidos`
   (DIDŽIOSIOMIS store, likusi struktūra nekeista).
 
-### `/leidinys/{store}/{flyer}` — dabar: `Šilas leidinys Nr. 18 | eVaistine.lt` (visiškai nekeista, senas)
+### `/leidinys/{store}/{flyer}` — dabar: `Šilas leidinys Nr. 18 | SuperAkcijos.lt` (visiškai nekeista, senas)
 Jokio iš 4 autoritetų neturime tiesioginio analogo (jie visi rodo tik hub, ne page-by-page
 leidinio skaitytuvą) — čia nėra rinkos etalono, kurį sekti. Mūsų pačių sprendimas.
 - **Rekomendacija** (nepagrįsta konkurentų duomenimis, tik logika): pridėti datą kaip
-  `/leidinys/{store}` daro: `{STORE} leidinys Nr.{issue} – galioja {from}–{to} | eVaistine.lt`.
+  `/leidinys/{store}` daro: `{STORE} leidinys Nr.{issue} – galioja {from}–{to} | SuperAkcijos.lt`.
 
 ### `/akcijos` ir `/leidiniai` (hub'ai) — dabar statiški, be live skaičiaus
 Nė vienas iš 4 patvirtintų autoritetų NEBUVO tikrintas jų homepage lygiu šiame tyrime (jie
@@ -142,8 +142,8 @@ puslapio pvz. cukrus title nebuvo tikrintas šioje analizėje atskirai (žr. §4
 bet remiantis šiuo radiniu:
 
 - **Rekomendacija title**: `{Keyword} kaina nuo {realiai žemiausia kaina}€ – {count}+
-  pasiūlymų | eVaistine.lt` (pvz. `Cukrus kaina nuo 0.89€ – 18+ pasiūlymų |
-  eVaistine.lt`) — realus žemiausios kainos skaičius jau turimas DB (`discounted_price`
+  pasiūlymų | SuperAkcijos.lt` (pvz. `Cukrus kaina nuo 0.89€ – 18+ pasiūlymų |
+  SuperAkcijos.lt`) — realus žemiausios kainos skaičius jau turimas DB (`discounted_price`
   MIN), technikai lengva, ir tai TIKSLIAI atkartoja du realius rinkos lyderius vienam iš
   svarbiausių mūsų puslapio tipų (KeywordPage), kurio anksčiau šiame faile visai netyrinėjome.
 - Šis radinys **stipriai koreliuoja su §"Ką matome" #4** ankstesniame skyriuje (akcijos/leidinys
