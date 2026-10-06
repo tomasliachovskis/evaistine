@@ -74,7 +74,7 @@ export async function extractWorkingHours(slug) {
 }
 
 export async function submitLocations(store, locations) {
-    const response = await fetch('https://superakcijos.lt/api/scrapers/store-locations', {
+    const response = await fetch('http://localhost/api/scrapers/store-locations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ store, locations }),

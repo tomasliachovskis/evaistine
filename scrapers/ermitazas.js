@@ -7,7 +7,7 @@ puppeteer.use(StealthPlugin());
 
 const BASE_URL = 'https://www.ermitazas.lt';
 const STORE = 'Ermitažas';
-const API_URL = process.env.SCRAPER_API_URL || 'https://superakcijos.lt/api/scrapers';
+const API_URL = process.env.SCRAPER_API_URL || 'http://localhost/api/scrapers';
 
 // Full catalog of the everyday-goods leaf categories only (household
 // chemicals, cleaning supplies, paper goods, pet food, hygiene, food) —

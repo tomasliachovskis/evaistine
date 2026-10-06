@@ -161,7 +161,7 @@ const parseUnitPrice = (text) => {
             image_url: product.image_url,
             store: 'norfa'
         }));
-        await axios.post('https://superakcijos.lt/api/scrapers', data);
+        await axios.post('http://localhost/api/scrapers', data);
     } catch (error) {
         console.error('Error posting products:', error.message);
     }

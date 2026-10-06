@@ -56,7 +56,7 @@ const clearProgress = () => {
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
 const axiosInstance = axios.create({
-    baseURL: 'https://superakcijos.lt/api',
+    baseURL: 'http://localhost/api',
     timeout: 30000,
     maxRedirects: 5,
     headers: {

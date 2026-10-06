@@ -240,7 +240,7 @@ const parseUnitPrice = (text) => {
                 store: 'iki'
             };
         });
-        await axios.post('https://superakcijos.lt/api/scrapers', data);
+        await axios.post('http://localhost/api/scrapers', data);
     } catch (error) {
         console.error('Error posting products:', error.message);
     }

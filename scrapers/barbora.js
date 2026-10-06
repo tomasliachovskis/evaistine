@@ -174,7 +174,7 @@ puppeteer.use(StealthPlugin());
                 condition: product.condition,
                 store: 'maxima'
             }));
-            await axios.post('https://superakcijos.lt/api/scrapers', data);
+            await axios.post('http://localhost/api/scrapers', data);
             console.log(`Posted ${data.length} products from page ${currentPage} to API`);
         } catch (error) {
             console.error(`Error posting products from page ${currentPage}:`, error.message);

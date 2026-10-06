@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "deploy.sh still targets the superakcijos.lt server; set up the vaistines server first." >&2; exit 1
 set -euo pipefail
 
 # Define server and project details
