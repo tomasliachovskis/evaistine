@@ -61,8 +61,8 @@
         <svg x-ref="svg" viewBox="0 0 760 220" preserveAspectRatio="none" class="block w-full overflow-visible" role="img" :aria-label="summaryLine">
             <defs>
                 <linearGradient id="priceHistoryFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#09a952" stop-opacity="0.16" />
-                    <stop offset="100%" stop-color="#09a952" stop-opacity="0" />
+                    <stop offset="0%" stop-color="#0f8b8d" stop-opacity="0.16" />
+                    <stop offset="100%" stop-color="#0f8b8d" stop-opacity="0" />
                 </linearGradient>
             </defs>
         </svg>

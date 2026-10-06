@@ -14,10 +14,10 @@
     /* Height of the site header (one row, site-header.blade.php): sticky
        bars dock right under it and <main> starts below it. */
     --header-h: 3.5rem;
-    --green: #09a952;
-    --dark-green: #044923;
-    --green-soft: #e7f6ed;
-    --green-soft-border: #c3e9d2;
+    --green: #0f8b8d;
+    --dark-green: #0a4f52;
+    --green-soft: #e6f4f4;
+    --green-soft-border: #bfe3e3;
     --font-color: #262626;
     --white: #fff;
     --container: 1168px;
@@ -111,10 +111,10 @@
     --text-4xl: 2.5rem;
     --text-4xl--line-height: 3rem;
 
-    /* Filled buttons and active tabs: the brand green darkened just
-       enough for white text (4.8:1). dark-green stays for text links. */
-    --color-action: #07843f;
-    --color-action-hover: #066b34;
+    /* Filled buttons and active tabs: the brand teal darkened just
+       enough for white text (5.7:1). dark-green stays for text links. */
+    --color-action: #0b7275;
+    --color-action-hover: #095c5f;
 
     --color-gray-400: #6b7280;
     --color-gray-500: #4b5563;

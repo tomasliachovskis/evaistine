@@ -11,7 +11,7 @@
         <td align="center">
             <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb;">
                 <tr>
-                    <td style="background-color:#044923; padding:24px 32px;">
+                    <td style="background-color:#0a4f52; padding:24px 32px;">
                         <img src="https://evaistine.lt/assets/logo-white.svg" alt="eVaistine.lt" width="133" height="22" style="display:block; height:22px; width:178px; max-width:178px; border:0;">
                     </td>
                 </tr>
@@ -23,7 +23,7 @@
                         </p>
                         <table role="presentation" cellpadding="0" cellspacing="0">
                             <tr>
-                                <td style="border-radius:8px; background-color:#09a952;">
+                                <td style="border-radius:8px; background-color:#0f8b8d;">
                                     <a href="{{ $loginUrl }}" target="_blank" style="display:inline-block; padding:12px 28px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:8px;">Prisijungti</a>
                                 </td>
                             </tr>

@@ -11,7 +11,7 @@
         <td align="center">
             <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb;">
                 <tr>
-                    <td style="background-color:#044923; padding:24px 32px;">
+                    <td style="background-color:#0a4f52; padding:24px 32px;">
                         <img src="https://evaistine.lt/assets/logo-white.svg" alt="eVaistine.lt" width="133" height="22" style="display:block; height:22px; width:178px; max-width:178px; border:0;">
                     </td>
                 </tr>
@@ -35,9 +35,9 @@
                                             <p style="margin:0 0 4px; font-size:14px; font-weight:700; text-transform:uppercase; color:#6b7280;">{{ $leaflet['store_name'] }}</p>
                                             <p style="margin:0 0 6px; font-size:18px; font-weight:700; line-height:1.35; color:#111827;">{{ $leaflet['title'] }}</p>
                                             @if ($leaflet['dates'])
-                                                <p style="margin:0 0 8px; font-size:15px; color:#044923;">Galioja {{ $leaflet['dates'] }}</p>
+                                                <p style="margin:0 0 8px; font-size:15px; color:#0a4f52;">Galioja {{ $leaflet['dates'] }}</p>
                                             @endif
-                                            <span style="display:inline-block; padding:8px 14px; border-radius:8px; background-color:#07843f; font-size:15px; font-weight:700; color:#ffffff;">Žiūrėti leidinį</span>
+                                            <span style="display:inline-block; padding:8px 14px; border-radius:8px; background-color:#0b7275; font-size:15px; font-weight:700; color:#ffffff;">Žiūrėti leidinį</span>
                                         </td>
                                     </tr>
                                 </table>

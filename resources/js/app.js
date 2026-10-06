@@ -461,14 +461,14 @@ document.addEventListener('alpine:init', () => {
             });
 
             svg.appendChild(mk('path', { d: this.areaPath, fill: 'url(#priceHistoryFill)' }));
-            svg.appendChild(mk('path', { d: this.linePath, fill: 'none', stroke: '#09a952', 'stroke-width': 2.25, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+            svg.appendChild(mk('path', { d: this.linePath, fill: 'none', stroke: '#0f8b8d', 'stroke-width': 2.25, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
 
             this.points.forEach((pt) => {
                 const isMin = pt.price === this.minPrice;
                 const circle = mk('circle', {
                     cx: pt.x, cy: pt.y, r: 3.5,
-                    fill: isMin ? '#09a952' : '#fff',
-                    stroke: isMin ? '#044923' : '#09a952',
+                    fill: isMin ? '#0f8b8d' : '#fff',
+                    stroke: isMin ? '#0a4f52' : '#0f8b8d',
                     'stroke-width': 2,
                     class: 'cursor-pointer',
                 });

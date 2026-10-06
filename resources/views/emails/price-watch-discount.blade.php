@@ -15,7 +15,7 @@
         <td align="center">
             <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb;">
                 <tr>
-                    <td style="background-color:#044923; padding:24px 32px;">
+                    <td style="background-color:#0a4f52; padding:24px 32px;">
                         <img src="https://evaistine.lt/assets/logo-white.svg" alt="eVaistine.lt" width="133" height="22" style="display:block; height:22px; width:178px; max-width:178px; border:0;">
                     </td>
                 </tr>
@@ -32,11 +32,11 @@
                 @if ($totalSavings > 0)
                     <tr>
                         <td style="padding:0 32px 20px;">
-                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:12px; background-color:#f0fdf4;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:12px; background-color:#effafa;">
                                 <tr>
                                     <td style="padding:16px 20px;">
                                         <p style="margin:0 0 4px; font-size:14px; color:#374151;">Galite sutaupyti dabar</p>
-                                        <p style="margin:0; font-size:28px; font-weight:800; line-height:1.2; color:#044923;">{{ $euro($totalSavings) }}</p>
+                                        <p style="margin:0; font-size:28px; font-weight:800; line-height:1.2; color:#0a4f52;">{{ $euro($totalSavings) }}</p>
                                     </td>
                                 </tr>
                             </table>
@@ -66,7 +66,7 @@
                                             <table role="presentation" cellpadding="0" cellspacing="0">
                                                 <tr>
                                                     <td style="padding-right:8px;">
-                                                        <span style="font-size:16px; font-weight:700; color:#09a952;">{{ $euro($cheapest->discounted_price) }}</span>
+                                                        <span style="font-size:16px; font-weight:700; color:#0f8b8d;">{{ $euro($cheapest->discounted_price) }}</span>
                                                     </td>
                                                     @if ($cheapest->original_price)
                                                         <td style="padding-right:8px;">
@@ -105,7 +105,7 @@
                     <td style="padding:0 32px 24px;">
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                             <tr>
-                                <td align="center" style="border-radius:8px; background-color:#09a952;">
+                                <td align="center" style="border-radius:8px; background-color:#0f8b8d;">
                                     <a href="{{ $favoritesUrl }}" target="_blank" style="display:block; padding:14px 28px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:8px; text-align:center;">Peržiūrėti sekamas prekes</a>
                                 </td>
                             </tr>
