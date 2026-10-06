@@ -75,7 +75,7 @@ class HomePageMetaService
             // (generic terms) plus a real branded-query example pairing
             // ("{Store} akcija", "{Store} leidinys" — how people actually
             // type single-store searches) — not just generic copy.
-            'meta_description' => "Palyginome {$dealsLabel}+ akcijų ir akcijų leidinius iš {$topNames} bei kitų Lietuvos parduotuvių – pvz., {$topStoreName} akcija, {$topStoreName} leidinys. Rask, kur šiuo metu pigiausia.",
+            'meta_description' => "Palyginome {$dealsLabel}+ akcijų ir akcijų leidinius iš {$topNames} bei kitų Lietuvos vaistinių – pvz., {$topStoreName} akcija, {$topStoreName} leidinys. Rask, kur šiuo metu pigiausia.",
         ];
     }
 
@@ -243,7 +243,7 @@ class HomePageMetaService
         return [
             [
                 'question' => 'Kas yra eVaistine.lt?',
-                'answer' => 'eVaistine.lt – akcijų agregatorius. Surenkame Maxima, Lidl, Iki, Rimi, Norfa ir kitų tinklų nuolaidas vienoje vietoje, kad nereikėtų tikrinti kiekvienos parduotuvės atskirai.',
+                'answer' => 'eVaistine.lt – akcijų agregatorius. Surenkame Maxima, Lidl, Iki, Rimi, Norfa ir kitų tinklų nuolaidas vienoje vietoje, kad nereikėtų tikrinti kiekvienos vaistinės atskirai.',
             ],
             [
                 'question' => 'Kaip dažnai atnaujinamos akcijos?',
@@ -258,7 +258,7 @@ class HomePageMetaService
                 'answer' => 'Peržiūrėkite savaitės pasiūlymus arba populiariausius pasiūlymus pagal kategoriją.',
             ],
             [
-                'question' => 'Ar galima palyginti kainas tarp parduotuvių?',
+                'question' => 'Ar galima palyginti kainas tarp vaistinių?',
                 'answer' => 'Taip. Pasirinkite kategoriją ir palyginkite akcijas visuose tinkluose vienoje vietoje.',
             ],
         ];

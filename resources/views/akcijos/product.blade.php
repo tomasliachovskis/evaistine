@@ -99,7 +99,7 @@ use App\Support\ProductPageMeta;
     // product-page-tabs.tsx's tab list — was missing the "about" tab and every
     // tab's icon/shortLabel entirely.
     $tabs = array_filter([
-        $hasOffers ? ['id' => 'offers', 'label' => 'Kainos parduotuvėse', 'shortLabel' => 'Kainos', 'icon' => 'shopping-bag'] : null,
+        $hasOffers ? ['id' => 'offers', 'label' => 'Kainos vaistinėse', 'shortLabel' => 'Kainos', 'icon' => 'shopping-bag'] : null,
         $hasSimilar ? ['id' => 'similar-products', 'label' => 'Panašūs produktai', 'shortLabel' => 'Panašūs', 'icon' => 'layout-grid'] : null,
         $hasHistory ? ['id' => 'kainu-istorija', 'label' => 'Kainų istorija', 'shortLabel' => 'Istorija', 'icon' => 'clock'] : null,
         $hasAbout ? ['id' => 'about', 'label' => 'Apie produktą', 'shortLabel' => 'Apie', 'icon' => 'info'] : null,
@@ -261,7 +261,7 @@ use App\Support\ProductPageMeta;
                                     @endif
                                     {{-- Where and until when, right under the price: older
                                          readers otherwise had to scroll to "Kainos
-                                         parduotuvėse" to learn which shop the price is from. --}}
+                                         vaistinėse" to learn which shop the price is from. --}}
                                     @if (!empty($bestOffer['store']['slug']))
                                         @php
                                             $heroValidity = \App\Support\ProductPageMeta::validUntilLabel($bestOffer['to_date'] ?? null);
@@ -431,13 +431,13 @@ use App\Support\ProductPageMeta;
         @if ($hasOffers)
             <section id="offers" class="base-container scroll-mt-40 pb-6 pt-3 sm:pt-4 lg:pt-5">
                 <h2 class="mb-1 text-lg font-bold text-gray-900">{{ \App\Support\ProductPageMeta::offersHeading() }}</h2>
-                <p class="mb-4 text-sm text-gray-500">Palyginome {{ $offerGroups->count() }} {{ $offerGroups->count() === 1 ? 'parduotuvės pasiūlymą' : 'parduotuvių pasiūlymus' }}.</p>
+                <p class="mb-4 text-sm text-gray-500">Palyginome {{ $offerGroups->count() }} {{ $offerGroups->count() === 1 ? 'vaistinės pasiūlymą' : 'vaistinių pasiūlymus' }}.</p>
 
                 {{-- Ported from product-store-offer-card.tsx (via
                      ProductStoreOffersSection/buildStoreGroups) — one card per
                      store, not a table: logo, price + yellow corner discount
                      badge, an "Iki MM.DD" pill top-right when the offer has an
-                     end date, and an origin line ("{Store} parduotuvė" for the
+                     end date, and an origin line ("{Store} vaistinė" for the
                      5 stores with real online prices, "{Store} kainų leidinys"
                      for the rest, scraped from a leaflet). --}}
                 <div class="flex w-full flex-col gap-3 sm:gap-4">

@@ -18,7 +18,7 @@
         ->filter(fn ($chip) => $chip['matching_offers_count'] > 0)
         ->values();
 
-    // Same editorial store order as the home hero chips / /parduotuves
+    // Same editorial store order as the home hero chips / /vaistines
     // directory (App\Support\StoreListPriority) — named chains first in a
     // fixed order, then everyone else by active-leaflet count — instead of
     // raw count desc, which put e.g. Officeday ahead of Maxima/Rimi/Lidl.
@@ -51,7 +51,7 @@
 
 <x-layouts.app
     :breadcrumbs="$breadcrumbs ?? []"
-    :title="$seo['meta_title'] ?? ($seo['seo_title'] ?? 'Akcijų leidiniai – visų parduotuvių savaitės katalogai')"
+    :title="$seo['meta_title'] ?? ($seo['seo_title'] ?? 'Akcijų leidiniai – visų vaistinių savaitės katalogai')"
     :description="$seo['meta_description'] ?? ($seo['seo_description'] ?? null)"
     :canonical="$canonical"
     :robots="$robots"
@@ -67,9 +67,9 @@
 
     <div class="base-container mx-auto flex flex-col gap-5 pb-8 sm:gap-6 sm:pb-10">
         <div class="flex flex-col gap-2">
-            <h1>Naujausi akcijų leidiniai iš visų parduotuvių</h1>
+            <h1>Naujausi akcijų leidiniai iš visų vaistinių</h1>
             <x-collapsible-intro class="mt-1.5">
-                Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje.
+                Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų vaistinių akcijų leidiniai vienoje vietoje.
                 Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.
             </x-collapsible-intro>
             @php
@@ -102,12 +102,12 @@
                 . ($active ? 'bg-[#e8e8e8] font-bold text-gray-900 hover:bg-[#dedede]' : 'font-semibold text-gray-900 hover:bg-[#f2f2f2]');
         @endphp
         {{-- The same navigation bar as the offer listings (<x-nav-bar>, not
-             pinned): "Parduotuvė" opens the store tiles, "Rikiuoti" the
+             pinned): "Vaistinė" opens the store tiles, "Rikiuoti" the
              order. Replaced the pinned gray bar with top-5 store chips. --}}
         <div x-data="{ storeOpen: false, sortOpen: false }" @keydown.escape.window="storeOpen = false; sortOpen = false">
             <x-nav-bar class="!mb-0" x-on:click.outside="sortOpen = false">
-                <x-nav-bar-button label="Parduotuvė" icon="store" x-on:click="storeOpen = true" aria-haspopup="dialog" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="leidiniai_nav_bar">
-                    Visos parduotuvės
+                <x-nav-bar-button label="Vaistinė" icon="store" x-on:click="storeOpen = true" aria-haspopup="dialog" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="leidiniai_nav_bar">
+                    Visos vaistinės
                 </x-nav-bar-button>
                 <x-nav-bar-button
                     label="Rikiuoti"

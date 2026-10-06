@@ -15,7 +15,7 @@ class StoresTable
             ->defaultSort('name')
             ->columns([
                 TextColumn::make('name')
-                    ->label('Parduotuvė')
+                    ->label('Vaistinė')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('slug')

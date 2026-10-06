@@ -28,7 +28,7 @@ class StoreFlyersTable
                     ->square()
                     ->height(56),
                 TextColumn::make('store.name')
-                    ->label('Parduotuvė')
+                    ->label('Vaistinė')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('display_title')
@@ -89,7 +89,7 @@ class StoreFlyersTable
             ])
             ->filters([
                 SelectFilter::make('store_id')
-                    ->label('Parduotuvė')
+                    ->label('Vaistinė')
                     ->relationship('store', 'name')
                     ->searchable()
                     ->preload(),

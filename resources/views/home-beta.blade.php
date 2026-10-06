@@ -15,23 +15,23 @@
             <h1 class="m-0 text-2xl font-extrabold leading-tight tracking-tight text-dark-green sm:text-4xl">Ką šiandien perkate?</h1>
             <p class="m-0 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-lg">
                 @if ($totalDealsLabel)
-                    Šiandien palyginome <strong class="font-bold text-gray-900">{{ $totalDealsLabel }}</strong> {{ \App\Support\LithuanianPlural::offerWordAccusative($totalDeals) }} iš {{ $storeTotal }} parduotuvių. Įrašykite prekę – parodysime, kur pigiausia.
+                    Šiandien palyginome <strong class="font-bold text-gray-900">{{ $totalDealsLabel }}</strong> {{ \App\Support\LithuanianPlural::offerWordAccusative($totalDeals) }} iš {{ $storeTotal }} vaistinių. Įrašykite prekę – parodysime, kur pigiausia.
                 @else
-                    Įrašykite prekę – parodysime, kur pigiausia iš {{ $storeTotal }} parduotuvių.
+                    Įrašykite prekę – parodysime, kur pigiausia iš {{ $storeTotal }} vaistinių.
                 @endif
             </p>
             <x-search-box size="lg" placeholder="Pienas, kava, sviestas…" class="mt-2" />
           </div>
 
             <div class="flex w-full flex-col gap-3 lg:w-[26rem] lg:shrink-0">
-                <span class="text-base font-bold text-gray-700">Arba pasirinkite parduotuvę</span>
+                <span class="text-base font-bold text-gray-700">Arba pasirinkite vaistinę</span>
                 <div class="flex w-full flex-wrap gap-2.5 sm:gap-3">
                     @foreach ($storeTiles as $store)
                         <a href="{{ $store['href'] }}" aria-label="{{ $store['name'] }} akcijos" class="flex h-16 w-[calc((100%-1.25rem)/3)] items-center justify-center rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-md sm:h-[4.5rem] sm:w-[calc((100%-3.75rem)/6)] lg:w-[calc((100%-1.5rem)/3)]">
                             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="sm" />
                         </a>
                     @endforeach
-                    <a href="/parduotuves" class="flex h-16 w-[calc((100%-1.25rem)/3)] items-center justify-center rounded-2xl bg-white text-base font-bold text-dark-green shadow-sm transition-shadow hover:shadow-md sm:h-[4.5rem] sm:w-[calc((100%-3.75rem)/6)] sm:text-lg lg:w-[calc((100%-1.5rem)/3)]">+{{ $otherStoresCount }} kitos</a>
+                    <a href="/vaistines" class="flex h-16 w-[calc((100%-1.25rem)/3)] items-center justify-center rounded-2xl bg-white text-base font-bold text-dark-green shadow-sm transition-shadow hover:shadow-md sm:h-[4.5rem] sm:w-[calc((100%-3.75rem)/6)] sm:text-lg lg:w-[calc((100%-1.5rem)/3)]">+{{ $otherStoresCount }} kitos</a>
                 </div>
             </div>
         </section>

@@ -23,15 +23,15 @@ class StoreForm
                     ->dehydrated(false),
                 TextInput::make('flyer_source_url')
                     ->label('Leidinio parsisiuntimo šaltinis (URL)')
-                    ->helperText('Parduotuvės puslapis, kuriame skelbiamas naujausias leidinys/PDF – iš čia jį parsisiųsti ir įkelti per "Leidiniai".')
+                    ->helperText('Vaistinės puslapis, kuriame skelbiamas naujausias leidinys/PDF – iš čia jį parsisiųsti ir įkelti per "Leidiniai".')
                     ->url()
                     ->maxLength(500),
                 Toggle::make('show_discounts_page')
                     ->label('Rodyti akcijų puslapį')
-                    ->helperText('Įjungus /akcijos/{slug} rodo šios parduotuvės prekes. Išjungus – nukreipia į leidinių puslapį.'),
+                    ->helperText('Įjungus /akcijos/{slug} rodo šios vaistinės prekes. Išjungus – nukreipia į leidinių puslapį.'),
                 Toggle::make('extract_discounts_from_flyer')
                     ->label('Ištraukti nuolaidas iš leidinių (Gemini)')
-                    ->helperText('Nuolaidas ištraukia iš leidinio PDF. Nereikia parduotuvėms, turinčioms savo e. parduotuvės scraperį.'),
+                    ->helperText('Nuolaidas ištraukia iš leidinio PDF. Nereikia vaistinėms, turinčioms savo e. vaistinės scraperį.'),
             ]);
     }
 }

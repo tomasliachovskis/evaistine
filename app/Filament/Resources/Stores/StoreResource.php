@@ -19,11 +19,11 @@ class StoreResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
 
-    protected static ?string $navigationLabel = 'Parduotuvės';
+    protected static ?string $navigationLabel = 'Vaistinės';
 
-    protected static ?string $modelLabel = 'parduotuvė';
+    protected static ?string $modelLabel = 'vaistinė';
 
-    protected static ?string $pluralModelLabel = 'parduotuvės';
+    protected static ?string $pluralModelLabel = 'vaistinės';
 
     protected static ?string $recordTitleAttribute = 'name';
 

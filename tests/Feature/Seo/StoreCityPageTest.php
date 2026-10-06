@@ -9,7 +9,7 @@ use App\Models\StoreLocation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-// Google folded /parduotuves/{store}/{city} into /parduotuves/{store} as a
+// Google folded /vaistines/{store}/{city} into /vaistines/{store} as a
 // duplicate ("Google chose different canonical"): the city page was mostly
 // seven repeated weekday rows per address, and the chain page's HTML
 // already carried every city's addresses for its map/finder.
@@ -21,7 +21,7 @@ class StoreCityPageTest extends TestCase
     {
         $this->seedChain();
 
-        $response = $this->get('/parduotuves/seo-tinklas/vilnius')->assertOk();
+        $response = $this->get('/vaistines/seo-tinklas/vilnius')->assertOk();
 
         $response->assertSee('Pr–Št 08:00–22:00, Sk 09:00–20:00');
         $response->assertDontSee('Ketvirtadienis');
@@ -36,9 +36,9 @@ class StoreCityPageTest extends TestCase
     {
         $this->seedChain();
 
-        $response = $this->get('/parduotuves/seo-tinklas/vilnius')->assertOk();
+        $response = $this->get('/vaistines/seo-tinklas/vilnius')->assertOk();
 
-        $response->assertSee('<title>Seo Tinklas Vilnius darbo laikas – 3 parduotuvės', false);
+        $response->assertSee('<title>Seo Tinklas Vilnius darbo laikas – 3 vaistinės', false);
         $response->assertSee('content="Seo Tinklas Vilnius: Seo g. 1 (Pr–Št 07:00–22:00, Sk 09:00–20:00), Seo g. 2 (Pr–Št 08:00–22:00, Sk 09:00–20:00) ir kt. Visi adresai', false);
         $response->assertDontSee('šiandien');
     }
@@ -57,11 +57,11 @@ class StoreCityPageTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->get('/parduotuves/seo-tinklas/utena')
+        $this->get('/vaistines/seo-tinklas/utena')
             ->assertOk()
             ->assertSee('<title>Seo Tinklas Utena darbo laikas – Aukštakalnio g. 5', false)
             ->assertSee('content="Seo Tinklas Utena, Aukštakalnio g. 5 (Kasdien 08:00–21:00). Adresas, kontaktai ir vieta žemėlapyje."', false)
-            ->assertSee('1 parduotuvė Utena mieste');
+            ->assertSee('1 vaistinė Utena mieste');
     }
 
     public function test_city_with_shared_hours_states_them_once(): void
@@ -82,7 +82,7 @@ class StoreCityPageTest extends TestCase
             ]);
         }
 
-        $this->get('/parduotuves/seo-tinklas/kaunas')
+        $this->get('/vaistines/seo-tinklas/kaunas')
             ->assertOk()
             ->assertSee('content="Seo Tinklas Kaunas: Kauno g. 1, Kauno g. 2 ir kt. Darbo laikas: Kasdien 08:00–22:00. Visi adresai ir kontaktai."', false);
     }
@@ -91,18 +91,18 @@ class StoreCityPageTest extends TestCase
     {
         $this->seedChain();
 
-        $this->get('/parduotuves/seo-tinklas')
+        $this->get('/vaistines/seo-tinklas')
             ->assertOk()
-            ->assertSee('<title>Seo Tinklas darbo laikas ir parduotuvių adresai', false)
+            ->assertSee('<title>Seo Tinklas vaistinių adresai ir darbo laikas', false)
             // Only one city, so no city list; 2 of 3 locations share the hours.
-            ->assertSee('content="Seo Tinklas Lietuvoje – 3 parduotuvės. Dažniausias darbo laikas: Pr–Št 08:00–22:00, Sk 09:00–20:00. Adresai, darbo laikas ir kontaktai pagal miestą."', false);
+            ->assertSee('content="Seo Tinklas Lietuvoje – 3 vaistinės. Dažniausias darbo laikas: Pr–Št 08:00–22:00, Sk 09:00–20:00. Adresai, darbo laikas ir kontaktai pagal miestą."', false);
     }
 
     public function test_city_page_links_deals_and_leaflets_only_when_the_store_has_them(): void
     {
         $this->seedChain();
 
-        $this->get('/parduotuves/seo-tinklas/vilnius')
+        $this->get('/vaistines/seo-tinklas/vilnius')
             ->assertDontSee('Žiūrėti Seo Tinklas akcijas')
             ->assertDontSee('Žiūrėti Seo Tinklas leidinius');
 
@@ -120,7 +120,7 @@ class StoreCityPageTest extends TestCase
             'processing_status' => StoreFlyer::STATUS_READY,
         ]);
 
-        $this->get('/parduotuves/seo-tinklas/vilnius')
+        $this->get('/vaistines/seo-tinklas/vilnius')
             ->assertSee('Žiūrėti Seo Tinklas akcijas (1)')
             ->assertSee('Žiūrėti Seo Tinklas leidinius (1)');
     }
@@ -129,7 +129,7 @@ class StoreCityPageTest extends TestCase
     {
         $this->seedChain();
 
-        $response = $this->get('/parduotuves/seo-tinklas')->assertOk();
+        $response = $this->get('/vaistines/seo-tinklas')->assertOk();
 
         $response->assertDontSee('Seo g. 2');
         $response->assertSee('store-locations\/seo-tinklas', false);

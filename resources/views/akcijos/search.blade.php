@@ -27,10 +27,10 @@
         // Plain query-param navigation, same as the sort dropdown next to it
         // (this page isn't Livewire, unlike discount-filters' multi-select
         // store toggle) — single store at a time, "Visos" clears it.
-        // ?store can hold several slugs ("Mano parduotuvės", applied below).
+        // ?store can hold several slugs ("Mano vaistinės", applied below).
         $selectedStoreSlugs = array_values(array_filter(explode(',', (string) $selectedStore)));
         $selectedStoreName = match (true) {
-            count($selectedStoreSlugs) > 1 => count($selectedStoreSlugs) . ' parduotuvės',
+            count($selectedStoreSlugs) > 1 => count($selectedStoreSlugs) . ' vaistinės',
             count($selectedStoreSlugs) === 1 => collect($allStores)->firstWhere('slug', $selectedStoreSlugs[0])['name'] ?? $selectedStoreSlugs[0],
             default => null,
         };
@@ -55,14 +55,14 @@
              (livewire/discount-filters.blade.php): labelled buttons that say
              what's shown. Plain links here (this page isn't Livewire), so
              each store tile links to the results with that store added or
-             removed. "Mano parduotuvės" are applied by the server
+             removed. "Mano vaistinės" are applied by the server
              (App\Support\MyStores); the redirect to ?store= below only runs
              when that didn't happen (no cookie yet). --}}
         @php
             // Crawler links only: a tap just ticks (see picked below).
             $storeToggleHref = fn (string $slug) => $storeHref($slug);
             $storeNamesShown = collect($selectedStoreSlugs)->map(fn ($slug) => collect($allStores)->firstWhere('slug', $slug)['name'] ?? $slug);
-            $storeButtonText = $storeNamesShown->isEmpty() ? 'Visos parduotuvės'
+            $storeButtonText = $storeNamesShown->isEmpty() ? 'Visos vaistinės'
                 : ($storeNamesShown->count() > 3 ? $storeNamesShown->take(2)->implode(', ') . ' ir dar ' . ($storeNamesShown->count() - 2) : $storeNamesShown->implode(', '));
         @endphp
         <div
@@ -106,7 +106,7 @@
         >
             @if (!empty($deals) || $selectedStore)
                 <x-nav-bar class="mt-4" x-on:click.outside="sortOpen = false" x-on:click="if ($event.target.closest('a[href]')) busy = true">
-                    <x-nav-bar-button label="Parduotuvės" icon="store" x-on:click="openStores()" aria-haspopup="dialog">
+                    <x-nav-bar-button label="Vaistinės" icon="store" x-on:click="openStores()" aria-haspopup="dialog">
                         <span x-show="$store.myStores.active() && sameAsMine()" x-cloak>Mano: </span>{{ $storeButtonText }}
                     </x-nav-bar-button>
                     <x-nav-bar-button
@@ -144,7 +144,7 @@
                     <div class="sheet-panel px-5 pb-5">
                         <div class="sheet-handle"></div>
                         <div class="mb-3 mt-3 flex items-center justify-between gap-3 sm:mt-5">
-                            <h2 class="text-2xl font-bold text-gray-900">Kurių parduotuvių prekes rodyti?</h2>
+                            <h2 class="text-2xl font-bold text-gray-900">Kurių vaistinių prekes rodyti?</h2>
                             <button type="button" @click="storeOpen = false" class="sheet-close" aria-label="Uždaryti">
                                 <x-app-icon name="x" class="size-7" />
                             </button>
@@ -156,7 +156,7 @@
                             :class="picked.length ? 'border-gray-200 bg-white text-gray-900 hover:border-gray-300' : 'border-action bg-green-soft text-dark-green'"
                         >
                             <x-app-icon name="store" class="size-5" />
-                            Visos parduotuvės
+                            Visos vaistinės
                         </button>
                         <div class="flex flex-wrap gap-2.5">
                             @foreach ($allStores as $storeOption)
@@ -174,7 +174,7 @@
                                 type="button"
                                 @click="applyPicked()"
                                 class="flex min-h-12 w-full items-center justify-center rounded-xl bg-action px-4 text-lg font-bold text-white hover:bg-action-hover"
-                                x-text="picked.length ? 'Rodyti pažymėtas (' + picked.length + ')' : 'Rodyti visas parduotuves'"
+                                x-text="picked.length ? 'Rodyti pažymėtas (' + picked.length + ')' : 'Rodyti visas vaistines'"
                             >Rodyti</button>
                             <button
                                 type="button"
@@ -183,7 +183,7 @@
                                 class="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-base font-bold text-dark-green ring-1 ring-green-soft-border hover:bg-green-soft"
                             >
                                 <x-app-icon name="check" class="size-5" />
-                                Išsaugoti kaip mano parduotuves
+                                Išsaugoti kaip mano vaistines
                             </button>
                             <button
                                 type="button"

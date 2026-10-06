@@ -29,7 +29,7 @@ class StructuredDataTest extends TestCase
             "/akcijos/{$seed['store']->slug}",
             "/akcijos/{$seed['store']->slug}/{$seed['category']->slug}",
             "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}",
-            '/parduotuves',
+            '/vaistines',
             '/leidiniai',
         ];
 
@@ -69,7 +69,7 @@ class StructuredDataTest extends TestCase
     public function test_product_page_lists_every_store_offer(): void
     {
         $seed = $this->seedListing();
-        $otherStore = Store::factory()->create(['slug' => 'seo-kita-parduotuve', 'show_discounts_page' => true]);
+        $otherStore = Store::factory()->create(['slug' => 'seo-kita-vaistine', 'show_discounts_page' => true]);
         Discount::factory()->create([
             'product_id' => $seed['product']->id,
             'store_id' => $otherStore->id,
@@ -268,7 +268,7 @@ class StructuredDataTest extends TestCase
             'is_active' => true,
         ]);
 
-        [$list] = $this->jsonLdOfType($this->get('/parduotuves/seo-tinklas/vilnius'), 'ItemList');
+        [$list] = $this->jsonLdOfType($this->get('/vaistines/seo-tinklas/vilnius'), 'ItemList');
         $location = $list['itemListElement'][0]['item'];
 
         $this->assertSame('Store', $location['@type']);
@@ -337,7 +337,7 @@ class StructuredDataTest extends TestCase
             ->pluck('acceptedAnswer.text', 'name');
         $minQuestion = $answers->keys()->first(fn ($q) => str_contains($q, 'mažiausia kaina'));
         $this->assertNotNull($minQuestion);
-        $this->assertStringContainsString('1,19 € (Seo Parduotuve), '.now()->subDays(46)->format('Y.m.d'), $answers[$minQuestion]);
+        $this->assertStringContainsString('1,19 € (Seo Vaistine), '.now()->subDays(46)->format('Y.m.d'), $answers[$minQuestion]);
         $this->assertStringContainsString('Vidutinė kaina per tą laikotarpį – 1,44 €', $answers[$minQuestion]);
         $frequency = $answers->first(fn ($a, $q) => str_contains($q, 'būna akcijoje'));
         $this->assertStringContainsString('akcijoje buvo 2 kartus', $frequency);

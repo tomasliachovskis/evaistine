@@ -5,7 +5,7 @@ namespace App\Support;
 // How one store's price for a product compares with the other stores
 // currently selling it, from a formatted deal's 'offers' list. Used on
 // leaflet pages, where the store is fixed by the page and the other
-// stores' logos are hidden: deal cards ("Pigiausia iš 3 parduotuvių",
+// stores' logos are hidden: deal cards ("Pigiausia iš 3 vaistinių",
 // "Rimi pigiau – 1,29 €") and the flyer hotspot cards.
 class PriceComparison
 {
@@ -46,7 +46,7 @@ class PriceComparison
         }
 
         $storeCount = $others->count() + 1;
-        $storeWord = $storeCount % 10 === 1 && $storeCount % 100 !== 11 ? 'parduotuvės' : 'parduotuvių';
+        $storeWord = $storeCount % 10 === 1 && $storeCount % 100 !== 11 ? 'vaistinės' : 'vaistinių';
 
         return [
             'cheapest' => true,

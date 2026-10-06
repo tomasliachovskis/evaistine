@@ -13,7 +13,7 @@
 
     <div class="base-container mx-auto flex flex-col gap-6 pb-8 sm:pb-10">
         <div>
-            <h1>{{ $store->name }} parduotuvės ir darbo laikas</h1>
+            <h1>{{ \App\Support\PharmacyName::phrase($store->name, 'genitive_plural') }} adresai ir darbo laikas</h1>
             <p class="mt-1 text-sm text-gray-600">
                 Iš viso {{ $totalCount }} {{ \App\Support\LithuanianPlural::storeWord($totalCount) }} Lietuvoje.
                 Pasirinkite miestą, kad pamatytumėte visus adresus ir darbo laiką.
@@ -26,7 +26,7 @@
                  "near me" label with nothing behind it. Locations come from
                  the API (shared with the map below), not inlined here: the
                  full address list in this page's HTML made Google treat
-                 every /parduotuves/{store}/{city} page as a duplicate of
+                 every /vaistines/{store}/{city} page as a duplicate of
                  this one. --}}
             <div
                 x-data="nearestStoreFinder(@js($locationsUrl))"
@@ -39,15 +39,15 @@
                         class="inline-flex min-h-12 items-center gap-2 rounded-xl bg-green-soft px-4 text-base font-bold text-dark-green hover:bg-green-soft-border"
                     >
                         <x-app-icon name="map-pin" class="size-5" />
-                        Rasti artimiausią {{ mb_strtolower($store->name) }} parduotuvę
+                        Rasti artimiausią {{ \App\Support\PharmacyName::phrase($store->name, 'accusative') }}
                     </button>
                 </template>
                 <p x-show="loading" class="text-sm text-gray-600">Nustatoma jūsų vieta...</p>
                 <p x-show="error" x-text="error" class="text-sm text-gray-600"></p>
                 <template x-if="result">
                     <p class="text-sm text-gray-900">
-                        Artimiausia parduotuvė:
-                        <a :href="'/parduotuves/{{ $store->slug }}/' + result.citySlug" class="font-semibold text-dark-green hover:underline" x-text="result.address + ', ' + result.city"></a>
+                        Artimiausia vaistinė:
+                        <a :href="'/vaistines/{{ $store->slug }}/' + result.citySlug" class="font-semibold text-dark-green hover:underline" x-text="result.address + ', ' + result.city"></a>
                         <span class="text-gray-600" x-text="'(~' + result.distanceKm + ' km)'"></span>
                     </p>
                 </template>
@@ -56,7 +56,7 @@
 
         @if ($cities->isEmpty())
             <div class="flex min-h-[10rem] flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-6 text-center">
-                <p class="text-sm text-gray-600">Šiuo metu parduotuvių sąrašo nėra.</p>
+                <p class="text-sm text-gray-600">Šiuo metu vaistinių sąrašo nėra.</p>
             </div>
         @else
             <div class="flex flex-col gap-4" x-data="{ query: '' }">
@@ -72,7 +72,7 @@
                     <div class="order-2 grid max-h-[600px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:order-1">
                         @foreach ($cities as $city)
                             <a
-                                href="/parduotuves/{{ $store->slug }}/{{ $city['slug'] }}"
+                                href="/vaistines/{{ $store->slug }}/{{ $city['slug'] }}"
                                 x-show="!query.trim() || '{{ Str::lower($city['name']) }}'.includes(query.trim().toLowerCase())"
                                 class="rounded-xl border border-gray-200 bg-white p-4 hover:border-green"
                             >

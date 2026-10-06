@@ -287,7 +287,7 @@ class GenerateDescriptions extends Command
 
             if ($activeDiscountsCount === 0) {
                 $category->update([
-                    'description' => "{$category->name} akcijos ir nuolaidos – palyginkite kainas skirtingose parduotuvėse. Naujos akcijos šioje kategorijoje atsiranda kiekvieną savaitę.",
+                    'description' => "{$category->name} akcijos ir nuolaidos – palyginkite kainas skirtingose vaistinėse. Naujos akcijos šioje kategorijoje atsiranda kiekvieną savaitę.",
                     'meta_description' => "{$category->name} akcijos ir nuolaidos vienoje vietoje – eVaistine.lt.",
                 ]);
                 $this->warn("Category '{$category->name}' has no active discounts. Wrote minimal fallback description instead of calling GPT.");

@@ -22,7 +22,7 @@ class ExpiringLeafletsWidget extends TableWidget
             ->paginated(false)
             ->columns([
                 TextColumn::make('store.name')
-                    ->label('Parduotuvė')
+                    ->label('Vaistinė')
                     ->sortable(),
                 TextColumn::make('valid_to')
                     ->label('Galioja iki')

@@ -79,12 +79,12 @@ Route::get('/akcijos/{store}/alkoholiniai-ir-nealkoholiniai-gerimai', function (
 
 Route::get('/akcijos/{slug1}/{slug2?}', [AkcijosController::class, 'show']);
 
-Route::get('/parduotuves', [StoreController::class, 'index']);
-Route::get('/parduotuves/{slug}/{city?}', [StoreController::class, 'show']);
-// Per-address location pages (e.g. /parduotuves/iki/kelme/birutes-g-7) no
+Route::get('/vaistines', [StoreController::class, 'index']);
+Route::get('/vaistines/{slug}/{city?}', [StoreController::class, 'show']);
+// Per-address location pages (e.g. /vaistines/camelia/kelme/birutes-g-7) no
 // longer exist — the city page lists every address, so send them there.
-Route::get('/parduotuves/{slug}/{city}/{address}', function (string $slug, string $city) {
-    return redirect("/parduotuves/{$slug}/{$city}", 301);
+Route::get('/vaistines/{slug}/{city}/{address}', function (string $slug, string $city) {
+    return redirect("/vaistines/{$slug}/{$city}", 301);
 })->where('address', '.*');
 
 Route::get('/leidiniai', [LeafletController::class, 'index']);
@@ -105,7 +105,7 @@ Route::post('/auth/pending-favorite', [AuthController::class, 'rememberPendingFa
 Route::post('/login', [AuthController::class, 'sendMagicLink'])->middleware(['throttle:6,1,magic-link-burst', 'throttle:50,1440,magic-link-daily']);
 Route::get('/auth/magic-link/{token}', [AuthController::class, 'verifyMagicLink']);
 Route::post('/login/code', [AuthController::class, 'verifyLoginCode'])->middleware('throttle:10,1,login-code');
-Route::post('/mano-parduotuves', [MyStoresController::class, 'update'])->middleware(['auth', 'throttle:30,1']);
+Route::post('/mano-vaistines', [MyStoresController::class, 'update'])->middleware(['auth', 'throttle:30,1']);
 
 // Email notifications without an account (EmailSubscriptionController): the
 // token is the key of each subscriber's settings page, linked from every

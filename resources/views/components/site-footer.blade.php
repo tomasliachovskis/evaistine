@@ -54,7 +54,7 @@
                             <li><a href="/apie" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Apie mus</a></li>
                             <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Naujienos</a></li>
                             <li><a href="/privatumo-politika" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Privatumo politika</a></li>
-                            <li><a href="/parduotuves" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Parduotuvės</a></li>
+                            <li><a href="/vaistines" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Vaistinės</a></li>
                         </ul>
                     </div>
                     <div class="border-t border-white/10 pt-6">
@@ -86,12 +86,12 @@
                 </div>
 
                 <div>
-                    <h2 class="mb-4 text-lg font-bold">Parduotuvės</h2>
+                    <h2 class="mb-4 text-lg font-bold">Vaistinės</h2>
                     <ul class="flex flex-col gap-2">
                         @foreach ($footerStores as $store)
                             <li><a href="/akcijos/{{ $store['slug'] }}" class="text-base text-white/80 transition-colors hover:text-white hover:underline">{{ $store['name'] }}</a></li>
                         @endforeach
-                        <li><a href="/parduotuves" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Visos parduotuvės</a></li>
+                        <li><a href="/vaistines" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Visos vaistinės</a></li>
                     </ul>
                 </div>
 

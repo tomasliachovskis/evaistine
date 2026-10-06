@@ -110,7 +110,7 @@ trait InspectsSeoHead
     protected function seedListing(): array
     {
         $category = Category::factory()->create(['name' => 'Pieno produktai', 'slug' => 'seo-pieno-produktai']);
-        $store = Store::factory()->create(['name' => 'Seo Parduotuve', 'slug' => 'seo-parduotuve', 'show_discounts_page' => true]);
+        $store = Store::factory()->create(['name' => 'Seo Vaistine', 'slug' => 'seo-vaistine', 'show_discounts_page' => true]);
         $product = Product::factory()->create([
             'name' => 'Seo pienas 2.5% 1 l',
             'slug' => 'seo-pienas-1-l',

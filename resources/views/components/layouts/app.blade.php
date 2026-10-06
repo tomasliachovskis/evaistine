@@ -149,7 +149,7 @@
             Alpine.store('priceWatchModal', {
                 open: false,
             });
-            // "Mano parduotuvės": the stores this visitor shops at. Kept in
+            // "Mano vaistinės": the stores this visitor shops at. Kept in
             // localStorage (works without an account) and, when signed in,
             // in users.preferred_store_slugs too, which wins on load so the
             // choice follows the user to other devices. Mirrored into a
@@ -212,7 +212,7 @@
                     document.cookie = name + '=' + encodeURIComponent(value) + '; path=/; SameSite=Lax' + age;
                 },
                 saveAccount(slugs) {
-                    fetch('/mano-parduotuves', {
+                    fetch('/mano-vaistines', {
                         method: 'POST',
                         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '' },
                         body: JSON.stringify({ stores: slugs }),

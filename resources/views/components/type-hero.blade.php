@@ -19,7 +19,7 @@
     </div>
 
     @isset($cta)
-        {{-- Store pages' "Mano parduotuvė" button. Shown on phones too
+        {{-- Store pages' "Mano vaistinė" button. Shown on phones too
              (it was hidden there while it was only a link to the login
              sheet), as a compact button under the title. --}}
         <div class="mt-2 shrink-0 sm:mt-0">

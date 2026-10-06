@@ -104,7 +104,7 @@
                         <table role="presentation" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td style="border-radius:10px; background-color:#13306a;">
-                                    <a href="{{ $track($allOffersUrl, 'all_offers') }}" target="_blank" style="display:inline-block; padding:14px 26px; font-size:17px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:10px;">Visos jūsų parduotuvių akcijos</a>
+                                    <a href="{{ $track($allOffersUrl, 'all_offers') }}" target="_blank" style="display:inline-block; padding:14px 26px; font-size:17px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:10px;">Visos jūsų vaistinių akcijos</a>
                                 </td>
                             </tr>
                         </table>

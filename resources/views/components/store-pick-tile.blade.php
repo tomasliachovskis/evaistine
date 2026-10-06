@@ -3,7 +3,7 @@
 {{-- One store tile: logo on top, the name centered under it with the
      tile's full width (side by side, names like "Thomas Philipps" broke
      mid-word). Every store picker on the site uses it, so they all look
-     like the "Mano parduotuvės" one:
+     like the "Mano vaistinės" one:
      - Alpine-driven ($checked: JS expression, $toggle: JS statement run on
        tap): check box tiles that update in place. With $href it stays a
        real link for crawlers and the tap is intercepted.

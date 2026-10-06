@@ -137,7 +137,7 @@
         @if ($allHref)
             {!! $openRow(null) !!}
                 <x-app-icon name="store" class="size-5 shrink-0 opacity-70" />
-                <span class="min-w-0 flex-1 truncate">Visos parduotuvės</span>
+                <span class="min-w-0 flex-1 truncate">Visos vaistinės</span>
             {!! $closeRow() !!}
         @endif
         @foreach ($headItems as $store)

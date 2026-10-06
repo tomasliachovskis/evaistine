@@ -5,7 +5,7 @@
 <div class="mb-4 flex flex-col gap-3 text-lg">
     <p class="max-w-3xl leading-relaxed text-font">
         <span class="sm:hidden">Paspauskite ant prekės, kad pamatytumėte kainas ir įsidėtumėte ją į sąrašą.</span>
-        <span class="hidden sm:inline">Paspauskite ant prekės leidinyje: pamatysite kainą kitose parduotuvėse ir galėsite įsidėti ją į pirkinių sąrašą.</span>
+        <span class="hidden sm:inline">Paspauskite ant prekės leidinyje: pamatysite kainą kitose vaistinėse ir galėsite įsidėti ją į pirkinių sąrašą.</span>
     </p>
 
     <form @submit.prevent="runSearch()" class="flex flex-wrap items-end gap-2" role="search">

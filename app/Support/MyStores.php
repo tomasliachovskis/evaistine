@@ -5,7 +5,7 @@ namespace App\Support;
 use Illuminate\Http\Request;
 
 /**
- * "Mano parduotuvės" on the server. The browser keeps the choice in
+ * "Mano vaistinės" on the server. The browser keeps the choice in
  * localStorage and mirrors it into a plain cookie (see the myStores Alpine
  * store in components/layouts/app.blade.php), so multi-store listings can
  * render already filtered instead of loading every store and then

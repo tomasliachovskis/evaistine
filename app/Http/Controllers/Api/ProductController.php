@@ -549,7 +549,7 @@ class ProductController extends Controller
     // Same scoping idea as getStoresForCategory() above, but for a keyword
     // page: only stores that actually have an active discount on one of the
     // page's mapped products, instead of every store site-wide (a keyword
-    // page's "Parduotuvė" filter previously listed pharmacies/cosmetics
+    // page's "Vaistinė" filter previously listed pharmacies/cosmetics
     // chains alongside grocery stores for something like "duona").
     public function getStoresForKeyword(string $keywordSlug)
     {
@@ -593,7 +593,7 @@ class ProductController extends Controller
         $payload = Cache::remember($cacheKey, 3600, function () use ($store) {
             // city_slug: the chain page's map and nearest-store finder load
             // this endpoint client-side and link each result to its
-            // /parduotuves/{store}/{city} page.
+            // /vaistines/{store}/{city} page.
             $locations = \App\Models\StoreLocation::where('store_id', $store->id)
                 ->active()
                 ->orderBy('city')
@@ -1362,13 +1362,8 @@ class ProductController extends Controller
                 // category has no examples authored yet. mb_ucfirst since
                 // it opens the description sentence.
                 $categoryItemExamples = mb_ucfirst(self::CATEGORY_ITEM_EXAMPLES[$categoryShortName] ?? $categoryDative);
-                // Locative ("Maximoje") only for the one store it's been
-                // verified for — see STORE_LOCATIVE_LABELS's comment. Every
-                // other store falls back to a plain nominative phrase that's
-                // always grammatically safe.
-                $storePhrase = isset(self::STORE_LOCATIVE_LABELS[$entity->name])
-                    ? "„".self::STORE_LOCATIVE_LABELS[$entity->name]."“"
-                    : "„{$entity->name}“ parduotuvėje";
+                // "Benu vaistinėje", "Camelia vaistinėje", "Eurovaistinėje".
+                $storePhrase = \App\Support\PharmacyName::phrase($entity->name, 'locative');
 
                 $storeCategoryDescription = StoreCategoryDescription::where('store_id', $entity->id)
                     ->where('category_id', $secondaryEntity->id)
@@ -1385,8 +1380,8 @@ class ProductController extends Controller
                         'seo_title' => $entity->name.' '.$categoryLower,
                         'seo_description' => '',
                         'category_dative_label' => $categoryDative,
-                        'meta_title' => $entity->name.' '.$categoryLower.' – palyginkite kainas kitose parduotuvėse',
-                        'meta_description' => "Šiuo metu {$entity->name} neturi aktyvių {$categoryLower} akcijų. Peržiūrėkite {$categoryLower} pasiūlymus kitose parduotuvėse.",
+                        'meta_title' => $entity->name.' '.$categoryLower.' – palyginkite kainas kitose vaistinėse',
+                        'meta_description' => "Šiuo metu {$entity->name} neturi aktyvių {$categoryLower} akcijų. Peržiūrėkite {$categoryLower} pasiūlymus kitose vaistinėse.",
                     ];
 
                     return $seoData;
@@ -1410,7 +1405,7 @@ class ProductController extends Controller
                     // right after — explicit product decision.
                     'meta_description' => $maxDiscount > 0
                         ? "{$categoryItemExamples} {$storePhrase} – iki {$maxDiscount} % nuolaida. Patikrinkite pasiūlymus, galiojančius iki {$endDateGenitive}!"
-                        : "Peržiūrėkite {$categoryLower} pasiūlymus „{$entity->name}“ parduotuvėje.",
+                        : "Peržiūrėkite {$categoryLower} pasiūlymus {$storePhrase}.",
                 ];
 
                 if ($storeCategoryDescription && $storeCategoryDescription->intro_html) {
@@ -1489,9 +1484,9 @@ class ProductController extends Controller
                     'seo_title' => 'Visos akcijos ir nuolaidos Lietuvoje',
                     'seo_description' => '<div class="space-y-4">
   <h2 class="text-2xl md:text-3xl font-semibold leading-tight mb-3">Akcijos ir nuolaidos Lietuvoje – visi prekybos tinklai vienoje vietoje</h2>
-  <p class="leading-relaxed">Norite greitai rasti akciją, o ne vartytis po kiekvieno prekybos tinklo puslapį atskirai? Čia rasite šios savaitės pasiūlymus iš <a href="/akcijos/maxima">Maxima</a>, <a href="/akcijos/lidl">Lidl</a>, <a href="/akcijos/iki">Iki</a>, <a href="/akcijos/rimi">Rimi</a>, <a href="/akcijos/norfa">Norfa</a> ir kitų parduotuvių sudėtus į vieną vietą – patogu palyginti kainas prieš perkant, o ne po to.</p>
+  <p class="leading-relaxed">Norite greitai rasti akciją, o ne vartytis po kiekvieno prekybos tinklo puslapį atskirai? Čia rasite šios savaitės pasiūlymus iš <a href="/akcijos/maxima">Maxima</a>, <a href="/akcijos/lidl">Lidl</a>, <a href="/akcijos/iki">Iki</a>, <a href="/akcijos/rimi">Rimi</a>, <a href="/akcijos/norfa">Norfa</a> ir kitų vaistinių sudėtus į vieną vietą – patogu palyginti kainas prieš perkant, o ne po to.</p>
   <p class="leading-relaxed">Akcijos rūšiuojamos pagal kategorijas, tad greičiau rasite tai, ko šiuo metu ieškote: <a href="/akcijos/vaisiai-ir-darzoves">vaisius ir daržoves</a>, <a href="/akcijos/mesa-ir-zuvis">mėsą ir žuvį</a>, <a href="/akcijos/buitine-chemija-valymo-priemones">buitinę chemiją</a>, <a href="/akcijos/kosmetika-ir-higiena">kosmetiką ir higienos prekes</a> ar <a href="/akcijos/namu-ukio-ir-laisvalaikio-prekes">namų ūkio prekes</a>. Kiekvienos kategorijos viduje matysite, kuris tinklas tuo metu siūlo geriausią kainą, be reikalo neapsiperkant kitur.</p>
-  <p class="leading-relaxed">Pasiūlymai atnaujinami kiekvieną savaitę, kai prekybos tinklai išleidžia naujus akcijų leidinius – jei ieškote konkretaus tinklo savaitės leidinio, jį rasite ir čia, ir per <a href="/leidiniai">visų parduotuvių leidinių sąrašą</a>.</p>
+  <p class="leading-relaxed">Pasiūlymai atnaujinami kiekvieną savaitę, kai prekybos tinklai išleidžia naujus akcijų leidinius – jei ieškote konkretaus tinklo savaitės leidinio, jį rasite ir čia, ir per <a href="/leidiniai">visų vaistinių leidinių sąrašą</a>.</p>
 </div>',
                     'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – Maxima, Lidl, Iki, Rimi',
                     'meta_description' => 'Rask akciją greičiau – visi akcijų leidiniai vienoje vietoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai, savaitės ir savaitgalio akcijos.',
@@ -1500,19 +1495,19 @@ class ProductController extends Controller
                 // $entity is the real distinct-store count for this case
                 // (passed by getAllLeaflets(), free from data already
                 // fetched — see its own comment). Guarded: fall back to the
-                // count-free copy rather than ever render "0 parduotuvių".
+                // count-free copy rather than ever render "0 vaistinių".
                 $storeCount = (int) $entity;
-                $description = 'Peržiūrėkite naujausius „Maxima“, „Lidl“, „Iki“, „Rimi“, „Norfa“ ir kitų parduotuvių akcijų leidinius. Visi aktualūs katalogai vienoje vietoje.';
+                $description = 'Peržiūrėkite naujausius „Maxima“, „Lidl“, „Iki“, „Rimi“, „Norfa“ ir kitų vaistinių akcijų leidinius. Visi aktualūs katalogai vienoje vietoje.';
 
                 return [
                     // H1 is plain/static — no store count in it anymore
                     // (leaflets/index.blade.php renders this directly, no
                     // longer needs its own conditional 'leaflet_store_count_label').
-                    'seo_title' => 'Naujausi akcijų leidiniai iš visų parduotuvių',
+                    'seo_title' => 'Naujausi akcijų leidiniai iš visų vaistinių',
                     'seo_description' => $description,
                     'meta_title' => $storeCount > 0
-                        ? "Akcijų leidiniai iš daugiau nei {$storeCount} parduotuvių"
-                        : 'Akcijų leidiniai iš visų parduotuvių',
+                        ? "Akcijų leidiniai iš daugiau nei {$storeCount} vaistinių"
+                        : 'Akcijų leidiniai iš visų vaistinių',
                     'meta_description' => $description,
                 ];
             default:
@@ -1793,7 +1788,7 @@ class ProductController extends Controller
                 ->values()
                 ->all();
 
-            // Store overview pages (/parduotuves/{store}).
+            // Store overview pages (/vaistines/{store}).
             $storeLocationSlugs = \App\Models\StoreLocation::query()
                 ->where('is_active', true)
                 ->join('stores', 'stores.id', '=', 'store_locations.store_id')
@@ -1802,7 +1797,7 @@ class ProductController extends Controller
                 ->values()
                 ->all();
 
-            // Per-city pages (/parduotuves/{store}/{city}) — real pages since
+            // Per-city pages (/vaistines/{store}/{city}) — real pages since
             // 2026-09-10 (StoreController::showCity(), replacing the old
             // per-address doorway pages), but only cities with 3+ active
             // locations are listed: most of the ~1,400 are one-address towns,
@@ -2460,18 +2455,6 @@ class ProductController extends Controller
         'Augalai' => 'augalų',
     ];
 
-    // A store's locative case ("Maximoje" — "in/at Maxima") only for the
-    // one store explicitly verified — NOT a full 47-store map. Several of
-    // the other 46 stores are foreign/brand names with no safe, verified
-    // Lithuanian declension (Ikea, Jysk, AVS, Thomas Philipps, ePromo);
-    // guessing a form like "Jyske"/"Ikeoje" risks reading as broken rather
-    // than natural, so every other store instead falls back to plain
-    // nominative + "parduotuvėje" ("Iki" parduotuvėje") in the description,
-    // which is always grammatically safe. Add more entries here only once
-    // each one is actually verified, not guessed.
-    private const STORE_LOCATIVE_LABELS = [
-        'Maxima' => 'Maximoje',
-    ];
 
     // Concrete, hand-written illustrative item-type examples (dative
     // plural, natural "X, Y ir Z" list form) per root category, e.g.

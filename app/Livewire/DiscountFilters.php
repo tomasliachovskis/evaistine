@@ -64,7 +64,7 @@ class DiscountFilters extends Component
     public bool $showSort = true;
 
     // Lists offers from several stores (not a store or store+category page),
-    // so the visitor's "Mano parduotuvės" choice applies here.
+    // so the visitor's "Mano vaistinės" choice applies here.
     #[Locked]
     public bool $multiStore = false;
 
@@ -169,7 +169,7 @@ class DiscountFilters extends Component
         $this->refreshResults();
     }
 
-    // "Mano parduotuvės" changed in the sheet, or the first page view
+    // "Mano vaistinės" changed in the sheet, or the first page view
     // before the browser had mirrored them into the cookie that
     // MyStores::applyToRequest() reads. Empty clears the store filter.
     public function applyStores(string $slugs): void

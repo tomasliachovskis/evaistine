@@ -22,7 +22,7 @@
 
 @if ($layout === 'chip')
     {{-- Quick-access tile for the home hero's store row — same bordered
-         card look as the /parduotuves grid card below (logo, bold name,
+         card look as the /vaistines grid card below (logo, bold name,
          count as plain text), just narrower and without the "Žiūrėti
          akcijas" CTA since the whole tile is already clickable. --}}
     <a href="{{ $storeHref }}" class="flex w-28 shrink-0 snap-start flex-col rounded-xl border border-gray-200 bg-white p-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/40 sm:w-32 sm:p-3 {{ !$isActive ? 'opacity-75' : '' }}">

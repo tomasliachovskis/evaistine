@@ -227,7 +227,7 @@ class KeywordPageService
         // broke the Livewire filter request.
         // The listing fetch stops at MAX_LISTING_FETCH hits across all
         // stores, so on a very large keyword page a store filter ("Mano
-        // parduotuvės") applied to that set could miss its own matches.
+        // vaistinės") applied to that set could miss its own matches.
         // Then fetch again with the stores in the Meilisearch filter.
         $source = $allDiscounts;
         $storeSlugs = array_values(array_filter(array_map('trim', explode(',', (string) ($filters['store'] ?? '')))));
@@ -533,7 +533,7 @@ class KeywordPageService
             ->get();
 
         // Same PRIORITY_STORE_NAMES-first ordering buildStorePriceTable()
-        // already uses for the keyword page's own "Kainos pagal parduotuvę"
+        // already uses for the keyword page's own "Kainos pagal vaistinę"
         // table — without it, a teaser capped at 5 stores can silently miss
         // a main chain (Maxima/Norfa/Lidl/Iki/Rimi) whenever a niche store's
         // match happens to have a bigger discount. Within a store, the
@@ -998,7 +998,7 @@ class KeywordPageService
         $cheapestPrice = $storeComparison['summary_rows'][0]['min_price'] ?? null;
         // Real distinct store count (answer.store_count), not
         // count(summary_rows) — summary_rows/leading_deals are capped at 8
-        // for display, which used to under-report "Parduotuvių" on any
+        // for display, which used to under-report "Vaistinių" on any
         // keyword covering more than 8 stores.
         $stats = $this->buildQuickStats(
             $matchingTotal,
@@ -1110,7 +1110,7 @@ class KeywordPageService
         $genitive = $page->grammar_genitive ?: $keyword;
         $price = fn (float $value) => number_format($value, 2, ',', ' ') . ' €';
         $storeCount = (int) $answer['store_count'];
-        $storesPhrase = $storeCount . ' ' . (LithuanianPlural::offerWord($storeCount) === 'pasiūlymas' ? 'parduotuvėje' : 'parduotuvėse');
+        $storesPhrase = $storeCount . ' ' . (LithuanianPlural::offerWord($storeCount) === 'pasiūlymas' ? 'vaistinėje' : 'vaistinėse');
         $offersPhrase = $matchingTotal . ' ' . LithuanianPlural::offerWord($matchingTotal);
 
         $byPrice = collect($table)->sortBy('min_price')->values();
@@ -1121,7 +1121,7 @@ class KeywordPageService
         // escaped by the accordion itself.
         $priceAnswer = 'Šiuo metu ' . e($keyword) . " akcijose kainuoja nuo {$price($answer['price'])} (" . e($answer['store_name']) . ')';
         if ($byPrice->count() > 1) {
-            $priceAnswer .= '. Pigiausi kiekvienos parduotuvės pasiūlymai svyruoja nuo '
+            $priceAnswer .= '. Pigiausi kiekvienos vaistinės pasiūlymai svyruoja nuo '
                 . $price($byPrice->first()['min_price']) . ' iki ' . $price($byPrice->last()['min_price']);
         }
         $faq[] = [
@@ -1148,7 +1148,7 @@ class KeywordPageService
                 ? implode(', ', array_slice($names, 0, -1)) . ' ir ' . end($names)
                 : $names[0];
             $faq[] = [
-                'question' => "Kiek kainuoja {$keyword} {$namesPhrase} parduotuvėse?",
+                'question' => "Kiek kainuoja {$keyword} pagrindinėse vaistinėse?",
                 'answer' => $mainChains
                     ->map(fn (array $row) => e($row['store_name']) . ": nuo {$price($row['min_price'])}")
                     ->implode('; ') . '.',
@@ -1204,15 +1204,15 @@ class KeywordPageService
     }
 
     /**
-     * The standard "Aktyvios akcijos" / "Parduotuvių" pair — same stat set
+     * The standard "Aktyvios akcijos" / "Vaistinių" pair — same stat set
      * as the category page's hero (see ListingPageMetaService::buildForCategory()),
      * kept simple since the store_price_chips row already carries the
      * per-store detail.
      */
     /**
      * Hero stat row. Each stat carries a ready-made 'text' with Lithuanian
-     * numeral agreement ("20 aktyvių pasiūlymų", "9 parduotuvės") — the old
-     * fixed labels read "20 aktyvūs pasiūlymai" / "9 parduotuvių". label/
+     * numeral agreement ("20 aktyvių pasiūlymų", "9 vaistinės") — the old
+     * fixed labels read "20 aktyvūs pasiūlymai" / "9 vaistinių". label/
      * value stay for any consumer that reads them separately.
      */
     private function buildQuickStats(int $matchingTotal, int $storeCount, ?float $cheapestPrice, ?string $cheapestStoreName = null, ?int $maxDiscountPercent = null): array
@@ -1233,7 +1233,7 @@ class KeywordPageService
                 'pill' => LithuanianPlural::formatCount($matchingTotal) . ' ' . LithuanianPlural::offerWord($matchingTotal),
             ],
             [
-                'label' => 'Parduotuvių',
+                'label' => 'Vaistinių',
                 'value' => (string) $storeCount,
                 'icon' => 'store',
                 'text' => $storeCount . ' ' . LithuanianPlural::storeWord($storeCount),

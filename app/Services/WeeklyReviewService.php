@@ -428,10 +428,10 @@ HTML MARKUP RULES:
 
 CONTENT STRUCTURE (700-1000+ words):
 
-1) INTRODUCTION (H2 class=\"mt-0\": \"Savaitės maisto parduotuvių akcijų apžvalga\")
+1) INTRODUCTION (H2 class=\"mt-0\": \"Savaitės vaistinių akcijų apžvalga\")
 - Use <h2 class=\"mt-0\"> for the introduction heading
 - Friendly, engaging, natural paragraph (not robotic or too formal)
-- Start with: \"Šią {week_number}-os savaitės apžvalgą sudaro {total_discounts} nuolaidos iš {total_stores} didžiųjų maisto parduotuvių. Vidutinė nuolaida siekė {avg_discount_percent}%, o kai kuriems produktams kainos sumažėjo net iki {max_discount_percent}%.\"
+- Start with: \"Šią {week_number}-os savaitės apžvalgą sudaro {total_discounts} nuolaidos iš {total_stores} didžiųjų vaistinių. Vidutinė nuolaida siekė {avg_discount_percent}%, o kai kuriems produktams kainos sumažėjo net iki {max_discount_percent}%.\"
 - Add friendly continuation: \"Šiame straipsnyje rasite aiškias savaitės pasiūlymus, geriausios nuolaidos sąrašą ir kur rasti pigiausias prekes — nuo vaikų žaislų iki buitinės chemijos.\"
 - End with friendly call-to-action: \"Panaudokite šią apžvalgą, jei domitės nuolaidomis, pasiūlymais ir ieškote pigiausios prekės ar geriausios nuolaidos.\"
 - More friendly, less formal, conversational tone
@@ -447,7 +447,7 @@ CONTENT STRUCTURE (700-1000+ words):
   - Include product links: <a href=\"{product_url}\">{product_name}</a>
 - This block increases CTR, often appears in Google snippets, immediately shows value
 
-4) STORE REVIEW SECTION (H2: \"Parduotuvių apžvalga\")
+4) STORE REVIEW SECTION (H2: \"Vaistinių apžvalga\")
 - CRITICAL: Include ALL stores from store_statistics (Maxima, Iki, Rimi, Lidl, Norfa - all that appear in data)
 - For each store in store_statistics, create H3 subsection with friendly format:
   - Use: \"{store_name} savaitės pasiūlymai\" OR \"{store_name} geriausi pasiūlymai\"
@@ -480,7 +480,7 @@ CONTENT STRUCTURE (700-1000+ words):
 - IMPORTANT: Do NOT include links in headings - only plain text
 - Use different variations for different categories to avoid repetition
 - Format:
-  - \"Pigiausia parduotuvė: {cheapest_store}\"
+  - \"Pigiausia vaistinė: {cheapest_store}\"
   - \"Rekomenduojami pasiūlymai:\"
   - List 2-3 product links from stores_comparison
   - For each product, include price or discount percentage:
@@ -559,10 +559,10 @@ OUTPUT RULES:
         $weekNumber = $weekStart->week;
         $maxDiscount = $data['summary']['max_discount_percent'];
         $counter = 1;
-        $fallbackTitle = "Maisto parduotuvių {$weekNumber}-os savaitės akcijos – geriausios nuolaidos iki {$maxDiscount}%";
+        $fallbackTitle = "Vaistinių {$weekNumber}-os savaitės akcijos – geriausios nuolaidos iki {$maxDiscount}%";
 
         while (!$this->isTitleUnique($fallbackTitle)) {
-            $fallbackTitle = "Maisto parduotuvių {$weekNumber}-os savaitės akcijos – geriausios nuolaidos iki {$maxDiscount}% ({$counter})";
+            $fallbackTitle = "Vaistinių {$weekNumber}-os savaitės akcijos – geriausios nuolaidos iki {$maxDiscount}% ({$counter})";
             $counter++;
         }
 
@@ -631,7 +631,7 @@ OUTPUT RULES:
     {
         $weekNumber = $weekStart->week;
         $summary = $data['summary'];
-        $topStore = !empty($data['store_statistics']) ? $data['store_statistics'][0]['name'] : 'parduotuvės';
+        $topStore = !empty($data['store_statistics']) ? $data['store_statistics'][0]['name'] : 'vaistinės';
         $topCategory = !empty($data['category_statistics']) ? $data['category_statistics'][0]['name'] : 'produktai';
 
         $templateData = [
@@ -757,12 +757,12 @@ OUTPUT RULES:
         $avgDiscount = $data['summary']['avg_discount_percent'];
         $totalStores = $data['summary']['total_stores'];
 
-        $fallbackDescription = "Savaitės akcijos apžvalga: {$totalDiscounts} nuolaidų iš {$totalStores} parduotuvių. Vidutinė nuolaida {$avgDiscount}%. ";
+        $fallbackDescription = "Savaitės akcijos apžvalga: {$totalDiscounts} nuolaidų iš {$totalStores} vaistinių. Vidutinė nuolaida {$avgDiscount}%. ";
         $fallbackDescription .= "Atraskite pigiausias prekes Maxima, Iki, Rimi, Lidl ir Norfa akcijose ({$weekStart->format('m d')} - {$weekEnd->format('m d')}).";
 
         $counter = 1;
         while (!$this->isMetaDescriptionUnique($fallbackDescription) && $counter < 10) {
-            $fallbackDescription = "Savaitės akcijos apžvalga: {$totalDiscounts} nuolaidų iš {$totalStores} parduotuvių. Vidutinė nuolaida {$avgDiscount}%. ";
+            $fallbackDescription = "Savaitės akcijos apžvalga: {$totalDiscounts} nuolaidų iš {$totalStores} vaistinių. Vidutinė nuolaida {$avgDiscount}%. ";
             $fallbackDescription .= "Atraskite pigiausias prekes ({$weekStart->format('m d')} - {$weekEnd->format('m d')}).";
             $counter++;
         }
@@ -777,18 +777,18 @@ OUTPUT RULES:
     private function getMetaDescriptionTemplates(): array
     {
         return [
-            'Atraskite {total_discounts} akcijų iš {total_stores} parduotuvių. Vidutinė nuolaida {avg}%, didžiausia iki {max}%. {top_store} siūlo geriausias pasiūlymas.',
+            'Atraskite {total_discounts} akcijų iš {total_stores} vaistinių. Vidutinė nuolaida {avg}%, didžiausia iki {max}%. {top_store} siūlo geriausias pasiūlymas.',
             'Šią {week_ordinal} savaitę {top_product} su {top_discount}% nuolaida {top_store_product}. {total_discounts} akcijų, vidutinė nuolaida {avg}%.',
-            'Kur pigiausia šią {week_ordinal} savaitę? {total_products} produktų akcijos, nuolaidos iki {max}%. Palyginkite kainas {total_stores} parduotuvėse.',
+            'Kur pigiausia šią {week_ordinal} savaitę? {total_products} produktų akcijos, nuolaidos iki {max}%. Palyginkite kainas {total_stores} vaistinėse.',
             '{week_ordinal} savaitės TOP akcijos: {total_discounts} nuolaidų, vidutinė nuolaida {avg}%. {top_store} dominuoja su didžiausiomis nuolaidomis.',
             'Neįtikėtina: {top_product} su {top_discount}% nuolaida {top_store_product}. {total_discounts} akcijų šią {week_ordinal} savaitę, nuolaidos iki {max}%.',
-            'Kur rasti geriausias akcijas {week_ordinal} savaitę? {total_products} produktų nuolaidos iš {total_stores} parduotuvių. Vidutinė nuolaida {avg}%, didžiausia iki {max}%.',
+            'Kur rasti geriausias akcijas {week_ordinal} savaitę? {total_products} produktų nuolaidos iš {total_stores} vaistinių. Vidutinė nuolaida {avg}%, didžiausia iki {max}%.',
             'Šią {week_ordinal} savaitę {top_store} siūlo {total_discounts} akcijų. Vidutinė nuolaida {avg}%, TOP pasiūlymas: {top_product} su {top_discount}% nuolaida.',
-            'Sutaupykite iki {max}%: {week_ordinal} savaitės apžvalga su {total_discounts} akcijų iš {total_stores} parduotuvių. Vidutinė nuolaida {avg}%.',
+            'Sutaupykite iki {max}%: {week_ordinal} savaitės apžvalga su {total_discounts} akcijų iš {total_stores} vaistinių. Vidutinė nuolaida {avg}%.',
             'Kur pigiausia {top_category}? {week_ordinal} savaitės palyginimas su {total_discounts} akcijų. {top_store} siūlo didžiausias nuolaidas.',
-            '{total_products} produktų akcijos šią {week_ordinal} savaitę: nuolaidos iki {max}%, vidutinė nuolaida {avg}%. Palyginkite kainas {total_stores} parduotuvėse.',
+            '{total_products} produktų akcijos šią {week_ordinal} savaitę: nuolaidos iki {max}%, vidutinė nuolaida {avg}%. Palyginkite kainas {total_stores} vaistinėse.',
             'TOP {week_ordinal} savaitės pasiūlymai: {top_product} su {top_discount}% nuolaida. {total_discounts} akcijų, vidutinė nuolaida {avg}%.',
-            'Neleiskite praleisti: {top_product} tik {top_price}€ ({top_discount}% nuolaida). {total_discounts} akcijų šią {week_ordinal} savaitę iš {total_stores} parduotuvių.',
+            'Neleiskite praleisti: {top_product} tik {top_price}€ ({top_discount}% nuolaida). {total_discounts} akcijų šią {week_ordinal} savaitę iš {total_stores} vaistinių.',
         ];
     }
 
@@ -797,7 +797,7 @@ OUTPUT RULES:
         $weekNumber = $weekStart->week;
         $weekEnd = (clone $weekStart)->endOfWeek();
         $summary = $data['summary'];
-        $topStore = !empty($data['store_statistics']) ? $data['store_statistics'][0]['name'] : 'Parduotuvės';
+        $topStore = !empty($data['store_statistics']) ? $data['store_statistics'][0]['name'] : 'Vaistinės';
         $topCategory = !empty($data['category_statistics']) ? $data['category_statistics'][0]['name'] : 'produktai';
 
         $templateData = [
@@ -864,7 +864,7 @@ OUTPUT RULES:
             $productList = implode(', ', $productNames);
             $discountList = implode(', ', $discountPercentages);
 
-            $prompt = "Minimalistinė, moderni maisto prekių parduotuvės akcijų iliustracija, skirta naujienų portalo arba blogo viršeliui. Vaizdas – realistiškas, europietiško stiliaus prekybos centro interjeras, su lengvai išblurintu fonu ir subtiliu apšvietimu.
+            $prompt = "Minimalistinė, moderni maisto prekių vaistinės akcijų iliustracija, skirta naujienų portalo arba blogo viršeliui. Vaizdas – realistiškas, europietiško stiliaus prekybos centro interjeras, su lengvai išblurintu fonu ir subtiliu apšvietimu.
 
                 Centre – tvarkingas, 2D dizaino baneris su aiškiu lietuvišku užrašu:
                 \"{$weekNumber} savaitė\".

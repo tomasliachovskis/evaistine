@@ -8,7 +8,7 @@
             class="relative flex h-12 w-full max-w-none min-w-0 items-center rounded-xl bg-gray-100 pr-4 pl-12 text-left text-base transition-colors hover:bg-gray-200"
         >
             <x-app-icon name="search" class="pointer-events-none absolute left-4 size-6 text-gray-700" />
-            <span class="truncate text-gray-600">Ieškoti prekės ar parduotuvės</span>
+            <span class="truncate text-gray-600">Ieškoti prekės ar vaistinės</span>
         </button>
 
         {{-- Teleported to <body>: <header> is `fixed` + `z-50`, its own

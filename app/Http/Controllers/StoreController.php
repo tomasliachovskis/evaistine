@@ -10,11 +10,12 @@ use App\Support\CanonicalUrl;
 use App\Support\FaqSchema;
 use App\Support\ItemListSchema;
 use App\Support\LithuanianPlural;
+use App\Support\PharmacyName;
 use App\Support\OpeningHours;
 use App\Support\StoreLocationsSchema;
 use Illuminate\Support\Str;
 
-// Ported from discount/src/app/parduotuves/{page,[slug]/page,[slug]/[city]/page}.tsx.
+// Ported from discount/src/app/vaistines/{page,[slug]/page,[slug]/[city]/page}.tsx.
 class StoreController extends Controller
 {
     public function index(ProductController $api)
@@ -22,9 +23,9 @@ class StoreController extends Controller
         $payload = json_decode($api->getStores()->getContent(), true);
         $stores = $payload['data'];
         $pageMeta = $payload['page_meta'];
-        $path = '/parduotuves';
+        $path = '/vaistines';
         $faq = $pageMeta['faq'] ?? [];
-        $breadcrumbs = [['name' => 'Akcijos', 'href' => '/akcijos'], ['name' => 'Parduotuvės', 'href' => $path]];
+        $breadcrumbs = [['name' => 'Akcijos', 'href' => '/akcijos'], ['name' => 'Vaistinės', 'href' => $path]];
 
         return view('stores.index', [
             'stores' => $stores,
@@ -34,7 +35,7 @@ class StoreController extends Controller
             'breadcrumbs' => $breadcrumbs,
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
             'itemListSchema' => ItemListSchema::build(
-                'Parduotuvių akcijos Lietuvoje',
+                'Vaistinių akcijos Lietuvoje',
                 collect($stores)->map(fn ($s) => ['name' => $s['name'], 'href' => ($s['shows_discounts_page'] ?? true) ? "/akcijos/{$s['slug']}" : "/leidinys/{$s['slug']}"])->all()
             ),
             'faqSchema' => !empty($faq) ? FaqSchema::build($faq) : null,
@@ -58,10 +59,10 @@ class StoreController extends Controller
             return $this->showCity($store, $locationsByCity, $city);
         }
 
-        $path = "/parduotuves/{$slug}";
+        $path = "/vaistines/{$slug}";
         $breadcrumbs = [
             ['name' => 'Akcijos', 'href' => '/akcijos'],
-            ['name' => 'Parduotuvės', 'href' => '/parduotuves'],
+            ['name' => 'Vaistinės', 'href' => '/vaistines'],
             ['name' => $store->name, 'href' => $path],
         ];
 
@@ -87,7 +88,7 @@ class StoreController extends Controller
 
         return view('stores.show', [
             'store' => $store,
-            'title' => "{$store->name} darbo laikas ir parduotuvių adresai",
+            'title' => PharmacyName::phrase($store->name, 'genitive_plural') . ' adresai ir darbo laikas',
             'description' => "{$store->name} Lietuvoje – {$total} ".LithuanianPlural::storeWord($total)
                 .($cities->count() > 1 ? ": {$topCities}".($cities->count() > 3 ? ' ir kiti miestai' : '') : '')
                 .'.'.($typicalHours ? " Dažniausias darbo laikas: {$typicalHours}." : '')
@@ -120,11 +121,11 @@ class StoreController extends Controller
         $cityLocations = $locationsByCity->get($cityName)->sortBy('address')->values();
         $count = $cityLocations->count();
 
-        $path = "/parduotuves/{$store->slug}/{$citySlug}";
+        $path = "/vaistines/{$store->slug}/{$citySlug}";
         $breadcrumbs = [
             ['name' => 'Akcijos', 'href' => '/akcijos'],
-            ['name' => 'Parduotuvės', 'href' => '/parduotuves'],
-            ['name' => $store->name, 'href' => "/parduotuves/{$store->slug}"],
+            ['name' => 'Vaistinės', 'href' => '/vaistines'],
+            ['name' => $store->name, 'href' => "/vaistines/{$store->slug}"],
             ['name' => $cityName, 'href' => $path],
         ];
 

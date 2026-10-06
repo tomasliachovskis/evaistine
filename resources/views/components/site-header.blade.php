@@ -7,7 +7,7 @@
     $keywordSlugs = array_column(config('header_nav.product_keyword_items'), 'slug');
     $isProductKeywordPath = $akcijosSegment && $akcijosSegment !== 'paieska' && in_array($akcijosSegment, $keywordSlugs, true);
     $akcijosActive = $path === 'akcijos' || str_starts_with($path, 'akcijos/');
-    $storesActive = $path === 'parduotuves' || str_starts_with($path, 'parduotuves/');
+    $storesActive = $path === 'vaistines' || str_starts_with($path, 'vaistines/');
     $leafletsActive = $path === 'leidiniai' || str_starts_with($path, 'leidinys/');
     $cheapestActive = $path === 'pigiausios-prekes';
 
@@ -28,7 +28,7 @@
     $navCounts = [
         'akcijos' => (int) $storeList->sum('discounts_count'),
         'leidiniai' => (int) $storeList->sum('leaflets_count'),
-        'parduotuves' => $storeList->filter(fn ($st) => ($st['discounts_count'] ?? 0) > 0 || ($st['leaflets_count'] ?? 0) > 0)->count(),
+        'vaistines' => $storeList->filter(fn ($st) => ($st['discounts_count'] ?? 0) > 0 || ($st['leaflets_count'] ?? 0) > 0)->count(),
         'kategorijos' => count($categories ?? []),
     ];
     $navCount = fn (string $key) => $navCounts[$key] > 0
@@ -108,7 +108,7 @@
         <nav class="hidden items-center lg:flex" aria-label="Pagrindinė navigacija">
             <a href="/akcijos" data-ga-event="desktop_nav_click" data-ga-item="products" class="{{ $navLinkClass($akcijosActive) }}">Akcijos{!! $navCount('akcijos') !!}</a>
             <a href="/leidiniai" data-ga-event="desktop_nav_click" data-ga-item="leaflets" class="{{ $navLinkClass($leafletsActive) }}">Leidiniai{!! $navCount('leidiniai') !!}</a>
-            <a href="/parduotuves" data-ga-event="desktop_nav_click" data-ga-item="stores" class="{{ $navLinkClass($storesActive) }}">Parduotuvės{!! $navCount('parduotuves') !!}</a>
+            <a href="/vaistines" data-ga-event="desktop_nav_click" data-ga-item="stores" class="{{ $navLinkClass($storesActive) }}">Vaistinės{!! $navCount('vaistines') !!}</a>
         </nav>
 
         <div class="-mr-2 ml-auto flex min-w-0 items-center gap-0.5 lg:mr-0 lg:flex-1 lg:justify-end lg:gap-2">
@@ -180,8 +180,8 @@
                     <a href="/akcijos" @click="menuOpen = false" class="{{ $menuItemClass($akcijosActive) }}">
                         <x-app-icon name="tag" class="size-5 shrink-0" />Visos akcijos
                     </a>
-                    <a href="/parduotuves" @click="menuOpen = false" class="{{ $menuItemClass($storesActive) }}">
-                        <x-app-icon name="store" class="size-5 shrink-0" />Parduotuvės
+                    <a href="/vaistines" @click="menuOpen = false" class="{{ $menuItemClass($storesActive) }}">
+                        <x-app-icon name="store" class="size-5 shrink-0" />Vaistinės
                     </a>
 
                     <div>
@@ -217,7 +217,7 @@
 
                     <button type="button" @click="menuOpen = false; $store.myStores.sheetOpen = true" class="{{ $menuItemClass(false) }}">
                         <x-app-icon name="store" class="size-5 shrink-0" />
-                        <span class="flex-1 text-left">Mano parduotuvės</span>
+                        <span class="flex-1 text-left">Mano vaistinės</span>
                         <span x-show="$store.myStores.active()" x-cloak class="text-base font-semibold tabular-nums text-gray-500" x-text="'(' + $store.myStores.slugs.length + ')'"></span>
                     </button>
 

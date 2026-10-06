@@ -10,7 +10,7 @@
         $activeTab = 'favorites';
     } elseif (request()->is('leidiniai') || request()->is('leidinys/*')) {
         $activeTab = 'leaflets';
-    } elseif (request()->is('parduotuves') || request()->is('parduotuves/*')) {
+    } elseif (request()->is('vaistines') || request()->is('vaistines/*')) {
         $activeTab = 'stores';
     } elseif (request()->is('akcijos') || request()->is('akcijos/paieska*')) {
         $activeTab = 'products';
@@ -146,7 +146,7 @@
         >
             <div class="flex shrink-0 justify-center pb-1 pt-3"><div class="h-1.5 w-14 rounded-full bg-gray-400"></div></div>
             <div class="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-3">
-                <h2 class="text-2xl font-bold leading-tight">Parduotuvės</h2>
+                <h2 class="text-2xl font-bold leading-tight">Vaistinės</h2>
                 <button type="button" class="sheet-close" @click="storesOpen = false" aria-label="Uždaryti">
                     <x-app-icon name="x" class="size-7" />
                 </button>
@@ -183,7 +183,7 @@
                             </div>
                         </a>
                     @empty
-                        <p class="text-sm text-gray-500">Parduotuvės bus rodomos čia.</p>
+                        <p class="text-sm text-gray-500">Vaistinės bus rodomos čia.</p>
                     @endforelse
                 </div>
             </div>

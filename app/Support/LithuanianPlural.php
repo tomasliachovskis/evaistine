@@ -94,18 +94,18 @@ class LithuanianPlural
         $lastTwoDigits = $count % 100;
 
         if ($lastTwoDigits >= 11 && $lastTwoDigits <= 19) {
-            return 'parduotuvių';
+            return 'vaistinių';
         }
 
         if ($lastDigit === 1) {
-            return 'parduotuvė';
+            return 'vaistinė';
         }
 
         if ($lastDigit >= 2 && $lastDigit <= 9) {
-            return 'parduotuvės';
+            return 'vaistinės';
         }
 
-        return 'parduotuvių';
+        return 'vaistinių';
     }
 
     // Accusative ("surinkome 1 pasiūlymą / 3 pasiūlymus / 40 pasiūlymų").

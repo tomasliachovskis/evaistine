@@ -4,7 +4,7 @@ namespace App\Support;
 
 use Illuminate\Support\Collection;
 
-// ItemList of Store entities for /parduotuves/{store}/{city} — address,
+// ItemList of Store entities for /vaistines/{store}/{city} — address,
 // phone, geo and opening hours per location, all already shown on the page.
 // Added after the 2026-09-28 SEO audit: these pages target "{store} {city}
 // darbo laikas / adresai" queries but carried only a BreadcrumbList.
@@ -22,7 +22,7 @@ class StoreLocationsSchema
         return [
             '@context' => 'https://schema.org',
             '@type' => 'ItemList',
-            'name' => "{$storeName} parduotuvės {$cityName}",
+            'name' => PharmacyName::phrase($storeName, 'plural') . " {$cityName}",
             'numberOfItems' => $locations->count(),
             'itemListElement' => $locations->values()->map(fn (array $location, int $index) => [
                 '@type' => 'ListItem',

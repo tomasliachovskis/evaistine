@@ -2,7 +2,7 @@
 
 {{-- Signup for the email notifications without an account
      (EmailSubscriptionController::subscribe). Sends the visitor's "Mano
-     parduotuvės" along, so the emails cover their stores from the start.
+     vaistinės" along, so the emails cover their stores from the start.
      After signup: "check your email" (double opt-in), or straight to the
      settings page when signed in with the same address. $store (a leaflet
      page's store) is added to the stores sent. --}}
@@ -41,7 +41,7 @@
         <h2 class="text-base font-bold leading-snug text-gray-900">{{ $title }}</h2>
         <p class="mt-1 text-sm leading-snug text-gray-700">Kas ketvirtadienį nauji leidiniai ir akcijos. Nemokamai.</p>
         <p x-show="$store.myStores.active()" x-cloak class="mt-1 text-xs text-gray-600">
-            Parduotuvės: <span x-text="$store.myStores.slugs.map((s) => $store.myStores.name(s)).join(', ')"></span>
+            Vaistinės: <span x-text="$store.myStores.slugs.map((s) => $store.myStores.name(s)).join(', ')"></span>
         </p>
     @else
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
@@ -51,10 +51,10 @@
             <div class="min-w-0 flex-1">
                 <h2 class="text-xl font-bold leading-snug text-gray-900">{{ $title }}</h2>
                 <p class="mt-1 text-lg leading-snug text-gray-700">
-                    Kas ketvirtadienį: jūsų parduotuvių nauji leidiniai ir geriausios akcijos. Nemokamai, atsisakyti galima bet kada.
+                    Kas ketvirtadienį: jūsų vaistinių nauji leidiniai ir geriausios akcijos. Nemokamai, atsisakyti galima bet kada.
                 </p>
                 <p x-show="$store.myStores.active()" x-cloak class="mt-1 text-base text-gray-600">
-                    Parduotuvės: <span x-text="$store.myStores.slugs.map((s) => $store.myStores.name(s)).join(', ')"></span>
+                    Vaistinės: <span x-text="$store.myStores.slugs.map((s) => $store.myStores.name(s)).join(', ')"></span>
                 </p>
             </div>
         </div>

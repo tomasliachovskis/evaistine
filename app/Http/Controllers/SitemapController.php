@@ -80,7 +80,7 @@ class SitemapController extends Controller
             ['loc' => CanonicalUrl::build('/akcijos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.9'],
             ['loc' => CanonicalUrl::build('/pigiausios-prekes'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'],
             ['loc' => CanonicalUrl::build('/leidiniai'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'],
-            ['loc' => CanonicalUrl::build('/parduotuves'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'],
+            ['loc' => CanonicalUrl::build('/vaistines'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'],
             ['loc' => CanonicalUrl::build('/naujienos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'],
             ['loc' => CanonicalUrl::build('/apie'), 'lastmod' => $defaultLastmod, 'changefreq' => 'monthly', 'priority' => '0.4'],
             ['loc' => CanonicalUrl::build('/privatumo-politika'), 'lastmod' => $defaultLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
@@ -116,11 +116,11 @@ class SitemapController extends Controller
         }
 
         foreach ($data['store_location_slugs'] ?? [] as $slug) {
-            $urls[] = ['loc' => CanonicalUrl::build("/parduotuves/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
+            $urls[] = ['loc' => CanonicalUrl::build("/vaistines/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'];
         }
 
         foreach ($data['store_city_pages'] ?? [] as $path) {
-            $urls[] = ['loc' => CanonicalUrl::build("/parduotuves/{$path}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.5'];
+            $urls[] = ['loc' => CanonicalUrl::build("/vaistines/{$path}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.5'];
         }
 
         $urls[] = ['loc' => CanonicalUrl::build('/kuponai'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'];

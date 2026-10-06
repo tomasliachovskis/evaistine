@@ -40,7 +40,7 @@
             <p x-show="selected().unit" class="mt-1 text-lg text-gray-600" x-text="selected().unit"></p>
 
             <div x-show="selected().comparison" class="mt-5 rounded-xl bg-gray-50 p-4">
-                <h3 class="text-lg font-bold text-font">Kitose parduotuvėse</h3>
+                <h3 class="text-lg font-bold text-font">Kitose vaistinėse</h3>
                 <ul class="mt-2 flex flex-col gap-1">
                     <template x-for="other in (selected().comparison?.others || []).slice(0, 5)" :key="other.slug">
                         <li class="flex items-baseline justify-between gap-4 text-lg">

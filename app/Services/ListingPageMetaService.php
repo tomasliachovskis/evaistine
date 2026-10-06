@@ -11,6 +11,7 @@ use App\Support\FoodCategorySlugs;
 use App\Support\FlyerStorage;
 use App\Support\LithuanianDate;
 use App\Support\LithuanianPlural;
+use App\Support\PharmacyName;
 use App\Support\StoreListPriority;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -157,7 +158,7 @@ class ListingPageMetaService
                 // nominative name into the sentence read as "Sekite mėsa ir
                 // žuvis kainas".
                 'description' => $this->pickVariant($categorySlug, [
-                    'Palyginkite ' . ($categoryGenitive = \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($categoryName)) . ' akcijas visuose pagrindiniuose prekybos tinkluose. Matysite didžiausias nuolaidas ir aktyvių pasiūlymų skaičių kiekvienoje parduotuvėje.',
+                    'Palyginkite ' . ($categoryGenitive = \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($categoryName)) . ' akcijas visuose pagrindiniuose prekybos tinkluose. Matysite didžiausias nuolaidas ir aktyvių pasiūlymų skaičių kiekvienoje vaistinėje.',
                     'Visų didžiųjų prekybos tinklų ' . $categoryGenitive . ' akcijos vienoje vietoje — palyginkite kainas ir rinkitės pigiausią pasiūlymą.',
                     'Sekite ' . $categoryGenitive . ' kainas ir nuolaidas kiekviename prekybos tinkle — čia matysite, kur šiuo metu didžiausios akcijos ir kiek galima sutaupyti.',
                 ]),
@@ -170,7 +171,7 @@ class ListingPageMetaService
                         ? ['label' => 'Nuolaidos iki', 'value' => "-{$categoryMaxDiscount}%", 'icon' => 'percent', 'pill' => "nuolaidos iki -{$categoryMaxDiscount}%", 'mobile_first' => true]
                         : null,
                     ['label' => 'Aktyvios akcijos', 'value' => (string) $totalOffers, 'icon' => 'tag', 'pill' => LithuanianPlural::formatCount($totalOffers) . ' ' . LithuanianPlural::offerWord($totalOffers)],
-                    ['label' => 'Parduotuvių', 'value' => (string) count($storeComparison), 'icon' => 'store', 'pill' => count($storeComparison) . ' ' . LithuanianPlural::storeWord(count($storeComparison))],
+                    ['label' => 'Vaistinių', 'value' => (string) count($storeComparison), 'icon' => 'store', 'pill' => count($storeComparison) . ' ' . LithuanianPlural::storeWord(count($storeComparison))],
                 ])),
                 'freshness_label' => $this->freshnessLabel(ContentFreshness::forCategory($category->id)),
             ],
@@ -602,7 +603,7 @@ class ListingPageMetaService
             ->orderByDesc('offers_count')
             // No limit: at most one row per store (~47), and the real store
             // count (quick_stats, FAQ) needs all of them — the old limit(8)
-            // under-reported "N parduotuvių". Display slices its own top 8.
+            // under-reported "N vaistinių". Display slices its own top 8.
             ->get();
 
         return $rows->map(function ($row) use ($category) {
@@ -637,7 +638,7 @@ class ListingPageMetaService
                 ['label' => 'Aktyvios akcijos', 'value' => (string) $totalOffers],
                 ['label' => 'Vidutinė nuolaida', 'value' => $avgDiscount . ' %'],
                 ['label' => 'Didžiausia nuolaida', 'value' => $maxDiscount . ' %'],
-                ['label' => 'Prekybos tinklai', 'value' => (string) $storeCount],
+                ['label' => 'Vaistinių tinklai', 'value' => (string) $storeCount],
             ],
             'store_comparison' => $storeComparison,
             'top_discounted_products' => $this->getTopDiscountedProductsForCategory($category),
@@ -980,7 +981,7 @@ class ListingPageMetaService
             : "naujausią {$storeName} akcijų {$leafletNoun}";
 
         $intro = "eVaistine.lt – patogi vieta, kur {$leafletPhrase}, didžiausias savaitės nuolaidas ir populiariausius pasiūlymus rasite be papildomų paieškų.";
-        $detail = "Kas savaitę atnaujiname akcijų sąrašą pagal galiojantį leidinį, todėl čia matote, kas šiuo metu galioja parduotuvėse. Jei domina naujas leidinys, šios savaitės akcijos ar norite greitai palyginti nuolaidas – viršuje peržiūrėkite leidinių viršelius, o žemiau – atrinktas didžiausias nuolaidas su kainomis.";
+        $detail = "Kas savaitę atnaujiname akcijų sąrašą pagal galiojantį leidinį, todėl čia matote, kas šiuo metu galioja vaistinėse. Jei domina naujas leidinys, šios savaitės akcijos ar norite greitai palyginti nuolaidas – viršuje peržiūrėkite leidinių viršelius, o žemiau – atrinktas didžiausias nuolaidas su kainomis.";
 
         return "{$intro}\n\n{$detail}";
     }
@@ -1018,7 +1019,7 @@ class ListingPageMetaService
                 "Šiame puslapyje rasite {$storeName} akcijų {$leafletNoun} – tikrą, savaitinį šio prekybos tinklo katalogą, o ne vien atrinktų prekių sąrašą.",
             ]),
             $this->pickVariant($storeSlug . '/about/2', [
-                "Naujas {$storeName} {$leafletNounSingular} skelbiamas reguliariai, o jo viršelyje visada nurodyta, nuo kada iki kada jis galioja – tai patogu žinoti prieš planuojant, kada apsilankyti parduotuvėje.",
+                "Naujas {$storeName} {$leafletNounSingular} skelbiamas reguliariai, o jo viršelyje visada nurodyta, nuo kada iki kada jis galioja – tai patogu žinoti prieš planuojant, kada apsilankyti vaistinėje.",
                 "{$storeName} paprastai skelbia naują leidinio numerį kas savaitę – ankstesni numeriai lieka pasiekiami puslapio apačioje, pažymėti kaip pasibaigę.",
                 "Kiekvienas {$storeName} {$leafletNounSingular} turi savo unikalų numerį ir galiojimo laikotarpį, nurodytą viršelyje – taip lengva atskirti, kuris leidinys aktualus šiuo metu.",
             ]),
@@ -1082,7 +1083,7 @@ class ListingPageMetaService
     {
         return match ($storeSlug) {
             'maxima' => [
-                "Maxima leidinys – tai didžiausio Lietuvos prekybos tinklo, veikiančio nuo 1992 metų ir turinčio daugiau nei 200 parduotuvių visoje šalyje, savaitinis prekių katalogas, kuriame pristatomas naujausias tos savaitės asortimentas.",
+                "Maxima leidinys – tai didžiausio Lietuvos prekybos tinklo, veikiančio nuo 1992 metų ir turinčio daugiau nei 200 vaistinių visoje šalyje, savaitinis prekių katalogas, kuriame pristatomas naujausias tos savaitės asortimentas.",
                 "Kiekvieną savaitę Maxima skelbia naują AČIŪ leidinio numerį, kurio viršelyje visada nurodytos tikslios galiojimo datos – tai leidžia iš anksto žinoti, kada leidinys nustos galioti ir bus pakeistas nauju.",
                 "Be pagrindinio savaitinio leidinio, Maxima retkarčiais išleidžia ir atskirus teminius numerius – pavyzdžiui, švenčių, sezoninių ar namų apyvokos prekių kolekcijas, kurios galioja lygiagrečiai su savaitiniu leidiniu.",
             ],
@@ -1098,23 +1099,23 @@ class ListingPageMetaService
             ],
             'rimi' => [
                 "Rimi leidinys – tai Baltijos šalyse veikiančios Rimi Baltic grupės savaitinis prekių katalogas, kiekvieną savaitę pristatantis naują numerį su tos savaitės asortimentu.",
-                "Rimi valdo tiek didesnio formato Rimi Hyper, tiek mažesnes Rimi Super parduotuves – jų leidinio turinys gali šiek tiek skirtis priklausomai nuo formato.",
+                "Rimi valdo tiek didesnio formato Rimi Hyper, tiek mažesnes Rimi Super vaistines – jų leidinio turinys gali šiek tiek skirtis priklausomai nuo formato.",
                 "Naujas Rimi leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje visada nurodytos tikslios galiojimo datos.",
             ],
             'norfa' => [
                 "Norfa leidinys – tai Lietuvos kapitalo prekybos tinklo, atstovaujamo tiek didžiuosiuose miestuose, tiek mažesniuose miesteliuose ir kaimuose, savaitinis prekių katalogas.",
                 "Naujas Norfa leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje visada nurodytos tikslios galiojimo datos.",
-                "Kadangi Norfa parduotuvių tinklas platus ir apima įvairaus dydžio parduotuves, leidinio turinys paprastai orientuotas į plataus vartojimo prekes, aktualias didžiajai daliai tinklo.",
+                "Kadangi Norfa vaistinių tinklas platus ir apima įvairaus dydžio vaistines, leidinio turinys paprastai orientuotas į plataus vartojimo prekes, aktualias didžiajai daliai tinklo.",
             ],
             'aibe' => [
                 "Aibė leidinys – tai bendras savaitinis katalogas, kurį skelbia po Aibės vardu veikiantis nepriklausomų prekybininkų tinklas, ypač gausiai atstovaujamas mažesniuose miestuose ir kaimo vietovėse.",
                 "Naujas Aibė leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje nurodytos tikslios galiojimo datos.",
-                "Kadangi kiekviena Aibė parduotuvė priklauso skirtingam savininkui, leidinio turinys paprastai galioja didžiojoje dalyje tinklo parduotuvių, bet verta patikrinti konkrečios parduotuvės informaciją vietoje.",
+                "Kadangi kiekviena Aibė vaistinė priklauso skirtingam savininkui, leidinio turinys paprastai galioja didžiojoje dalyje tinklo vaistinių, bet verta patikrinti konkrečios vaistinės informaciją vietoje.",
             ],
             'express-market' => [
-                "Express Market leidinys – tai UAB Kilminė valdomo kompaktiško formato parduotuvių tinklo savaitinis katalogas, pristatantis naują prekių pasiūlymą kiekvieną savaitę.",
+                "Express Market leidinys – tai UAB Kilminė valdomo kompaktiško formato vaistinių tinklo savaitinis katalogas, pristatantis naują prekių pasiūlymą kiekvieną savaitę.",
                 "Naujas Express Market leidinio numeris skelbiamas reguliariai, o viršelyje nurodytos tikslios galiojimo datos.",
-                "Kadangi Express Market parduotuvės orientuotos į greitą, patogų apsipirkimą arti namų, jų leidinio turinys paprastai koncentruojasi į kasdienes, dažnai perkamas prekes.",
+                "Kadangi Express Market vaistinės orientuotos į greitą, patogų apsipirkimą arti namų, jų leidinio turinys paprastai koncentruojasi į kasdienes, dažnai perkamas prekes.",
             ],
             'silas' => [
                 "Šilas leidinys – tai Kauno ir Vilniaus regionuose veikiančio, nuo 1992 metų istoriją skaičiuojančio prekybos tinklo savaitinis prekių katalogas.",
@@ -1124,7 +1125,7 @@ class ListingPageMetaService
             'cia' => [
                 "Čia Market leidinys – tai iš Žemaitijos kilusio, nuo 1996 metų veikiančio prekybos tinklo savaitinis katalogas, gausiai atstovaujamas Žemaitijos regione.",
                 "Naujas Čia Market leidinio numeris skelbiamas reguliariai kiekvieną savaitę, o viršelyje nurodytos tikslios galiojimo datos.",
-                "Čia Market išaugo iš pieno produktų parduotuvių tinklo, todėl jo leidinyje dažnai matoma stipri pieno gaminių dalis šalia įprasto maisto ir buities prekių asortimento.",
+                "Čia Market išaugo iš pieno produktų vaistinių tinklo, todėl jo leidinyje dažnai matoma stipri pieno gaminių dalis šalia įprasto maisto ir buities prekių asortimento.",
             ],
             'kubas' => [
                 "Kubas leidinys – tai 2000 metais Šiauliuose įkurto prekybos tinklo, šiandien veikiančio keliuose Lietuvos miestuose, savaitinis prekių katalogas.",
@@ -1149,7 +1150,7 @@ class ListingPageMetaService
             'lidl' => [
                 "Lidl leidinio turinys atspindi tinklui būdingą glaustą, kruopščiai atrinktą asortimentą – kiekviename numeryje dažniausiai pristatoma keliasdešimt prekių, suskirstytų pagal kategorijas.",
                 "Kai turime PDF nuorodą, Lidl leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
-                "Ne maisto prekių Lidl leidiniai dažnai būna riboto kiekio – juose pristatomos sezoninės ar specialios prekės, kurios gali greitai baigtis parduotuvėse, todėl verta peržiūrėti leidinį iš anksto.",
+                "Ne maisto prekių Lidl leidiniai dažnai būna riboto kiekio – juose pristatomos sezoninės ar specialios prekės, kurios gali greitai baigtis vaistinėse, todėl verta peržiūrėti leidinį iš anksto.",
             ],
             'iki' => [
                 "Iki leidinio turinys suskirstytas pagal kategorijas – nuo šviežių maisto produktų, kepyklos gaminių ir mėsos iki buities chemijos bei namų apyvokos prekių.",
@@ -1172,7 +1173,7 @@ class ListingPageMetaService
                 "Leidinys atkartoja tikrąją numerio puslapių tvarką – patogu naršyti taip pat, kaip naršytumėte spausdintame ar oficialiame skaitmeniniame kataloge.",
             ],
             'express-market' => [
-                "Kadangi Express Market parduotuvės nedidelės, jų leidinys paprastai trumpesnis nei didesnių tinklų – patogu greitai peržiūrėti visą turinį prieš apsilankymą.",
+                "Kadangi Express Market vaistinės nedidelės, jų leidinys paprastai trumpesnis nei didesnių tinklų – patogu greitai peržiūrėti visą turinį prieš apsilankymą.",
                 "Kai turime PDF nuorodą, Express Market leidinį galima atsisiųsti ir peržiūrėti be interneto ryšio – nuoroda pateikiama prie leidinio viršelio.",
                 "Leidinys atkartoja tikrąją numerio puslapių tvarką – patogu naršyti taip pat, kaip naršytumėte oficialiame kataloge.",
             ],
@@ -1217,18 +1218,18 @@ class ListingPageMetaService
                 "Tikslias kainas ir nuolaidų dydžius rasite Iki akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą taip, kaip jis pateikiamas oficialiame numeryje.",
             ],
             'rimi' => [
-                "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį ir įsitikinkite, kad leidinys atitinka jums artimiausios parduotuvės formatą (Rimi Hyper ar Rimi Super).",
+                "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį ir įsitikinkite, kad leidinys atitinka jums artimiausios vaistinės formatą (Rimi Hyper ar Rimi Super).",
                 "Jei ieškote konkrečios kategorijos, patogu naršyti leidinį puslapis po puslapio – jis atkartoja spausdinto numerio struktūrą.",
                 "Tikslias kainas ir nuolaidų dydžius rasite Rimi akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
             ],
             'norfa' => [
                 "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
-                "Kadangi Norfa parduotuvės skiriasi dydžiu, verta patikrinti, ar leidinyje esanti prekė tikrai pasiekiama jums artimiausioje parduotuvėje.",
+                "Kadangi Norfa vaistinės skiriasi dydžiu, verta patikrinti, ar leidinyje esanti prekė tikrai pasiekiama jums artimiausioje vaistinėje.",
                 "Tikslias kainas ir nuolaidų dydžius rasite Norfa akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
             ],
             'aibe' => [
                 "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
-                "Kadangi Aibė vienija atskirus savininkus, verta patikrinti, ar konkreti prekė ir kaina galioja jūsų artimiausioje Aibė parduotuvėje.",
+                "Kadangi Aibė vienija atskirus savininkus, verta patikrinti, ar konkreti prekė ir kaina galioja jūsų artimiausioje Aibė vaistinėje.",
                 "Tikslias kainas ir nuolaidų dydžius rasite Aibė akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
             ],
             'express-market' => [
@@ -1238,7 +1239,7 @@ class ListingPageMetaService
             ],
             'silas' => [
                 "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
-                "Kadangi Šilas veikia tik Kauno ir Vilniaus regionuose, patogu iš anksto patikrinti, ar leidinio prekės pasiekiamos jums artimiausioje parduotuvėje.",
+                "Kadangi Šilas veikia tik Kauno ir Vilniaus regionuose, patogu iš anksto patikrinti, ar leidinio prekės pasiekiamos jums artimiausioje vaistinėje.",
                 "Tikslias kainas ir nuolaidų dydžius rasite Šilas akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu.",
             ],
             'cia' => [
@@ -1248,7 +1249,7 @@ class ListingPageMetaService
             ],
             'kubas' => [
                 "Prieš peržiūrėdami puslapius, patikrinkite viršelyje nurodytą galiojimo laikotarpį, kad įsitikintumėte, jog žiūrite aktualų numerį.",
-                "Kubas parduotuvės išsibarsčiusios keliuose miestuose – patogu iš anksto patikrinti, ar leidinio prekės pasiekiamos jums artimiausioje parduotuvėje.",
+                "Kubas vaistinės išsibarsčiusios keliuose miestuose – patogu iš anksto patikrinti, ar leidinio prekės pasiekiamos jums artimiausioje vaistinėje.",
                 "Tikslias kainas ir nuolaidų dydžius rasite Kubas akcijų sąraše – leidinys pirmiausia skirtas peržiūrėti visą savaitės pasiūlymą kataloginiu formatu, ne tik maisto skiltį.",
             ],
             default => [],
@@ -1289,8 +1290,8 @@ class ListingPageMetaService
                 'answer' => "{$storeName} akcijos atnaujinamos kasdien. Naujas savaitės {$words['nominative']} skelbiamas kiekvieną savaitę, o akcijų kainos syncinamos automatiškai.",
             ],
             [
-                'question' => "Ar {$storeName} akcijos galioja visose parduotuvėse?",
-                'answer' => "Dažniausiai taip – savaitės akcijos galioja visame {$storeName} tinkle Lietuvoje, nebent leidinyje nurodyta kitaip.",
+                'question' => 'Ar ' . PharmacyName::phrase($storeName, 'genitive') . ' akcijos galioja visose ' . PharmacyName::phrase($storeName, 'locative_plural') . '?',
+                'answer' => 'Dažniausiai taip – savaitės akcijos galioja visame ' . PharmacyName::phrase($storeName, 'genitive') . ' tinkle Lietuvoje, nebent leidinyje nurodyta kitaip.',
             ],
             [
                 'question' => "Ar galima atsisiųsti {$storeName} {$words['accusative']} PDF formatu?",
@@ -1359,7 +1360,7 @@ class ListingPageMetaService
             ->map(fn (array $row) => e($row['store']) . ' (' . $offersPhrase($row['offers_count']) . ')')
             ->values()->all();
         $faq[] = [
-            'question' => "Kurioje parduotuvėje daugiausia akcijų kategorijoje {$name}?",
+            'question' => "Kurioje vaistinėje daugiausia akcijų kategorijoje {$name}?",
             'answer' => 'Daugiausia pasiūlymų šiuo metu turi ' . array_shift($top)
                 . ($top !== [] ? ', toliau ' . implode(' ir ', $top) : '') . '.',
         ];
@@ -1376,7 +1377,7 @@ class ListingPageMetaService
         $faq[] = [
             'question' => "Kiek akcijų yra kategorijoje {$name}?",
             'answer' => 'Šiuo metu galioja ' . $offersPhrase($totalOffers) . ' '
-                . $storeCount . ' ' . (LithuanianPlural::storeWord($storeCount) === 'parduotuvė' ? 'parduotuvėje' : 'parduotuvėse') . '.',
+                . $storeCount . ' ' . (LithuanianPlural::storeWord($storeCount) === 'vaistinė' ? 'vaistinėje' : 'vaistinėse') . '.',
         ];
 
         return $faq;
@@ -1384,7 +1385,7 @@ class ListingPageMetaService
 
     /**
      * Same idea as buildLiveCategoryFaq(), for a store's own page. Store
-     * names stay undeclined (nominative subject / "{Store} parduotuvėje"),
+     * names stay undeclined (nominative subject / "{Store} vaistinėje"),
      * since most are foreign brand names with no safe Lithuanian case.
      *
      * @return list<array{question: string, answer: string}>
@@ -1401,16 +1402,16 @@ class ListingPageMetaService
                 ->implode('; ');
             $faq[] = [
                 'question' => "Kiek akcijų šiuo metu turi {$storeName}?",
-                // "parduotuvėje galioja N pasiūlymai" (nominative) instead of
+                // "vaistinėje galioja N pasiūlymai" (nominative) instead of
                 // "turi N pasiūlymus", which would need an accusative form.
-                'answer' => "{$storeName} parduotuvėje šiuo metu galioja " . LithuanianPlural::formatCount($totalOffers) . ' ' . LithuanianPlural::offerWord($totalOffers) . '.'
+                'answer' => PharmacyName::phrase($storeName, 'locative') . " šiuo metu galioja " . LithuanianPlural::formatCount($totalOffers) . ' ' . LithuanianPlural::offerWord($totalOffers) . '.'
                     . ($topCategories !== '' ? " Daugiausia jų kategorijose: {$topCategories}." : ''),
             ];
 
             $maxRow = collect($categories)->sortByDesc('max_discount_percent')->first();
             if ($maxRow && ($maxRow['max_discount_percent'] ?? 0) > 0) {
                 $faq[] = [
-                    'question' => "Kokios didžiausios nuolaidos {$storeName} parduotuvėje?",
+                    'question' => 'Kokios didžiausios nuolaidos ' . PharmacyName::phrase($storeName, 'locative') . '?',
                     'answer' => "Didžiausia šiuo metu galiojanti nuolaida — -{$maxRow['max_discount_percent']}%, kategorijoje „" . e($maxRow['name']) . '“.',
                 ];
             }

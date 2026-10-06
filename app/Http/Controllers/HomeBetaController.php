@@ -33,7 +33,7 @@ class HomeBetaController extends Controller
     private const STORE_TILES = 5;
 
     // Same static count the live homepage's hero and stats use, by product
-    // decision ("40 parduotuvės"), not derived from the store table.
+    // decision ("40 vaistinės"), not derived from the store table.
     private const STORE_TOTAL = 40;
 
     public function __construct(
@@ -78,7 +78,7 @@ class HomeBetaController extends Controller
 
         return view('home-beta', [
             'title' => 'Ką šiandien perkate? | eVaistine.lt',
-            'description' => 'Kur šiandien pigiausia: kasdienių prekių kainos 40 parduotuvių vienoje vietoje.',
+            'description' => 'Kur šiandien pigiausia: kasdienių prekių kainos 40 vaistinių vienoje vietoje.',
             'canonical' => url('/pradzia-beta'),
             'robots' => 'noindex, nofollow',
             'storeTiles' => $storeTiles,

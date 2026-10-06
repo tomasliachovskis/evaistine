@@ -317,7 +317,7 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    // "Rasti parduotuvę netoliese manęs" — real browser geolocation +
+    // "Rasti vaistinę netoliese manęs" — real browser geolocation +
     // client-side haversine against every location's own lat/lng. `source`
     // is [{lat, lng, address, city, citySlug}] or a URL returning them (see
     // loadStoreLocations above).
@@ -505,8 +505,8 @@ document.addEventListener('alpine:init', () => {
         get summaryLine() {
             const last = this.lastPoint;
             const scope = this.activeStore
-                ? `parduotuvėje ${this.allPoints.find((p) => p.store_slug === this.activeStore)?.store_name}`
-                : 'visose parduotuvėse';
+                ? `pasirinktoje vaistinėje (${this.allPoints.find((p) => p.store_slug === this.activeStore)?.store_name})`
+                : 'visose vaistinėse';
             const tail = last.price === this.minPrice
                 ? 'tai istorinis minimumas.'
                 : `žemiausia buvo ${this.fmtPrice(this.minPrice)}.`;

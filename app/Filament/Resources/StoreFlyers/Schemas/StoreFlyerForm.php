@@ -23,7 +23,7 @@ class StoreFlyerForm
             ->columns(2)
             ->components([
                 Select::make('store_id')
-                    ->label('Parduotuvė')
+                    ->label('Vaistinė')
                     ->relationship('store', 'name')
                     ->searchable()
                     ->preload()

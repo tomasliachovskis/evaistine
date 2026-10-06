@@ -7,7 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * "Mano parduotuvės": saves the signed-in user's chosen stores, so the
+ * "Mano vaistinės": saves the signed-in user's chosen stores, so the
  * choice follows them to other devices. Guests keep it in localStorage only
  * (see components/my-stores-sheet.blade.php).
  */

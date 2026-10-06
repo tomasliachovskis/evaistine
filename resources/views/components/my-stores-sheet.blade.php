@@ -1,5 +1,5 @@
 @php
-    // "Mano parduotuvės" picker. Stores that have offers or leaflets, the
+    // "Mano vaistinės" picker. Stores that have offers or leaflets, the
     // five main chains first, then by number of offers. $stores comes from
     // MobileNavComposer (same cached list as the bottom nav's store sheet).
     $mainStores = \App\Support\StoreListPriority::mainSlugs();
@@ -42,7 +42,7 @@
         </div>
 
         <div class="flex flex-col gap-4 px-5 py-5">
-            <p class="text-lg leading-snug text-gray-700">Pažymėkite savo parduotuves. Akcijų sąrašuose rodysime tik jų pasiūlymus.</p>
+            <p class="text-lg leading-snug text-gray-700">Pažymėkite savo vaistines. Akcijų sąrašuose rodysime tik jų pasiūlymus.</p>
 
             <div class="flex flex-wrap gap-2.5">
                 @foreach ($pickable as $store)

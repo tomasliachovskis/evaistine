@@ -41,7 +41,7 @@
 
     {{-- Pinned outside the scrollable nav (not just the last chip in it) so
          it's always visible without scrolling the row first. Same button
-         recipe as discount-filters.blade.php's desktop Parduotuvė/
+         recipe as discount-filters.blade.php's desktop Vaistinė/
          Kategorija toolbar buttons (icon + label + green count-circle +
          chevron), not the flat chip style above — this is a filter-panel
          trigger, not another website pill, so it should read like the

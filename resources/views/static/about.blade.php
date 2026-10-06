@@ -8,19 +8,19 @@
 
             <h2 class="mb-4 text-xl font-semibold">Kas mes esame</h2>
             <p class="mb-6 text-base">
-                eVaistine.lt yra kainų ir akcijų palyginimo svetainė — mes nesame parduotuvė ir
+                eVaistine.lt yra kainų ir akcijų palyginimo svetainė — mes nesame vaistinė ir
                 nieko patys neparduodame. Renkame ir vienoje vietoje sudedame Lietuvos prekybos tinklų
                 (Maxima, Lidl, Iki, Rimi, Norfa ir kitų) viešai skelbiamas akcijas, nuolaidas ir
                 savaitės leidinius, kad galėtumėte greitai palyginti kainas ir rasti geriausią pasiūlymą,
-                nereikalaudami vaikščioti po kiekvienos parduotuvės svetainę atskirai.
+                nereikalaudami vaikščioti po kiekvienos vaistinės svetainę atskirai.
             </p>
 
             <h2 class="mb-4 text-xl font-semibold">Kaip veikia kainų rinkimas</h2>
             <p class="mb-6 text-base">
                 Kainos, nuolaidos ir leidiniai renkami automatizuotai iš viešai prieinamų prekybos
                 tinklų šaltinių ir atnaujinami reguliariai. Kadangi duomenys renkami automatiškai,
-                tarp faktinio kainos pasikeitimo parduotuvėje ir jos atsiradimo mūsų svetainėje gali
-                praeiti šiek tiek laiko — visada rekomenduojame galutinę kainą patikrinti parduotuvėje
+                tarp faktinio kainos pasikeitimo vaistinėje ir jos atsiradimo mūsų svetainėje gali
+                praeiti šiek tiek laiko — visada rekomenduojame galutinę kainą patikrinti vaistinėje
                 ar prekybos tinklo svetainėje prieš perkant.
             </p>
 

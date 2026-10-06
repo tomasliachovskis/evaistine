@@ -125,7 +125,7 @@
                     $richHeroStats = $headerType === 'category'
                         ? array_values(array_filter(
                             $listingMeta['intro']['quick_stats'] ?? [],
-                            fn ($stat) => ($stat['label'] ?? '') !== 'Parduotuvių',
+                            fn ($stat) => ($stat['label'] ?? '') !== 'Vaistinių',
                         ))
                         : ($richHeroOffers > 0 ? [[
                             'icon' => 'tag',
@@ -250,7 +250,7 @@
             <div class="mt-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 sm:p-5">
                 Šiuo metu {{ $fallbackOtherStores['store_name'] }} neturi aktyvių {{ mb_strtolower($fallbackOtherStores['category_name']) }} akcijų.
                 @if (!empty($fallbackOtherStores['data']['data']))
-                    Žemiau matote {{ mb_strtolower($fallbackOtherStores['category_name']) }} pasiūlymus kitose parduotuvėse.
+                    Žemiau matote {{ mb_strtolower($fallbackOtherStores['category_name']) }} pasiūlymus kitose vaistinėse.
                 @endif
             </div>
 
@@ -287,7 +287,7 @@
             // same section-card box throughout, divide-y draws the line
             // between whichever of these five actually have content (not a
             // fixed set of dividers, since any of them can be empty).
-            // "Kainos pagal parduotuves" (per-store chips) removed per
+            // "Kainos pagal vaistines" (per-store chips) removed per
             // explicit product decision — superseded by the per-brand
             // summary below, which is the actually-fair comparison (same
             // brand across stores, not each store's own different cheapest
@@ -349,11 +349,11 @@
                             <p class="text-sm leading-relaxed text-gray-600">
                                 Šiuo metu pigiausia {{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }} —
                                 <span class="font-bold text-gray-900">{{ $answer['product_name'] }}</span>
-                                parduotuvėje <span class="font-bold text-gray-900">{{ $answer['store_name'] }}</span>,
+                                vaistinėje <span class="font-bold text-gray-900">{{ $answer['store_name'] }}</span>,
                                 už <span class="font-bold text-dark-green">{{ number_format($answer['price'], 2, ',', ' ') }}&nbsp;€</span>@if ($answer['store_offers_count'] > 1)
-                                    (iš {{ $answer['store_offers_count'] }} galiojančių pasiūlymų šioje parduotuvėje)@endif.
+                                    (iš {{ $answer['store_offers_count'] }} galiojančių pasiūlymų šioje vaistinėje)@endif.
                                 Iš viso „{{ mb_strtolower($listingMeta['keyword_title'] ?? $pageTitle) }}" akcijos šiuo metu galioja
-                                <span class="font-bold text-gray-900">{{ $answer['store_count'] }} {{ \App\Support\LithuanianPlural::offerWord($answer['store_count']) === 'pasiūlymas' ? 'parduotuvėje' : 'parduotuvėse' }}</span>,
+                                <span class="font-bold text-gray-900">{{ $answer['store_count'] }} {{ \App\Support\LithuanianPlural::offerWord($answer['store_count']) === 'pasiūlymas' ? 'vaistinėje' : 'vaistinėse' }}</span>,
                                 su <span class="font-bold text-gray-900">{{ number_format($listingMeta['intro']['total_matching_offers'] ?? 0, 0, ',', ' ') }} pasiūlymais</span>.
                                 @if (!empty($answer['max_discount_percent']))
                                     Didžiausia savaitės nuolaida —
@@ -374,10 +374,10 @@
                                  table is for. Product name truncates instead. --}}
                             <div class="mt-4 overflow-hidden rounded-xl border border-gray-200">
                                 <table class="w-full table-fixed text-left text-sm">
-                                    <caption class="sr-only">{{ mb_convert_case(mb_substr($listingMeta['keyword_grammar']['genitive'] ?? '', 0, 1), MB_CASE_UPPER, 'UTF-8') . mb_substr($listingMeta['keyword_grammar']['genitive'] ?? '', 1) }} kainos pagal parduotuvę</caption>
+                                    <caption class="sr-only">{{ mb_convert_case(mb_substr($listingMeta['keyword_grammar']['genitive'] ?? '', 0, 1), MB_CASE_UPPER, 'UTF-8') . mb_substr($listingMeta['keyword_grammar']['genitive'] ?? '', 1) }} kainos pagal vaistinę</caption>
                                     <thead class="bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-500">
                                         <tr>
-                                            <th scope="col" class="w-24 p-3 sm:w-40">Parduotuvė</th>
+                                            <th scope="col" class="w-24 p-3 sm:w-40">Vaistinė</th>
                                             <th scope="col" class="p-3">Pigiausia prekė</th>
                                             <th scope="col" class="w-20 p-3 text-right sm:w-24">Kaina</th>
                                         </tr>
@@ -454,13 +454,13 @@
                          (or its leaflets, when it has no akcijos page). --}}
                     @php $categoryGenitive = $seo['category_genitive_label'] ?? mb_strtolower($listingMeta['category_name'] ?? ''); @endphp
                     <div class="py-6 first:pt-0 last:pb-0">
-                        <h2 class="section-heading mb-3">Kurioje parduotuvėje daugiausia {{ $categoryGenitive }} akcijų?</h2>
+                        <h2 class="section-heading mb-3">Kurioje vaistinėje daugiausia {{ $categoryGenitive }} akcijų?</h2>
                         <div class="overflow-hidden rounded-xl border border-gray-200">
                             <table class="w-full table-fixed text-left text-sm">
-                                <caption class="sr-only">{{ $listingMeta['category_name'] ?? '' }} akcijos pagal parduotuvę</caption>
+                                <caption class="sr-only">{{ $listingMeta['category_name'] ?? '' }} akcijos pagal vaistinę</caption>
                                 <thead class="bg-gray-50 text-xs font-bold uppercase tracking-wide text-gray-500">
                                     <tr>
-                                        <th scope="col" class="p-3">Parduotuvė</th>
+                                        <th scope="col" class="p-3">Vaistinė</th>
                                         <th scope="col" class="w-[4.5rem] py-3 pr-3 text-right sm:w-32 sm:p-3">Pasiūlymai</th>
                                         <th scope="col" class="w-[4.5rem] py-3 pr-3 text-right sm:w-32 sm:p-3"><span class="sm:hidden">Iki</span><span class="hidden sm:inline">Nuolaidos iki</span></th>
                                         <th scope="col" class="hidden w-32 p-3 text-right sm:table-cell">Vid. nuolaida</th>
@@ -582,7 +582,7 @@
 
                 @if ($otherStoreLinks)
                     <div class="py-6 first:pt-0 last:pb-0">
-                        <h2 class="section-heading mb-3">Kitos parduotuvės</h2>
+                        <h2 class="section-heading mb-3">Kitos vaistinės</h2>
                         @include('components.partials.related-keyword-links', ['links' => $otherStoreLinks])
                     </div>
                 @endif

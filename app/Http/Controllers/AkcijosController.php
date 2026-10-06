@@ -107,7 +107,7 @@ class AkcijosController extends Controller
         }
 
         if ($store || Category::where('slug', $slug1)->exists()) {
-            // Category pages list every store: "Mano parduotuvės" apply.
+            // Category pages list every store: "Mano vaistinės" apply.
             if (! $store) {
                 MyStores::applyToRequest($request);
             }
@@ -283,7 +283,7 @@ class AkcijosController extends Controller
         }
 
         // Per explicit product decision: category and store+category pages
-        // show BOTH a "Parduotuvės" and a "Kategorijos" filter (each
+        // show BOTH a "Vaistinės" and a "Kategorijos" filter (each
         // pre-highlighting whichever facet the URL already fixes), instead
         // of the old single-facet-only sidebar. Plain store pages now get
         // the same bar too (added 2026-09-16) — <x-store-nav-tabs> still owns
@@ -297,7 +297,7 @@ class AkcijosController extends Controller
         $headerTypeForFilters = $listingMeta['type'] ?? null;
         $showCategoryFilter = $filtersMode !== 'keyword';
         // The /akcijos hub (no primary slug) gets the store filter too, so
-        // the same navigation bar (Parduotuvės / Kategorija) is on every
+        // the same navigation bar (Vaistinės / Kategorija) is on every
         // listing (2026-10-02).
         $isHub = $filtersMode === 'discounts' && $filtersPrimarySlug === null;
         $showStoreFilter = $isHub || $filtersMode === 'keyword' || $headerTypeForFilters === 'category' || $headerTypeForFilters === 'store_category' || $headerTypeForFilters === 'store';

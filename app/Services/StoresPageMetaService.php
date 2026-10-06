@@ -54,7 +54,7 @@ class StoresPageMetaService
     public function formatStore(Collection $stores): array
     {
         // Batched once for the whole collection (not per-store inside the
-        // map below) — this method also feeds /parduotuves, where $stores
+        // map below) — this method also feeds /vaistines, where $stores
         // can be every store site-wide, not just the homepage's 5.
         $leafletCounts = \App\Models\StoreFlyer::query()
             ->whereIn('store_id', $stores->pluck('id'))
@@ -111,13 +111,13 @@ class StoresPageMetaService
             'updated_at' => $freshness['updated_at'],
             'freshness' => $freshness,
             'seo' => [
-                'h1' => 'Parduotuvių akcijos Lietuvoje',
-                'intro' => "Akcijų leidiniai ir nuolaidos iš {$topNames} bei kitų Lietuvos prekybos tinklų. Pasirinkite parduotuvę žemiau.",
-                'meta_title' => 'Parduotuvių akcijos ir leidiniai – Maxima, Lidl, Iki, Rimi',
+                'h1' => 'Vaistinių akcijos Lietuvoje',
+                'intro' => "Akcijų leidiniai ir nuolaidos iš {$topNames} bei kitų Lietuvos vaistinių. Pasirinkite vaistinę žemiau.",
+                'meta_title' => 'Vaistinių akcijos ir leidiniai – Maxima, Lidl, Iki, Rimi',
                 'meta_description' => "Visų {$storeCount} prekybos tinklų akcijų leidiniai: {$topNames}. Palyginkite savaitės nuolaidas vienoje vietoje.",
             ],
             'best_offers' => [
-                'title' => 'Geriausi pasiūlymai pagal parduotuvę',
+                'title' => 'Geriausi pasiūlymai pagal vaistinę',
                 'rows' => $rows,
             ],
             'faq' => $this->getFaq(),
@@ -149,20 +149,20 @@ class StoresPageMetaService
                 'answer' => 'Maxima akcijas rasite paspaudę Maxima kortelę arba nuorodą „Maxima akcijos“. Visos aktyvios nuolaidos atnaujinamos pagal naujausius leidinius.',
             ],
             [
-                'question' => 'Ar eVaistine.lt rodo visas Lietuvos parduotuves?',
+                'question' => 'Ar eVaistine.lt rodo visas Lietuvos vaistines?',
                 'answer' => 'Taip – stebime pagrindinius prekybos tinklus: Maxima, Lidl, Iki, Rimi, Norfa, Aibė ir kitus. Sąrašas nuolat plečiamas.',
             ],
             [
-                'question' => 'Kaip dažnai atnaujinamos parduotuvių akcijos?',
+                'question' => 'Kaip dažnai atnaujinamos vaistinių akcijos?',
                 'answer' => 'Akcijos atnaujinamos kasdien. Savaitės leidiniai paprastai galioja nuo pirmadienio – kainos keičiasi kiekvieną savaitę.',
             ],
             [
-                'question' => 'Ar galiu palyginti kainas tarp parduotuvių?',
+                'question' => 'Ar galiu palyginti kainas tarp vaistinių?',
                 'answer' => 'Taip. Pasirinkite kategoriją, pvz. vaisiai ir daržovės, ir palyginkite akcijas Maxima, Lidl, Iki ir kituose tinkluose vienoje vietoje.',
             ],
             [
-                'question' => 'Kuo skiriasi parduotuvės ir kategorijos puslapiai?',
-                'answer' => 'Parduotuvės puslapyje matote vieno tinklo akcijas. Kategorijos puslapyje – tos pačios prekės akcijas visuose tinkluose.',
+                'question' => 'Kuo skiriasi vaistinės ir kategorijos puslapiai?',
+                'answer' => 'Vaistinės puslapyje matote vieno tinklo akcijas. Kategorijos puslapyje – tos pačios prekės akcijas visuose tinkluose.',
             ],
         ];
     }

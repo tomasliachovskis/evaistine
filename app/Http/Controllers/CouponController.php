@@ -55,7 +55,7 @@ class CouponController extends Controller
             // themselves — every coupon item used to carry the same /kuponai
             // URL, so the list said nothing a crawler could follow.
             'itemListSchema' => ItemListSchema::build(
-                'Nuolaidų kodai ir kuponai pagal parduotuvę',
+                'Nuolaidų kodai ir kuponai pagal vaistinę',
                 $websites->map(fn (CouponWebsite $w) => ['name' => "{$w->name} nuolaidų kodai", 'href' => "/kuponai/{$w->slug}"])->all()
             ),
         ]);

@@ -79,7 +79,7 @@ class HeadTagsTest extends TestCase
 
     public function test_store_directory_is_indexable(): void
     {
-        $this->assertIndexable($this->get('/parduotuves'), '/parduotuves');
+        $this->assertIndexable($this->get('/vaistines'), '/vaistines');
     }
 
     public function test_leaflets_index_is_indexable(): void

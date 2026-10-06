@@ -92,7 +92,7 @@
     {{-- busy: the list is being updated, shown as a "Ieškome pasiūlymų…" card
          over the list. Set around each filter/sort request (run()) and on
          taps that load a new page (category links). Multi-store pages get
-         "Mano parduotuvės" applied by the server (App\Support\MyStores);
+         "Mano vaistinės" applied by the server (App\Support\MyStores);
          the browser applies them after load only if that didn't happen. --}}
     x-data="{
         busy: false,
@@ -141,11 +141,11 @@
                 if (n % 10 === 0) return count + ' pasiūlymų';
                 return count + ' pasiūlymus';
             },
-            // The store button's text, in words: 'Visos parduotuvės', 'Mano:
+            // The store button's text, in words: 'Visos vaistinės', 'Mano:
             // Maxima, Lidl', 'Maxima, Norfa ir dar 2'.
             storeLabel() {
                 const picked = this.checkedStores();
-                if (!picked.length) return 'Visos parduotuvės';
+                if (!picked.length) return 'Visos vaistinės';
                 const names = picked.map((s) => $store.myStores.name(s));
                 const text = names.length > 3 ? names.slice(0, 2).join(', ') + ' ir dar ' + (names.length - 2) : names.join(', ');
                 return (this.sameAsMine() ? 'Mano: ' : '') + text;
@@ -183,7 +183,7 @@
                 // current on multi-store pages, see storeLabel()).
                 $storeNames = collect($selectedStores)->map(fn ($slug) => collect($allStores)->firstWhere('slug', $slug)['name'] ?? $slug)->values();
                 $storeButtonText = $activeStoreName
-                    ?? ($storeNames->isEmpty() ? 'Visos parduotuvės'
+                    ?? ($storeNames->isEmpty() ? 'Visos vaistinės'
                         : ($storeNames->count() > 3 ? $storeNames->take(2)->implode(', ') . ' ir dar ' . ($storeNames->count() - 2) : $storeNames->implode(', ')));
                 $categoryButtonText = $activeCategoryName ?? 'Visos kategorijos';
                 $storeValueText = $multiStore ? "busy ? 'Ieškome pasiūlymų…' : storeLabel()" : null;
@@ -191,10 +191,10 @@
             @endphp
             {{-- One navigation bar for every offer listing (owner's request,
                  2026-10-02): each facet is a labelled button that says in
-                 words what is shown now ("Parduotuvės: Maxima, Lidl",
+                 words what is shown now ("Vaistinės: Maxima, Lidl",
                  "Kategorija: Duonos gaminiai") and opens its list, so moving
                  from one store or category to another is one obvious tap.
-                 It replaced the green "Rodomos tik jūsų parduotuvės" bar,
+                 It replaced the green "Rodomos tik jūsų vaistinės" bar,
                  the separate pills and the phone-only "Filtrai" sheet.
                  Not pinned (owner's decision): at ~95px with its labels it
                  covered too much of the list, and phones never pinned it.
@@ -208,7 +208,7 @@
             >
                 @if ($showStoreFilter)
                     <x-nav-bar-button
-                        :label="$activeStoreSlug ? 'Parduotuvė' : 'Parduotuvės'"
+                        :label="$activeStoreSlug ? 'Vaistinė' : 'Vaistinės'"
                         :value-text="$storeValueText"
                         x-on:click="{{ $storeButtonClick }}"
                         aria-haspopup="dialog"
@@ -258,16 +258,16 @@
                     <div class="sheet-panel px-5 pb-5">
                         <div class="sheet-handle"></div>
                         <div class="mb-3 mt-3 flex items-center justify-between gap-3 sm:mt-5">
-                            <h2 class="text-2xl font-bold text-gray-900">{{ $multiStore ? 'Kurių parduotuvių akcijas rodyti?' : 'Pasirinkite parduotuvę' }}</h2>
+                            <h2 class="text-2xl font-bold text-gray-900">{{ $multiStore ? 'Kurių vaistinių akcijas rodyti?' : 'Pasirinkite vaistinę' }}</h2>
                             <button type="button" @click="$wire.openPanel = null" class="sheet-close" aria-label="Uždaryti">
                                 <x-app-icon name="x" class="size-7" />
                             </button>
                         </div>
                         @if ($multiStore)
-                            <p x-show="!$store.myStores.active()" class="mb-3 text-lg leading-snug text-gray-700">Pažymėkite, kur perkate. Galėsite išsaugoti jas kaip savo parduotuves.</p>
+                            <p x-show="!$store.myStores.active()" class="mb-3 text-lg leading-snug text-gray-700">Pažymėkite, kur perkate. Galėsite išsaugoti jas kaip savo vaistines.</p>
                         @endif
                         @if ($multiStore)
-                            {{-- Same tiles as the "Mano parduotuvės" picker
+                            {{-- Same tiles as the "Mano vaistinės" picker
                                  (owner's preference). Taps only tick here;
                                  "Rodyti" loads the list once. Tiles stay
                                  links to the store's page for crawlers. --}}
@@ -278,7 +278,7 @@
                                 :class="picked.length ? 'border-gray-200 bg-white text-gray-900 hover:border-gray-300' : 'border-action bg-green-soft text-dark-green'"
                             >
                                 <x-app-icon name="store" class="size-5" />
-                                Visos parduotuvės
+                                Visos vaistinės
                             </button>
                             <div class="flex flex-wrap gap-2.5">
                                 @foreach ($allStores as $storeOption)
@@ -309,7 +309,7 @@
                             @if ($storeAllHref)
                                 <a href="{{ $storeAllHref }}" class="mt-2.5 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 px-4 text-lg font-bold text-gray-900 hover:border-gray-300">
                                     <x-app-icon name="store" class="size-5" />
-                                    Visos parduotuvės
+                                    Visos vaistinės
                                 </a>
                             @endif
                         @endif
@@ -319,9 +319,9 @@
                                     type="button"
                                     @click="applyPicked()"
                                     class="flex min-h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-action px-4 text-lg font-bold text-white hover:bg-action-hover"
-                                    x-text="picked.length ? 'Rodyti pažymėtas (' + picked.length + ')' : 'Rodyti visas parduotuves'"
+                                    x-text="picked.length ? 'Rodyti pažymėtas (' + picked.length + ')' : 'Rodyti visas vaistines'"
                                 >Rodyti</button>
-                                {{-- Keep the ticked stores as "Mano parduotuvės" (and show them). --}}
+                                {{-- Keep the ticked stores as "Mano vaistinės" (and show them). --}}
                                 <button
                                     type="button"
                                     x-show="picked.length && [...picked].sort().join(',') !== $store.myStores.filterValue()"
@@ -329,7 +329,7 @@
                                     class="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-base font-bold text-dark-green ring-1 ring-green-soft-border hover:bg-green-soft"
                                 >
                                     <x-app-icon name="check" class="size-5" />
-                                    Išsaugoti kaip mano parduotuves
+                                    Išsaugoti kaip mano vaistines
                                 </button>
                                 {{-- Back to the saved stores after "Visos" or other ticks. --}}
                                 <button

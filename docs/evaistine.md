@@ -34,6 +34,18 @@ Eurovaistinė's category pages carry the full product JSON in the HTML (name,
 EAN in `sku`, `price`/`regularPrice` in cents, `ev_large` image, `slug`).
 That's the starting point for its e-shop scraper.
 
+## Wording: "vaistinė", not "parduotuvė"
+
+Every URL and text says vaistinė: `/vaistines`, `/vaistines/{slug}/{city}`,
+`POST /mano-vaistines`, "Visos vaistinės", "Kainos vaistinėse". The two
+words decline the same way, so the rename kept every ending. Where a chain
+name meets the noun, use `App\Support\PharmacyName::phrase($name, $case)`:
+it gives "Camelia vaistinėje" but "Benu vaistinėje" and "Eurovaistinėje",
+never "Benu vaistinė vaistinėje". Names that already say "vaistinė" are
+inflected from `config('stores.name_forms')`; add a new chain there too.
+Internal identifiers (`StoreController`, `MyStores`, the
+`evaistine_parduotuves*` cookie and localStorage keys) were left as they are.
+
 ## Categories (planned)
 
 Researched on Eurovaistinė, Gintarinė, Camelia, Benu, Apotheka and

@@ -16,7 +16,7 @@ class ScraperRunsTable
             ->poll('5s')
             ->columns([
                 TextColumn::make('store')
-                    ->label('Parduotuvė')
+                    ->label('Vaistinė')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('type')
@@ -79,7 +79,7 @@ class ScraperRunsTable
             ])
             ->filters([
                 SelectFilter::make('store')
-                    ->label('Parduotuvė')
+                    ->label('Vaistinė')
                     ->options(fn () => ScraperRun::query()->distinct()->pluck('store', 'store')->all()),
                 SelectFilter::make('type')
                     ->label('Tipas')

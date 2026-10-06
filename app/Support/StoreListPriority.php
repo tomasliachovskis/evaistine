@@ -3,7 +3,7 @@
 namespace App\Support;
 
 // Editorial display order for store list/grid UI (home hero chips,
-// /parduotuves directory) — the main chains (config('stores.main_slugs'))
+// /vaistines directory) — the main chains (config('stores.main_slugs'))
 // first in that exact order (brand recognizability, not raw discount
 // count), then every other store with active discounts sorted by
 // discounts_count desc. Stores with zero active discounts are dropped

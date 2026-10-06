@@ -11,10 +11,10 @@
                         <div class="min-w-0">
                             <h1 class="font-extrabold text-gray-900">Daug akcijų ir nuolaidų vienoje vietoje</h1>
                             <p class="mt-1 text-sm leading-snug text-gray-600 sm:mt-1.5 sm:text-base">
-                                Raskite naujausias Maxima, Lidl, Rimi, Norfa, Iki ir kitų parduotuvių akcijas vienoje vietoje.
+                                Raskite naujausias Maxima, Lidl, Rimi, Norfa, Iki ir kitų vaistinių akcijas vienoje vietoje.
                             </p>
                         </div>
-                        <a href="/parduotuves" class="hidden shrink-0 items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 transition-colors hover:border-gray-400 hover:bg-gray-50 sm:inline-flex sm:px-4 sm:py-2 min-h-12">
+                        <a href="/vaistines" class="hidden shrink-0 items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 transition-colors hover:border-gray-400 hover:bg-gray-50 sm:inline-flex sm:px-4 sm:py-2 min-h-12">
                             Žiūrėti visas
                             <x-app-icon name="chevron-right" class="size-4 opacity-70" />
                         </a>

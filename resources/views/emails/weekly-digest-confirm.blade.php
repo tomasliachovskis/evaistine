@@ -19,7 +19,7 @@
                     <td style="padding:32px;">
                         <h1 style="margin:0 0 16px; font-size:22px; font-weight:700; color:#111827;">Patvirtinkite el. paštą</h1>
                         <p style="margin:0 0 24px; font-size:17px; line-height:1.6; color:#374151;">
-                            Kas ketvirtadienį atsiųsime naujus jūsų parduotuvių leidinius ir geriausias savaitės akcijas. Paspauskite mygtuką, kad pradėtumėte gauti laiškus.
+                            Kas ketvirtadienį atsiųsime naujus jūsų vaistinių leidinius ir geriausias savaitės akcijas. Paspauskite mygtuką, kad pradėtumėte gauti laiškus.
                         </p>
                         <table role="presentation" cellpadding="0" cellspacing="0">
                             <tr>

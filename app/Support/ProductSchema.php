@@ -92,7 +92,7 @@ class ProductSchema
             // The product's own name — not the meta title, which carries
             // "akcija – kaina nuo X € (Store)" marketing copy.
             'name' => $product['name'],
-            'description' => trim(strip_tags((string) ($seo['seo_description'] ?? ''))) ?: ($product['name'] . ' kainos ir akcijos parduotuvėse'),
+            'description' => trim(strip_tags((string) ($seo['seo_description'] ?? ''))) ?: ($product['name'] . ' kainos ir akcijos vaistinėse'),
             'image' => $product['image_url'],
             'category' => $product['category']['name'] ?? 'Akcijos',
             'url' => $currentUrl,

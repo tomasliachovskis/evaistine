@@ -29,14 +29,14 @@
     </p>
 
     @if ($storeCounts->count() > 1)
-        <nav aria-label="Filtruoti pagal parduotuvę" class="scroll-cards-x mb-4 flex flex-nowrap items-center gap-2">
+        <nav aria-label="Filtruoti pagal vaistinę" class="scroll-cards-x mb-4 flex flex-nowrap items-center gap-2">
             <button
                 type="button"
                 @click="setStore(null)"
                 :class="activeStore === null ? 'border-green bg-action text-white' : 'border-gray-200 text-gray-700 hover:border-green/40'"
                 class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-bold transition-colors min-h-12"
             >
-                Visos parduotuvės
+                Visos vaistinės
                 <span class="text-xs font-semibold opacity-75">{{ $storeCounts->count() }}</span>
             </button>
             @foreach ($storeCounts as $store)
@@ -107,11 +107,11 @@
         <summary class="cursor-pointer text-sm font-semibold text-dark-green hover:underline">Visi kainų įrašai lentelėje</summary>
         <div class="mt-3 max-h-80 overflow-y-auto rounded-xl border border-gray-200">
             <table class="w-full border-collapse text-sm">
-                <caption class="sr-only">{{ $productName }} — kainų istorija pagal parduotuvę, nuo naujausios</caption>
+                <caption class="sr-only">{{ $productName }} — kainų istorija pagal vaistinę, nuo naujausios</caption>
                 <thead>
                     <tr class="sticky top-0 bg-white">
                         <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Data</th>
-                        <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Parduotuvė</th>
+                        <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Vaistinė</th>
                         <th scope="col" class="border-b border-gray-200 px-3.5 py-2 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Kaina</th>
                     </tr>
                 </thead>

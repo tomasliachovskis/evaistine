@@ -17,7 +17,7 @@
 
         <div class="flex flex-col gap-2">
             <x-type-hero
-                title="Pigiausios prekės parduotuvėse"
+                title="Pigiausios prekės vaistinėse"
                 subtitle="Kelių kasdienių prekių kainos didžiausiuose prekybos tinkluose — kiekvienos prekės kaina matoma iš karto, jokių papildomų paspaudimų."
             />
             <x-hero-stats :freshness="$freshnessLabel" />
@@ -80,7 +80,7 @@
 
             <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-dark-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
                 <h2>Kodėl verta sekti maisto prekių kainas kiekvieną savaitę</h2>
-                <p>Kainos didžiuosiuose prekybos tinkluose — <a href="/akcijos/maxima">Maxima</a>, <a href="/akcijos/lidl">Lidl</a>, <a href="/akcijos/rimi">Rimi</a>, <a href="/akcijos/norfa">Norfa</a> ir <a href="/akcijos/iki">Iki</a> — tam pačiam produktui gali skirtis nemažai, o kuris tinklas tuo metu pigiausias priklauso nuo konkrečios prekių kategorijos ir savaitės akcijų. Todėl vienkartinis apsipirkimas vienoje parduotuvėje retai būna pats pigiausias variantas — verta palyginti prieš renkantis, kur eiti su pirkinių sąrašu.</p>
+                <p>Kainos didžiuosiuose prekybos tinkluose — <a href="/akcijos/maxima">Maxima</a>, <a href="/akcijos/lidl">Lidl</a>, <a href="/akcijos/rimi">Rimi</a>, <a href="/akcijos/norfa">Norfa</a> ir <a href="/akcijos/iki">Iki</a> — tam pačiam produktui gali skirtis nemažai, o kuris tinklas tuo metu pigiausias priklauso nuo konkrečios prekių kategorijos ir savaitės akcijų. Todėl vienkartinis apsipirkimas vienoje vaistinėje retai būna pats pigiausias variantas — verta palyginti prieš renkantis, kur eiti su pirkinių sąrašu.</p>
 
                 <h2>Kaip kinta maisto kainos Lietuvoje</h2>
                 <p>Maisto kainos nekyla tolygiai visose kategorijose — šviežių vaisių ir daržovių kainos paprastai svyruoja stipriausiai, priklausomai nuo derliaus sezono, o perdirbti ir ilgai laikomi produktai (pvz. makaronai, ryžiai, aliejus) keičiasi lėčiau. Todėl tos pačios prekės vienu mėnesiu gali atrodyti brangesnės, o kitu — pigesnės, net jei bendra infliacija nepasikeitė. Sekti kelių konkrečių prekių kainas kiekvieną savaitę leidžia pastebėti šiuos svyravimus anksčiau, nei jie atsispindi oficialioje statistikoje.</p>
@@ -91,7 +91,7 @@
 
             <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-dark-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
                 <p>
-                    <strong>Kaip skaičiuojame:</strong> kiekvienai prekei rodome jos pačios akcijų puslapio realiu laiku skaičiuojamą kainų palyginimą — po vieną pigiausią šiuo metu galiojantį pasiūlymą iš kiekvienos parduotuvės, kuri tą prekę turi (iki penkių parduotuvių). Kainos remiasi realiais eVaistine.lt sistemoje esančiais duomenimis ir gali kartais atspindėti pavienes šaltinio klaidas.
+                    <strong>Kaip skaičiuojame:</strong> kiekvienai prekei rodome jos pačios akcijų puslapio realiu laiku skaičiuojamą kainų palyginimą — po vieną pigiausią šiuo metu galiojantį pasiūlymą iš kiekvienos vaistinės, kuri tą prekę turi (iki penkių vaistinių). Kainos remiasi realiais eVaistine.lt sistemoje esančiais duomenimis ir gali kartais atspindėti pavienes šaltinio klaidas.
                 </p>
             </div>
         @endif

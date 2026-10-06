@@ -14,7 +14,7 @@
             <p class="max-w-xl text-base leading-snug text-gray-600 sm:text-lg">
                 {{-- 20 is a static number by explicit product decision, not
                      derived from active_store_count anymore. --}}
-                Palygink kasdienių prekių kainas Maxima, Lidl, Iki, Rimi, Norfa ir dar 20+ parduotuvių.
+                Palygink kasdienių prekių kainas Maxima, Lidl, Iki, Rimi, Norfa ir dar 20+ vaistinių.
             </p>
 
             <x-search-box />
@@ -51,7 +51,7 @@
                             <x-store-logo :slug="$slug" size="sm" />
                         </a>
                     @endforeach
-                    <a href="/parduotuves" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="home_trust_row" class="inline-flex min-h-12 shrink-0 items-center whitespace-nowrap px-3 text-base font-semibold text-dark-green underline underline-offset-4 hover:no-underline">+20 kitų</a>
+                    <a href="/vaistines" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="home_trust_row" class="inline-flex min-h-12 shrink-0 items-center whitespace-nowrap px-3 text-base font-semibold text-dark-green underline underline-offset-4 hover:no-underline">+20 kitų</a>
                 </div>
             </div>
         </div>
@@ -110,8 +110,8 @@
                  above it, instead of floating bare on the page background. --}}
             <div>
                 <div class="section-heading-row">
-                    <h2 class="section-heading-lg">Parduotuvių tinklai</h2>
-                    <a href="/parduotuves" class="section-link">
+                    <h2 class="section-heading-lg">Vaistinių tinklai</h2>
+                    <a href="/vaistines" class="section-link">
                         Žiūrėti visas
                         <x-app-icon name="chevron-right" class="size-4 opacity-80" />
                     </a>
@@ -168,9 +168,9 @@
             <div class="flex flex-wrap gap-x-6 gap-y-2 border-t border-gray-200 pt-5 text-base text-gray-600">
                 <span><strong class="text-gray-900 tabular-nums">{{ $stats['total_deals_label'] }}</strong> aktyvios akcijos</span>
                 {{-- 40 is a static number by explicit product decision, same
-                     reasoning as the hero subtitle's "20 kitų parduotuvių" —
+                     reasoning as the hero subtitle's "20 kitų vaistinių" —
                      not derived from active_store_count. --}}
-                <span><strong class="text-gray-900 tabular-nums">40</strong> parduotuvės su akcijomis ir leidiniais</span>
+                <span><strong class="text-gray-900 tabular-nums">40</strong> vaistinės su akcijomis ir leidiniais</span>
                 @if ($stats['top_discount_percent'])
                     <span><strong class="text-gray-900 tabular-nums">{{ $stats['top_discount_percent'] }}%</strong> didžiausia nuolaida šiandien</span>
                 @endif

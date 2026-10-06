@@ -18,11 +18,13 @@ Project decisions are in `docs/evaistine.md`.
       nullable prices and dates).
 - [x] Local test data: 31 real Eurovaistinė products in three test
       categories, price comparison across four chains.
+- [x] `/parduotuves` -> `/vaistines`, "parduotuvė" -> "vaistinė" in all UI,
+      meta and GPT text; `PharmacyName::phrase()` for chain names.
+- [x] Test suite green (289 tests): the 125 failures were one data migration
+      that used the deleted `EnergyDrinkCategory`.
 
 ## Next
 
-- [ ] **Test suite**: 125 of 278 tests failed on the fresh DB before the
-      schema alignment. Re-run, then fix the grocery-specific assertions.
 - [ ] **Categories**: seed the 12 root categories from `docs/evaistine.md`
       with SVG icons, adapt the `categories:map-mappers` GPT prompt, and drop
       the grocery category ids hardcoded in `ProcessDiscounts::resolveCategoryId()`

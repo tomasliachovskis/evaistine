@@ -4,7 +4,7 @@ namespace App\Support;
 
 use Illuminate\Support\Collection;
 
-// Opening hours for /parduotuves/{store}/{city}. Scraped per-day values come
+// Opening hours for /vaistines/{store}/{city}. Scraped per-day values come
 // in many spellings ("08:00-22:00", "8-22", "08:00 – 22:00", "Nedirba", "")
 // — this normalizes them for two things: a one-line week summary per
 // location (the page used to print 7 near-identical day rows per address,

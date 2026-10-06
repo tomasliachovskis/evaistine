@@ -16,7 +16,7 @@ class RedirectsTest extends TestCase
 
     public function test_store_without_offers_page_redirects_to_its_leaflet_hub(): void
     {
-        $store = Store::factory()->create(['slug' => 'seo-leidinio-parduotuve', 'show_discounts_page' => false]);
+        $store = Store::factory()->create(['slug' => 'seo-leidinio-vaistine', 'show_discounts_page' => false]);
 
         $this->get("/akcijos/{$store->slug}")->assertStatus(301)->assertRedirect("/leidinys/{$store->slug}");
         $this->get("/akcijos/{$store->slug}/pieno-produktai")->assertStatus(301)->assertRedirect("/leidinys/{$store->slug}");
@@ -106,7 +106,7 @@ class RedirectsTest extends TestCase
 
     public function test_missing_flyer_of_a_known_store_redirects_to_its_leaflet_hub(): void
     {
-        $store = Store::factory()->create(['slug' => 'seo-leidiniu-parduotuve']);
+        $store = Store::factory()->create(['slug' => 'seo-leidiniu-vaistine']);
 
         $this->get("/leidinys/{$store->slug}/seo-pasibaiges-leidinys")
             ->assertStatus(301)
@@ -115,7 +115,7 @@ class RedirectsTest extends TestCase
 
     public function test_flyer_of_unknown_store_is_404(): void
     {
-        $this->get('/leidinys/seo-nera-parduotuves/seo-leidinys')->assertNotFound();
+        $this->get('/leidinys/seo-nera-vaistines/seo-leidinys')->assertNotFound();
     }
 
     public function test_missing_product_under_unknown_category_is_404(): void
@@ -143,7 +143,7 @@ class RedirectsTest extends TestCase
             'old homepage' => ['/nauja-pradzia', '/'],
             'split drinks category' => ['/akcijos/alkoholiniai-ir-nealkoholiniai-gerimai', '/akcijos/nealkoholiniai-gerimai'],
             'split drinks category under a store' => ['/akcijos/iki/alkoholiniai-ir-nealkoholiniai-gerimai', '/akcijos/iki/nealkoholiniai-gerimai'],
-            'store address page' => ['/parduotuves/maxima/vilnius/gedimino-pr-1', '/parduotuves/maxima/vilnius'],
+            'store address page' => ['/vaistines/maxima/vilnius/gedimino-pr-1', '/vaistines/maxima/vilnius'],
         ];
     }
 

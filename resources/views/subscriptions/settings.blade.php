@@ -1,5 +1,5 @@
 @php
-    // Same store list and order as the "Mano parduotuvės" picker
+    // Same store list and order as the "Mano vaistinės" picker
     // (components/my-stores-sheet.blade.php); $stores from MobileNavComposer.
     $mainStores = \App\Support\StoreListPriority::mainSlugs();
     $pickable = collect($stores ?? [])
@@ -24,7 +24,7 @@
         @if ($justConfirmed)
             <div class="rounded-2xl border border-green/30 bg-green/5 p-4 text-lg text-gray-900" role="status">
                 <p class="font-bold">Patvirtinta, ačiū!</p>
-                <p class="mt-1">Žemiau galite pasirinkti parduotuves ir kokius laiškus gauti.</p>
+                <p class="mt-1">Žemiau galite pasirinkti vaistines ir kokius laiškus gauti.</p>
             </div>
         @endif
         @if (session('status'))
@@ -57,7 +57,7 @@
                     <input type="checkbox" name="wants_weekly" value="1" class="mt-1 size-6 shrink-0 accent-[#13306a]" x-model="on">
                     <span>
                         <span class="block text-lg font-bold text-gray-900">Savaitės santrauka</span>
-                        <span class="block text-base text-gray-700">Kas ketvirtadienį: nauji leidiniai ir geriausios jūsų parduotuvių akcijos.</span>
+                        <span class="block text-base text-gray-700">Kas ketvirtadienį: nauji leidiniai ir geriausios jūsų vaistinių akcijos.</span>
                     </span>
                 </label>
 
@@ -65,13 +65,13 @@
                     <input type="checkbox" name="wants_new_leaflets" value="1" class="mt-1 size-6 shrink-0 accent-[#13306a]" x-model="on">
                     <span>
                         <span class="block text-lg font-bold text-gray-900">Naujas leidinys</span>
-                        <span class="block text-base text-gray-700">Kai jūsų parduotuvė išleidžia naują leidinį.</span>
+                        <span class="block text-base text-gray-700">Kai jūsų vaistinė išleidžia naują leidinį.</span>
                     </span>
                 </label>
             </section>
 
             <section class="flex flex-col gap-3">
-                <h2 class="text-xl font-bold">Kurių parduotuvių?</h2>
+                <h2 class="text-xl font-bold">Kurių vaistinių?</h2>
                 <p class="text-base text-gray-700">Nepažymėjus jokios, siųsime Maxima, Norfa, Lidl, Rimi ir Iki.</p>
                 <template x-for="slug in picked" :key="slug">
                     <input type="hidden" name="stores[]" :value="slug">

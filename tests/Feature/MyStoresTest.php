@@ -23,13 +23,13 @@ class MyStoresTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->postJson('/mano-parduotuves', ['stores' => ['lidl', 'nera-tokios', 'iki', 'lidl']])
+            ->postJson('/mano-vaistines', ['stores' => ['lidl', 'nera-tokios', 'iki', 'lidl']])
             ->assertOk()
             ->assertJson(['stores' => ['lidl', 'iki']]);
 
         $this->assertSame(['lidl', 'iki'], $user->fresh()->preferred_store_slugs);
 
-        $this->actingAs($user)->postJson('/mano-parduotuves', ['stores' => []])->assertOk();
+        $this->actingAs($user)->postJson('/mano-vaistines', ['stores' => []])->assertOk();
         $this->assertNull($user->fresh()->preferred_store_slugs);
     }
 
@@ -37,14 +37,14 @@ class MyStoresTest extends TestCase
     {
         $user = User::factory()->create(['preferred_store_slugs' => ['iki', 'lidl']]);
 
-        $this->actingAs($user)->get('/parduotuves')
+        $this->actingAs($user)->get('/vaistines')
             ->assertOk()
             ->assertSee('const account = ["iki","lidl"];', false);
     }
 
     public function test_guests_cannot_save_to_an_account(): void
     {
-        $this->postJson('/mano-parduotuves', ['stores' => ['iki']])->assertUnauthorized();
+        $this->postJson('/mano-vaistines', ['stores' => ['iki']])->assertUnauthorized();
     }
 
     public function test_apply_stores_narrows_a_multi_store_listing(): void

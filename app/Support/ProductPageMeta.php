@@ -285,7 +285,7 @@ class ProductPageMeta
         float $bestPrice,
         ?string $bestStoreName,
         int $offerCount,
-        string $offersHeading = 'Kainos parduotuvėse',
+        string $offersHeading = 'Kainos vaistinėse',
         ?array $historyFacts = null
     ): array {
         $shortName = self::shortName($product['name']);
@@ -296,16 +296,16 @@ class ProductPageMeta
             [
                 'question' => "Kur šiandien pigiausia pirkti {$genitive}?",
                 'answer' => $bestPrice > 0 && $bestStoreName
-                    ? "Šiuo metu geriausia {$genitive} kaina — " . self::euro($bestPrice) . " {$bestStoreName} parduotuvėse. Palyginkite visas {$offerCount} parduotuvių kainas skyriuje „{$offersHeading}“."
+                    ? "Šiuo metu geriausia {$genitive} kaina — " . self::euro($bestPrice) . ' ' . PharmacyName::phrase($bestStoreName, 'locative_plural') . ". Palyginkite visas {$offerCount} vaistinių kainas skyriuje „{$offersHeading}“."
                     : ($offerCount === 0
                         ? "Šiuo metu aktyvių {$genitive} akcijų nėra. Peržiūrėkite paskutinę akciją ir kainų istoriją šiame puslapyje."
-                        : "Palyginkite {$genitive} kainas visose parduotuvėse mūsų svetainėje — skyriuje „{$offersHeading}“."),
+                        : "Palyginkite {$genitive} kainas visose vaistinėse mūsų svetainėje — skyriuje „{$offersHeading}“."),
             ],
             [
                 'question' => "Kiek kainuoja {$genitive} akcijų metu?",
                 'answer' => $bestPrice > 0
-                    ? "Akcijų metu {$genitive} kaina prasideda nuo " . self::euro($bestPrice) . '. Kainos skiriasi priklausomai nuo parduotuvės ir akcijos sąlygų.'
-                    : "{$shortName} kainos skiriasi priklausomai nuo parduotuvės. Peržiūrėkite aktualius pasiūlymus šiame puslapyje.",
+                    ? "Akcijų metu {$genitive} kaina prasideda nuo " . self::euro($bestPrice) . '. Kainos skiriasi priklausomai nuo vaistinės ir akcijos sąlygų.'
+                    : "{$shortName} kainos skiriasi priklausomai nuo vaistinės. Peržiūrėkite aktualius pasiūlymus šiame puslapyje.",
             ],
         ];
 
@@ -332,7 +332,7 @@ class ProductPageMeta
 
     public static function offersHeading(): string
     {
-        return 'Kainos parduotuvėse';
+        return 'Kainos vaistinėse';
     }
 
     public static function similarHeading(array $product): string
@@ -355,12 +355,12 @@ class ProductPageMeta
     }
 
     // Stores with an e-shop scraper (config('scrapers')) get "{Store}
-    // parduotuvė"; the rest are scraped from a printed/PDF leaflet, so
+    // vaistinėje internetu"; the rest are scraped from a printed/PDF leaflet, so
     // "{Store} kainų leidinys" instead.
     public static function offerOriginLabel(string $storeSlug, string $storeName): string
     {
         if (array_key_exists($storeName, config('scrapers', []))) {
-            return "{$storeName} parduotuvė";
+            return PharmacyName::phrase($storeName, 'locative') . ' internetu';
         }
 
         $noun = $storeSlug === 'iki' ? 'leidynys' : 'leidinys';

@@ -99,7 +99,7 @@
             @php
                 $gridCellBase = 'flex flex-col items-start gap-1 rounded-xl border bg-white p-3 text-left transition-colors';
             @endphp
-            <h2 class="mb-2 text-lg font-bold text-gray-900">Jūsų parduotuvės</h2>
+            <h2 class="mb-2 text-lg font-bold text-gray-900">Jūsų vaistinės</h2>
             <div class="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 <button
                     type="button"

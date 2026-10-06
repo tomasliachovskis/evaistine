@@ -23,7 +23,7 @@
     $iconSizeClass = 'size-5 shrink-0';
 @endphp
 
-{{-- Same pill-bar language as discount-filters.blade.php's Parduotuvė/
+{{-- Same pill-bar language as discount-filters.blade.php's Vaistinė/
      Kategorija/Leidiniai bar — plain link pills only here (no dropdowns,
      no facets to pick), so no mobile/desktop split is needed. $compact
      swaps that sticky bar for a plain vertical link list instead, for the

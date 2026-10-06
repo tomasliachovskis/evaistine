@@ -9,7 +9,7 @@
 <x-layouts.app
     :breadcrumbs="$breadcrumbs ?? []"
     title="Nuolaidų kodai ir kuponai"
-    description="Patikrinti nuolaidų kodai ir aktualios akcijos internetinėse parduotuvėse. Rinkitės iš patikimų kuponų ir sutaupykite kiekvieną kartą apsipirkdami."
+    description="Patikrinti nuolaidų kodai ir aktualios akcijos internetinėse vaistinėse. Rinkitės iš patikimų kuponų ir sutaupykite kiekvieną kartą apsipirkdami."
     :canonical="$canonical"
     :robots="$robots"
 >
@@ -49,7 +49,7 @@
                 type="search"
                 name="q"
                 value="{{ $q }}"
-                placeholder="Ieškoti kuponų ar parduotuvės, pvz. VidaXL, kvepalai..."
+                placeholder="Ieškoti kuponų ar vaistinės, pvz. VidaXL, kvepalai..."
                 class="w-full rounded-full border border-gray-200 bg-white py-4 pl-14 pr-5 text-lg font-medium text-gray-900 placeholder:text-gray-400 focus:border-green focus:outline-none focus:ring-1 focus:ring-green"
             >
         </form>
@@ -104,7 +104,7 @@
             <h2 id="how-to-heading" class="text-base font-extrabold text-gray-900 sm:text-lg">Kaip panaudoti nuolaidų kodus?</h2>
             <p class="mt-2 text-sm leading-relaxed text-gray-600 sm:text-base">
                 Nuolaidos kodas – tai kuponas, kuriame yra specialus kodas. Paspaudus mygtuką „Rodyti kodą“, kodas bus parodytas ir automatiškai nukopijuotas.
-                Jį reikia įrašyti į atitinkamą laukelį parduotuvės krepšelyje. Tada nuolaida bus išskaičiuota iš produktų, kuriems ji taikoma, kainos arba nuo viso pirkimo.
+                Jį reikia įrašyti į atitinkamą laukelį vaistinės krepšelyje. Tada nuolaida bus išskaičiuota iš produktų, kuriems ji taikoma, kainos arba nuo viso pirkimo.
             </p>
         </section>
     </div>
