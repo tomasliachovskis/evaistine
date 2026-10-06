@@ -109,6 +109,26 @@ nullable. Without it every real scraper row was rejected.
   once recreated the superakcijos containers on this checkout, so check that
   line first in any new copy.
 
+## Roadmap (estimate from 2026-10-06, days of work with Claude)
+
+| # | Phase | Estimate | Status |
+|---|---|---|---|
+| 0 | Fork, own Sail stack, DB, ports; block prod paths | 0.5–1 | done |
+| 1 | Remove grocery stores/scrapers/logic; main chains config | 1–2 | done |
+| 2 | 12 root categories, icons, mapper prompt; ailment layer | 1 + 1.5–2 | next |
+| 3 | E-shop scrapers (Eurovaistinė, Gintarinė, Camelia, Benu, Apotheka, N vaistinė), ~0.5–1 each | 4–6 | |
+| 4 | Cross-pharmacy matching (EAN, strength/count/form normalization) | 1–2 | |
+| 5 | Copy and SEO: GPT prompts, meta templates, schema, static pages, emails | 2–3 | |
+| 6 | Design: palette, logo, favicon, OG images, hero, category icons | 1–2 | palette/logo done |
+| 7 | Pharmacy keyword pages | 1–2 | |
+| 8 | Legal: prescription rules, disclaimer, no treatment claims | 0.5 + lawyer | |
+| 9 | Full scrape, deploy, GSC, sitemap, IndexNow | 1 | |
+
+Total about 15–22 working days; a usable MVP (categories, three main
+scrapers, copy basics) about 5–7. Biggest risks: Cloudflare on a pharmacy
+e-shop, weak matching without EAN, keeping two forks in sync (pull upstream
+fixes with `git cherry-pick` from the `upstream` remote).
+
 ## Local test data
 
 `storage/app/seed-test-products.php` (not in git) loads 31 real Eurovaistinė

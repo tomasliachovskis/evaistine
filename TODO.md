@@ -4,6 +4,47 @@ Running list for eVaistine.lt. Not a sprint board — check items off or
 delete them once done, and add context inline rather than a bare title.
 Project decisions are in `docs/evaistine.md`.
 
+## Where we left off (2026-10-06, end of the first session)
+
+State: everything is local and committed in this repo; nothing was pushed or
+deployed (the owner's rule: "į prodą nieko nekelk"). Sail stack `vaistines`
+is up on http://localhost:8081 with 31 test products (see "Local test data"
+in `docs/evaistine.md`). Full test suite passes (289).
+
+How the owner works: writes in Lithuanian, wants answers in Lithuanian;
+approves look by seeing it, so show screenshots or open the page before
+asking. Plans get approved before code (`/plan`).
+
+Look decisions and how we got there (don't re-propose the rejected ones):
+- Rejected: plain green (taken by Eurovaistinė/Benu/Camelia), teal ("labai
+  nuobodžiai"), orange + navy/teal/plum/all-orange, N vaistinė-style full
+  green or orange hero ("per ryškiai, bado akis"), white hero with soft
+  blobs and light-green hero ("hujnia").
+- Chosen: Benu-style palette (navy actions/links/footer, mid-blue tints,
+  raspberry deal badges) with logo L1 (navy tile, green cross, navy
+  "eVaistine" + green ".lt"); the logo green was then darkened to Benu's
+  `#58A618`.
+- **Open question**: the owner then said "grąžink mėlyną kuri buvo prieš tai"
+  and interrupted before saying which blue. No blue had changed in that
+  last step (only the logo green). Ask which one they mean before touching
+  colors again.
+
+Tools kept in the repo:
+- `scripts/brand/make-logo.cjs` (logo SVGs, outlined Inter) and
+  `scripts/brand/build-favicon.sh` (favicon from `scripts/brand/icon.svg`).
+- `scripts/brand/screenshot-pages.cjs`: 390/1440 screenshots of any paths
+  into `storage/app/screenshots/`, for the visual check before "done".
+- `scripts/research/eurovaistine-category-json.py`: parses the product JSON
+  in Eurovaistinė category pages (EAN, price, regular price, image, slug,
+  name). Starting point for the Eurovaistinė e-shop scraper.
+- `storage/app/seed-test-products.php` + `storage/app/test-products.json`
+  (not in git): the local test data.
+
+Suggested next step: phase 2, the 12 root categories (seed + icons +
+mapper prompt + dropping the grocery ids in `resolveCategoryId()`), then the
+Eurovaistinė scraper. The phased roadmap with time estimates is in
+`docs/evaistine.md` ("Roadmap"); open items are under "Next" below.
+
 ## Done (2026-10-06)
 
 - [x] Fork superakcijos.lt into `/Users/tomas/www/vaistines` with its own
