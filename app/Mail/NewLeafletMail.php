@@ -33,6 +33,6 @@ class NewLeafletMail extends Mailable
             ? 'Naujas '.$first['store_name'].' leidinys'
             : 'Nauji leidiniai: '.collect($this->leaflets)->pluck('store_name')->unique()->take(3)->implode(', ');
 
-        return $this->subject($subject.' - SuperAkcijos')->view('emails.new-leaflet');
+        return $this->subject($subject.' - eVaistinė')->view('emails.new-leaflet');
     }
 }

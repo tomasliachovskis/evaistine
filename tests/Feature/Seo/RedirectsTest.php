@@ -152,9 +152,9 @@ class RedirectsTest extends TestCase
         $this->app['env'] = 'production';
 
         try {
-            $this->get('http://api.superakcijos.lt/akcijos/iki?page=2')
+            $this->get('http://api.evaistine.lt/akcijos/iki?page=2')
                 ->assertStatus(301)
-                ->assertRedirect('https://superakcijos.lt/akcijos/iki?page=2');
+                ->assertRedirect('https://evaistine.lt/akcijos/iki?page=2');
         } finally {
             $this->app['env'] = 'testing';
         }

@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Model;
 class EmailSubscriber extends Model
 {
     // Used when a subscriber picked no stores.
-    public const DEFAULT_STORES = ['maxima', 'norfa', 'lidl', 'rimi', 'iki'];
 
     protected $fillable = ['email', 'user_id', 'store_slugs', 'wants_weekly', 'wants_new_leaflets', 'token', 'confirmed_at', 'unsubscribed_at', 'weekly_sent_at'];
 
@@ -43,7 +42,7 @@ class EmailSubscriber extends Model
      */
     public function storeSlugs(): array
     {
-        return $this->store_slugs ?: self::DEFAULT_STORES;
+        return $this->store_slugs ?: \App\Support\StoreListPriority::mainSlugs();
     }
 
     public function settingsUrl(): string

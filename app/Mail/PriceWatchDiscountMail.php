@@ -44,8 +44,8 @@ class PriceWatchDiscountMail extends Mailable
     public function build(): self
     {
         $subject = $this->productGroups->count() === 1
-            ? 'Atpigo prekė, kurią sekate - SuperAkcijos'
-            : 'Atpigo ' . $this->productGroups->count() . ' prekės, kurias sekate - SuperAkcijos';
+            ? 'Atpigo prekė, kurią sekate - eVaistinė'
+            : 'Atpigo ' . $this->productGroups->count() . ' prekės, kurias sekate - eVaistinė';
 
         return $this->subject($subject)
             ->view('emails.price-watch-discount', [

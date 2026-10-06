@@ -99,7 +99,11 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         Artisan::call('products:merge-duplicates', ['--cross-source' => true]);
         app(DuplicateDiscountRemover::class)->remove();
         Artisan::call('discounts:archive-expired');
-        Artisan::call('discounts:index-meilisearch', app()->environment('production') ? [] : ['--with-ssh-tunnel' => true]);
+        // Only production has its own Meilisearch; the SSH tunnel to the
+        // evaistine.lt server this used to open from dev was removed.
+        if (app()->environment('production')) {
+            Artisan::call('discounts:index-meilisearch');
+        }
         // Product pages with a new/changed offer → Bing & co. (no-op outside
         // production or without INDEXNOW_KEY; never throws).
         Artisan::call('seo:indexnow', ['--since' => $batchStartedAt->toDateTimeString()]);

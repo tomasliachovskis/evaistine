@@ -28,12 +28,12 @@ class SitemapRobotsTest extends TestCase
     {
         $this->seedListing();
 
-        $response = $this->get('http://superakcijos.lt/robots.txt');
+        $response = $this->get('http://evaistine.lt/robots.txt');
 
         $response->assertOk();
         $body = $response->getContent();
-        $this->assertStringContainsString('Sitemap: https://superakcijos.lt/sitemap.xml', $body);
-        $this->assertStringContainsString('Sitemap: https://superakcijos.lt/product-sitemap/1', $body);
+        $this->assertStringContainsString('Sitemap: https://evaistine.lt/sitemap.xml', $body);
+        $this->assertStringContainsString('Sitemap: https://evaistine.lt/product-sitemap/1', $body);
         $this->assertStringContainsString('Disallow: /akcijos/paieska', $body);
         $this->assertStringContainsString('Disallow: /api/', $body);
         $this->assertStringContainsString('Disallow: /auth/', $body);
@@ -47,7 +47,7 @@ class SitemapRobotsTest extends TestCase
 
     public function test_robots_on_any_other_host_blocks_everything(): void
     {
-        $response = $this->get('http://api.superakcijos.lt/robots.txt');
+        $response = $this->get('http://api.evaistine.lt/robots.txt');
 
         $response->assertOk();
         $this->assertSame("User-agent: *\nDisallow: /\n", $response->getContent());

@@ -112,10 +112,9 @@ class Kernel extends ConsoleKernel
             ->dailyAt('04:00')
             ->withoutOverlapping(60)
             ->onSuccess(function () {
-                \Illuminate\Support\Facades\Artisan::call(
-                    'discounts:index-meilisearch',
-                    app()->environment('production') ? [] : ['--with-ssh-tunnel' => true],
-                );
+                if (app()->environment('production')) {
+                    \Illuminate\Support\Facades\Artisan::call('discounts:index-meilisearch');
+                }
             });
 
         // discounts:archive-expired deletes Discount rows via

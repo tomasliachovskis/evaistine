@@ -9,7 +9,7 @@
 
             <h2 class="mb-4 text-xl font-semibold">1. Bendrosios nuostatos</h2>
             <p class="mb-6 text-base">
-                SuperAkcijos.lt (toliau &ndash; &bdquo;mes&ldquo;, &bdquo;mūsų&ldquo;, &bdquo;svetainė&ldquo;) pripažįsta ir gerbia jūsų privatumą.
+                eVaistinė.lt (toliau &ndash; &bdquo;mes&ldquo;, &bdquo;mūsų&ldquo;, &bdquo;svetainė&ldquo;) pripažįsta ir gerbia jūsų privatumą.
                 Ši privatumo politika paaiškina, kaip mes renkame, naudojame, saugome ir apsaugome jūsų
                 asmeninę informaciją, kai naudojatės mūsų svetaine.
             </p>
@@ -62,7 +62,7 @@
                 Jei turite klausimų dėl šios privatumo politikos ar norite naudoti savo teises,
                 kreipkitės į mus:
             </p>
-            <p class="mb-6 text-base">El. paštas: info@superakcijos.lt<br></p>
+            <p class="mb-6 text-base">El. paštas: info@evaistine.lt<br></p>
         </div>
     </div>
 </x-layouts.app>

@@ -18,17 +18,17 @@ class CanonicalUrlTest extends TestCase
     public static function canonicalProvider(): array
     {
         return [
-            'plain path' => ['/akcijos/iki', [], 'https://superakcijos.lt/akcijos/iki'],
-            'page 1 dropped' => ['/akcijos/iki', ['page' => '1'], 'https://superakcijos.lt/akcijos/iki'],
-            'page 2 kept' => ['/akcijos/iki', ['page' => '2'], 'https://superakcijos.lt/akcijos/iki?page=2'],
-            'default order dropped' => ['/akcijos/iki', ['order' => 'popular'], 'https://superakcijos.lt/akcijos/iki'],
-            'other order kept' => ['/akcijos/iki', ['order' => 'price_min'], 'https://superakcijos.lt/akcijos/iki?order=price_min'],
+            'plain path' => ['/akcijos/iki', [], 'https://evaistine.lt/akcijos/iki'],
+            'page 1 dropped' => ['/akcijos/iki', ['page' => '1'], 'https://evaistine.lt/akcijos/iki'],
+            'page 2 kept' => ['/akcijos/iki', ['page' => '2'], 'https://evaistine.lt/akcijos/iki?page=2'],
+            'default order dropped' => ['/akcijos/iki', ['order' => 'popular'], 'https://evaistine.lt/akcijos/iki'],
+            'other order kept' => ['/akcijos/iki', ['order' => 'price_min'], 'https://evaistine.lt/akcijos/iki?order=price_min'],
             'filters and tracking stripped' => [
                 '/akcijos/iki',
                 ['store' => 'maxima', 'category' => 'pienas', 'card' => '1', 'plus' => '1', 'utm_source' => 'fb', 'gclid' => 'x'],
-                'https://superakcijos.lt/akcijos/iki',
+                'https://evaistine.lt/akcijos/iki',
             ],
-            'page kept, filter stripped' => ['/akcijos/iki', ['page' => '3', 'store' => 'maxima'], 'https://superakcijos.lt/akcijos/iki?page=3'],
+            'page kept, filter stripped' => ['/akcijos/iki', ['page' => '3', 'store' => 'maxima'], 'https://evaistine.lt/akcijos/iki?page=3'],
         ];
     }
 

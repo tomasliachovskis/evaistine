@@ -285,7 +285,7 @@ class DiscountResponseFormatter
         // the real image; production keeps emitting the relative path as
         // above.
         if (! app()->environment('production')) {
-            return 'https://superakcijos.lt' . $relativePath;
+            return 'https://evaistine.lt' . $relativePath;
         }
 
         return $relativePath;

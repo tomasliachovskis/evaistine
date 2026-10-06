@@ -149,7 +149,7 @@ class StoresPageMetaService
                 'answer' => 'Maxima akcijas rasite paspaudę Maxima kortelę arba nuorodą „Maxima akcijos“. Visos aktyvios nuolaidos atnaujinamos pagal naujausius leidinius.',
             ],
             [
-                'question' => 'Ar SuperAkcijos.lt rodo visas Lietuvos parduotuves?',
+                'question' => 'Ar eVaistinė.lt rodo visas Lietuvos parduotuves?',
                 'answer' => 'Taip – stebime pagrindinius prekybos tinklus: Maxima, Lidl, Iki, Rimi, Norfa, Aibė ir kitus. Sąrašas nuolat plečiamas.',
             ],
             [

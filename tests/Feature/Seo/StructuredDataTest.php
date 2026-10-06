@@ -227,7 +227,7 @@ class StructuredDataTest extends TestCase
         $response = $this->get("/leidinys/{$store->slug}/seo-ne-maisto");
 
         $this->assertSame(
-            'Seo Leidiniai NE MAISTO PREKIŲ PASIŪLYMAI Nr.39 – 2026.09.21–2026.09.27 | SuperAkcijos.lt',
+            'Seo Leidiniai NE MAISTO PREKIŲ PASIŪLYMAI Nr.39 – 2026.09.21–2026.09.27 | eVaistinė.lt',
             $this->seoHead($response)['title']
         );
         // H1 keeps the builder's own wording.
@@ -250,7 +250,7 @@ class StructuredDataTest extends TestCase
         $this->assertSame('Seo naujiena apie kainas', $article['headline']);
         $this->assertSame(self::ORIGIN.'/naujienos/seo-naujiena', $article['mainEntityOfPage']['@id']);
         $this->assertNotEmpty($article['datePublished']);
-        $this->assertSame('SuperAkcijos.lt', $article['publisher']['name']);
+        $this->assertSame('eVaistinė.lt', $article['publisher']['name']);
     }
 
     public function test_store_city_page_lists_locations_with_address_and_hours(): void
@@ -298,7 +298,7 @@ class StructuredDataTest extends TestCase
         $sites = $this->jsonLdOfType($response, 'WebSite');
         $this->assertCount(1, $sites);
         $this->assertSame(
-            'https://superakcijos.lt/akcijos/paieska/{search_term_string}',
+            'https://evaistine.lt/akcijos/paieska/{search_term_string}',
             $sites[0]['potentialAction']['target']['urlTemplate']
         );
     }

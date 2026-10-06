@@ -77,7 +77,7 @@ class HomeBetaController extends Controller
             ->all();
 
         return view('home-beta', [
-            'title' => 'Ką šiandien perkate? | SuperAkcijos.lt',
+            'title' => 'Ką šiandien perkate? | eVaistinė.lt',
             'description' => 'Kur šiandien pigiausia: kasdienių prekių kainos 40 parduotuvių vienoje vietoje.',
             'canonical' => url('/pradzia-beta'),
             'robots' => 'noindex, nofollow',

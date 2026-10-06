@@ -113,7 +113,7 @@ class MergeDuplicateProductsCommandTest extends TestCase
             'slug' => 'saldytos-bulviu-lazdeles-natali-1-kg',
             'category_id' => $category->id,
             'image_from_flyer' => true,
-            'image_url' => 'https://superakcijos.lt/storage/flyer-crop.jpg',
+            'image_url' => 'https://evaistine.lt/storage/flyer-crop.jpg',
             'created_at' => now()->subDays(10),
         ]);
 

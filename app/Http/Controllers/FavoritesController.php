@@ -58,7 +58,7 @@ class FavoritesController extends Controller
         ));
 
         return view('favorites.index', [
-            'title' => 'Stebimos prekės | SuperAkcijos.lt',
+            'title' => 'Stebimos prekės | eVaistinė.lt',
             'robots' => 'noindex, nofollow',
             'products' => $payload['products'],
             'storeTotals' => $storeTotals,

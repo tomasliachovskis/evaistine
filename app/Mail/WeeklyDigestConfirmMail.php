@@ -18,7 +18,7 @@ class WeeklyDigestConfirmMail extends Mailable
 
     public function build(): self
     {
-        return $this->subject('Patvirtinkite savaitės akcijų laišką - SuperAkcijos')
+        return $this->subject('Patvirtinkite savaitės akcijų laišką - eVaistinė')
             ->view('emails.weekly-digest-confirm');
     }
 }

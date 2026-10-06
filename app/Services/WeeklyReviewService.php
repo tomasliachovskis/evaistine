@@ -250,12 +250,12 @@ class WeeklyReviewService
                 'name' => $discount->product->name,
                 'store' => $discount->store->name,
                 'store_slug' => $discount->store->slug,
-                'store_url' => "https://superakcijos.lt/akcijos/{$discount->store->slug}",
+                'store_url' => "https://evaistine.lt/akcijos/{$discount->store->slug}",
                 'category' => $discount->product->category->name,
                 'category_slug' => $discount->product->category->slug,
-                'category_url' => "https://superakcijos.lt/akcijos/{$discount->product->category->slug}",
+                'category_url' => "https://evaistine.lt/akcijos/{$discount->product->category->slug}",
                 'product_slug' => $discount->product->slug,
-                'product_url' => "https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                'product_url' => "https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                 'image_url' => $imageUrl,
                 'original_price' => $discount->original_price,
                 'discounted_price' => $discount->discounted_price,
@@ -280,7 +280,7 @@ class WeeklyReviewService
                     return [
                         'name' => $first->product->category->name,
                         'slug' => $first->product->category->slug,
-                        'url' => "https://superakcijos.lt/akcijos/{$first->product->category->slug}",
+                        'url' => "https://evaistine.lt/akcijos/{$first->product->category->slug}",
                         'count' => $categoryDiscounts->count(),
                     ];
                 })
@@ -292,7 +292,7 @@ class WeeklyReviewService
             return [
                 'name' => $store->name,
                 'slug' => $store->slug,
-                'url' => "https://superakcijos.lt/akcijos/{$store->slug}",
+                'url' => "https://evaistine.lt/akcijos/{$store->slug}",
                 'discount_count' => $storeDiscounts->count(),
                 'product_count' => $storeDiscounts->unique('product_id')->count(),
                 'avg_discount_percent' => round($storeDiscounts->avg('discount_percent'), 1),
@@ -301,7 +301,7 @@ class WeeklyReviewService
                 'top_products' => $storeDiscounts->sortByDesc('discount_percent')->take(5)->map(function ($d) {
                     return [
                         'name' => $d->product->name,
-                        'product_url' => "https://superakcijos.lt/akcijos/{$d->product->category->slug}/{$d->product->slug}",
+                        'product_url' => "https://evaistine.lt/akcijos/{$d->product->category->slug}/{$d->product->slug}",
                         'discount_percent' => $d->discount_percent,
                         'discounted_price' => $d->discounted_price,
                     ];
@@ -319,7 +319,7 @@ class WeeklyReviewService
             return [
                 'name' => $category->name,
                 'slug' => $category->slug,
-                'url' => "https://superakcijos.lt/akcijos/{$category->slug}",
+                'url' => "https://evaistine.lt/akcijos/{$category->slug}",
                 'discount_count' => $categoryDiscounts->count(),
                 'product_count' => $categoryDiscounts->unique('product_id')->count(),
                 'store_count' => $categoryDiscounts->unique('store_id')->count(),
@@ -331,7 +331,7 @@ class WeeklyReviewService
                     return [
                         'name' => $d->product->name,
                         'store' => $d->store->name,
-                        'product_url' => "https://superakcijos.lt/akcijos/{$d->product->category->slug}/{$d->product->slug}",
+                        'product_url' => "https://evaistine.lt/akcijos/{$d->product->category->slug}/{$d->product->slug}",
                         'discount_percent' => $d->discount_percent,
                         'discounted_price' => $d->discounted_price,
                     ];
@@ -373,9 +373,9 @@ class WeeklyReviewService
                 $allStores[] = [
                     'store_name' => $discount->store->name,
                     'store_slug' => $discount->store->slug,
-                    'store_url' => "https://superakcijos.lt/akcijos/{$discount->store->slug}",
+                    'store_url' => "https://evaistine.lt/akcijos/{$discount->store->slug}",
                     'product_name' => $discount->product->name,
-                    'product_url' => "https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'product_url' => "https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                     'product_image_url' => $imageUrl,
                     'discounted_price' => $discount->discounted_price,
                     'original_price' => $discount->original_price,
@@ -392,7 +392,7 @@ class WeeklyReviewService
                 'category_name' => $category->name,
                 'category_name_lowercase' => mb_strtolower($category->name),
                 'category_slug' => $category->slug,
-                'category_url' => "https://superakcijos.lt/akcijos/{$category->slug}",
+                'category_url' => "https://evaistine.lt/akcijos/{$category->slug}",
                 'cheapest_store' => $cheapest->store->name,
                 'cheapest_store_slug' => $cheapest->store->slug,
                 'cheapest_product' => $cheapest->product->name,
@@ -418,7 +418,7 @@ HTML MARKUP RULES:
 - Use <h2> for main section headings
 - Use <h3> for subsection headings
 - Use <b> tags (not <strong>) for bold emphasis
-- Use <a href=\"https://superakcijos.lt/akcijos/{slug}\"> for internal links
+- Use <a href=\"https://evaistine.lt/akcijos/{slug}\"> for internal links
 - Include product images using <img src=\"{image_url}\" alt=\"{product_name}\"> tags naturally in content
 - CRITICAL: You MUST include minimum 5 and maximum 7 product images throughout the article
 - Images must be distributed across different sections, not all in one place

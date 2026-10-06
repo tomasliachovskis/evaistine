@@ -66,7 +66,7 @@
             <section class="overflow-hidden rounded-2xl border border-gray-100 bg-white">
                 <div class="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-8">
                     <div class="min-w-0">
-                        <h2 class="text-lg font-bold text-gray-900 sm:text-xl">SuperAkcijos.lt – akcijos ir nuolaidos Lietuvoje</h2>
+                        <h2 class="text-lg font-bold text-gray-900 sm:text-xl">eVaistinė.lt – akcijos ir nuolaidos Lietuvoje</h2>
                         <p class="mt-3 text-sm leading-relaxed text-gray-600 sm:text-base">
                             {{ $pageMeta['seo']['intro_lead'] }} {{ $pageMeta['seo']['intro_support'] }}
                         </p>

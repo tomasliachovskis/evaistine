@@ -12,7 +12,6 @@ class HomeLatestLeaflets
 {
     // One leaflet per store, in this priority order, per explicit product
     // decision (was: whichever 10 leaflets happened to be newest overall).
-    private const STORE_PRIORITY = ['maxima', 'norfa', 'lidl', 'rimi', 'iki'];
 
     // One row: matches the grid's sm:grid-cols-4.
     private const LIMIT = 4;
@@ -32,7 +31,7 @@ class HomeLatestLeaflets
             ->groupBy('store_slug')
             ->map(fn ($leaflets) => $leaflets->first());
 
-        return collect(self::STORE_PRIORITY)
+        return collect(StoreListPriority::mainSlugs())
             ->map(fn ($slug) => $currentLeafletsByStore->get($slug))
             ->filter()
             ->take(self::LIMIT)

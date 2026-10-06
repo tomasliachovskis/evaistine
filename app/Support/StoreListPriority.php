@@ -3,16 +3,18 @@
 namespace App\Support;
 
 // Editorial display order for store list/grid UI (home hero chips,
-// /parduotuves directory) — the named chains first in this exact order
-// (brand recognizability, not raw discount count), then every other store
-// with active discounts sorted by discounts_count desc. Stores with zero
-// active discounts are dropped entirely, not just pushed to the end.
+// /parduotuves directory) — the main chains (config('stores.main_slugs'))
+// first in that exact order (brand recognizability, not raw discount
+// count), then every other store with active discounts sorted by
+// discounts_count desc. Stores with zero active discounts are dropped
+// entirely, not just pushed to the end.
 class StoreListPriority
 {
-    public const PRIORITY_SLUGS = [
-        'maxima', 'lidl', 'iki', 'rimi', 'norfa',
-        'aibe', 'express-market', 'silas', 'cia', 'kubas',
-    ];
+    /** @return array<int, string> */
+    public static function mainSlugs(): array
+    {
+        return config('stores.main_slugs', []);
+    }
 
     /**
      * @param  array<int, array{slug: string, discounts_count?: int}>  $stores
@@ -41,8 +43,9 @@ class StoreListPriority
 
     private static function compare(array $a, array $b): int
     {
-        $rankA = array_search($a['slug'], self::PRIORITY_SLUGS, true);
-        $rankB = array_search($b['slug'], self::PRIORITY_SLUGS, true);
+        $mainSlugs = self::mainSlugs();
+        $rankA = array_search($a['slug'], $mainSlugs, true);
+        $rankB = array_search($b['slug'], $mainSlugs, true);
 
         if ($rankA !== false || $rankB !== false) {
             return ($rankA === false ? PHP_INT_MAX : $rankA) <=> ($rankB === false ? PHP_INT_MAX : $rankB);

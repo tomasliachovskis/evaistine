@@ -1,11 +1,6 @@
 @php
-    // Confirmed-to-have-physical-locations set, kept in sync with
-    // discount/src/components/stores/store-locations-links.tsx (its own
-    // comment there points at nuolaidos/config/hours_scrapers.php).
-    $storesWithLocations = ['maxima', 'iki', 'lidl', 'norfa', 'rimi', 'aibe', 'silas', 'cia', 'gruste',
-        'kubas', 'vynoteka', 'thomas-philipps', 'apotheka', 'benu-vaistine', 'bikuva', 'camelia',
-        'elimart', 'ermitazas', 'eurokos', 'eurovaistine', 'gintarine-vaistine', 'jupoja', 'jysk',
-        'moki-vezi', 'pepco', 'senukai'];
+    // Stores whose physical locations scrapers/hours/scrape.js collects.
+    $storesWithLocations = array_values(config('hours_scrapers'));
 
     // Every store, not just those with offers — leaflet-only stores (Jysk,
     // Senukai...) are real stores too, their cards link to /leidinys/{slug}.

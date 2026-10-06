@@ -2,7 +2,7 @@
     // "Mano parduotuvės" picker. Stores that have offers or leaflets, the
     // five main chains first, then by number of offers. $stores comes from
     // MobileNavComposer (same cached list as the bottom nav's store sheet).
-    $mainStores = ['maxima', 'norfa', 'lidl', 'rimi', 'iki'];
+    $mainStores = \App\Support\StoreListPriority::mainSlugs();
     $pickable = collect($stores ?? [])
         ->filter(fn ($s) => ($s['discounts_count'] ?? 0) > 0 || ($s['leaflets_count'] ?? 0) > 0)
         ->sortBy([

@@ -2,7 +2,7 @@
 
 ## Data
 
-Pulled from the Search Console API (`sc-domain:superakcijos.lt`, 28 days 2026-09-01–09-28 vs the 28 days before).
+Pulled from the Search Console API (`sc-domain:evaistine.lt`, 28 days 2026-09-01–09-28 vs the 28 days before).
 
 - Clicks/week went from ~1 500 (August) to ~3 100 (late September). 28-day total: 9 554 clicks / 336k impressions (before: 6 088 / 199k).
 

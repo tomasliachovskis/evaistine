@@ -196,7 +196,7 @@ class PageHtmlCache
         // staging domain), not the real public domain. Every route()/url()
         // call rendered into cached HTML was forced onto that wrong host —
         // confirmed live: every link on every cached page pointed at
-        // liachovskis.com instead of superakcijos.lt. CanonicalUrl::origin()
+        // liachovskis.com instead of evaistine.lt. CanonicalUrl::origin()
         // is the actual single source of truth for the public domain.
         return CanonicalUrl::origin();
     }

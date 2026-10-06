@@ -1,7 +1,7 @@
 @php
     // Same store list and order as the "Mano parduotuvės" picker
     // (components/my-stores-sheet.blade.php); $stores from MobileNavComposer.
-    $mainStores = \App\Models\EmailSubscriber::DEFAULT_STORES;
+    $mainStores = \App\Support\StoreListPriority::mainSlugs();
     $pickable = collect($stores ?? [])
         ->filter(fn ($s) => ($s['discounts_count'] ?? 0) > 0 || ($s['leaflets_count'] ?? 0) > 0)
         ->sortBy([

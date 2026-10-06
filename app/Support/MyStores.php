@@ -13,10 +13,10 @@ use Illuminate\Http\Request;
  */
 class MyStores
 {
-    public const COOKIE = 'superakcijos_parduotuves';
+    public const COOKIE = 'evaistine_parduotuves';
 
     // "Rodyti visas": a session cookie, all stores for the rest of the visit.
-    public const SHOW_ALL_COOKIE = 'superakcijos_visos_parduotuves';
+    public const SHOW_ALL_COOKIE = 'evaistine_visos_parduotuves';
 
     private const MAX_STORES = 12;
 

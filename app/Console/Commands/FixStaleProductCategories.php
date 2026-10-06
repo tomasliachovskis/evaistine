@@ -8,7 +8,6 @@ use App\Models\Discount;
 use App\Models\DiscountTemp;
 use App\Models\Product;
 use App\Models\Store;
-use App\Support\EnergyDrinkCategory;
 use Illuminate\Console\Command;
 
 // Product::firstOrCreate() (see ProcessDiscounts::findOrCreateProduct) only
@@ -108,7 +107,7 @@ class FixStaleProductCategories extends Command
                 continue;
             }
 
-            $resolved = EnergyDrinkCategory::apply($this->resolveCategoryId($temp->name, $temp->category, $store), $temp->name);
+            $resolved = $this->resolveCategoryId($temp->name, $temp->category, $store);
             if ($resolved) {
                 $votes[$resolved] = ($votes[$resolved] ?? 0) + 1;
             }

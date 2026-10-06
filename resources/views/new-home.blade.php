@@ -46,7 +46,7 @@
                  "don't grow the hero" reasoning as everything else here. --}}
             <div class="flex w-full max-w-xl flex-col items-center gap-2">
                 <div class="scroll-cards-x flex w-full items-center justify-start gap-2 sm:justify-center sm:flex-wrap">
-                    @foreach (['maxima', 'lidl', 'iki', 'rimi', 'norfa'] as $slug)
+                    @foreach (\App\Support\StoreListPriority::mainSlugs() as $slug)
                         <a href="/akcijos/{{ $slug }}" data-ga-event="filter_select" data-ga-item="store:{{ $slug }}" data-ga-source="home_trust_row" class="flex min-h-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 transition-colors hover:border-green/40">
                             <x-store-logo :slug="$slug" size="sm" />
                         </a>

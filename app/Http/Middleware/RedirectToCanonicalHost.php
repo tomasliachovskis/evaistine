@@ -6,7 +6,7 @@ use App\Support\CanonicalUrl;
 use Closure;
 use Illuminate\Http\Request;
 
-// This app is also reachable at a staging host (api.superakcijos.lt) ahead
+// This app is also reachable at a staging host (api.evaistine.lt) ahead
 // of / alongside the public-domain cutover — SitemapController::robots()
 // already blocks crawling there, but robots.txt doesn't stop an already-
 // linked URL from being indexed, and PageHtmlCache stores canonical/og:url

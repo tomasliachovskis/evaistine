@@ -15,7 +15,7 @@
             navFolded: false,
             navSummary: '',
             init() {
-                try { this.navFolded = localStorage.getItem('superakcijos_filtrai_suskleisti') === '1'; } catch (e) {}
+                try { this.navFolded = localStorage.getItem('evaistine_filtrai_suskleisti') === '1'; } catch (e) {}
                 this.$nextTick(() => this.readSummary());
                 // The values change after load (saved stores applied, a new
                 // sort): keep the folded line in step.
@@ -31,7 +31,7 @@
             toggleNav() {
                 this.readSummary();
                 this.navFolded = !this.navFolded;
-                try { localStorage.setItem('superakcijos_filtrai_suskleisti', this.navFolded ? '1' : '0'); } catch (e) {}
+                try { localStorage.setItem('evaistine_filtrai_suskleisti', this.navFolded ? '1' : '0'); } catch (e) {}
             },
         }"
     >

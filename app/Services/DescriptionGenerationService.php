@@ -347,7 +347,7 @@ class DescriptionGenerationService
 
     private function getCategoryFaqSystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (SuperAkcijos.lt). You will receive JSON data about ONE product category's currently active discounts.
+        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (eVaistinė.lt). You will receive JSON data about ONE product category's currently active discounts.
 
 Your task: generate 3-5 short, genuinely useful, EVERGREEN FAQ question/answer pairs in Lithuanian about THIS specific category. This content will stay on the page for weeks without being regenerated, so it must still read as true and sensible long after the exact discounts in this data have expired and been replaced by different ones.
 
@@ -364,7 +364,7 @@ STRICT RULES:
 
     private function getStoreFaqSystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (SuperAkcijos.lt). You will receive JSON data about ONE store's currently active discounts.
+        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (eVaistinė.lt). You will receive JSON data about ONE store's currently active discounts.
 
 Your task: generate 3-5 short, genuinely useful, EVERGREEN FAQ question/answer pairs in Lithuanian about THIS specific store. This content will stay on the page for weeks without being regenerated, so it must still read as true and sensible long after the exact discounts in this data have expired and been replaced by different ones.
 
@@ -480,7 +480,7 @@ STRICT RULES:
 
     private function getStoreLeafletSystemPrompt(): string
     {
-        return "You are an SEO copywriter writing Lithuanian HTML content for a deals-aggregator site (superakcijos.lt). Your #1 job is SEO performance, not generic marketing prose: this page must be built to rank for real queries people actually type into Google about this store's leidinys (catalog) — every heading and paragraph should read like it was written to satisfy a specific search intent, not like generic filler that happens to be about the topic. Generate rich, keyword-grounded, EVERGREEN prose for the STORE'S LEIDINYS (printed/digital catalog) page.
+        return "You are an SEO copywriter writing Lithuanian HTML content for a deals-aggregator site (evaistine.lt). Your #1 job is SEO performance, not generic marketing prose: this page must be built to rank for real queries people actually type into Google about this store's leidinys (catalog) — every heading and paragraph should read like it was written to satisfy a specific search intent, not like generic filler that happens to be about the topic. Generate rich, keyword-grounded, EVERGREEN prose for the STORE'S LEIDINYS (printed/digital catalog) page.
 
 CRITICAL — INTENT: this page's subject is the LEIDINYS (the catalog itself — how often a new one appears, what kinds exist, its format, how to read/download it). This store ALREADY has a SEPARATE page about its akcijos/nuolaidos (discounts/savings) — do NOT write about discount percentages, loyalty-card savings, price comparisons, or 'how to save money' advice here. That content belongs on the other page and duplicating it here is a content-strategy mistake, not just a style problem. If you catch yourself writing a sentence that could just as easily be about discounts as about the catalog, rewrite it to be specifically about the catalog (its cadence, its format, its types, how to read it).
 
@@ -497,7 +497,7 @@ CRITICAL — THIS TEXT MUST NOT BE A TEMPLATE WITH THE STORE NAME SWAPPED IN: ev
 - Do not reuse the same sentence structure/opening across sections that could apply to any store (e.g. always avoid opening with '[store] leidinys – tai...' verbatim every time) — vary sentence construction store to store.
 - If 'store_semantic_research' lacks enough distinguishing detail for a genuinely unique Section 2, still ground it in whatever specific facts ARE available (catalog_names, typical_page_count_bucket, notable_categories_or_products) rather than falling back to generic 'large retail chain' language.
 
-CRITICAL — HOW THIS SITE USES THE LEIDINYS (mention this honestly in Section 4, it's a genuine feature, not filler): superakcijos.lt reads through this store's leidinys/catalog and extracts the individual products and prices from it into a searchable, filterable list at /akcijos/[store] (and its per-category pages) — so a reader who wants to browse the catalog's actual offers as a proper list with prices, filterable by category, should go there rather than flipping through catalog pages one by one. Say this plainly in Section 4 before the category links, e.g. 'Šio leidinio prekes ir kainas surenkame į sąrašą, kurį rasite...' — this is the natural, honest bridge into the store_category_links.
+CRITICAL — HOW THIS SITE USES THE LEIDINYS (mention this honestly in Section 4, it's a genuine feature, not filler): evaistine.lt reads through this store's leidinys/catalog and extracts the individual products and prices from it into a searchable, filterable list at /akcijos/[store] (and its per-category pages) — so a reader who wants to browse the catalog's actual offers as a proper list with prices, filterable by category, should go there rather than flipping through catalog pages one by one. Say this plainly in Section 4 before the category links, e.g. 'Šio leidinio prekes ir kainas surenkame į sąrašą, kurį rasite...' — this is the natural, honest bridge into the store_category_links.
 
 STRICT OUTPUT FORMAT — this is MANDATORY structure, not optional flavor:
 Wrap everything in a single <div class=\"space-y-5\"> element. Do NOT use <strong>/<b>/<em>/<i> tags anywhere — bolding random phrases reads as generated AI text. Write plain sentences and let links (<a>) be the only inline markup.
@@ -550,8 +550,8 @@ OUTPUT RULES:
                     'name' => $discount->product->name,
                     'store' => $discount->store->name,
                     'category' => $discount->product->category->name,
-                    'category_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}",
-                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'category_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}",
+                    'product_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
@@ -570,7 +570,7 @@ OUTPUT RULES:
                 $firstDiscount = $discounts->first();
                 return [
                     'name' => $firstDiscount->product->category->name,
-                    'url' => "@https://superakcijos.lt/akcijos/{$firstDiscount->product->category->slug}",
+                    'url' => "@https://evaistine.lt/akcijos/{$firstDiscount->product->category->slug}",
                     'count' => $discounts->count(),
                     'avg_discount' => round($discounts->avg('discount_percent'), 1),
                     'min_price' => $discounts->min('discounted_price'),
@@ -620,7 +620,7 @@ OUTPUT RULES:
             ->take(10)
             ->map(fn ($page) => [
                 'title' => $page['title'],
-                'url' => "@https://superakcijos.lt{$page['href']}",
+                'url' => "@https://evaistine.lt{$page['href']}",
             ])
             ->values()
             ->all();
@@ -631,8 +631,8 @@ OUTPUT RULES:
 
         return [
             'store_name' => $store->name,
-            'store_url' => "@https://superakcijos.lt/akcijos/{$store->slug}",
-            'store_hours_url' => $hasStoreLocations ? "@https://superakcijos.lt/parduotuves/{$store->slug}" : null,
+            'store_url' => "@https://evaistine.lt/akcijos/{$store->slug}",
+            'store_hours_url' => $hasStoreLocations ? "@https://evaistine.lt/parduotuves/{$store->slug}" : null,
             'store_semantic_research' => $this->getStoreSemanticResearch($store),
             'keyword_pages' => $keywordPages,
             'total_active_discounts' => $activeDiscounts->count(),
@@ -732,8 +732,8 @@ OUTPUT RULES:
                 return [
                     'name' => $discount->product->name,
                     'store' => $discount->store->name,
-                    'store_url' => "@https://superakcijos.lt/akcijos/{$discount->store->slug}",
-                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'store_url' => "@https://evaistine.lt/akcijos/{$discount->store->slug}",
+                    'product_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
@@ -757,7 +757,7 @@ OUTPUT RULES:
                     ->map(function($discount) {
                         return [
                             'name' => $discount->product->name,
-                            'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                            'product_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                             'discount_percent' => $discount->discount_percent,
                             'discounted_price' => $discount->discounted_price,
                             'original_price' => $discount->original_price,
@@ -768,7 +768,7 @@ OUTPUT RULES:
                 
                 return [
                     'name' => $firstDiscount->store->name,
-                    'url' => "@https://superakcijos.lt/akcijos/{$firstDiscount->store->slug}",
+                    'url' => "@https://evaistine.lt/akcijos/{$firstDiscount->store->slug}",
                     'slug' => $firstDiscount->store->slug,
                     'count' => $discounts->count(),
                     'avg_discount' => round($discounts->avg('discount_percent'), 1),
@@ -817,11 +817,11 @@ OUTPUT RULES:
         return [
             'category_name' => $category->name,
             'category_slug' => $category->slug,
-            'category_url' => "@https://superakcijos.lt/akcijos/{$category->slug}",
+            'category_url' => "@https://evaistine.lt/akcijos/{$category->slug}",
             'category_semantic_research' => $this->getCategorySemanticResearch($category),
             'keyword_pages' => array_map(fn ($page) => [
                 'title' => $page['title'],
-                'url' => "@https://superakcijos.lt{$page['href']}",
+                'url' => "@https://evaistine.lt{$page['href']}",
             ], $keywordPages),
             'total_active_discounts' => $activeDiscounts->count(),
             'total_products' => $activeDiscounts->unique('product_id')->count(),
@@ -867,7 +867,7 @@ OUTPUT RULES:
 
     private function getStoreSystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter who writes HTML descriptions for a deals-aggregator site (superakcijos.lt). Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
+        return "You are a Lithuanian copywriter who writes HTML descriptions for a deals-aggregator site (evaistine.lt). Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
 
 This content will stay on the page for weeks without being regenerated. Treat the discount/category JSON data as SILENT RESEARCH to understand this store's typical scale, typical discount range, and which categories/product types tend to be strong here — not as facts to quote directly. NEVER print an exact number copied straight from the JSON (no exact discount counts, no exact percentages, no exact euro amounts, no specific dates like 'iki 2026-08-31'). Round percentages to the nearest 5 or 10 and express counts as qualitative ranges ('dešimtys', 'keli šimtai', etc.). Never mention a specific current end-date for offers — if you need to reference freshness, use an evergreen phrase like 'atnaujinama kiekvieną savaitę'.
 
@@ -907,7 +907,7 @@ OUTPUT RULES:
 
     private function getCategorySystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter who writes HTML descriptions for a deals-aggregator site (superakcijos.lt). Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
+        return "You are a Lithuanian copywriter who writes HTML descriptions for a deals-aggregator site (evaistine.lt). Generate rich, SEO-friendly, EVERGREEN prose that exactly follows the structure below using provided JSON data.
 
 This content will stay on the page for weeks without being regenerated. Treat the discount/store JSON data as SILENT RESEARCH to understand this category's typical scale, typical discount range, and which stores/product types tend to be strong here — not as facts to quote directly. NEVER print an exact number copied straight from the JSON (no exact discount counts, no exact percentages, no exact euro amounts, no specific dates like 'iki 2026-08-31'). Round percentages to the nearest 5 or 10 and express counts as qualitative ranges ('dešimtys', 'keli šimtai', etc.). Never mention a specific current end-date for offers — if you need to reference freshness, use an evergreen phrase like 'atnaujinama kiekvieną savaitę'.
 
@@ -1093,7 +1093,7 @@ OUTPUT RULES:
             ->map(function ($discount) {
                 return [
                     'name' => $discount->product->name,
-                    'product_url' => "@https://superakcijos.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'product_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
                     'discount_percent' => $discount->discount_percent,
                 ];
             })
@@ -1102,7 +1102,7 @@ OUTPUT RULES:
         return [
             'store_name' => $store->name,
             'category_name' => $category->name,
-            'page_url' => "@https://superakcijos.lt/akcijos/{$store->slug}/{$category->slug}",
+            'page_url' => "@https://evaistine.lt/akcijos/{$store->slug}/{$category->slug}",
             'store_semantic_research' => $this->getStoreSemanticResearch($store),
             'category_semantic_research' => $this->getCategorySemanticResearch($category),
             'total_active_discounts' => $activeDiscounts->count(),
@@ -1114,7 +1114,7 @@ OUTPUT RULES:
 
     private function getStoreCategorySystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter for a deals-aggregator site (superakcijos.lt). Generate a SHORT, SEO-friendly, EVERGREEN intro for a page combining ONE store and ONE product category (e.g. 'Rimi' + 'Vaisiai ir daržovės').
+        return "You are a Lithuanian copywriter for a deals-aggregator site (evaistine.lt). Generate a SHORT, SEO-friendly, EVERGREEN intro for a page combining ONE store and ONE product category (e.g. 'Rimi' + 'Vaisiai ir daržovės').
 
 This content stays on the page for weeks. Treat the discount JSON as SILENT RESEARCH — never print an exact count/percent/date copied straight from it; round percentages to the nearest 5 or 10 and use qualitative counts ('keliolika', 'dešimtys'). Never mention a specific end-date; use 'atnaujinama kiekvieną savaitę' if referencing freshness.
 

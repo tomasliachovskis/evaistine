@@ -4,10 +4,10 @@ A visitor picks the stores they shop at, and the offer listings that mix several
 
 ## Where the choice lives
 
-- **Browser:** `localStorage['superakcijos_parduotuves_v1']`, an array of store slugs. No account needed.
+- **Browser:** `localStorage['evaistine_parduotuves_v1']`, an array of store slugs. No account needed.
 - **Account:** `users.preferred_store_slugs` (JSON), saved by `POST /mano-parduotuves` (`MyStoresController`). For a signed-in user the account copy wins on page load and is written back to the browser. If the account is empty but the browser has a choice, the browser's choice is pushed to the account.
 - **Alpine store:** `$store.myStores` in `layouts/app.blade.php`. Other code uses `set()`, `toggle()`, `has()`, `active()`, `filterValue()` and `setShowAll()`.
-- **"Rodyti visas":** sets `sessionStorage['superakcijos_visos_parduotuves']`. Every store is shown until the browser tab is closed.
+- **"Rodyti visas":** sets `sessionStorage['evaistine_visos_parduotuves']`. Every store is shown until the browser tab is closed.
 
 ## Why it is applied in the browser
 
@@ -30,7 +30,7 @@ Not applied when:
 
 `livewire/discount-filters.blade.php`, since 2026-10-02. The bar has three labelled buttons: "Parduotuvės", "Kategorija" and "Rikiuoti". Each says in words what is shown, e.g. "Mano: Maxima, Lidl" or "Duonos gaminiai", and opens its list.
 - **Layout:** in the page above the list, not pinned (2026-10-02, it covered too much of the list). One row on desktop, stacked full-width buttons on phones.
-- **Folding on phones:** a "Filtrai" header folds the stacked buttons (~346px) to one summary line (~84px), e.g. "Mano: Norfa · Mėsa ir žuvis · Populiariausi". Remembered in `localStorage['superakcijos_filtrai_suskleisti']`. Desktop is always open (`<x-nav-bar>`).
+- **Folding on phones:** a "Filtrai" header folds the stacked buttons (~346px) to one summary line (~84px), e.g. "Mano: Norfa · Mėsa ir žuvis · Populiariausi". Remembered in `localStorage['evaistine_filtrai_suskleisti']`. Desktop is always open (`<x-nav-bar>`).
 - **It replaced:**
   - the green "Rodomos tik jūsų parduotuvės" bar;
   - the "Perkate tik keliose parduotuvėse?" line;

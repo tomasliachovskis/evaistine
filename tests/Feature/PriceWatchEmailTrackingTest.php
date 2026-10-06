@@ -47,7 +47,7 @@ class PriceWatchEmailTrackingTest extends TestCase
         // Product rows link straight to the public product page.
         $html = $mailable->render();
         $this->assertStringContainsString(
-            e('https://superakcijos.lt/akcijos/pieno-produktai/pienas-1-l?'.self::UTM.'&utm_content=product'),
+            e('https://evaistine.lt/akcijos/pieno-produktai/pienas-1-l?'.self::UTM.'&utm_content=product'),
             $html
         );
     }

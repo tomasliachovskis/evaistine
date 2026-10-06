@@ -9,27 +9,8 @@ use App\Models\DiscountTemp;
 use App\Models\Product;
 use App\Models\ProductMapping;
 use App\Models\Store;
-use App\Rules\StoreRules\AibeRules;
-use App\Rules\StoreRules\CiaRules;
-use App\Rules\StoreRules\EpromoRules;
-use App\Rules\StoreRules\ErmitazasRules;
-use App\Rules\StoreRules\PromoCashCarryRules;
-use App\Rules\StoreRules\ExpressMarketRules;
-use App\Rules\StoreRules\GrusteRules;
-use App\Rules\StoreRules\GulbeleRules;
-use App\Rules\StoreRules\IkiRules;
-use App\Rules\StoreRules\KoopsRules;
-use App\Rules\StoreRules\KubasRules;
-use App\Rules\StoreRules\LidlRules;
-use App\Rules\StoreRules\MaximaRules;
-use App\Rules\StoreRules\NorfaRules;
-use App\Rules\StoreRules\RimiRules;
-use App\Rules\StoreRules\SilasRules;
 use App\Rules\StoreRules\DefaultRules;
-use App\Rules\StoreRules\ThomasPhilippsRules;
-use App\Rules\StoreRules\VynotekaRules;
 use App\Services\DealPoolRefresher;
-use App\Support\EnergyDrinkCategory;
 use App\Support\NormalizesDiscountDates;
 use App\Support\ProductPackSizeExtractor;
 use Illuminate\Console\Command;
@@ -256,7 +237,7 @@ class ProcessDiscounts extends Command
             return true;
         }
 
-        $rules = $this->getStoreRules($store->name, $tempDiscount);
+        $rules = new DefaultRules($tempDiscount);
 
         $normalizedCondition = $this->normalizeCondition($tempDiscount->condition);
 
@@ -336,9 +317,6 @@ class ProcessDiscounts extends Command
         }
 
         $categoryId = $this->resolveCategoryId($tempDiscount, $store);
-        if (is_int($categoryId)) {
-            $categoryId = EnergyDrinkCategory::apply($categoryId, $tempDiscount->name);
-        }
         if ($categoryId === false || $categoryId === null) {
             CategoryMapper::firstOrCreate(
                 ['store_category' => $tempDiscount->category],
@@ -950,50 +928,6 @@ class ProcessDiscounts extends Command
 
         $this->unmappedCategoryKeys[$key] = true;
         $this->info("Added unmapped category: {$storeCategory}");
-    }
-
-    private function getStoreRules(string $storeName, DiscountTemp $tempDiscount)
-    {
-        switch ($storeName) {
-            case 'Lidl':
-                return new LidlRules($tempDiscount);
-            case 'Maxima':
-                return new MaximaRules($tempDiscount);
-            case 'Rimi':
-                return new RimiRules($tempDiscount);
-            case 'Norfa':
-                return new NorfaRules($tempDiscount);
-            case 'Iki':
-                return new IkiRules($tempDiscount);
-            case 'Šilas':
-                return new SilasRules($tempDiscount);
-            case 'Aibė':
-                return new AibeRules($tempDiscount);
-            case 'Grustė':
-                return new GrusteRules($tempDiscount);
-            case 'Čia':
-                return new CiaRules($tempDiscount);
-            case 'Express Market':
-                return new ExpressMarketRules($tempDiscount);
-            case 'Kubas':
-                return new KubasRules($tempDiscount);
-            case 'Koops':
-                return new KoopsRules($tempDiscount);
-            case 'Gulbelė':
-                return new GulbeleRules($tempDiscount);
-            case 'Vynoteka':
-                return new VynotekaRules($tempDiscount);
-            case 'Thomas Philipps':
-                return new ThomasPhilippsRules($tempDiscount);
-            case 'ePromo':
-                return new EpromoRules($tempDiscount);
-            case 'Promo Cash&Carry':
-                return new PromoCashCarryRules($tempDiscount);
-            case 'Ermitažas':
-                return new ErmitazasRules($tempDiscount);
-            default:
-                return new DefaultRules($tempDiscount);
-        }
     }
 
     private function composeDisplayName(string $rawName, ?string $infoPackSize): string

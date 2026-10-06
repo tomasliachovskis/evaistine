@@ -354,14 +354,12 @@ class ProductPageMeta
         return "Kitos {$storeName} akcijos";
     }
 
-    // Stores selling directly online get "{Store} parduotuvė"; the rest are
-    // scraped from a printed/PDF leaflet, so "{Store} kainų leidinys" instead —
-    // resolveOfferOriginLabel in product-page-meta.ts.
-    private const ONLINE_PRICE_SOURCE_STORES = ['maxima', 'norfa', 'rimi', 'lidl', 'iki'];
-
+    // Stores with an e-shop scraper (config('scrapers')) get "{Store}
+    // parduotuvė"; the rest are scraped from a printed/PDF leaflet, so
+    // "{Store} kainų leidinys" instead.
     public static function offerOriginLabel(string $storeSlug, string $storeName): string
     {
-        if (in_array($storeSlug, self::ONLINE_PRICE_SOURCE_STORES, true)) {
+        if (array_key_exists($storeName, config('scrapers', []))) {
             return "{$storeName} parduotuvė";
         }
 

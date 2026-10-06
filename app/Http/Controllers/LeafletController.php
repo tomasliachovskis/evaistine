@@ -138,7 +138,7 @@ class LeafletController extends Controller
             ->filter(fn ($l) => ($l['slug'] ?? null) !== $currentSlug && ($l['status'] ?? null) !== 'expired')
             ->map(fn ($l) => $l + ['store_name' => $listingMeta['store_name'] ?? $storeSlug, 'store_slug' => $storeSlug]);
 
-        $mainStores = ['maxima', 'norfa', 'lidl', 'rimi', 'iki'];
+        $mainStores = \App\Support\StoreListPriority::mainSlugs();
         $otherStores = collect(json_decode(app(ProductController::class)->getAllLeaflets()->getContent(), true)['leaflets'] ?? [])
             ->filter(fn ($l) => ($l['status'] ?? null) !== 'expired' && ($l['store_slug'] ?? null) !== $storeSlug)
             ->groupBy('store_slug')

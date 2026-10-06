@@ -77,7 +77,7 @@ class ListingPageMetaService
                 'value' => $avgDuration !== null ? $avgDuration . ' d.' : '—',
             ],
             [
-                'label' => 'Sutaupymai su SuperAkcijos šią savaitę',
+                'label' => 'Sutaupymai su eVaistinė.lt šią savaitę',
                 'value' => $totalSavings > 0
                     ? number_format($totalSavings, 2, ',', ' ') . ' €'
                     : '—',
@@ -334,7 +334,7 @@ class ListingPageMetaService
             ->groupBy('store_slug')
             ->map(fn ($group) => $group->first());
 
-        $mainChains = array_slice(\App\Support\StoreListPriority::PRIORITY_SLUGS, 0, 5);
+        $mainChains = array_slice(\App\Support\StoreListPriority::mainSlugs(), 0, 5);
         $mainNewest = collect($mainChains)
             ->map(fn (string $slug) => $newestFreshByStore->get($slug))
             ->filter();
@@ -632,7 +632,7 @@ class ListingPageMetaService
 
         return [
             'title' => $categoryName . ' akcijų statistika',
-            'summary' => "Šiuo metu SuperAkcijos.lt stebi {$totalOffers} aktyvių " . \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($categoryName) . " akcijų {$storeCount} prekybos tinkluose. Didžiausia aptikta nuolaida siekia {$maxDiscount} %, o vidutinis sutaupymas šioje kategorijoje – apie {$avgDiscount} %.",
+            'summary' => "Šiuo metu eVaistinė.lt stebi {$totalOffers} aktyvių " . \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($categoryName) . " akcijų {$storeCount} prekybos tinkluose. Didžiausia aptikta nuolaida siekia {$maxDiscount} %, o vidutinis sutaupymas šioje kategorijoje – apie {$avgDiscount} %.",
             'highlights' => [
                 ['label' => 'Aktyvios akcijos', 'value' => (string) $totalOffers],
                 ['label' => 'Vidutinė nuolaida', 'value' => $avgDiscount . ' %'],
@@ -979,7 +979,7 @@ class ListingPageMetaService
             ? "naujausius {$storeName} akcijų {$leafletNoun}"
             : "naujausią {$storeName} akcijų {$leafletNoun}";
 
-        $intro = "SuperAkcijos.lt – patogi vieta, kur {$leafletPhrase}, didžiausias savaitės nuolaidas ir populiariausius pasiūlymus rasite be papildomų paieškų.";
+        $intro = "eVaistinė.lt – patogi vieta, kur {$leafletPhrase}, didžiausias savaitės nuolaidas ir populiariausius pasiūlymus rasite be papildomų paieškų.";
         $detail = "Kas savaitę atnaujiname akcijų sąrašą pagal galiojantį leidinį, todėl čia matote, kas šiuo metu galioja parduotuvėse. Jei domina naujas leidinys, šios savaitės akcijos ar norite greitai palyginti nuolaidas – viršuje peržiūrėkite leidinių viršelius, o žemiau – atrinktas didžiausias nuolaidas su kainomis.";
 
         return "{$intro}\n\n{$detail}";
@@ -991,10 +991,15 @@ class ListingPageMetaService
     // /akcijos/{store} hub's job. Copy must stay about the catalog itself —
     // how often it's published, what kinds exist, how to read/download it —
     // not savings/loyalty-card advice, which belongs on the other page.
-    // Priority stores (StoreListPriority::PRIORITY_SLUGS) get hand-written,
+    // Stores in HAND_WRITTEN_HUB_COPY_SLUGS get hand-written,
     // factual paragraphs; every other store falls back to a richer
     // pickVariant()-templated version so pages stay distinct without needing
     // bespoke copy for all ~40 stores.
+    // Slugs with a case in getPriorityStoreAbout/Format/Tips. Empty until
+    // the pharmacy chains get their own hand-written paragraphs; those
+    // match() blocks still hold the grocery copy and have no default arm.
+    private const HAND_WRITTEN_HUB_COPY_SLUGS = [];
+
     private function buildStoreHubContent(Store $store, int $activeLeafletCount): array
     {
         $storeName = $store->name;
@@ -1004,7 +1009,7 @@ class ListingPageMetaService
         $leafletNounSingular = $words['nominative'];
         $leafletNounAccusative = $words['accusative'];
         $leafletNounGenitive = $words['genitive'];
-        $isPriority = in_array($storeSlug, StoreListPriority::PRIORITY_SLUGS, true);
+        $isPriority = in_array($storeSlug, self::HAND_WRITTEN_HUB_COPY_SLUGS, true);
 
         $about = $isPriority ? $this->getPriorityStoreAbout($storeSlug) : [
             $this->pickVariant($storeSlug . '/about/1', [
@@ -1020,7 +1025,7 @@ class ListingPageMetaService
             $this->pickVariant($storeSlug . '/about/3', [
                 "Kai kada {$storeName} vienu metu skelbia kelis skirtingus leidinius (pvz. bendrą savaitinį ir siauresnės kategorijos numerį) – visus aktyvius {$leafletNoun} rasite kartu šiame puslapyje.",
                 "{$storeName} {$leafletNounSingular} apima platų prekių spektrą – nuo maisto iki buities ir namų apyvokos prekių, suskirstytą į atskirus puslapius pagal kategorijas.",
-                "SuperAkcijos.lt seka {$storeName} skelbiamus leidinius ir kiekvieną naują numerį pridedame čia iškart, kai jis pasirodo.",
+                "eVaistinė.lt seka {$storeName} skelbiamus leidinius ir kiekvieną naują numerį pridedame čia iškart, kai jis pasirodo.",
             ]),
         ];
 
@@ -1326,7 +1331,7 @@ class ListingPageMetaService
 
     private function siteUrl(string $path): string
     {
-        return 'https://superakcijos.lt' . $path;
+        return 'https://evaistine.lt' . $path;
     }
 
     /**

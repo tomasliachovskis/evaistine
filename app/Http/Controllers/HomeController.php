@@ -66,7 +66,7 @@ class HomeController extends Controller
             ->all();
 
         $seo = $pageMeta['seo'];
-        $title = $seo['meta_title'] ?: 'Akcijos ir nuolaidos Lietuvoje | SuperAkcijos.lt';
+        $title = $seo['meta_title'] ?: 'Akcijos ir nuolaidos Lietuvoje | eVaistinė.lt';
         $description = $seo['meta_description'] ?: 'Rask visas akcijas ir nuolaidas Lietuvoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai.';
 
         return PageHtmlCache::remember($request, '/', fn () => view('home', [

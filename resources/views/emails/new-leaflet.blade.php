@@ -12,7 +12,7 @@
             <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb;">
                 <tr>
                     <td style="background-color:#044923; padding:24px 32px;">
-                        <img src="https://superakcijos.lt/assets/logo-white.svg" alt="SuperAkcijos.lt" width="178" height="22" style="display:block; height:22px; width:178px; max-width:178px; border:0;">
+                        <img src="https://evaistine.lt/assets/logo-white.svg" alt="eVaistinė.lt" width="178" height="22" style="display:block; height:22px; width:178px; max-width:178px; border:0;">
                     </td>
                 </tr>
                 <tr>

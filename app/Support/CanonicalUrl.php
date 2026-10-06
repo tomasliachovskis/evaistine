@@ -8,7 +8,7 @@ namespace App\Support;
 // filtered pages are noindexed the same way the Next.js frontend did.
 class CanonicalUrl
 {
-    private const BASE_URL = 'https://superakcijos.lt';
+    private const BASE_URL = 'https://evaistine.lt';
 
     public static function origin(): string
     {

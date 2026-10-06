@@ -37,7 +37,7 @@ class WeeklyDigestMail extends Mailable
     {
         $names = $this->stores->pluck('name')->take(3)->implode(', ');
 
-        return $this->subject('Šios savaitės akcijos: '.$names.' - SuperAkcijos')
+        return $this->subject('Šios savaitės akcijos: '.$names.' - eVaistinė')
             ->view('emails.weekly-digest');
     }
 }

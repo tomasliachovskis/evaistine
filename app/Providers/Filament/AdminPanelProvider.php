@@ -27,7 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('SuperAkcijos')
+            ->brandName('eVaistinė')
             ->colors([
                 'primary' => Color::Green,
             ])

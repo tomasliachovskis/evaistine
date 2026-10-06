@@ -985,7 +985,7 @@ class ProductController extends Controller
         // hid the alternatives block on expired-promo product pages even
         // though the page itself (product.blade.php's $isNoActivePromotion,
         // which checks end_at against now()) correctly showed "no active
-        // promotion" UI — https://superakcijos.lt/akcijos/mesa-ir-zuvis/virtos-hot-dog-desreles-1-kg
+        // promotion" UI — https://evaistine.lt/akcijos/mesa-ir-zuvis/virtos-hot-dog-desreles-1-kg
         // was one such case. Match that same "is there a discount active
         // right now" check instead of "has a discount row ever existed".
         $hasActiveDiscount = $product->discounts->contains(
@@ -2062,7 +2062,6 @@ class ProductController extends Controller
     // both one of these and a smaller/less-known store, the title favors
     // showing the recognizable name(s) first rather than whatever order the
     // discounts relation happens to load in.
-    private const MAIN_STORE_SLUGS = ['maxima', 'norfa', 'lidl', 'iki', 'rimi'];
 
     private function getStoreNamesForProduct($product): string
     {
@@ -2071,7 +2070,7 @@ class ProductController extends Controller
             ->filter()
             ->unique('id')
             ->sortBy(function ($store) {
-                $rank = array_search($store->slug, self::MAIN_STORE_SLUGS, true);
+                $rank = array_search($store->slug, \App\Support\StoreListPriority::mainSlugs(), true);
 
                 return $rank === false ? 99 : $rank;
             })
@@ -2588,7 +2587,7 @@ class ProductController extends Controller
         $names = \App\Models\Store::whereIn('id', $storeIds)
             ->get(['name', 'slug'])
             ->sortBy(function ($store) {
-                $rank = array_search($store->slug, self::MAIN_STORE_SLUGS, true);
+                $rank = array_search($store->slug, \App\Support\StoreListPriority::mainSlugs(), true);
 
                 return $rank === false ? 99 : $rank;
             })

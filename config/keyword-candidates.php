@@ -9,12 +9,9 @@ return [
     ],
 
     'store_names' => [
-        'maxima', 'maksima', 'iki', 'lidl', 'rimi', 'rimas', 'norfa', 'aibė', 'aibe', 'aibės', 'aibes',
-        'grustė', 'gruste', 'gulbelė', 'gulbele', 'kubas', 'šilas', 'silas', 'koops',
-        'ermitažas', 'ermitazas', 'eurovaistinė', 'eurovaistine',
-        'camelia', 'benu', 'pigu', 'senukai', 'depo', 'express', 'prekybos',
-        'leidinys', 'leidiniai', 'katalogas', 'flyer',
-        'eurokos', 'vynoteka', 'impuls', 'tai', 'tai save', 'tai-save',
+        'eurovaistinė', 'eurovaistine', 'gintarinė', 'gintarine', 'camelia', 'benu',
+        'apotheka', 'n vaistinė', 'nvaistine', 'ramunėlės', 'ramuneles', 'vaistinė', 'vaistine',
+        'vaistinės', 'vaistines', 'pigu', 'leidinys', 'leidiniai', 'katalogas', 'flyer',
     ],
 
     'skip_term_groups' => [

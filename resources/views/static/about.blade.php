@@ -4,11 +4,11 @@
 
     <div class="base-container">
         <div class="flex flex-col gap-4 pb-[56px]">
-            <h1>Apie SuperAkcijos.lt</h1>
+            <h1>Apie eVaistinė.lt</h1>
 
             <h2 class="mb-4 text-xl font-semibold">Kas mes esame</h2>
             <p class="mb-6 text-base">
-                SuperAkcijos.lt yra kainų ir akcijų palyginimo svetainė — mes nesame parduotuvė ir
+                eVaistinė.lt yra kainų ir akcijų palyginimo svetainė — mes nesame parduotuvė ir
                 nieko patys neparduodame. Renkame ir vienoje vietoje sudedame Lietuvos prekybos tinklų
                 (Maxima, Lidl, Iki, Rimi, Norfa ir kitų) viešai skelbiamas akcijas, nuolaidas ir
                 savaitės leidinius, kad galėtumėte greitai palyginti kainas ir rasti geriausią pasiūlymą,
@@ -29,7 +29,7 @@
                 Turite klausimų, pastebėjote neteisingą informaciją ar norite susisiekti dėl bendradarbiavimo?
                 Rašykite mums:
             </p>
-            <p class="mb-6 text-base">El. paštas: <a href="mailto:info@superakcijos.lt" class="text-primary underline hover:text-dark-green">info@superakcijos.lt</a></p>
+            <p class="mb-6 text-base">El. paštas: <a href="mailto:info@evaistine.lt" class="text-primary underline hover:text-dark-green">info@evaistine.lt</a></p>
             <p class="text-base">
                 Su asmens duomenų tvarkymu susijusius klausimus rasite
                 <a href="/privatumo-politika" class="text-primary underline hover:text-dark-green">privatumo politikoje</a>.

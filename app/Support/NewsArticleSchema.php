@@ -13,7 +13,7 @@ class NewsArticleSchema
     {
         $publisher = [
             '@type' => 'Organization',
-            'name' => 'SuperAkcijos.lt',
+            'name' => 'eVaistinė.lt',
             'url' => CanonicalUrl::origin(),
             'logo' => [
                 '@type' => 'ImageObject',

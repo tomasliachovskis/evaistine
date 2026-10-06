@@ -1,24 +1,24 @@
 <?php
 
-// Ported from discount/src/lib/header-nav.ts's PRODUCT_KEYWORD_NAV_ITEMS —
-// static popular-keyword shortcuts shown in the header's "Populiarios akcijos"
-// dropdown and the mobile menu, not DB-driven.
+// Static popular-keyword shortcuts shown in the header's "Populiarios
+// akcijos" dropdown and the mobile menu, not DB-driven. Each slug needs a
+// matching keyword page (created with the pharmacy keyword import).
 return [
     'product_keyword_items' => [
-        ['label' => 'Kava', 'slug' => 'kava'],
-        ['label' => 'Pienas', 'slug' => 'pienas'],
-        ['label' => 'Sviestas', 'slug' => 'sviestas'],
-        ['label' => 'Kiaušiniai', 'slug' => 'kiausiniai'],
-        ['label' => 'Vištiena', 'slug' => 'vistienai'],
-        ['label' => 'Sūris', 'slug' => 'suris'],
-        ['label' => 'Skalbimo priemonės', 'slug' => 'skalbimo-priemones'],
-        ['label' => 'Kiauliena', 'slug' => 'kiauliena'],
-        ['label' => 'Ledai', 'slug' => 'ledai'],
-        ['label' => 'Vanduo', 'slug' => 'mineralinis-vanduo'],
-        ['label' => 'Šokoladas', 'slug' => 'sokoladas'],
-        ['label' => 'Tualetinis popierius', 'slug' => 'tualetinis-popierius'],
-        ['label' => 'Aliejus', 'slug' => 'aliejus'],
-        ['label' => 'Sauskelnės', 'slug' => 'sauskelnems'],
-        ['label' => 'Pomidorai', 'slug' => 'pomidorai'],
+        ['label' => 'Vitaminas D', 'slug' => 'vitaminas-d'],
+        ['label' => 'Magnis', 'slug' => 'magnis'],
+        ['label' => 'Vitaminas C', 'slug' => 'vitaminas-c'],
+        ['label' => 'Omega-3', 'slug' => 'omega-3'],
+        ['label' => 'Probiotikai', 'slug' => 'probiotikai'],
+        ['label' => 'Kolagenas', 'slug' => 'kolagenas'],
+        ['label' => 'Ibuprofenas', 'slug' => 'ibuprofenas'],
+        ['label' => 'Paracetamolis', 'slug' => 'paracetamolis'],
+        ['label' => 'Nosies purškalas', 'slug' => 'nosies-purskalas'],
+        ['label' => 'Melatoninas', 'slug' => 'melatoninas'],
+        ['label' => 'Kremas nuo saulės', 'slug' => 'kremas-nuo-saules'],
+        ['label' => 'Dantų pasta', 'slug' => 'dantu-pasta'],
+        ['label' => 'Sauskelnės', 'slug' => 'sauskelnes'],
+        ['label' => 'Kraujospūdžio matuoklis', 'slug' => 'kraujospudzio-matuoklis'],
+        ['label' => 'Termometras', 'slug' => 'termometras'],
     ],
 ];

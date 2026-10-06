@@ -8,7 +8,7 @@ class StaticPageController extends Controller
     {
         return view('static.privacy-policy', [
             'title' => 'Privatumo politika',
-            'description' => 'SuperAkcijos.lt privatumo politika. Sužinokite, kaip tvarkome jūsų asmeninę informaciją.',
+            'description' => 'eVaistinė.lt privatumo politika. Sužinokite, kaip tvarkome jūsų asmeninę informaciją.',
             'canonical' => url('/privatumo-politika'),
             'breadcrumbs' => [
                 ['name' => 'Akcijos', 'href' => '/'],
@@ -21,7 +21,7 @@ class StaticPageController extends Controller
     {
         return view('static.about', [
             'title' => 'Apie mus',
-            'description' => 'Kas yra SuperAkcijos.lt, iš kur renkame kainas ir akcijas, ir kaip su mumis susisiekti.',
+            'description' => 'Kas yra eVaistinė.lt, iš kur renkame kainas ir akcijas, ir kaip su mumis susisiekti.',
             'canonical' => url('/apie'),
             'breadcrumbs' => [
                 ['name' => 'Akcijos', 'href' => '/'],

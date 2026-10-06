@@ -16,7 +16,7 @@ class MagicLinkMail extends Mailable
 
     public function build(): self
     {
-        return $this->subject($this->code ? "Prisijungimo kodas {$this->code} - SuperAkcijos" : 'Prisijungimo nuoroda - SuperAkcijos')
+        return $this->subject($this->code ? "Prisijungimo kodas {$this->code} - eVaistinė" : 'Prisijungimo nuoroda - eVaistinė')
             ->view('emails.magic-link');
     }
 }

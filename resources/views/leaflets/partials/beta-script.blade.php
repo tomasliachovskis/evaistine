@@ -9,7 +9,7 @@
      the product card or the list instead of leaving the page. --}}
 <script>
     window.leafletBeta = function (config) {
-        const LIST_KEY = 'superakcijos_sarasas_v1';
+        const LIST_KEY = 'evaistine_sarasas_v1';
 
         const readList = () => {
             try {

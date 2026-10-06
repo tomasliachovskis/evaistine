@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @php
         // Every controller except HomeController passes a bare title with no
-        // "| SuperAkcijos.lt" suffix — confirmed against production, where
+        // "| eVaistinė.lt" suffix — confirmed against production, where
         // every single page type carries it. Centralized here instead of in
         // every controller (HomePageMetaService already bakes the suffix
         // into its own generated title, so guard against double-suffixing).
         $pageTitle = $title ?? 'Rask visas akcijas ir nuolaidas Lietuvoje';
-        if (!str_ends_with($pageTitle, '| SuperAkcijos.lt')) {
-            $pageTitle .= ' | SuperAkcijos.lt';
+        if (!str_ends_with($pageTitle, '| eVaistinė.lt')) {
+            $pageTitle .= ' | eVaistinė.lt';
         }
     @endphp
     @php
@@ -44,7 +44,7 @@
 
     {{-- Open Graph / Twitter: share previews (Facebook, Messenger, Viber,
          X). Were missing on every page (audit 2026-09-28). --}}
-    <meta property="og:site_name" content="SuperAkcijos.lt">
+    <meta property="og:site_name" content="eVaistinė.lt">
     <meta property="og:locale" content="lt_LT">
     <meta property="og:type" content="{{ $ogType ?? 'website' }}">
     <meta property="og:title" content="{{ $pageTitle }}">
@@ -64,9 +64,9 @@
             {!! json_encode([
                 '@context' => 'https://schema.org',
                 '@type' => 'Organization',
-                'name' => 'SuperAkcijos.lt',
-                'url' => 'https://superakcijos.lt',
-                'logo' => 'https://superakcijos.lt/assets/logo.svg',
+                'name' => 'eVaistinė.lt',
+                'url' => 'https://evaistine.lt',
+                'logo' => 'https://evaistine.lt/assets/logo.svg',
                 'description' => 'Naujausi akcijų ir nuolaidų leidiniai vienoje vietoje. Rask geriausias MAXIMA, IKI, LIDL, NORFA, RIMI ir kitų prekybos tinklų akcijas.',
             ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
         </script>
@@ -74,14 +74,14 @@
             {!! json_encode([
                 '@context' => 'https://schema.org',
                 '@type' => 'WebSite',
-                'name' => 'SuperAkcijos.lt',
-                'url' => 'https://superakcijos.lt',
+                'name' => 'eVaistinė.lt',
+                'url' => 'https://evaistine.lt',
                 'description' => 'Rask visas akcijas ir nuolaidas vienoje vietoje',
                 'potentialAction' => [
                     '@type' => 'SearchAction',
                     'target' => [
                         '@type' => 'EntryPoint',
-                        'urlTemplate' => 'https://superakcijos.lt/akcijos/paieska/{search_term_string}',
+                        'urlTemplate' => 'https://evaistine.lt/akcijos/paieska/{search_term_string}',
                     ],
                     'query-input' => 'required name=search_term_string',
                 ],
@@ -157,8 +157,8 @@
             // request (App\Support\MyStores); the browser only re-filters
             // when the cookie wasn't there yet.
             Alpine.store('myStores', {
-                KEY: 'superakcijos_parduotuves_v1',
-                SHOW_ALL_KEY: 'superakcijos_visos_parduotuves',
+                KEY: 'evaistine_parduotuves_v1',
+                SHOW_ALL_KEY: 'evaistine_visos_parduotuves',
                 COOKIE: @js(\App\Support\MyStores::COOKIE),
                 signedIn: @json(auth()->check()),
                 slugs: [],

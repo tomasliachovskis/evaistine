@@ -9,13 +9,6 @@ use Illuminate\Support\Collection;
 
 class KeywordPageDynamicMetaService
 {
-    // The 5 nationally recognizable chains — same list as
-    // ProductController::MAIN_STORE_SLUGS / KeywordPageService::
-    // PRIORITY_STORE_NAMES, duplicated locally rather than shared since
-    // this class doesn't otherwise depend on either (matches this
-    // codebase's own existing convention of each class keeping its own
-    // small copy of this list).
-    private const PRIORITY_STORE_SLUGS = ['maxima', 'norfa', 'lidl', 'iki', 'rimi'];
 
     /**
      * @param  Collection<int, Discount>  $discounts
@@ -133,7 +126,7 @@ class KeywordPageDynamicMetaService
             ->filter(fn (Discount $d) => $d->store !== null)
             ->unique(fn (Discount $d) => $d->store->id)
             ->sortBy(function (Discount $d) {
-                $rank = array_search($d->store->slug, self::PRIORITY_STORE_SLUGS, true);
+                $rank = array_search($d->store->slug, \App\Support\StoreListPriority::mainSlugs(), true);
 
                 return $rank === false ? 99 : $rank;
             })

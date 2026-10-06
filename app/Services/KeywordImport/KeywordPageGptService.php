@@ -101,7 +101,7 @@ class KeywordPageGptService
     private function systemPrompt(): string
     {
         return <<<'PROMPT'
-Tu esi SuperAkcijos.lt turinio specialistas. Gauni keyword grupę su:
+Tu esi eVaistinė.lt turinio specialistas. Gauni keyword grupę su:
 - primary_keywords (3 exact frazės – jos jau naudojamos H1/meta, NEGENERUOK jų)
 - secondary_keywords (likę raktažodžiai – turinio šaltinis)
 - candidate_brands (galimi prekės ženklai/linijos)
@@ -206,7 +206,7 @@ PROMPT;
      */
     private function sanitizeExcludeTerms(array $terms): array
     {
-        $blocked = ['akcija', 'akcijos', 'nuolaida', 'nuolaidos', 'iki', 'maxima', 'lidl', 'rimi', 'norfa'];
+        $blocked = ['akcija', 'akcijos', 'nuolaida', 'nuolaidos', 'vaistinė', 'vaistine', 'eurovaistinė', 'gintarinė', 'camelia', 'benu', 'apotheka'];
 
         return array_values(array_filter($terms, function ($term) use ($blocked) {
             $term = mb_strtolower(trim((string) $term));

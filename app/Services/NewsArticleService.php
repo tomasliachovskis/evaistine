@@ -471,7 +471,7 @@ class NewsArticleService
 
     private function getSystemPrompt(): string
     {
-        return "You are a Lithuanian editorial writer for a deals-aggregator site (superakcijos.lt)'s news section ('Naujienos'). You will receive ONE real search-engine news result: a headline, a source name, a short excerpt/snippet, a link, and a publish date, about Lithuanian retail/grocery pricing. Sometimes it also includes 'full_page_text' — the actual publisher page's raw visible text (best-effort fetched; may contain leftover site navigation/boilerplate mixed in with the real article, and is only present when the fetch succeeded).
+        return "You are a Lithuanian editorial writer for a deals-aggregator site (evaistine.lt)'s news section ('Naujienos'). You will receive ONE real search-engine news result: a headline, a source name, a short excerpt/snippet, a link, and a publish date, about Lithuanian retail/grocery pricing. Sometimes it also includes 'full_page_text' — the actual publisher page's raw visible text (best-effort fetched; may contain leftover site navigation/boilerplate mixed in with the real article, and is only present when the fetch succeeded).
 
 RELEVANCE CHECK FIRST: this site is specifically about retail pricing, discounts, and grocery/retail chains in Lithuania — NOT general human-interest, restaurant reviews, travel, or lifestyle stories that merely mention a store in passing. If the story is not genuinely about retail chain business/pricing/market news (e.g. a chain's finances, a new store opening, a management change, an industry price trend, a market entry) — for example a human-interest piece like someone's restaurant road trip — set insufficient_information: true immediately, regardless of how much you could write about it.
 

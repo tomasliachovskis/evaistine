@@ -12,7 +12,7 @@ use Illuminate\Testing\TestResponse;
 
 trait InspectsSeoHead
 {
-    protected const ORIGIN = 'https://superakcijos.lt';
+    protected const ORIGIN = 'https://evaistine.lt';
 
     protected const NOINDEX = 'noindex, nofollow, noarchive, nosnippet';
 

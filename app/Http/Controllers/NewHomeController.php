@@ -103,7 +103,7 @@ class NewHomeController extends Controller
         // versioned Cache::remember() calls inside buildHomeTeaser()/
         // getStores()/etc. this view's own data already goes through.
         return view('new-home', [
-            'title' => $seo['meta_title'] ?: 'Daug akcijų ir nuolaidų Lietuvoje | SuperAkcijos.lt',
+            'title' => $seo['meta_title'] ?: 'Daug akcijų ir nuolaidų Lietuvoje | eVaistinė.lt',
             'description' => $seo['meta_description'] ?: 'Visos akcijos ir nuolaidos Lietuvoje vienoje vietoje.',
             'canonical' => url('/'),
             'robots' => null,

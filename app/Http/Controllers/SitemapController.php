@@ -24,7 +24,7 @@ class SitemapController extends Controller
     public function robots(Request $request)
     {
         // This app is currently also reachable at its staging host
-        // (api.superakcijos.lt) ahead of the public-domain nginx cutover —
+        // (api.evaistine.lt) ahead of the public-domain nginx cutover —
         // block crawling there entirely rather than risk it getting indexed
         // as duplicate content. CanonicalUrl::BASE_URL already hardcodes the
         // real public domain, so anything else request()->getHost() returns

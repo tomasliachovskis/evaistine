@@ -2,7 +2,7 @@
 
 ## Why
 
-Most people reading leaflets on superakcijos.lt are older. The interactive leaflet beta (large type, worded buttons, clear steps) was liked, and the owner asked for the same style across the whole site, with an app-like feel on phones. This replaced the earlier rule of matching the old Next.js site pixel for pixel.
+Most people reading leaflets on evaistine.lt are older. The interactive leaflet beta (large type, worded buttons, clear steps) was liked, and the owner asked for the same style across the whole site, with an app-like feel on phones. This replaced the earlier rule of matching the old Next.js site pixel for pixel.
 
 ## Rules
 
