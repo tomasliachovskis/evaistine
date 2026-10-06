@@ -70,7 +70,7 @@ class HomePageMetaService
             'h1' => 'Akcijos, nuolaidos ir kainų palyginimas Lietuvoje',
             'intro_lead' => "Agreguojame {$dealsLabel}+ akcijų iš {$topNames} ir kitų Lietuvos tinklų.",
             'intro_support' => 'Palyginkite prekybos tinklų savaitės nuolaidas ir akcijas vienoje vietoje – duomenys atnaujinami kasdien.',
-            'meta_title' => 'Visos akcijos ir nuolaidos Lietuvoje – kainų palyginimas | eVaistinė.lt',
+            'meta_title' => 'Visos akcijos ir nuolaidos Lietuvoje – kainų palyginimas | eVaistine.lt',
             // Explicit keywords per direct request: "akcijos"/"leidiniai"
             // (generic terms) plus a real branded-query example pairing
             // ("{Store} akcija", "{Store} leidinys" — how people actually
@@ -242,8 +242,8 @@ class HomePageMetaService
     {
         return [
             [
-                'question' => 'Kas yra eVaistinė.lt?',
-                'answer' => 'eVaistinė.lt – akcijų agregatorius. Surenkame Maxima, Lidl, Iki, Rimi, Norfa ir kitų tinklų nuolaidas vienoje vietoje, kad nereikėtų tikrinti kiekvienos parduotuvės atskirai.',
+                'question' => 'Kas yra eVaistine.lt?',
+                'answer' => 'eVaistine.lt – akcijų agregatorius. Surenkame Maxima, Lidl, Iki, Rimi, Norfa ir kitų tinklų nuolaidas vienoje vietoje, kad nereikėtų tikrinti kiekvienos parduotuvės atskirai.',
             ],
             [
                 'question' => 'Kaip dažnai atnaujinamos akcijos?',

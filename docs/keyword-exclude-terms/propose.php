@@ -9,7 +9,7 @@ $key = config('services.openai.api_key');
 $model = config('services.openai.model', 'gpt-5-mini');
 
 $system = <<<'P'
-Tu tikrini eVaistinė.lt keyword puslapį. Puslapis turi H1 ir rodo akcijų prekių sąrašą (names, sunumeruotas). Žmogus, ieškantis šio H1, nori nupirkti konkrečią prekę.
+Tu tikrini eVaistine.lt keyword puslapį. Puslapis turi H1 ir rodo akcijų prekių sąrašą (names, sunumeruotas). Žmogus, ieškantis šio H1, nori nupirkti konkrečią prekę.
 
 1. off_intent: numeriai prekių, kurios NEatitinka puslapio intencijos (kita prekės rūšis, priedas, aksesuaras, kitos kategorijos prekė, prekė tik su tokio skonio kvapu ir pan.). Pvz. puslapyje "Kavos pupelės" malta kava ir kavos kapsulės yra off_intent; puslapyje "Kava" (bendras) visos kavos rūšys tinka, bet paruošti kavos gėrimai buteliuose ar "kavos skonio" saldainiai – ne. Jei abejoji – prekė tinka (nežymėk). Bendros akcijos, kurios apima ir tinkamą prekę (pvz. "Malta kava X / Kavos pupelės Y" maltos kavos puslapyje), tinka.
 2. exclude_terms: trumpos poeilutės (mažosiomis, tiksliai kaip pavadinime, su lietuviškomis raidėmis), kurias pridėjus išmetamos off_intent prekės. Exclude veikia kaip poeilutė pavadinime ARBA brande (brandas nurodytas [laužtiniuose skliaustuose]). SVARBU: exclude terminas neturi pasitaikyti nė vienos tinkamos prekės pavadinime ar brande. Rinkis specifinius žodžius (pvz. "frappuccino", "250 ml" netinka – per bendra; "kakavos" gerai). Nenaudok: akcija, akcijos, nuolaida, iki, maxima, lidl, rimi, norfa.

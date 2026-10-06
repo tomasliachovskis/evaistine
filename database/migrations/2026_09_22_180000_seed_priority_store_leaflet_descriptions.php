@@ -214,7 +214,7 @@ return new class extends Migration
 
   <h2 class="section-heading">Kur rasti Čia Market leidinio pasiūlymus?</h2>
   <div class="mt-2 space-y-2">
-    <p class="leading-relaxed">eVaistinė.lt iš Čia Market akcijų leidinio surenka visas prekes ir jų kainas į patogų, ieškomą ir filtruojamą sąrašą. Jei norite peržiūrėti leidinio turinį kaip aiškų sąrašą, užsukite į <a href="https://evaistine.lt/akcijos/cia">Čia Market leidinio prekių sąrašą</a> ir filtruokite pagal jus dominančias prekių kategorijas be vartymo po atskirus leidinio puslapius.</p>
+    <p class="leading-relaxed">eVaistine.lt iš Čia Market akcijų leidinio surenka visas prekes ir jų kainas į patogų, ieškomą ir filtruojamą sąrašą. Jei norite peržiūrėti leidinio turinį kaip aiškų sąrašą, užsukite į <a href="https://evaistine.lt/akcijos/cia">Čia Market leidinio prekių sąrašą</a> ir filtruokite pagal jus dominančias prekių kategorijas be vartymo po atskirus leidinio puslapius.</p>
   </div>
 </div>',
   'kubas' => '<div class="space-y-5">
@@ -445,7 +445,7 @@ return new class extends Migration
 
   <h2 class="section-heading">Kur rasti Čia Market leidinio pasiūlymus?</h2>
   <div class="mt-2 space-y-2">
-    <p class="leading-relaxed">eVaistinė.lt iš Čia Market akcijų leidinio surenka visas prekes ir jų kainas į patogų, ieškomą ir filtruojamą sąrašą. Jei norite peržiūrėti leidinio turinį kaip aiškų sąrašą, užsukite į <a href="https://evaistine.lt/akcijos/cia">Čia Market leidinio prekių sąrašą</a> ir filtruokite pagal jus dominančias prekių kategorijas be vartymo po atskirus leidinio puslapius.</p>
+    <p class="leading-relaxed">eVaistine.lt iš Čia Market akcijų leidinio surenka visas prekes ir jų kainas į patogų, ieškomą ir filtruojamą sąrašą. Jei norite peržiūrėti leidinio turinį kaip aiškų sąrašą, užsukite į <a href="https://evaistine.lt/akcijos/cia">Čia Market leidinio prekių sąrašą</a> ir filtruokite pagal jus dominančias prekių kategorijas be vartymo po atskirus leidinio puslapius.</p>
   </div>
 </div>',
   'kubas' => '<div class="space-y-5">

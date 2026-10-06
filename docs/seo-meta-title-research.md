@@ -12,16 +12,16 @@ Single decisive pick per page type, not options — supersedes the "2-3 variants
 
 **Implementation change requested alongside this: round discount percentages down to the nearest 10, not the nearest 5.** `ProductController::roundDownDiscountPercent()` (`app/Http/Controllers/Api/ProductController.php:1902-1905`) currently does `(int) (floor($percent / 5) * 5)` — a real 66% shows as "iki 65%" today. Change the divisor/multiplier from 5 to 10 so the same 66% shows as "iki 60%": still a conservative floor (never overstates the real discount, same safety property as today), but reads as a cleaner, more typical marketing number — round-10 numbers are what's actually seen across the competitor titles/descriptions fetched throughout this research (`-50%`, `iki 30%`, `-37%` aside, the great majority were clean 10s). This one function is shared by all three call sites that use it — `store` (`ProductController.php:1199`), `category` (`:1158`), and `store_category` (`:1225`) — so the fix is a single one-line change that automatically applies everywhere, including the new category-specific max-discount lookup proposed in §1 below.
 
-**H1 vs title, deliberately, per page type below:** they share the same core keyword, but are never the same string, and **H1 does NOT just restate every number the title has.** Title is the compact, CTR-shaped SERP element (pre-click, no other data visible yet) and always carries the `| eVaistinė.lt` suffix, so it's the right place for the full number set. H1 sits on the actual page, where a dedicated stats line almost always already renders the same numbers a few pixels below it — verified in code (`akcijos/listing.blade.php:105-116`'s `<x-type-hero>` subtitle, `ListingPageMetaService::buildForCategory()`'s `quick_stats`, `KeywordPageService::buildQuickStats()`, and the product page's own large price/discount-badge block right under its H1). Putting the same number in H1 too is pure duplication, not reinforcement — it was flagged directly and confirmed against the templates. **Rule applied below: H1 drops any number that's already rendered in that page's adjacent stats block; it keeps a number only when nothing else on the page already shows it** (currently just the leaflet hub's validity dates).
+**H1 vs title, deliberately, per page type below:** they share the same core keyword, but are never the same string, and **H1 does NOT just restate every number the title has.** Title is the compact, CTR-shaped SERP element (pre-click, no other data visible yet) and always carries the `| eVaistine.lt` suffix, so it's the right place for the full number set. H1 sits on the actual page, where a dedicated stats line almost always already renders the same numbers a few pixels below it — verified in code (`akcijos/listing.blade.php:105-116`'s `<x-type-hero>` subtitle, `ListingPageMetaService::buildForCategory()`'s `quick_stats`, `KeywordPageService::buildQuickStats()`, and the product page's own large price/discount-badge block right under its H1). Putting the same number in H1 too is pure duplication, not reinforcement — it was flagged directly and confirmed against the templates. **Rule applied below: H1 drops any number that's already rendered in that page's adjacent stats block; it keeps a number only when nothing else on the page already shows it** (currently just the leaflet hub's validity dates).
 
 | Page | H1 (current → recommended) | Title (current → recommended) |
 |---|---|---|
-| Store | `Maxima akcijos šią savaitę` → `Visos Maxima akcijos šią savaitę – iki {maxDiscount}% nuolaidos` *(count dropped — already shown as `"{count} akcijos"` right under H1)* | → `Maxima akcijos – iki {maxDiscount}%, {count}+ pasiūlymų \| eVaistinė.lt` |
-| Leaflet hub | `Maxima leidiniai` → `Naujas Maxima savaitės leidinys galioja nuo {validFrom} iki {validTo}` *(kept — dates aren't shown anywhere else near H1)* | → `Maxima leidinys Nr.{issue}, {validFrom}–{validTo} \| eVaistinė.lt` |
-| Leaflets index | `Populiariausi akcijų leidiniai` → `Visi akcijų leidiniai vienoje vietoje` *(count dropped — already shown as `"{N} savaitės katalogai"` right under H1)* | → `Visi akcijų leidiniai – {storeCount} parduotuvių \| eVaistinė.lt` |
-| Category | *(seo_title, e.g. "Elektronika akcijos")* → `Elektronikos akcijos ir nuolaidos – iki {maxDiscount}% nuolaida` *(count dropped — `quick_stats` already shows "Aktyvios akcijos: {count}"; % kept, not duplicated anywhere)* | → `{Category} akcijos – {count}+ pasiūlymų, iki {maxDiscount}% \| eVaistinė.lt` |
-| Store+category | *(seo_title, e.g. "Maxima akcija elektronika")* → `Maxima elektronikos akcijos šią savaitę – iki {maxDiscount}% nuolaida` *(count dropped — hero already shows "{total} akcijos"; % kept)* | → `{Store} {category} akcijos – {count}+ pasiūlymų, iki {maxDiscount}% \| eVaistinė.lt` |
-| Product | `{Product} akcija` (`ProductPageMeta::heroTitle`) → **unchanged** *(price dropped entirely — the page's own price-hero block right under H1 already shows it in large type with a discount badge; adding it to H1 too is pure duplication)* | → `{Product} akcija – kaina nuo {minPrice} € \| eVaistinė.lt` |
+| Store | `Maxima akcijos šią savaitę` → `Visos Maxima akcijos šią savaitę – iki {maxDiscount}% nuolaidos` *(count dropped — already shown as `"{count} akcijos"` right under H1)* | → `Maxima akcijos – iki {maxDiscount}%, {count}+ pasiūlymų \| eVaistine.lt` |
+| Leaflet hub | `Maxima leidiniai` → `Naujas Maxima savaitės leidinys galioja nuo {validFrom} iki {validTo}` *(kept — dates aren't shown anywhere else near H1)* | → `Maxima leidinys Nr.{issue}, {validFrom}–{validTo} \| eVaistine.lt` |
+| Leaflets index | `Populiariausi akcijų leidiniai` → `Visi akcijų leidiniai vienoje vietoje` *(count dropped — already shown as `"{N} savaitės katalogai"` right under H1)* | → `Visi akcijų leidiniai – {storeCount} parduotuvių \| eVaistine.lt` |
+| Category | *(seo_title, e.g. "Elektronika akcijos")* → `Elektronikos akcijos ir nuolaidos – iki {maxDiscount}% nuolaida` *(count dropped — `quick_stats` already shows "Aktyvios akcijos: {count}"; % kept, not duplicated anywhere)* | → `{Category} akcijos – {count}+ pasiūlymų, iki {maxDiscount}% \| eVaistine.lt` |
+| Store+category | *(seo_title, e.g. "Maxima akcija elektronika")* → `Maxima elektronikos akcijos šią savaitę – iki {maxDiscount}% nuolaida` *(count dropped — hero already shows "{total} akcijos"; % kept)* | → `{Store} {category} akcijos – {count}+ pasiūlymų, iki {maxDiscount}% \| eVaistine.lt` |
+| Product | `{Product} akcija` (`ProductPageMeta::heroTitle`) → **unchanged** *(price dropped entirely — the page's own price-hero block right under H1 already shows it in large type with a discount badge; adding it to H1 too is pure duplication)* | → `{Product} akcija – kaina nuo {minPrice} € \| eVaistine.lt` |
 | Keyword | `{Keyword} akcijos ir nuolaidos šią savaitę` → **unchanged** *(count + price dropped entirely — `buildQuickStats()` already renders "Aktyvūs pasiūlymai", "Parduotuvių", AND "Kaina nuo X €" right under this exact H1)* | → `{Keyword} akcija – kaina nuo {minPrice} \| {count} pasiūlymų` |
 
 ### 1. Store page — `/akcijos/maxima`
@@ -35,7 +35,7 @@ Gėrimai, kava, arbata:              285 offers, max 51%
 ```
 
 - **H1:** `Visos Maxima akcijos šią savaitę – Buitinė chemija iki 60%`
-- **Title:** `Maxima akcijos – Buitinė chemija iki 60%, 1200+ pasiūlymų | eVaistinė.lt`
+- **Title:** `Maxima akcijos – Buitinė chemija iki 60%, 1200+ pasiūlymų | eVaistine.lt`
 - **Description:** `Rask geriausias Maxima akcijas: Buitinė chemija iki 60%, 1200+ pasiūlymų. Palyginkite kainas ir sutaupykite dabar! Galioja 2026.09.15–2026.09.21.`
 - Naming the actual category behind the top discount ("Buitinė chemija iki 60%") is a concrete, checkable claim — stronger than a bare "iki 50%" with no context, and matches how real competitor copy reads (label + %, e.g. gudrusis.lt's search results showed "DADU ledai -40%"-style listings, not a bare percentage with nothing else). Description now opens with an imperative CTA verb (`Rask` — "find") and closes with one (`sutaupykite dabar` — "save now"); title stays a noun-phrase label (SERP titles read better that way) but leads with the strongest concrete number available.
 - **This needs one new query that doesn't exist yet.** The current `generateSeoData('store', ...)` (`ProductController.php:1199`) only computes an overall `MAX(discount_percent)` across the whole store — it has no idea *which category* that maximum belongs to. `ListingPageMetaService::getTopCategoriesForStore()` (`app/Services/ListingPageMetaService.php:422-452`) already has the right shape (groups discounts by root category, selects `MAX(discount_percent)` per category) but orders by offer count, not by discount % — needs a small variant of that query ordering by `max_discount_percent` DESC instead, then that result (category name + its max %) gets threaded into `generateSeoData()`'s `store` branch in place of the bare store-wide max.
@@ -43,39 +43,39 @@ Gėrimai, kava, arbata:              285 offers, max 51%
 ### 2. Leaflet hub — `/leidinys/maxima`
 
 - **H1:** `Naujas Maxima savaitės leidinys galioja nuo 2026.09.15 iki 2026.09.21`
-- **Title:** `Maxima leidinys Nr.38, 2026.09.15–2026.09.21 | eVaistinė.lt`
+- **Title:** `Maxima leidinys Nr.38, 2026.09.15–2026.09.21 | eVaistine.lt`
 - **Description:** `Naujas Maxima leidinys Nr.38 galioja nuo 2026.09.15 iki 2026.09.21. Peržiūrėkite visus akcijų puslapius ir kainas.`
 - Adds the missing end date to the title (§2's research finding — every fetched competitor includes the full range, we only had the start date). `$flyer->issue_number`/`$validFromDot`/`$validToDot` are already in scope in `generateSeoData('store_leaflet', ...)`. H1 is written as a full sentence and drops the issue number (already visible on-page in the leaflet's own header) rather than repeating the title's `Nr.N, date–date` label shape.
 
 ### 3. Leaflets index — `/leidiniai`
 
 - **H1:** `Visi akcijų leidiniai vienoje vietoje`
-- **Title:** `Visi akcijų leidiniai – {storeCount} parduotuvių | eVaistinė.lt`
+- **Title:** `Visi akcijų leidiniai – {storeCount} parduotuvių | eVaistine.lt`
 - **Description:** `Naujausi Maxima, Lidl, Iki, Rimi, Norfa ir kitų {storeCount} parduotuvių leidiniai vienoje vietoje. Atnaujinama kiekvieną savaitę.`
 - **`{storeCount}` is not yet computed anywhere in `generateSeoData('leaflets_index')`, which is currently fully hardcoded** — this needs one new query (e.g. count of `Store` rows with a currently-valid flyer) wired into that branch before this text can go live. Flagging explicitly rather than guessing a number, since the whole point of this update is not to write fake "real" data. **H1 has no injected number at all** — `leaflets/index.blade.php:38` already renders `"{{ count($leaflets) }} savaitės katalogai"` directly under this H1, so a store-count figure there too would be a second, slightly-different-sounding number competing with the one already visible a line below.
 
 ### 4. Category page — `/akcijos/elektronika`
 
 - **H1:** `Elektronikos akcijos ir nuolaidos – iki 30% nuolaida`
-- **Title:** `Elektronika akcijos – 340+ pasiūlymų, iki 30% nuolaidos | eVaistinė.lt`
+- **Title:** `Elektronika akcijos – 340+ pasiūlymų, iki 30% nuolaidos | eVaistine.lt`
 - **Description:** `Palyginkite 340+ Elektronika akcijų iš Maxima, Kauno Baldai – iki 30% nuolaidos. Atnaujinama kiekvieną savaitę.`
 - All three numbers (count, max discount %, store names) already exist in `generateSeoData('category', ...)` — title keeps the full set (count + %), it's the only place they appear pre-click. **H1 drops the count** — `ListingPageMetaService::buildForCategory()` (`app/Services/ListingPageMetaService.php:150-153`) already feeds `quick_stats` with `"Aktyvios akcijos": {count}`, rendered directly under this H1 in `listing.blade.php`'s `@else` branch (line 119). Max discount % isn't part of that `quick_stats` array, so it's genuinely new information and stays in H1. H1 also uses the genitive form ("Elektronikos akcijos ir nuolaidos") as a fuller sentence instead of repeating the title's terser nominative label.
 
 ### 5. Store + category page — `/akcijos/maxima/elektronika`
 
 - **H1:** `Maxima elektronikos akcijos šią savaitę – iki 25% nuolaida`
-- **Title:** `Maxima elektronika akcijos – 85+ pasiūlymų, iki 25% nuolaidos | eVaistinė.lt`
+- **Title:** `Maxima elektronika akcijos – 85+ pasiūlymų, iki 25% nuolaidos | eVaistine.lt`
 - **Description:** `Maxima elektronika akcijos: 85+ pasiūlymų, iki 25% nuolaidos. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.`
 - Same as §4: title keeps count + %, **H1 drops the count** — the `store_category` branch of `listing.blade.php` (line 112) already renders `"{{ number_format($total) }} akcijos"` directly under this H1. % stays since nothing else on the page shows it.
 - Zero-offer fallback case (real fallback count from `$fallbackOtherStores`, per `AkcijosController.php`'s existing "show other stores' offers instead of a blank page" behavior) — here the count genuinely is the only real number available (there's no discount % to fall back on), so it stays in both:
   - **H1:** `Maxima šiuo metu elektronikos akcijų neturi – {fallbackCount}+ pasiūlymų kitose parduotuvėse`
-  - **Title:** `Maxima elektronika – {fallbackCount}+ pasiūlymų kitose parduotuvėse | eVaistinė.lt`
+  - **Title:** `Maxima elektronika – {fallbackCount}+ pasiūlymų kitose parduotuvėse | eVaistine.lt`
   - **Description:** `Šiuo metu Maxima neturi aktyvių elektronika akcijų, bet rasite {fallbackCount}+ pasiūlymų kitose parduotuvėse.`
 
 ### 6. Product page — `/akcijos/{category}/coca-cola-1-5l`
 
 - **H1:** *(current, unchanged)* `Coca-Cola 1.5L akcija` (`ProductPageMeta::heroTitle()`)
-- **Title:** `Coca-Cola 1.5L akcija – kaina nuo 1.29 € | eVaistinė.lt`
+- **Title:** `Coca-Cola 1.5L akcija – kaina nuo 1.29 € | eVaistine.lt`
 - **Description:** `Coca-Cola 1.5L kaina nuo 1.29 €, palyginta {sellerCount} parduotuvėse: {storeNames}. Sutaupykite pirkdami akcijos metu.`
 - This is the direct port of kaina24.lt's confirmed pattern (§6): price + real seller count + real store names in the description, not just a generic "palygink akcijas" line. `$storeNames` already exists (`getStoreNamesForProduct()`); `$sellerCount` is one line away — `$product->discounts->pluck('store_id')->unique()->count()` on the same `$product->discounts` relation already eager-loaded in `getProductWithSimilar()` (`ProductController.php:890`).
 - **Guard required before shipping** (the kaina24.lt "Nuo 0 €" bug found in §4's research is the concrete precedent): if `$formattedPrice` is empty/zero, fall back to the existing no-price copy (`{Product} akcija`) — never render `kaina nuo 0 €` or `palyginta 0 parduotuvėse`.
@@ -133,7 +133,7 @@ None of the four competitor titles/descriptions do anything our `KeywordPageDyna
 ```
 
 Rendered example (Maxima, ~50% max discount, September, ~1200 deals):
-- **Title:** `Maxima -50% akcija rugsėjį – 1200+ pasiūlymų | eVaistinė.lt`
+- **Title:** `Maxima -50% akcija rugsėjį – 1200+ pasiūlymų | eVaistine.lt`
 - **Description:** `Visos Maxima akcijos ir nuolaidos (galioja 2026.09.15–2026.09.21). Filtruokite, rūšiuokite ir palyginkite kainas. Naujas savaitės leidinys: /leidinys/maxima`
 
 ### Competitor findings
@@ -154,9 +154,9 @@ Rendered example (Maxima, ~50% max discount, September, ~1200 deals):
 ### Recommended variants
 
 **Titles:**
-1. `Maxima akcijos rugsėjį – iki 50% nuolaidos | eVaistinė.lt` — closer to competitor brevity, keeps the discount hook but drops the offer count (count is a "so what" number to a searcher; % off is the number that sells).
-2. `Maxima akcijos ir leidinys – 1200+ pasiūlymų | eVaistinė.lt` — mirrors akcijuseklys.lt's "akcijos ir leidinys" phrasing (captures both discount-listing and leaflet search intent in one page), keeps our count as social proof.
-3. *(current, unchanged)* `Maxima -50% akcija rugsėjį – 1200+ pasiūlymų | eVaistinė.lt` — keep as-is if the aggressive-CTR bet is intentional; flagging it as a real option since it's untested, not proven wrong.
+1. `Maxima akcijos rugsėjį – iki 50% nuolaidos | eVaistine.lt` — closer to competitor brevity, keeps the discount hook but drops the offer count (count is a "so what" number to a searcher; % off is the number that sells).
+2. `Maxima akcijos ir leidinys – 1200+ pasiūlymų | eVaistine.lt` — mirrors akcijuseklys.lt's "akcijos ir leidinys" phrasing (captures both discount-listing and leaflet search intent in one page), keeps our count as social proof.
+3. *(current, unchanged)* `Maxima -50% akcija rugsėjį – 1200+ pasiūlymų | eVaistine.lt` — keep as-is if the aggressive-CTR bet is intentional; flagging it as a real option since it's untested, not proven wrong.
 
 **Descriptions:**
 1. `Visos Maxima akcijos ir nuolaidos vienoje vietoje – filtruokite, rūšiuokite ir palyginkite kainas. Galioja 2026.09.15–2026.09.21.` (reorders to lead with the aggregator promise, matching raskakcija.lt/nuolaidos.lt's "vienoje vietoje" framing, date moved to a supporting clause)
@@ -177,7 +177,7 @@ $issueLabel = $flyer && $flyer->issue_number ? ", Nr.{$flyer->issue_number}" : '
 ```
 
 Rendered example (Maxima, issue Nr.37, valid 2026.09.15–2026.09.21):
-- **Title:** `Maxima naujas savaitės leidinys, Nr.37 2026.09.15 | eVaistinė.lt`
+- **Title:** `Maxima naujas savaitės leidinys, Nr.37 2026.09.15 | eVaistine.lt`
 - **Description:** `Naujas Maxima leidinys galioja nuo 2026.09.15 iki 2026.09.21.`
 
 ### Competitor findings
@@ -197,9 +197,9 @@ Rendered example (Maxima, issue Nr.37, valid 2026.09.15–2026.09.21):
 ### Recommended variants
 
 **Titles:**
-1. `Maxima leidinys Nr.37, 2026.09.15–2026.09.21 | eVaistinė.lt` — adds the missing end date, matches the dominant competitor pattern exactly (issue + full range).
-2. `Maxima naujas savaitės leidinys – galioja iki 09.21 | eVaistinė.lt` — keeps our "naujas savaitės leidinys" phrasing (freshness cue) but swaps the bare start date for an "galioja iki" end-date framing, which answers the "is it still on" intent directly.
-3. *(current, unchanged)* `Maxima naujas savaitės leidinys, Nr.37 2026.09.15 | eVaistinė.lt`
+1. `Maxima leidinys Nr.37, 2026.09.15–2026.09.21 | eVaistine.lt` — adds the missing end date, matches the dominant competitor pattern exactly (issue + full range).
+2. `Maxima naujas savaitės leidinys – galioja iki 09.21 | eVaistine.lt` — keeps our "naujas savaitės leidinys" phrasing (freshness cue) but swaps the bare start date for an "galioja iki" end-date framing, which answers the "is it still on" intent directly.
+3. *(current, unchanged)* `Maxima naujas savaitės leidinys, Nr.37 2026.09.15 | eVaistine.lt`
 
 **Descriptions:**
 1. *(current, unchanged)* — already states both start and end date; on par with competitors.
@@ -212,7 +212,7 @@ Rendered example (Maxima, issue Nr.37, valid 2026.09.15–2026.09.21):
 
 `app/Http/Controllers/Api/ProductController.php:1309-1315`, `generateSeoData('leaflets_index')` (hardcoded, no interpolation):
 
-- **Title:** `Akcijų leidiniai – visų parduotuvių savaitės katalogai | eVaistinė.lt`
+- **Title:** `Akcijų leidiniai – visų parduotuvių savaitės katalogai | eVaistine.lt`
 - **Description:** `Naujausi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje. Peržiūrėkite savaitės pasiūlymus PDF ir nuotraukose.`
 
 ### Competitor findings
@@ -228,14 +228,14 @@ Rendered example (Maxima, issue Nr.37, valid 2026.09.15–2026.09.21):
 
 - Universal pattern: **"vienoje vietoje"** ("all in one place") appears in 3 of 4 competitor titles/descriptions — it's the category's standard trust signal for an aggregator page and we don't currently use it anywhere in this page's copy.
 - Every competitor's description names the same 4-5 store brands (Maxima, Lidl, Rimi, IKI, Norfa) — we already do this too, no gap.
-- akciju.lt's title omits a brand suffix entirely (site name is baked into the domain-style phrase) — not directly transferable since our layout always appends `| eVaistinė.lt`.
+- akciju.lt's title omits a brand suffix entirely (site name is baked into the domain-style phrase) — not directly transferable since our layout always appends `| eVaistine.lt`.
 
 ### Recommended variants
 
 **Titles:**
-1. `Visi akcijų leidiniai vienoje vietoje | eVaistinė.lt` — adopts the category-standard "vienoje vietoje" phrase directly (matches akciju.lt/akcijuseklys.lt almost verbatim), shorter than current.
-2. `Akcijų leidiniai – Maxima, Lidl, Rimi, IKI, Norfa | eVaistinė.lt` — names the actual brands in the title itself (none of the competitors do this in title, only description — a possible differentiation for brand-name searches like "lidl leidinys" landing on this hub via internal search).
-3. *(current, unchanged)* `Akcijų leidiniai – visų parduotuvių savaitės katalogai | eVaistinė.lt`
+1. `Visi akcijų leidiniai vienoje vietoje | eVaistine.lt` — adopts the category-standard "vienoje vietoje" phrase directly (matches akciju.lt/akcijuseklys.lt almost verbatim), shorter than current.
+2. `Akcijų leidiniai – Maxima, Lidl, Rimi, IKI, Norfa | eVaistine.lt` — names the actual brands in the title itself (none of the competitors do this in title, only description — a possible differentiation for brand-name searches like "lidl leidinys" landing on this hub via internal search).
+3. *(current, unchanged)* `Akcijų leidiniai – visų parduotuvių savaitės katalogai | eVaistine.lt`
 
 **Descriptions:**
 1. `Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų parduotuvių akcijų leidiniai vienoje vietoje – savaitės pasiūlymai PDF ir nuotraukose.` (adds "vienoje vietoje", otherwise unchanged)
@@ -250,7 +250,7 @@ Rendered example (Maxima, issue Nr.37, valid 2026.09.15–2026.09.21):
 `app/Http/Controllers/Api/ProductController.php:1156-1174`, `generateSeoData('category', ...)`.
 
 Rendered example (category=Elektronika, 340 offers, 30% max discount, stores="Maxima, Kauno Baldai"):
-- **Title:** `Elektronika akcijos – pigiausios kainos, iki 30% nuolaidos | eVaistinė.lt`
+- **Title:** `Elektronika akcijos – pigiausios kainos, iki 30% nuolaidos | eVaistine.lt`
 - **Description:** `Palyginkite elektronika akcijas prekybos centruose – 340+ pasiūlymų iš Maxima, Kauno Baldai. Iki 30% nuolaidos šią savaitę!`
 
 ### Competitor findings
@@ -270,9 +270,9 @@ Rendered example (category=Elektronika, 340 offers, 30% max discount, stores="Ma
 ### Recommended variants
 
 **Titles:**
-1. `Elektronika akcijos – iki 30% nuolaidos | eVaistinė.lt` — trims "pigiausios kainos" (redundant with "akcijos"/"nuolaidos") to fit comfortably under 60 chars while keeping the discount-% hook.
-2. `Elektronika – 340+ akcijų vienoje vietoje | eVaistinė.lt` — leads with the count + aggregator trust phrase instead of the %, mirrors the "vienoje vietoje" pattern found to be a category-wide standard elsewhere in this research.
-3. *(current, unchanged)* `Elektronika akcijos – pigiausios kainos, iki 30% nuolaidos | eVaistinė.lt`
+1. `Elektronika akcijos – iki 30% nuolaidos | eVaistine.lt` — trims "pigiausios kainos" (redundant with "akcijos"/"nuolaidos") to fit comfortably under 60 chars while keeping the discount-% hook.
+2. `Elektronika – 340+ akcijų vienoje vietoje | eVaistine.lt` — leads with the count + aggregator trust phrase instead of the %, mirrors the "vienoje vietoje" pattern found to be a category-wide standard elsewhere in this research.
+3. *(current, unchanged)* `Elektronika akcijos – pigiausios kainos, iki 30% nuolaidos | eVaistine.lt`
 
 **Descriptions:**
 1. *(current, unchanged)* — already ahead of the one comparable competitor on specificity (real store names + real count).
@@ -286,11 +286,11 @@ Rendered example (category=Elektronika, 340 offers, 30% max discount, stores="Ma
 `app/Http/Controllers/Api/ProductController.php:1223-1265`, `generateSeoData('store_category', ...)`.
 
 With offers (store=Maxima, category=Elektronika, 85 offers, 25% max discount):
-- **Title:** `Maxima akcija elektronika – iki 25% nuolaidos | eVaistinė.lt`
+- **Title:** `Maxima akcija elektronika – iki 25% nuolaidos | eVaistine.lt`
 - **Description:** `Naujausios Maxima elektronika akcijos – iki 25% nuolaidos, 85+ prekių. Pasiūlymai galioja ribotą laiką parduotuvėse ir internetu.`
 
 Zero-offer fallback:
-- **Title:** `Maxima elektronika – palyginkite kainas kitose parduotuvėse | eVaistinė.lt`
+- **Title:** `Maxima elektronika – palyginkite kainas kitose parduotuvėse | eVaistine.lt`
 - **Description:** `Šiuo metu Maxima neturi aktyvių elektronika akcijų. Peržiūrėkite elektronika pasiūlymus kitose parduotuvėse.`
 
 ### Competitor findings
@@ -304,8 +304,8 @@ Since there's no direct precedent, the best available signal is: (a) the store-p
 ### Recommended variants
 
 **Titles:**
-1. `Maxima elektronika akcijos – iki 25% nuolaidos | eVaistinė.lt` — reorders "akcija elektronika" → "elektronika akcijos" (matches the natural Lithuanian search phrasing seen everywhere else in this research — categories consistently appear as "{category} akcijos", never "akcija {category}").
-2. *(current, unchanged)* `Maxima akcija elektronika – iki 25% nuolaidos | eVaistinė.lt`
+1. `Maxima elektronika akcijos – iki 25% nuolaidos | eVaistine.lt` — reorders "akcija elektronika" → "elektronika akcijos" (matches the natural Lithuanian search phrasing seen everywhere else in this research — categories consistently appear as "{category} akcijos", never "akcija {category}").
+2. *(current, unchanged)* `Maxima akcija elektronika – iki 25% nuolaidos | eVaistine.lt`
 
 **Descriptions:**
 1. *(current, unchanged)* — no competitor benchmark exists to compare against; current copy is already specific (store + category + % + count).
@@ -319,7 +319,7 @@ Since there's no direct precedent, the best available signal is: (a) the store-p
 `app/Http/Controllers/Api/ProductController.php:1266-1279`, `generateSeoData('product', ...)`.
 
 Rendered example (product="Coca-Cola 1.5L", min discounted price 1.29€, available at Maxima):
-- **Title:** `Coca-cola 1.5l akcija – kaina nuo 1.29 € (Maxima) | eVaistinė.lt`
+- **Title:** `Coca-cola 1.5l akcija – kaina nuo 1.29 € (Maxima) | eVaistine.lt`
 - **Description:** `Coca-Cola 1.5L ✔ kaina nuo 1.29 €, palygink akcijas prekybos centruose!`
 
 ### Competitor findings
@@ -346,9 +346,9 @@ Rendered example (product="Coca-Cola 1.5L", min discounted price 1.29€, availa
 ### Recommended variants
 
 **Titles:**
-1. `Coca-Cola 1.5L akcijos – kaina nuo 1.29 € | eVaistinė.lt` — drops the single-store parenthetical (which under-sells multi-store coverage), matches kaina24.lt's "product + price only" title discipline while keeping our "akcijos" framing (kaina24.lt is a pure price-comparison site, we're a discount site — the word still belongs).
-2. `Coca-Cola 1.5L – pigiausia kaina šią savaitę | eVaistinė.lt` — matches akcijuseklys.lt's non-numeric framing exactly, avoids the staleness risk of a cached literal price, but loses the price-specificity advantage both kaina24.lt and our current title have.
-3. *(current, unchanged)* `Coca-cola 1.5l akcija – kaina nuo 1.29 € (Maxima) | eVaistinė.lt` — keep if single-store attribution matters for trust/accuracy (e.g. if most products are genuinely single-store, the parenthetical is informative, not a limitation).
+1. `Coca-Cola 1.5L akcijos – kaina nuo 1.29 € | eVaistine.lt` — drops the single-store parenthetical (which under-sells multi-store coverage), matches kaina24.lt's "product + price only" title discipline while keeping our "akcijos" framing (kaina24.lt is a pure price-comparison site, we're a discount site — the word still belongs).
+2. `Coca-Cola 1.5L – pigiausia kaina šią savaitę | eVaistine.lt` — matches akcijuseklys.lt's non-numeric framing exactly, avoids the staleness risk of a cached literal price, but loses the price-specificity advantage both kaina24.lt and our current title have.
+3. *(current, unchanged)* `Coca-cola 1.5l akcija – kaina nuo 1.29 € (Maxima) | eVaistine.lt` — keep if single-store attribution matters for trust/accuracy (e.g. if most products are genuinely single-store, the parenthetical is informative, not a limitation).
 
 **Descriptions (real-data-driven, directly answering the question asked):**
 1. `Coca-Cola 1.5L kaina nuo 1.29 €, palyginta {N} parduotuvėse: {store1}, {store2}...` — closest port of kaina24.lt's exact pattern (price + seller count + names) using data we already compute (`getStoreNamesForProduct()`); needs the same zero/degenerate-price guard noted above before shipping.

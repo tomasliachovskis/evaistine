@@ -77,7 +77,7 @@ class ListingPageMetaService
                 'value' => $avgDuration !== null ? $avgDuration . ' d.' : '—',
             ],
             [
-                'label' => 'Sutaupymai su eVaistinė.lt šią savaitę',
+                'label' => 'Sutaupymai su eVaistine.lt šią savaitę',
                 'value' => $totalSavings > 0
                     ? number_format($totalSavings, 2, ',', ' ') . ' €'
                     : '—',
@@ -632,7 +632,7 @@ class ListingPageMetaService
 
         return [
             'title' => $categoryName . ' akcijų statistika',
-            'summary' => "Šiuo metu eVaistinė.lt stebi {$totalOffers} aktyvių " . \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($categoryName) . " akcijų {$storeCount} prekybos tinkluose. Didžiausia aptikta nuolaida siekia {$maxDiscount} %, o vidutinis sutaupymas šioje kategorijoje – apie {$avgDiscount} %.",
+            'summary' => "Šiuo metu eVaistine.lt stebi {$totalOffers} aktyvių " . \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($categoryName) . " akcijų {$storeCount} prekybos tinkluose. Didžiausia aptikta nuolaida siekia {$maxDiscount} %, o vidutinis sutaupymas šioje kategorijoje – apie {$avgDiscount} %.",
             'highlights' => [
                 ['label' => 'Aktyvios akcijos', 'value' => (string) $totalOffers],
                 ['label' => 'Vidutinė nuolaida', 'value' => $avgDiscount . ' %'],
@@ -979,7 +979,7 @@ class ListingPageMetaService
             ? "naujausius {$storeName} akcijų {$leafletNoun}"
             : "naujausią {$storeName} akcijų {$leafletNoun}";
 
-        $intro = "eVaistinė.lt – patogi vieta, kur {$leafletPhrase}, didžiausias savaitės nuolaidas ir populiariausius pasiūlymus rasite be papildomų paieškų.";
+        $intro = "eVaistine.lt – patogi vieta, kur {$leafletPhrase}, didžiausias savaitės nuolaidas ir populiariausius pasiūlymus rasite be papildomų paieškų.";
         $detail = "Kas savaitę atnaujiname akcijų sąrašą pagal galiojantį leidinį, todėl čia matote, kas šiuo metu galioja parduotuvėse. Jei domina naujas leidinys, šios savaitės akcijos ar norite greitai palyginti nuolaidas – viršuje peržiūrėkite leidinių viršelius, o žemiau – atrinktas didžiausias nuolaidas su kainomis.";
 
         return "{$intro}\n\n{$detail}";
@@ -1025,7 +1025,7 @@ class ListingPageMetaService
             $this->pickVariant($storeSlug . '/about/3', [
                 "Kai kada {$storeName} vienu metu skelbia kelis skirtingus leidinius (pvz. bendrą savaitinį ir siauresnės kategorijos numerį) – visus aktyvius {$leafletNoun} rasite kartu šiame puslapyje.",
                 "{$storeName} {$leafletNounSingular} apima platų prekių spektrą – nuo maisto iki buities ir namų apyvokos prekių, suskirstytą į atskirus puslapius pagal kategorijas.",
-                "eVaistinė.lt seka {$storeName} skelbiamus leidinius ir kiekvieną naują numerį pridedame čia iškart, kai jis pasirodo.",
+                "eVaistine.lt seka {$storeName} skelbiamus leidinius ir kiekvieną naują numerį pridedame čia iškart, kai jis pasirodo.",
             ]),
         ];
 

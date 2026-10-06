@@ -347,7 +347,7 @@ class DescriptionGenerationService
 
     private function getCategoryFaqSystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (eVaistinė.lt). You will receive JSON data about ONE product category's currently active discounts.
+        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (eVaistine.lt). You will receive JSON data about ONE product category's currently active discounts.
 
 Your task: generate 3-5 short, genuinely useful, EVERGREEN FAQ question/answer pairs in Lithuanian about THIS specific category. This content will stay on the page for weeks without being regenerated, so it must still read as true and sensible long after the exact discounts in this data have expired and been replaced by different ones.
 
@@ -364,7 +364,7 @@ STRICT RULES:
 
     private function getStoreFaqSystemPrompt(): string
     {
-        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (eVaistinė.lt). You will receive JSON data about ONE store's currently active discounts.
+        return "You are a Lithuanian copywriter for a grocery/retail deals aggregator (eVaistine.lt). You will receive JSON data about ONE store's currently active discounts.
 
 Your task: generate 3-5 short, genuinely useful, EVERGREEN FAQ question/answer pairs in Lithuanian about THIS specific store. This content will stay on the page for weeks without being regenerated, so it must still read as true and sensible long after the exact discounts in this data have expired and been replaced by different ones.
 

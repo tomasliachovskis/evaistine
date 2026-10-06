@@ -9,7 +9,7 @@
 
             <h2 class="mb-4 text-xl font-semibold">1. Bendrosios nuostatos</h2>
             <p class="mb-6 text-base">
-                eVaistinė.lt (toliau &ndash; &bdquo;mes&ldquo;, &bdquo;mūsų&ldquo;, &bdquo;svetainė&ldquo;) pripažįsta ir gerbia jūsų privatumą.
+                eVaistine.lt (toliau &ndash; &bdquo;mes&ldquo;, &bdquo;mūsų&ldquo;, &bdquo;svetainė&ldquo;) pripažįsta ir gerbia jūsų privatumą.
                 Ši privatumo politika paaiškina, kaip mes renkame, naudojame, saugome ir apsaugome jūsų
                 asmeninę informaciją, kai naudojatės mūsų svetaine.
             </p>

@@ -44,12 +44,12 @@
     <div class="base-container">
         <div class="border-b border-white/10 py-12 lg:py-16">
             <a href="/" class="mb-8 inline-block hover:opacity-90">
-                <img src="/assets/logo-white.svg" alt="eVaistinė.lt" width="178" height="22" class="h-7 w-auto">
+                <img src="/assets/logo-white.svg" alt="eVaistine.lt" width="133" height="22" class="h-7 w-auto">
             </a>
             <div class="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5 lg:gap-12">
                 <div class="flex flex-col gap-6">
                     <div>
-                        <h2 class="mb-4 text-lg font-bold">Apie eVaistinė.lt</h2>
+                        <h2 class="mb-4 text-lg font-bold">Apie eVaistine.lt</h2>
                         <ul class="flex flex-col gap-2">
                             <li><a href="/apie" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Apie mus</a></li>
                             <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Naujienos</a></li>
@@ -116,7 +116,7 @@
         </div>
 
         <div class="py-6 text-center text-base text-white/60">
-            <p>&copy; {{ date('Y') }} eVaistinė.lt &ndash; Rask visas akcijas ir nuolaidas</p>
+            <p>&copy; {{ date('Y') }} eVaistine.lt &ndash; Rask visas akcijas ir nuolaidas</p>
         </div>
     </div>
 </footer>

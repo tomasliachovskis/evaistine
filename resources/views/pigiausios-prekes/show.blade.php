@@ -91,7 +91,7 @@
 
             <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-dark-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
                 <p>
-                    <strong>Kaip skaičiuojame:</strong> kiekvienai prekei rodome jos pačios akcijų puslapio realiu laiku skaičiuojamą kainų palyginimą — po vieną pigiausią šiuo metu galiojantį pasiūlymą iš kiekvienos parduotuvės, kuri tą prekę turi (iki penkių parduotuvių). Kainos remiasi realiais eVaistinė.lt sistemoje esančiais duomenimis ir gali kartais atspindėti pavienes šaltinio klaidas.
+                    <strong>Kaip skaičiuojame:</strong> kiekvienai prekei rodome jos pačios akcijų puslapio realiu laiku skaičiuojamą kainų palyginimą — po vieną pigiausią šiuo metu galiojantį pasiūlymą iš kiekvienos parduotuvės, kuri tą prekę turi (iki penkių parduotuvių). Kainos remiasi realiais eVaistine.lt sistemoje esančiais duomenimis ir gali kartais atspindėti pavienes šaltinio klaidas.
                 </p>
             </div>
         @endif

@@ -17,7 +17,7 @@ return new class extends Migration
                 'slug' => 'geriausios-nuolaidos-si-savait',
                 'content' => 'Atraskite geriausias nuolaidas šią savaitę! Peržiūrėkite naujausius pasiūlymus iš populiariausių parduotuvių. Sutaupykite pinigų perkant kasdienes prekes ir daugiau.',
                 'published_at' => $now,
-                'meta_title' => 'Geriausios nuolaidos šią savaitę - eVaistinė.lt',
+                'meta_title' => 'Geriausios nuolaidos šią savaitę - eVaistine.lt',
                 'meta_description' => 'Peržiūrėkite geriausias nuolaidas šią savaitę. Sutaupykite pinigų perkant kasdienes prekes iš populiariausių parduotuvių.',
                 'status' => 'published',
                 'created_at' => $now,

@@ -12,7 +12,7 @@
             <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb;">
                 <tr>
                     <td style="background-color:#044923; padding:24px 32px;">
-                        <img src="https://evaistine.lt/assets/logo-white.svg" alt="eVaistinė.lt" width="178" height="22" style="display:block; height:22px; width:178px; max-width:178px; border:0;">
+                        <img src="https://evaistine.lt/assets/logo-white.svg" alt="eVaistine.lt" width="133" height="22" style="display:block; height:22px; width:178px; max-width:178px; border:0;">
                     </td>
                 </tr>
                 <tr>
@@ -35,7 +35,7 @@
                 </tr>
                 <tr>
                     <td style="padding:16px 32px; background-color:#f9fafb; border-top:1px solid #e5e7eb;">
-                        <p style="margin:0; font-size:13px; color:#9ca3af;">&copy; {{ now()->year }} eVaistinė.lt</p>
+                        <p style="margin:0; font-size:13px; color:#9ca3af;">&copy; {{ now()->year }} eVaistine.lt</p>
                     </td>
                 </tr>
             </table>

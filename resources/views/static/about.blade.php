@@ -4,11 +4,11 @@
 
     <div class="base-container">
         <div class="flex flex-col gap-4 pb-[56px]">
-            <h1>Apie eVaistinė.lt</h1>
+            <h1>Apie eVaistine.lt</h1>
 
             <h2 class="mb-4 text-xl font-semibold">Kas mes esame</h2>
             <p class="mb-6 text-base">
-                eVaistinė.lt yra kainų ir akcijų palyginimo svetainė — mes nesame parduotuvė ir
+                eVaistine.lt yra kainų ir akcijų palyginimo svetainė — mes nesame parduotuvė ir
                 nieko patys neparduodame. Renkame ir vienoje vietoje sudedame Lietuvos prekybos tinklų
                 (Maxima, Lidl, Iki, Rimi, Norfa ir kitų) viešai skelbiamas akcijas, nuolaidas ir
                 savaitės leidinius, kad galėtumėte greitai palyginti kainas ir rasti geriausią pasiūlymą,

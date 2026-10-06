@@ -13,7 +13,7 @@ class NewsArticleSchema
     {
         $publisher = [
             '@type' => 'Organization',
-            'name' => 'eVaistinė.lt',
+            'name' => 'eVaistine.lt',
             'url' => CanonicalUrl::origin(),
             'logo' => [
                 '@type' => 'ImageObject',
