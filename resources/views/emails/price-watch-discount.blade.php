@@ -48,7 +48,7 @@
                         $cheapest = $group->first();
                         $product = $cheapest->product;
                         $roundedPercent = $cheapest->discount_percent !== null ? round($cheapest->discount_percent) : null;
-                        $productUrl = \App\Mail\PriceWatchDiscountMail::trackedUrl('https://evaistine.lt/akcijos/' . ($product->category?->slug ?? '') . '/' . $product->slug, 'product');
+                        $productUrl = \App\Mail\PriceWatchDiscountMail::trackedUrl('https://evaistine.lt' . \App\Support\PageUrl::product($product->slug), 'product');
                     @endphp
                     <tr>
                         <td style="padding:0 32px 20px;">

@@ -382,7 +382,7 @@ STRICT RULES:
     /**
      * Leaflet/catalog-specific data payload for /leidinys/{store} — deliberately
      * NOT the discounts/savings payload getStoreData() builds (that's the
-     * /akcijos/{store} page's subject). Reuses getStoreData()'s already-computed
+     * /{store} page's subject). Reuses getStoreData()'s already-computed
      * store_category_links/keyword_pages/store_semantic_research (those are
      * genuinely shared — cross-linking to the akcijos pages and keyword pages
      * is fine, the discount STATS are not) rather than duplicating that DB work.
@@ -451,7 +451,7 @@ STRICT RULES:
      * "Maxima leidinys", "naujas Lidl leidinys" — as distinct from
      * store_semantic_research's real_search_phrases, which are mostly
      * akcijos/nuolaidos-intent phrases ("Maxima akcijos") grounded via research
-     * for the /akcijos/{store} page. Keeping these separate stops the leidinys
+     * for the /{store} page. Keeping these separate stops the leidinys
      * prompt reaching for akcijos-shaped queries by default.
      */
     private function getStoreLeafletSemanticResearch(Store $store): ?array
@@ -497,7 +497,7 @@ CRITICAL — THIS TEXT MUST NOT BE A TEMPLATE WITH THE STORE NAME SWAPPED IN: ev
 - Do not reuse the same sentence structure/opening across sections that could apply to any store (e.g. always avoid opening with '[store] leidinys – tai...' verbatim every time) — vary sentence construction store to store.
 - If 'store_semantic_research' lacks enough distinguishing detail for a genuinely unique Section 2, still ground it in whatever specific facts ARE available (catalog_names, typical_page_count_bucket, notable_categories_or_products) rather than falling back to generic 'large retail chain' language.
 
-CRITICAL — HOW THIS SITE USES THE LEIDINYS (mention this honestly in Section 4, it's a genuine feature, not filler): evaistine.lt reads through this store's leidinys/catalog and extracts the individual products and prices from it into a searchable, filterable list at /akcijos/[store] (and its per-category pages) — so a reader who wants to browse the catalog's actual offers as a proper list with prices, filterable by category, should go there rather than flipping through catalog pages one by one. Say this plainly in Section 4 before the category links, e.g. 'Šio leidinio prekes ir kainas surenkame į sąrašą, kurį rasite...' — this is the natural, honest bridge into the store_category_links.
+CRITICAL — HOW THIS SITE USES THE LEIDINYS (mention this honestly in Section 4, it's a genuine feature, not filler): evaistine.lt reads through this store's leidinys/catalog and extracts the individual products and prices from it into a searchable, filterable list at /[store] (and its per-category pages) — so a reader who wants to browse the catalog's actual offers as a proper list with prices, filterable by category, should go there rather than flipping through catalog pages one by one. Say this plainly in Section 4 before the category links, e.g. 'Šio leidinio prekes ir kainas surenkame į sąrašą, kurį rasite...' — this is the natural, honest bridge into the store_category_links.
 
 STRICT OUTPUT FORMAT — this is MANDATORY structure, not optional flavor:
 Wrap everything in a single <div class=\"space-y-5\"> element. Do NOT use <strong>/<b>/<em>/<i> tags anywhere — bolding random phrases reads as generated AI text. Write plain sentences and let links (<a>) be the only inline markup.
@@ -550,8 +550,8 @@ OUTPUT RULES:
                     'name' => $discount->product->name,
                     'store' => $discount->store->name,
                     'category' => $discount->product->category->name,
-                    'category_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}",
-                    'product_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'category_url' => "@https://evaistine.lt/{$discount->product->category->slug}",
+                    'product_url' => "@https://evaistine.lt/p/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
@@ -570,7 +570,7 @@ OUTPUT RULES:
                 $firstDiscount = $discounts->first();
                 return [
                     'name' => $firstDiscount->product->category->name,
-                    'url' => "@https://evaistine.lt/akcijos/{$firstDiscount->product->category->slug}",
+                    'url' => "@https://evaistine.lt/{$firstDiscount->product->category->slug}",
                     'count' => $discounts->count(),
                     'avg_discount' => round($discounts->avg('discount_percent'), 1),
                     'min_price' => $discounts->min('discounted_price'),
@@ -599,7 +599,7 @@ OUTPUT RULES:
                 return [
                     'name' => $category->name,
                     'slug' => $category->slug,
-                    'url' => "/akcijos/{$store->slug}/{$category->slug}",
+                    'url' => "/{$store->slug}/{$category->slug}",
                     'count' => $discounts->count()
                 ];
             })
@@ -631,7 +631,7 @@ OUTPUT RULES:
 
         return [
             'store_name' => $store->name,
-            'store_url' => "@https://evaistine.lt/akcijos/{$store->slug}",
+            'store_url' => "@https://evaistine.lt/{$store->slug}",
             'store_hours_url' => $hasStoreLocations ? "@https://evaistine.lt/vaistines/{$store->slug}" : null,
             'store_semantic_research' => $this->getStoreSemanticResearch($store),
             'keyword_pages' => $keywordPages,
@@ -732,8 +732,8 @@ OUTPUT RULES:
                 return [
                     'name' => $discount->product->name,
                     'store' => $discount->store->name,
-                    'store_url' => "@https://evaistine.lt/akcijos/{$discount->store->slug}",
-                    'product_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'store_url' => "@https://evaistine.lt/{$discount->store->slug}",
+                    'product_url' => "@https://evaistine.lt/p/{$discount->product->slug}",
                     'original_price' => $discount->original_price,
                     'discounted_price' => $discount->discounted_price,
                     'discount_percent' => $discount->discount_percent,
@@ -757,7 +757,7 @@ OUTPUT RULES:
                     ->map(function($discount) {
                         return [
                             'name' => $discount->product->name,
-                            'product_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                            'product_url' => "@https://evaistine.lt/p/{$discount->product->slug}",
                             'discount_percent' => $discount->discount_percent,
                             'discounted_price' => $discount->discounted_price,
                             'original_price' => $discount->original_price,
@@ -768,7 +768,7 @@ OUTPUT RULES:
                 
                 return [
                     'name' => $firstDiscount->store->name,
-                    'url' => "@https://evaistine.lt/akcijos/{$firstDiscount->store->slug}",
+                    'url' => "@https://evaistine.lt/{$firstDiscount->store->slug}",
                     'slug' => $firstDiscount->store->slug,
                     'count' => $discounts->count(),
                     'avg_discount' => round($discounts->avg('discount_percent'), 1),
@@ -802,7 +802,7 @@ OUTPUT RULES:
                     'store_name' => $store->name,
                     'store_slug' => $store->slug,
                     'category_name' => $category->name,
-                    'url' => "/akcijos/{$store->slug}/{$category->slug}",
+                    'url' => "/{$store->slug}/{$category->slug}",
                     'count' => $discounts->count()
                 ];
             })
@@ -817,7 +817,7 @@ OUTPUT RULES:
         return [
             'category_name' => $category->name,
             'category_slug' => $category->slug,
-            'category_url' => "@https://evaistine.lt/akcijos/{$category->slug}",
+            'category_url' => "@https://evaistine.lt/{$category->slug}",
             'category_semantic_research' => $this->getCategorySemanticResearch($category),
             'keyword_pages' => array_map(fn ($page) => [
                 'title' => $page['title'],
@@ -1093,7 +1093,7 @@ OUTPUT RULES:
             ->map(function ($discount) {
                 return [
                     'name' => $discount->product->name,
-                    'product_url' => "@https://evaistine.lt/akcijos/{$discount->product->category->slug}/{$discount->product->slug}",
+                    'product_url' => "@https://evaistine.lt/p/{$discount->product->slug}",
                     'discount_percent' => $discount->discount_percent,
                 ];
             })
@@ -1102,7 +1102,7 @@ OUTPUT RULES:
         return [
             'store_name' => $store->name,
             'category_name' => $category->name,
-            'page_url' => "@https://evaistine.lt/akcijos/{$store->slug}/{$category->slug}",
+            'page_url' => "@https://evaistine.lt/{$store->slug}/{$category->slug}",
             'store_semantic_research' => $this->getStoreSemanticResearch($store),
             'category_semantic_research' => $this->getCategorySemanticResearch($category),
             'total_active_discounts' => $activeDiscounts->count(),

@@ -44,9 +44,9 @@ class SitemapController extends Controller
             // Previously allowed + noindex-meta'd instead of blocked here, so
             // Googlebot would actually crawl the page and see the noindex tag
             // rather than showing "Indexed, though blocked by robots.txt".
-            // That still let bots crawl and index /akcijos/paieska/* pages in
+            // That still let bots crawl and index /paieska/* pages in
             // practice, so block crawling outright instead.
-            'Disallow: /akcijos/paieska',
+            'Disallow: /paieska',
             'Disallow: /*?store=*',
             'Disallow: /*?category=*',
             'Disallow: /*?card=*',
@@ -96,19 +96,19 @@ class SitemapController extends Controller
         }
 
         foreach ($data['stores'] ?? [] as $slug) {
-            $urls[] = ['loc' => CanonicalUrl::build("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'];
+            $urls[] = ['loc' => CanonicalUrl::build("/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'];
         }
 
         foreach ($data['store_category_pages'] ?? [] as $path) {
-            $urls[] = ['loc' => CanonicalUrl::build("/akcijos/{$path}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.6'];
+            $urls[] = ['loc' => CanonicalUrl::build("/{$path}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.6'];
         }
 
         foreach ($data['categories'] ?? [] as $slug) {
-            $urls[] = ['loc' => CanonicalUrl::build("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.7'];
+            $urls[] = ['loc' => CanonicalUrl::build("/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.7'];
         }
 
         foreach ($data['keywords'] ?? [] as $slug) {
-            $urls[] = ['loc' => CanonicalUrl::build("/akcijos/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'];
+            $urls[] = ['loc' => CanonicalUrl::build("/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.85'];
         }
 
         foreach ($data['blog_posts'] ?? [] as $post) {
@@ -151,7 +151,7 @@ class SitemapController extends Controller
         }
 
         $urls = array_map(fn ($p) => [
-            'loc' => CanonicalUrl::build('/akcijos/' . $p['path']),
+            'loc' => CanonicalUrl::build('/' . $p['path']),
             'lastmod' => $p['lastmod'],
             'changefreq' => 'weekly',
             'priority' => '0.6',

@@ -16,21 +16,21 @@ class HeadTagsTest extends TestCase
     {
         $seed = $this->seedListing();
 
-        $this->assertIndexable($this->get("/akcijos/{$seed['category']->slug}"), "/akcijos/{$seed['category']->slug}");
+        $this->assertIndexable($this->get("/{$seed['category']->slug}"), "/{$seed['category']->slug}");
     }
 
     public function test_store_listing_is_indexable_with_self_canonical(): void
     {
         $seed = $this->seedListing();
 
-        $head = $this->assertIndexable($this->get("/akcijos/{$seed['store']->slug}"), "/akcijos/{$seed['store']->slug}");
+        $head = $this->assertIndexable($this->get("/{$seed['store']->slug}"), "/{$seed['store']->slug}");
         $this->assertStringContainsString($seed['store']->name, $head['title']);
     }
 
     public function test_store_category_listing_is_indexable_with_self_canonical(): void
     {
         $seed = $this->seedListing();
-        $path = "/akcijos/{$seed['store']->slug}/{$seed['category']->slug}";
+        $path = "/{$seed['store']->slug}/{$seed['category']->slug}";
 
         $this->assertIndexable($this->get($path), $path);
     }
@@ -38,7 +38,7 @@ class HeadTagsTest extends TestCase
     public function test_product_page_is_indexable_under_its_category(): void
     {
         $seed = $this->seedListing();
-        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+        $path = "/p/{$seed['product']->slug}";
 
         $this->assertIndexable($this->get($path), $path);
     }
@@ -47,7 +47,7 @@ class HeadTagsTest extends TestCase
     {
         $seed = $this->seedListing();
         $seed['discount']->update(['start_at' => now()->subMonth(), 'end_at' => now()->subWeeks(3)]);
-        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+        $path = "/p/{$seed['product']->slug}";
 
         $this->assertIndexable($this->get($path), $path);
     }
@@ -55,7 +55,7 @@ class HeadTagsTest extends TestCase
     public function test_product_page_canonical_ignores_query_string(): void
     {
         $seed = $this->seedListing();
-        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+        $path = "/p/{$seed['product']->slug}";
 
         $this->assertIndexable($this->get("{$path}?utm_source=facebook&fbclid=abc"), $path);
     }
@@ -74,7 +74,7 @@ class HeadTagsTest extends TestCase
             'is_published' => true,
         ]);
 
-        $this->assertIndexable($this->get('/akcijos/seo-pienas'), '/akcijos/seo-pienas');
+        $this->assertIndexable($this->get('/seo-pienas'), '/seo-pienas');
     }
 
     public function test_store_directory_is_indexable(): void
@@ -90,7 +90,7 @@ class HeadTagsTest extends TestCase
     public function test_second_page_keeps_its_own_canonical_but_is_noindex(): void
     {
         $seed = $this->seedListing();
-        $path = "/akcijos/{$seed['category']->slug}";
+        $path = "/{$seed['category']->slug}";
 
         $head = $this->seoHead($this->get("{$path}?page=2"));
 
@@ -102,7 +102,7 @@ class HeadTagsTest extends TestCase
     {
         $seed = $this->seedListing();
         $seed['product']->update(['name' => "L'Oréal Paris Elvital šampūnas, 250 ml"]);
-        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+        $path = "/p/{$seed['product']->slug}";
 
         $head = $this->seoHead($this->get($path));
 
@@ -115,7 +115,7 @@ class HeadTagsTest extends TestCase
     {
         $seed = $this->seedListing();
         $seed['product']->update(['name' => 'DUŠO ŽELĖ NEUTRAL, 250 ML']);
-        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+        $path = "/p/{$seed['product']->slug}";
 
         $this->assertStringStartsWith('Dušo želė neutral', $this->seoHead($this->get($path))['title']);
     }
@@ -123,7 +123,7 @@ class HeadTagsTest extends TestCase
     public function test_filtered_listing_is_noindex_with_clean_canonical(): void
     {
         $seed = $this->seedListing();
-        $path = "/akcijos/{$seed['category']->slug}";
+        $path = "/{$seed['category']->slug}";
 
         $head = $this->seoHead($this->get("{$path}?store={$seed['store']->slug}&utm_source=facebook"));
 
@@ -135,14 +135,14 @@ class HeadTagsTest extends TestCase
     {
         $seed = $this->seedListing();
 
-        $this->assertNoindex($this->get("/akcijos/{$seed['category']->slug}?order=price_min"));
+        $this->assertNoindex($this->get("/{$seed['category']->slug}?order=price_min"));
     }
 
     public function test_search_results_are_noindex(): void
     {
         $this->seedListing();
 
-        $response = $this->get('/akcijos/paieska/pienas');
+        $response = $this->get('/paieska/pienas');
 
         $response->assertOk();
         $this->assertSame(self::NOINDEX, $this->seoHead($response)['robots']);
@@ -150,7 +150,7 @@ class HeadTagsTest extends TestCase
 
     public function test_search_form_is_noindex(): void
     {
-        $response = $this->get('/akcijos/paieska');
+        $response = $this->get('/paieska');
 
         $response->assertOk();
         $this->assertNoindex($response);
@@ -168,7 +168,7 @@ class HeadTagsTest extends TestCase
 
     public function test_not_found_page_is_noindex(): void
     {
-        $response = $this->get('/akcijos/seo-tokio-puslapio-nera');
+        $response = $this->get('/seo-tokio-puslapio-nera');
 
         $response->assertNotFound();
         $head = $this->assertNoindex($response);
@@ -179,7 +179,7 @@ class HeadTagsTest extends TestCase
     public function test_pages_carry_open_graph_tags_matching_the_canonical(): void
     {
         $seed = $this->seedListing();
-        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+        $path = "/p/{$seed['product']->slug}";
 
         $html = $this->get($path)->assertOk()->getContent();
 
@@ -193,7 +193,7 @@ class HeadTagsTest extends TestCase
     public function test_meta_description_is_trimmed_to_snippet_length(): void
     {
         $seed = $this->seedListing();
-        $html = $this->get("/akcijos/{$seed['category']->slug}")->assertOk()->getContent();
+        $html = $this->get("/{$seed['category']->slug}")->assertOk()->getContent();
 
         preg_match('/<meta name="description" content="([^"]*)"/', $html, $m);
         $this->assertLessThanOrEqual(160, mb_strlen(html_entity_decode($m[1] ?? '')));

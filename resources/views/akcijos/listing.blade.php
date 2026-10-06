@@ -16,7 +16,7 @@
     // related searches → about → tips → FAQ.
     // "Dažniausiai ieškoma" (keyword_examples + keyword_store_keywords chips)
     // removed per explicit product decision — every one of those chips
-    // linked (rel=nofollow) to /akcijos/paieska/{term}, itself
+    // linked (rel=nofollow) to /paieska/{term}, itself
     // noindex,nofollow (AkcijosController::search()), so the section carried
     // zero link equity and read as a keyword-stuffing wall of chips at the
     // page bottom. keyword_categories was the section's only real link, and
@@ -542,7 +542,7 @@
                                     @foreach ($storeCategoryRows as $row)
                                         <tr class="bg-white">
                                             <td class="p-3">
-                                                <a href="/akcijos/{{ $listingMeta['store_slug'] }}/{{ $row['slug'] }}" class="flex min-w-0 items-center gap-2.5 font-semibold text-gray-900 hover:text-dark-green">
+                                                <a href="/{{ $listingMeta['store_slug'] }}/{{ $row['slug'] }}" class="flex min-w-0 items-center gap-2.5 font-semibold text-gray-900 hover:text-dark-green">
                                                     <span class="min-w-0 leading-snug">{{ $row['name'] }}</span>
                                                 </a>
                                             </td>

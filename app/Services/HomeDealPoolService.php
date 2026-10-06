@@ -52,7 +52,7 @@ class HomeDealPoolService
     /**
      * Top-N deals for a single category (optionally scoped to one store),
      * ranked by the same deal_score used for the home page pools. Used to
-     * power one carousel per category on /akcijos and /akcijos/{store}
+     * power one carousel per category on /akcijos and /{store}
      * instead of a single cross-category pool.
      */
     public function bestForCategory(int $categoryId, int $limit, ?int $storeId = null): Collection

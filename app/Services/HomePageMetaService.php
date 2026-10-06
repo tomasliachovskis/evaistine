@@ -139,12 +139,10 @@ class HomePageMetaService
             $highlights[] = [
                 'category_name' => $category->name,
                 'category_slug' => $category->slug,
-                'category_href' => "/akcijos/{$category->slug}",
+                'category_href' => "/{$category->slug}",
                 'discounts_count' => $category->discounts_count,
                 'top_product_name' => $best->product->name,
-                'top_product_href' => '/akcijos/' . ($best->product->category
-                    ? $best->product->category->slug . '/' . $best->product->slug
-                    : $best->product->slug),
+                'top_product_href' => \App\Support\PageUrl::product($best->product->slug),
                 'top_product_image_url' => $best->product->image_url,
                 'max_discount_percent' => (int) round($best->discount_percent),
                 'store_name' => $best->store->name,
@@ -206,7 +204,7 @@ class HomePageMetaService
             $rows[] = [
                 'store_name' => $entry['store_name'],
                 'store_slug' => $entry['store_slug'],
-                'store_href' => '/akcijos/' . $entry['store_slug'],
+                'store_href' => '/' . $entry['store_slug'],
                 'total_price' => round($entry['total'], 2),
                 'items_count' => $itemsCount,
                 'rank' => $rank++,

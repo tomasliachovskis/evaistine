@@ -13,16 +13,16 @@ class PageHtmlCacheTest extends TestCase
     public function test_cached_html_is_served_with_absolute_canonical_and_og_url(): void
     {
         $html = '<head>'
-            .'<link rel="canonical" href="https://evaistine.lt/akcijos/kava">'
-            .'<meta property="og:url" content="https://evaistine.lt/akcijos/kava">'
+            .'<link rel="canonical" href="https://evaistine.lt/kava">'
+            .'<meta property="og:url" content="https://evaistine.lt/kava">'
             .'</head>';
 
         $stored = PageHtmlCache::neutralizeForStorage($html);
-        $this->assertStringContainsString('<link rel="canonical" href="/akcijos/kava">', $stored);
+        $this->assertStringContainsString('<link rel="canonical" href="/kava">', $stored);
 
         $served = PageHtmlCache::hydrateForResponse($stored);
-        $this->assertStringContainsString('<link rel="canonical" href="https://evaistine.lt/akcijos/kava">', $served);
-        $this->assertStringContainsString('<meta property="og:url" content="https://evaistine.lt/akcijos/kava">', $served);
+        $this->assertStringContainsString('<link rel="canonical" href="https://evaistine.lt/kava">', $served);
+        $this->assertStringContainsString('<meta property="og:url" content="https://evaistine.lt/kava">', $served);
     }
 
     public function test_homepage_canonical_round_trips_to_the_bare_origin_with_slash(): void

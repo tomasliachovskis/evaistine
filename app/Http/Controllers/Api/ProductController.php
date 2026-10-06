@@ -97,7 +97,7 @@ class ProductController extends Controller
 
     /**
      * Flat, cross-category "Geriausi pasiūlymai" pool for a single store's
-     * /akcijos/{store} and /leidinys/{store} pages — shown as one curated
+     * /{store} and /leidinys/{store} pages — shown as one curated
      * strip above the per-category carousels.
      */
     public function getBestOffersForStore($storeSlug)
@@ -985,7 +985,7 @@ class ProductController extends Controller
         // hid the alternatives block on expired-promo product pages even
         // though the page itself (product.blade.php's $isNoActivePromotion,
         // which checks end_at against now()) correctly showed "no active
-        // promotion" UI — https://evaistine.lt/akcijos/mesa-ir-zuvis/virtos-hot-dog-desreles-1-kg
+        // promotion" UI — https://evaistine.lt/mesa-ir-zuvis/virtos-hot-dog-desreles-1-kg
         // was one such case. Match that same "is there a discount active
         // right now" check instead of "has a discount row ever existed".
         $hasActiveDiscount = $product->discounts->contains(
@@ -1111,26 +1111,26 @@ class ProductController extends Controller
             case 'store':
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/'.$entity->slug,
+                    'slug' => $entity->slug,
                     'type' => 'store',
                 ];
                 break;
             case 'category':
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/'.$entity->slug,
+                    'slug' => $entity->slug,
                     'type' => 'category',
                 ];
                 break;
             case 'store_category':
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/'.$entity->slug,
+                    'slug' => $entity->slug,
                     'type' => 'store',
                 ];
                 $breadcrumbs[] = [
                     'name' => $secondaryEntity->name,
-                    'slug' => 'akcijos/'.$entity->slug.'/'.$secondaryEntity->slug,
+                    'slug' => $entity->slug.'/'.$secondaryEntity->slug,
                     'type' => 'category',
                 ];
                 break;
@@ -1138,20 +1138,20 @@ class ProductController extends Controller
                 if ($entity->category) {
                     $breadcrumbs[] = [
                         'name' => $entity->category->name,
-                        'slug' => 'akcijos/'.$entity->category->slug,
+                        'slug' => $entity->category->slug,
                         'type' => 'category',
                     ];
                 }
                 $breadcrumbs[] = [
                     'name' => $entity->name,
-                    'slug' => 'akcijos/'.($entity->category ? $entity->category->slug.'/' : '').$entity->slug,
+                    'slug' => ltrim(\App\Support\PageUrl::product($entity->slug), '/'),
                     'type' => 'product',
                 ];
                 break;
             case 'search':
                 $breadcrumbs[] = [
                     'name' => 'Paieška',
-                    'slug' => 'akcijos/paieska/'.$entity,
+                    'slug' => 'paieska/'.$entity,
                     'type' => 'search',
                 ];
                 break;
@@ -1266,7 +1266,7 @@ class ProductController extends Controller
                         ? "Naujausi {$entity->name} akcijų katalogai"
                         : "{$entity->name} akcijos ir naujausi katalogai",
                     'meta_description' => $metaDescription,
-                    // A store without its own offers page (/akcijos/{slug}
+                    // A store without its own offers page (/{slug}
                     // 301s here) has its offers only in the leaflets, so
                     // this page is the one for "{store} akcijos" searches.
                     'h1' => $entity->showsDiscountsPage()
@@ -1485,8 +1485,8 @@ class ProductController extends Controller
                     'seo_title' => 'Visos akcijos ir nuolaidos Lietuvoje',
                     'seo_description' => '<div class="space-y-4">
   <h2 class="text-2xl md:text-3xl font-semibold leading-tight mb-3">Akcijos ir nuolaidos Lietuvoje – visi prekybos tinklai vienoje vietoje</h2>
-  <p class="leading-relaxed">Norite greitai rasti akciją, o ne vartytis po kiekvieno prekybos tinklo puslapį atskirai? Čia rasite šios savaitės pasiūlymus iš <a href="/akcijos/maxima">Maxima</a>, <a href="/akcijos/lidl">Lidl</a>, <a href="/akcijos/iki">Iki</a>, <a href="/akcijos/rimi">Rimi</a>, <a href="/akcijos/norfa">Norfa</a> ir kitų vaistinių sudėtus į vieną vietą – patogu palyginti kainas prieš perkant, o ne po to.</p>
-  <p class="leading-relaxed">Akcijos rūšiuojamos pagal kategorijas, tad greičiau rasite tai, ko šiuo metu ieškote: <a href="/akcijos/vaisiai-ir-darzoves">vaisius ir daržoves</a>, <a href="/akcijos/mesa-ir-zuvis">mėsą ir žuvį</a>, <a href="/akcijos/buitine-chemija-valymo-priemones">buitinę chemiją</a>, <a href="/akcijos/kosmetika-ir-higiena">kosmetiką ir higienos prekes</a> ar <a href="/akcijos/namu-ukio-ir-laisvalaikio-prekes">namų ūkio prekes</a>. Kiekvienos kategorijos viduje matysite, kuris tinklas tuo metu siūlo geriausią kainą, be reikalo neapsiperkant kitur.</p>
+  <p class="leading-relaxed">Norite greitai rasti akciją, o ne vartytis po kiekvieno prekybos tinklo puslapį atskirai? Čia rasite šios savaitės pasiūlymus iš <a href="/maxima">Maxima</a>, <a href="/lidl">Lidl</a>, <a href="/iki">Iki</a>, <a href="/rimi">Rimi</a>, <a href="/norfa">Norfa</a> ir kitų vaistinių sudėtus į vieną vietą – patogu palyginti kainas prieš perkant, o ne po to.</p>
+  <p class="leading-relaxed">Akcijos rūšiuojamos pagal kategorijas, tad greičiau rasite tai, ko šiuo metu ieškote: <a href="/vaisiai-ir-darzoves">vaisius ir daržoves</a>, <a href="/mesa-ir-zuvis">mėsą ir žuvį</a>, <a href="/buitine-chemija-valymo-priemones">buitinę chemiją</a>, <a href="/kosmetika-ir-higiena">kosmetiką ir higienos prekes</a> ar <a href="/namu-ukio-ir-laisvalaikio-prekes">namų ūkio prekes</a>. Kiekvienos kategorijos viduje matysite, kuris tinklas tuo metu siūlo geriausią kainą, be reikalo neapsiperkant kitur.</p>
   <p class="leading-relaxed">Pasiūlymai atnaujinami kiekvieną savaitę, kai prekybos tinklai išleidžia naujus akcijų leidinius – jei ieškote konkretaus tinklo savaitės leidinio, jį rasite ir čia, ir per <a href="/leidiniai">visų vaistinių leidinių sąrašą</a>.</p>
 </div>',
                     'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – Maxima, Lidl, Iki, Rimi',
@@ -1816,7 +1816,7 @@ class ProductController extends Controller
                 ->values()
                 ->all();
 
-            // Store+category listings (/akcijos/{store}/{category}) with live
+            // Store+category listings (/{store}/{category}) with live
             // offers, for stores that have an akcijos page at all (otherwise
             // the URL 301s to the leaflets hub). Categories are root-only.
             $storeCategoryPages = DB::table('discounts')
@@ -1852,18 +1852,16 @@ class ProductController extends Controller
     {
         $perPage = 20000;
         $page = max(1, (int) $request->query('page', 1));
-        $cacheKey = "sitemap_products_v1_page_{$page}_".CacheVersion::suffix(['sitemap']);
+        $cacheKey = "sitemap_products_v2_page_{$page}_".CacheVersion::suffix(['sitemap']);
 
         return Cache::remember($cacheKey, 3600, function () use ($page, $perPage) {
             $products = $this->sitemapProductsQuery()
-                ->with('category:id,slug')
                 ->select('id', 'slug', 'updated_at', 'category_id')
                 ->orderBy('id')
                 ->forPage($page, $perPage)
                 ->get()
                 ->map(function (Product $product) {
-                    $categorySlug = $product->category?->slug;
-                    $path = $categorySlug ? "{$categorySlug}/{$product->slug}" : $product->slug;
+                    $path = ltrim(\App\Support\PageUrl::product($product->slug), '/');
 
                     return [
                         'path' => $path,

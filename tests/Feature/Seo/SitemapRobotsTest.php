@@ -34,7 +34,7 @@ class SitemapRobotsTest extends TestCase
         $body = $response->getContent();
         $this->assertStringContainsString('Sitemap: https://evaistine.lt/sitemap.xml', $body);
         $this->assertStringContainsString('Sitemap: https://evaistine.lt/product-sitemap/1', $body);
-        $this->assertStringContainsString('Disallow: /akcijos/paieska', $body);
+        $this->assertStringContainsString('Disallow: /paieska', $body);
         $this->assertStringContainsString('Disallow: /api/', $body);
         $this->assertStringContainsString('Disallow: /auth/', $body);
 
@@ -68,16 +68,16 @@ class SitemapRobotsTest extends TestCase
         $this->assertContains(self::ORIGIN.'/', $locs);
         $this->assertContains(self::ORIGIN.'/akcijos', $locs);
         $this->assertContains(self::ORIGIN.'/pigiausios-prekes', $locs);
-        $this->assertContains(self::ORIGIN."/akcijos/{$seed['store']->slug}", $locs);
-        $this->assertContains(self::ORIGIN."/akcijos/{$seed['category']->slug}", $locs);
-        $this->assertContains(self::ORIGIN.'/akcijos/seo-publikuotas', $locs);
+        $this->assertContains(self::ORIGIN."/{$seed['store']->slug}", $locs);
+        $this->assertContains(self::ORIGIN."/{$seed['category']->slug}", $locs);
+        $this->assertContains(self::ORIGIN.'/seo-publikuotas', $locs);
         $this->assertContains(self::ORIGIN.'/leidiniai', $locs);
-        $this->assertContains(self::ORIGIN."/akcijos/{$seed['store']->slug}/{$seed['category']->slug}", $locs);
+        $this->assertContains(self::ORIGIN."/{$seed['store']->slug}/{$seed['category']->slug}", $locs);
 
         // A 301 or a 404 must never be listed.
-        $this->assertNotContains(self::ORIGIN."/akcijos/{$leafletOnly->slug}", $locs);
-        $this->assertNotContains(self::ORIGIN."/akcijos/{$leafletOnly->slug}/{$seed['category']->slug}", $locs);
-        $this->assertNotContains(self::ORIGIN.'/akcijos/seo-juodrastis', $locs);
+        $this->assertNotContains(self::ORIGIN."/{$leafletOnly->slug}", $locs);
+        $this->assertNotContains(self::ORIGIN."/{$leafletOnly->slug}/{$seed['category']->slug}", $locs);
+        $this->assertNotContains(self::ORIGIN.'/seo-juodrastis', $locs);
 
         $this->assertSame(count($locs), count(array_unique($locs)), 'Duplicate URLs in sitemap.xml');
         foreach ($locs as $loc) {
@@ -103,8 +103,8 @@ class SitemapRobotsTest extends TestCase
 
         $locs = $this->sitemapLocs($this->get('/product-sitemap/1'));
 
-        $this->assertContains(self::ORIGIN."/akcijos/{$seed['category']->slug}/{$seed['product']->slug}", $locs);
-        $this->assertNotContains(self::ORIGIN."/akcijos/{$seed['category']->slug}/{$stale->slug}", $locs);
+        $this->assertContains(self::ORIGIN."/p/{$seed['product']->slug}", $locs);
+        $this->assertNotContains(self::ORIGIN."/p/{$stale->slug}", $locs);
     }
 
     public function test_out_of_range_product_sitemap_page_is_503_not_an_empty_sitemap(): void

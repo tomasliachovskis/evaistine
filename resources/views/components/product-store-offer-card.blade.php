@@ -16,7 +16,7 @@
 @endphp
 
 <a
-    href="{{ $flyerLink['href'] ?? '/akcijos/' . ($store['slug'] ?? '') }}"
+    href="{{ $flyerLink['href'] ?? '/' . ($store['slug'] ?? '') }}"
     {{ $attributes->class([
         'relative flex w-full flex-col rounded-xl border border-green/35 bg-white p-4 transition-colors hover:border-green/45 sm:p-5',
         'pt-6 sm:pt-7' => $showBestPriceBadge,

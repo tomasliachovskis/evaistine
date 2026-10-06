@@ -13,7 +13,7 @@ use Livewire\Component;
 // bottom sheet), which is where the live-search <input> actually lives. Live
 // results from 2+ chars via the same MeilisearchService the JSON API used
 // (in-process, no HTTP hop), popular keyword pages shown before typing.
-// Enter/"see all" always lands on the noindex'd /akcijos/paieska/{query} page,
+// Enter/"see all" always lands on the noindex'd /paieska/{query} page,
 // which stays the no-JS fallback.
 //
 // One component, two render modes (`mode="desktop"|"mobile"`, matching the
@@ -53,7 +53,7 @@ class SiteSearch extends Component
             ->take(8)
             ->map(fn ($page) => [
                 'title' => $page['title'] ?? $page['h1'] ?? $page['slug'],
-                'href' => '/akcijos/' . $page['slug'],
+                'href' => '/' . $page['slug'],
                 'emoji' => $page['emoji'] ?? null,
             ])
             ->values()
@@ -76,7 +76,7 @@ class SiteSearch extends Component
             ->take(8)
             ->map(fn ($deal) => [
                 'name' => $deal['product']['name'],
-                'href' => '/akcijos/' . $deal['product']['full_slug'],
+                'href' => '/' . $deal['product']['full_slug'],
             ])
             ->all();
     }
@@ -89,7 +89,7 @@ class SiteSearch extends Component
             return;
         }
 
-        return redirect('/akcijos/paieska/' . rawurlencode($trimmed));
+        return redirect('/paieska/' . rawurlencode($trimmed));
     }
 
     public function render()

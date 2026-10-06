@@ -35,7 +35,7 @@
     $footerKeywordItems = collect($keywordPayload['pages'] ?? [])
         ->sortBy('sort_order')
         ->take(15)
-        ->map(fn ($page) => ['href' => '/akcijos/' . $page['slug'], 'label' => $page['title'] ?? $page['h1'] ?? $page['slug']])
+        ->map(fn ($page) => ['href' => '/' . $page['slug'], 'label' => $page['title'] ?? $page['h1'] ?? $page['slug']])
         ->values();
 @endphp
 
@@ -80,7 +80,7 @@
                     <h2 class="mb-4 text-lg font-bold">Kategorijos</h2>
                     <ul class="flex flex-col gap-2">
                         @foreach ($footerCategories as $category)
-                            <li><a href="/akcijos/{{ $category->slug }}" class="text-base text-white/80 transition-colors hover:text-white hover:underline">{{ $category->name }}</a></li>
+                            <li><a href="/{{ $category->slug }}" class="text-base text-white/80 transition-colors hover:text-white hover:underline">{{ $category->name }}</a></li>
                         @endforeach
                     </ul>
                 </div>
@@ -89,7 +89,7 @@
                     <h2 class="mb-4 text-lg font-bold">Vaistinės</h2>
                     <ul class="flex flex-col gap-2">
                         @foreach ($footerStores as $store)
-                            <li><a href="/akcijos/{{ $store['slug'] }}" class="text-base text-white/80 transition-colors hover:text-white hover:underline">{{ $store['name'] }}</a></li>
+                            <li><a href="/{{ $store['slug'] }}" class="text-base text-white/80 transition-colors hover:text-white hover:underline">{{ $store['name'] }}</a></li>
                         @endforeach
                         <li><a href="/vaistines" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Visos vaistinės</a></li>
                     </ul>

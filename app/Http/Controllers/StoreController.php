@@ -36,7 +36,7 @@ class StoreController extends Controller
             'breadcrumbSchema' => BreadcrumbSchema::build($breadcrumbs),
             'itemListSchema' => ItemListSchema::build(
                 'Vaistinių akcijos Lietuvoje',
-                collect($stores)->map(fn ($s) => ['name' => $s['name'], 'href' => ($s['shows_discounts_page'] ?? true) ? "/akcijos/{$s['slug']}" : "/leidinys/{$s['slug']}"])->all()
+                collect($stores)->map(fn ($s) => ['name' => $s['name'], 'href' => ($s['shows_discounts_page'] ?? true) ? "/{$s['slug']}" : "/leidinys/{$s['slug']}"])->all()
             ),
             'faqSchema' => !empty($faq) ? FaqSchema::build($faq) : null,
         ]);

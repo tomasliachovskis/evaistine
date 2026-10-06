@@ -34,12 +34,12 @@
     // $activeCategorySlug (set by AkcijosController per page type) are what
     // actually tell us which URL shape applies:
     // - Picking a category: prefixed with the store when one is fixed
-    //   (store+category combo); plain /akcijos/{category} otherwise (plain
+    //   (store+category combo); plain /{category} otherwise (plain
     //   hub, or a category-only page switching to a sibling category).
     // - Picking a store: suffixed with the category when one is fixed
     //   (category-only or store+category page); on a keyword page there is
-    //   no /akcijos/{store}/{keyword} route (that path only resolves
-    //   store+category), so a plain /akcijos/{store} nav silently dropped
+    //   no /{store}/{keyword} route (that path only resolves
+    //   store+category), so a plain /{store} nav silently dropped
     //   the keyword filter entirely (confirmed live bug, 2026-09-15) —
     //   KeywordPageController::show() already reads a ?store= query param
     //   (same one toggleStore()'s wire re-fetch uses), so link there
@@ -49,15 +49,15 @@
     $categoryQuery = $activeStoreSlug === null && $storeFilter !== ''
         ? '?' . http_build_query(array_filter(['store' => $storeFilter, 'order' => $order !== 'popular' ? $order : null]))
         : $orderSuffix;
-    $categoryHrefFor = fn (string $slug) => ($activeStoreSlug !== null ? '/akcijos/' . $activeStoreSlug . '/' . $slug : '/akcijos/' . $slug) . $categoryQuery;
+    $categoryHrefFor = fn (string $slug) => ($activeStoreSlug !== null ? '/' . $activeStoreSlug . '/' . $slug : '/' . $slug) . $categoryQuery;
     $storeHrefFor = function (string $slug) use ($activeCategorySlug, $mode, $primarySlug, $order, $orderSuffix) {
         if ($mode === 'keyword') {
             $query = array_filter(['store' => $slug, 'order' => $order !== 'popular' ? $order : null]);
 
-            return '/akcijos/' . $primarySlug . '?' . http_build_query($query);
+            return '/' . $primarySlug . '?' . http_build_query($query);
         }
 
-        return ($activeCategorySlug !== null ? '/akcijos/' . $slug . '/' . $activeCategorySlug : '/akcijos/' . $slug) . $orderSuffix;
+        return ($activeCategorySlug !== null ? '/' . $slug . '/' . $activeCategorySlug : '/' . $slug) . $orderSuffix;
     };
 
     // "Visos" clears the category facet — back to the plain store page. Only
@@ -66,16 +66,16 @@
     // no broader "all" to return to (verified against production for the
     // hub case; category-only is new, same reasoning applies).
     $categoryAllHref = $showCategoryFilter && $activeStoreSlug !== null
-        ? '/akcijos/' . $activeStoreSlug . $orderSuffix
+        ? '/' . $activeStoreSlug . $orderSuffix
         : ($showCategoryFilter && $multiStore && $activeCategorySlug !== null ? '/akcijos' . $categoryQuery : null);
 
     // "Visos" clears the store facet — back to the plain category page. Only
     // meaningful on a store+category combo page, same reasoning as
     // $categoryAllHref above (the only case with a "plain category page" to
     // fall back to — category-only pages have no store fixed to drop, and
-    // keyword pages have no /akcijos/{keyword} route sharing this shape).
+    // keyword pages have no /{keyword} route sharing this shape).
     $storeAllHref = $showStoreFilter && $activeCategorySlug !== null
-        ? '/akcijos/' . $activeCategorySlug . $orderSuffix
+        ? '/' . $activeCategorySlug . $orderSuffix
         : null;
 
     $contextStoreSlug = $primarySlug && \App\Support\StoreDisplayMeta::isStoreSlug($primarySlug)

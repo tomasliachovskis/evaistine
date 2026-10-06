@@ -28,7 +28,7 @@ class StoreForm
                     ->maxLength(500),
                 Toggle::make('show_discounts_page')
                     ->label('Rodyti akcijų puslapį')
-                    ->helperText('Įjungus /akcijos/{slug} rodo šios vaistinės prekes. Išjungus – nukreipia į leidinių puslapį.'),
+                    ->helperText('Įjungus /{slug} rodo šios vaistinės prekes. Išjungus – nukreipia į leidinių puslapį.'),
                 Toggle::make('extract_discounts_from_flyer')
                     ->label('Ištraukti nuolaidas iš leidinių (Gemini)')
                     ->helperText('Nuolaidas ištraukia iš leidinio PDF. Nereikia vaistinėms, turinčioms savo e. vaistinės scraperį.'),

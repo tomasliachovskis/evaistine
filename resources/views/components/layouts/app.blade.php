@@ -81,7 +81,7 @@
                     '@type' => 'SearchAction',
                     'target' => [
                         '@type' => 'EntryPoint',
-                        'urlTemplate' => 'https://evaistine.lt/akcijos/paieska/{search_term_string}',
+                        'urlTemplate' => 'https://evaistine.lt/paieska/{search_term_string}',
                     ],
                     'query-input' => 'required name=search_term_string',
                 ],

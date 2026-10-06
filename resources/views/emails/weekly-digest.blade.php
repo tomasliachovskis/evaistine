@@ -68,7 +68,7 @@
                     @foreach ($offers as $discount)
                         @php
                             $product = $discount->product;
-                            $productUrl = $track(url('/akcijos/' . ($product->category?->slug ?? '') . '/' . $product->slug), 'offer');
+                            $productUrl = $track(url(\App\Support\PageUrl::product($product->slug)), 'offer');
                             $percent = $discount->discount_percent ? round($discount->discount_percent) : null;
                         @endphp
                         <tr>

@@ -3,10 +3,11 @@
 @php
     // Mirrors discount/src/lib/header-nav.ts's isHeaderNavItemActive() family.
     $path = request()->path();
-    $akcijosSegment = str_starts_with($path, 'akcijos/') ? explode('/', $path)[1] ?? null : null;
+    // Listings are flat (/{slug}, route "listing") and products are /p/{slug}.
+    $listingSegment = request()->routeIs('listing') ? explode('/', $path)[0] : null;
     $keywordSlugs = array_column(config('header_nav.product_keyword_items'), 'slug');
-    $isProductKeywordPath = $akcijosSegment && $akcijosSegment !== 'paieska' && in_array($akcijosSegment, $keywordSlugs, true);
-    $akcijosActive = $path === 'akcijos' || str_starts_with($path, 'akcijos/');
+    $isProductKeywordPath = $listingSegment && in_array($listingSegment, $keywordSlugs, true);
+    $akcijosActive = $path === 'akcijos' || request()->routeIs('listing', 'product') || $path === 'paieska' || str_starts_with($path, 'paieska/');
     $storesActive = $path === 'vaistines' || str_starts_with($path, 'vaistines/');
     $leafletsActive = $path === 'leidiniai' || str_starts_with($path, 'leidinys/');
     $cheapestActive = $path === 'pigiausios-prekes';
@@ -92,7 +93,7 @@
                             'facet' => 'categories',
                             'items' => $categoriesForModal,
                             'activeSlug' => null,
-                            'hrefFor' => fn ($slug) => '/akcijos/' . $slug,
+                            'hrefFor' => fn ($slug) => '/' . $slug,
                             'rowClass' => $categoryRowClass,
                             'gaSource' => 'header_nav_categories',
                             // This is a full category directory, not a

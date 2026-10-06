@@ -6,7 +6,7 @@
     // (this card's own $deal['store_id']) first, deduped by slug.
     $offerStores = collect($deal['offers'] ?? [])->pluck('store')->filter()->unique('slug')->values();
     $stores = $offerStores->sortBy(fn ($s) => ($s['id'] ?? null) === ($deal['store_id'] ?? null) ? 0 : 1)->values();
-    $href = '/akcijos/' . $product['full_slug'];
+    $href = '/' . $product['full_slug'];
 
     $discountPrice = (float) ($deal['discounted_price'] ?? 0);
     $originalPrice = (float) ($deal['original_price'] ?? 0);

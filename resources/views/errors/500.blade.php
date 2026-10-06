@@ -12,7 +12,7 @@
             <p class="text-base text-gray-600">Kažkas nutiko ne taip. Pabandykite dar kartą arba grįžkite į pagrindinį puslapį.</p>
             <div class="flex gap-4">
                 <a class="text-primary hover:text-dark-green underline" href="/">Į pagrindinį puslapį</a>
-                <a class="text-primary hover:text-dark-green underline" href="/akcijos/paieska">Ieškoti akcijų</a>
+                <a class="text-primary hover:text-dark-green underline" href="/paieska">Ieškoti akcijų</a>
             </div>
         </div>
     </section>

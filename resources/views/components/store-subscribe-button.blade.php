@@ -1,6 +1,6 @@
 @props(['slug', 'class' => ''])
 
-{{-- On a store's own pages (/akcijos/{store}, /leidinys/{store}): adds the
+{{-- On a store's own pages (/{store}, /leidinys/{store}): adds the
      store to "Mano vaistinės" or takes it off (see the myStores Alpine
      store in layouts/app.blade.php). Was a "Sekti akcijas" button that only
      linked to /favorites or the login sheet, with no per-store follow

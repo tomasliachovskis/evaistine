@@ -65,6 +65,9 @@ ailment layer (rest of phase 2). The phased roadmap with time estimates is in
       category ids dropped from `resolveCategoryId()`. **No category icons**
       (owner dropped them): icons and grocery category images removed, UI is
       text only.
+- [x] URL structure (2026-10-07): products `/p/{slug}` without category,
+      flat listings `/{slug}`, `/paieska/{q}`; slug collision rule. See
+      `docs/evaistine.md`.
 - [x] Test suite green (289 tests): the 125 failures were one data migration
       that used the deleted `EnergyDrinkCategory`.
 

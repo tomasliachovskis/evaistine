@@ -70,7 +70,7 @@ class HomeBetaController extends Controller
                 // Same rule as <x-store-card>: the offers page only when the
                 // store shows one and has offers, its leaflet hub otherwise.
                 'href' => (($store['shows_discounts_page'] ?? true) && ($store['discounts_count'] ?? 0) > 0)
-                    ? "/akcijos/{$store['slug']}"
+                    ? "/{$store['slug']}"
                     : "/leidinys/{$store['slug']}",
             ])
             ->values()

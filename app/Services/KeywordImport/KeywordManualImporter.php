@@ -121,8 +121,13 @@ class KeywordManualImporter
             $matchCount = $this->keywordPageService->countMatchingOffersForPage($page);
             $displayedCount = $this->keywordPageService->countDisplayedOffersForPage($page);
             $recommendation = $matchCount >= $pageData['min_active_offers'] ? 'PUBLISH' : 'KEEP UNPUBLISHED';
+            // Keyword pages live at /{slug}, next to pharmacies, categories
+            // and other routes; a taken slug would never be reachable.
+            if ($slugConflict = \App\Rules\FreeTopLevelSlug::conflict($pageData['slug'])) {
+                $recommendation = "SKIP (slug taken: {$slugConflict})";
+            }
 
-            if ($apply) {
+            if ($apply && ! $slugConflict) {
                 $persist = $pageData;
                 $persist['is_published'] = $matchCount >= $persist['min_active_offers'];
                 $persist['matching_offers_count'] = $matchCount;

@@ -24,7 +24,7 @@
                  itself would land on for these terms. --}}
             <div class="hidden flex-wrap items-center justify-center gap-2 sm:flex">
                 @foreach (['kava' => 'Kava', 'sviestas' => 'Sviestas', 'pienas' => 'Pienas', 'kiausiniai' => 'Kiaušiniai'] as $slug => $label)
-                    <a href="/akcijos/{{ $slug }}" class="rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green min-h-12 inline-flex items-center">
+                    <a href="/{{ $slug }}" class="rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green min-h-12 inline-flex items-center">
                         {{ $label }}
                     </a>
                 @endforeach
@@ -47,7 +47,7 @@
             <div class="flex w-full max-w-xl flex-col items-center gap-2">
                 <div class="scroll-cards-x flex w-full items-center justify-start gap-2 sm:justify-center sm:flex-wrap">
                     @foreach (\App\Support\StoreListPriority::mainSlugs() as $slug)
-                        <a href="/akcijos/{{ $slug }}" data-ga-event="filter_select" data-ga-item="store:{{ $slug }}" data-ga-source="home_trust_row" class="flex min-h-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 transition-colors hover:border-green/40">
+                        <a href="/{{ $slug }}" data-ga-event="filter_select" data-ga-item="store:{{ $slug }}" data-ga-source="home_trust_row" class="flex min-h-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 transition-colors hover:border-green/40">
                             <x-store-logo :slug="$slug" size="sm" />
                         </a>
                     @endforeach
@@ -139,7 +139,7 @@
                     <div x-data="{ all: false }">
                         <div class="mt-4 flex flex-wrap gap-2 sm:snap-x sm:snap-mandatory sm:flex-nowrap sm:gap-3 sm:overflow-x-auto sm:py-2 sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden">
                             @foreach ($categories as $category)
-                                <a href="/akcijos/{{ $category['slug'] }}"
+                                <a href="/{{ $category['slug'] }}"
                                    @if ($loop->index >= 6) :class="all ? 'flex' : 'max-sm:hidden'" @endif
                                    class="flex min-h-12 w-full items-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 transition-[border-color,box-shadow] hover:border-gray-300 hover:shadow-sm sm:min-h-20 sm:w-[168px] sm:shrink-0 sm:snap-start sm:justify-center sm:p-3 sm:text-center">
                                     <span class="text-base font-bold leading-snug text-gray-900 sm:line-clamp-2 sm:text-sm">{{ $category['name'] }}</span>

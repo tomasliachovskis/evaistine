@@ -181,7 +181,7 @@ class KeywordPageService
             'title' => $page->title,
             'h1' => $page->h1,
             'emoji' => $page->emoji ?: '🏷️',
-            'href' => "/akcijos/{$page->slug}",
+            'href' => "/{$page->slug}",
             'matching_offers_count' => (int) ($page->matching_offers_count ?? 0),
             // "{Genitive} akcijos" link label, when the caller selected
             // grammar_genitive (listPublishedPagesForCategory() does).
@@ -441,7 +441,7 @@ class KeywordPageService
 
             return [
                 'slug' => $page->slug,
-                'href' => "/akcijos/{$page->slug}",
+                'href' => "/{$page->slug}",
                 // title, not h1 — h1 is written as "{keyword} akcija" (e.g.
                 // "Varškei akcija") for the page's own SEO heading, and
                 // stripping "akcija" from it can leave an odd standalone
@@ -1276,7 +1276,7 @@ class KeywordPageService
             ->map(function (Discount $discount) {
                 $categorySlug = $discount->product->category?->slug;
                 $href = $categorySlug
-                    ? "/akcijos/{$categorySlug}/{$discount->product->slug}"
+                    ? "/p/{$discount->product->slug}"
                     : '/akcijos';
 
                 return [
@@ -1360,7 +1360,7 @@ class KeywordPageService
                 return [
                     'product_name' => $best['discount']->product->name,
                     'product_image_url' => $formatted['product']['image_url'],
-                    'product_href' => '/akcijos/' . $formatted['product']['full_slug'],
+                    'product_href' => '/' . $formatted['product']['full_slug'],
                     'price' => (float) $best['discount']->discounted_price,
                     'store_name' => $best['discount']->store->name,
                     'store_slug' => $best['discount']->store->slug,
@@ -1414,7 +1414,7 @@ class KeywordPageService
                     'store_slug' => $cheapest->store->slug,
                     'product_name' => $formatted['product']['name'],
                     'product_image_url' => $formatted['product']['image_url'],
-                    'product_href' => '/akcijos/' . $formatted['product']['full_slug'],
+                    'product_href' => '/' . $formatted['product']['full_slug'],
                     'discount_percent' => $formatted['discount_percent'],
                     'valid_to' => $formatted['to_date'],
                 ];
@@ -1457,7 +1457,7 @@ class KeywordPageService
                     'brand' => $brand !== '' ? mb_convert_case(mb_strtolower($brand), MB_CASE_TITLE, 'UTF-8') : null,
                     'product_name' => $formatted['product']['name'],
                     'product_image_url' => $formatted['product']['image_url'],
-                    'product_href' => '/akcijos/' . $formatted['product']['full_slug'],
+                    'product_href' => '/' . $formatted['product']['full_slug'],
                 ];
             })
             ->values();
@@ -1615,7 +1615,7 @@ class KeywordPageService
             'label' => $related->grammar_genitive
                 ? $this->capitalizeFirst($related->grammar_genitive) . ' akcijos'
                 : $related->title,
-            'href' => "/akcijos/{$related->slug}",
+            'href' => "/{$related->slug}",
             'matching_offers_count' => (int) $related->matching_offers_count,
         ];
     }
@@ -1745,7 +1745,7 @@ class KeywordPageService
                 return [
                     'name' => $category->name,
                     'slug' => $category->slug,
-                    'href' => '/akcijos/' . $category->slug,
+                    'href' => '/' . $category->slug,
                 ];
             })
             ->filter()
@@ -1773,7 +1773,7 @@ class KeywordPageService
         if ($category) {
             $breadcrumbs[] = [
                 'name' => $category->name,
-                'slug' => 'akcijos/' . $category->slug,
+                'slug' => $category->slug,
                 'type' => 'category',
             ];
         } else {
@@ -1787,7 +1787,7 @@ class KeywordPageService
         $breadcrumbs[] = [
             // Just the keyword ("Grietinė"), not the whole H1 repeated.
             'name' => $this->capitalizeFirst(trim((string) $page->title)),
-            'slug' => 'akcijos/' . $page->slug,
+            'slug' => $page->slug,
             'type' => 'keyword',
         ];
 

@@ -104,7 +104,7 @@ class PageHtmlCache
      * so a cache entry never bakes in a wrong host — but they must go out
      * absolute: a relative og:url is invalid Open Graph, and Google asks for
      * absolute canonicals. Found live 2026-09-28: every cached listing page
-     * served <link rel="canonical" href="/akcijos/kava">.
+     * served <link rel="canonical" href="/kava">.
      */
     private static function toAbsoluteMetaUrls(string $html): string
     {

@@ -42,7 +42,7 @@ class IndexNowTest extends TestCase
         Http::assertSent(function ($request) use ($seed) {
             return $request['key'] === self::KEY
                 && $request['host'] === 'evaistine.lt'
-                && $request['urlList'] === [self::ORIGIN."/akcijos/{$seed['category']->slug}/{$seed['product']->slug}"];
+                && $request['urlList'] === [self::ORIGIN."/p/{$seed['product']->slug}"];
         });
     }
 

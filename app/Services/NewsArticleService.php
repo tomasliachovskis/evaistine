@@ -233,7 +233,7 @@ class NewsArticleService
 
     /**
      * GPT occasionally leaves a stray trailing space inside href="..." (seen
-     * live: href="/akcijos/mesa-ir-zuvis "). Browsers are lenient about it,
+     * live: href="/mesa-ir-zuvis "). Browsers are lenient about it,
      * but trim it anyway rather than rely on that.
      */
     private function cleanHrefWhitespace(string $html): string
@@ -339,10 +339,10 @@ class NewsArticleService
     {
         return [
             'stores' => Store::orderBy('name')->get(['name', 'slug'])
-                ->map(fn ($s) => ['name' => $s->name, 'url' => "/akcijos/{$s->slug}"])
+                ->map(fn ($s) => ['name' => $s->name, 'url' => "/{$s->slug}"])
                 ->values()->all(),
             'categories' => Category::whereNull('parent_id')->orderBy('name')->get(['name', 'slug'])
-                ->map(fn ($c) => ['name' => $c->name, 'url' => "/akcijos/{$c->slug}"])
+                ->map(fn ($c) => ['name' => $c->name, 'url' => "/{$c->slug}"])
                 ->values()->all(),
         ];
     }

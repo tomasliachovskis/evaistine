@@ -25,10 +25,10 @@ class StructuredDataTest extends TestCase
         $paths = [
             '/',
             '/akcijos',
-            "/akcijos/{$seed['category']->slug}",
-            "/akcijos/{$seed['store']->slug}",
-            "/akcijos/{$seed['store']->slug}/{$seed['category']->slug}",
-            "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}",
+            "/{$seed['category']->slug}",
+            "/{$seed['store']->slug}",
+            "/{$seed['store']->slug}/{$seed['category']->slug}",
+            "/p/{$seed['product']->slug}",
             '/vaistines',
             '/leidiniai',
         ];
@@ -44,7 +44,7 @@ class StructuredDataTest extends TestCase
     public function test_product_page_has_product_with_live_offer(): void
     {
         $seed = $this->seedListing();
-        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+        $path = "/p/{$seed['product']->slug}";
 
         $products = $this->jsonLdOfType($this->get($path), 'Product');
 
@@ -78,7 +78,7 @@ class StructuredDataTest extends TestCase
             'discount_percent' => 25,
         ]);
 
-        $product = $this->jsonLdOfType($this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}"), 'Product')[0];
+        $product = $this->jsonLdOfType($this->get("/p/{$seed['product']->slug}"), 'Product')[0];
 
         $prices = collect($this->offersOf($product))->pluck('price')->sort()->values()->all();
         $this->assertSame(['1.29', '1.49'], $prices);
@@ -98,7 +98,7 @@ class StructuredDataTest extends TestCase
         $seed = $this->seedListing();
         $seed['product']->update(['ean' => '4770001234567']);
 
-        $product = $this->jsonLdOfType($this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}"), 'Product')[0];
+        $product = $this->jsonLdOfType($this->get("/p/{$seed['product']->slug}"), 'Product')[0];
 
         $this->assertSame('4770001234567', $product['gtin']);
     }
@@ -108,7 +108,7 @@ class StructuredDataTest extends TestCase
         $seed = $this->seedListing();
         $seed['discount']->update(['start_at' => now()->subMonth(), 'end_at' => now()->subWeeks(3)]);
 
-        $products = $this->jsonLdOfType($this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}"), 'Product');
+        $products = $this->jsonLdOfType($this->get("/p/{$seed['product']->slug}"), 'Product');
 
         $this->assertCount(1, $products);
         $offers = $this->offersOf($products[0]);
@@ -122,7 +122,7 @@ class StructuredDataTest extends TestCase
         $seed = $this->seedListing();
         $seed['product']->update(['image_url' => null]);
 
-        $response = $this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}");
+        $response = $this->get("/p/{$seed['product']->slug}");
 
         $response->assertOk();
         $this->assertSame([], $this->jsonLdOfType($response, 'Product'));
@@ -131,7 +131,7 @@ class StructuredDataTest extends TestCase
     public function test_product_page_breadcrumb_ends_at_the_product(): void
     {
         $seed = $this->seedListing();
-        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+        $path = "/p/{$seed['product']->slug}";
 
         $breadcrumbs = $this->jsonLdOfType($this->get($path), 'BreadcrumbList');
 
@@ -140,23 +140,23 @@ class StructuredDataTest extends TestCase
         $this->assertGreaterThanOrEqual(2, count($items));
         $this->assertSame(range(1, count($items)), array_column($items, 'position'));
         $this->assertStringEndsWith($path, end($items)['item']);
-        $this->assertContains(url("/akcijos/{$seed['category']->slug}"), array_column($items, 'item'));
+        $this->assertContains(url("/{$seed['category']->slug}"), array_column($items, 'item'));
     }
 
     public function test_category_listing_has_breadcrumb_and_item_list_of_its_products(): void
     {
         $seed = $this->seedListing();
-        $response = $this->get("/akcijos/{$seed['category']->slug}");
+        $response = $this->get("/{$seed['category']->slug}");
 
         $breadcrumbs = $this->jsonLdOfType($response, 'BreadcrumbList');
         $this->assertCount(1, $breadcrumbs);
-        $this->assertStringEndsWith("/akcijos/{$seed['category']->slug}", end($breadcrumbs[0]['itemListElement'])['item']);
+        $this->assertStringEndsWith("/{$seed['category']->slug}", end($breadcrumbs[0]['itemListElement'])['item']);
 
         $lists = $this->jsonLdOfType($response, 'ItemList');
         $this->assertCount(1, $lists);
         $this->assertGreaterThanOrEqual(1, $lists[0]['numberOfItems']);
         $this->assertStringEndsWith(
-            "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}",
+            "/p/{$seed['product']->slug}",
             $lists[0]['itemListElement'][0]['url']
         );
     }
@@ -168,7 +168,7 @@ class StructuredDataTest extends TestCase
         $breadcrumbs = $this->getJson('/api/search/pienas')->assertOk()->json('breadcrumbs');
 
         $this->assertSame(['Akcijos', 'Paieška'], array_column($breadcrumbs, 'name'));
-        $this->assertSame('akcijos/paieska/pienas', end($breadcrumbs)['slug']);
+        $this->assertSame('paieska/pienas', end($breadcrumbs)['slug']);
     }
 
     public function test_leaflet_hub_has_breadcrumb_and_item_list_of_current_leaflets(): void
@@ -298,7 +298,7 @@ class StructuredDataTest extends TestCase
         $sites = $this->jsonLdOfType($response, 'WebSite');
         $this->assertCount(1, $sites);
         $this->assertSame(
-            'https://evaistine.lt/akcijos/paieska/{search_term_string}',
+            'https://evaistine.lt/paieska/{search_term_string}',
             $sites[0]['potentialAction']['target']['urlTemplate']
         );
     }
@@ -307,7 +307,7 @@ class StructuredDataTest extends TestCase
     {
         $seed = $this->seedListing();
 
-        $response = $this->get("/akcijos/{$seed['category']->slug}");
+        $response = $this->get("/{$seed['category']->slug}");
 
         $this->assertSame([], $this->jsonLdOfType($response, 'Organization'));
         $this->assertSame([], $this->jsonLdOfType($response, 'WebSite'));
@@ -331,7 +331,7 @@ class StructuredDataTest extends TestCase
             ]);
         }
 
-        $response = $this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}");
+        $response = $this->get("/p/{$seed['product']->slug}");
 
         $answers = collect($this->jsonLdOfType($response, 'FAQPage')[0]['mainEntity'])
             ->pluck('acceptedAnswer.text', 'name');
@@ -360,7 +360,7 @@ class StructuredDataTest extends TestCase
             ]);
         }
 
-        $response = $this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}");
+        $response = $this->get("/p/{$seed['product']->slug}");
 
         $this->assertStringContainsString('Mažiausia kaina per 90 d.', $this->seoHead($response)['description']);
     }
@@ -369,7 +369,7 @@ class StructuredDataTest extends TestCase
     {
         $seed = $this->seedListing();
         $seed['discount']->update(['unit_price' => 1.29, 'unit_price_basis' => 'l', 'unit_price_estimated' => false]);
-        $path = "/akcijos/{$seed['category']->slug}/{$seed['product']->slug}";
+        $path = "/p/{$seed['product']->slug}";
 
         $response = $this->get($path);
         $specs = $this->offersOf($this->jsonLdOfType($response, 'Product')[0])[0]['priceSpecification'];
@@ -384,7 +384,7 @@ class StructuredDataTest extends TestCase
         $seed = $this->seedListing();
         $seed['discount']->update(['unit_price' => 1.29, 'unit_price_basis' => 'l', 'unit_price_estimated' => true]);
 
-        $offer = $this->offersOf($this->jsonLdOfType($this->get("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}"), 'Product')[0])[0];
+        $offer = $this->offersOf($this->jsonLdOfType($this->get("/p/{$seed['product']->slug}"), 'Product')[0])[0];
         $specs = $offer['priceSpecification'] ?? [];
 
         $this->assertNull(collect(isset($specs['@type']) ? [$specs] : $specs)->first(fn ($s) => isset($s['referenceQuantity'])));

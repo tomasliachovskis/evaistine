@@ -30,7 +30,7 @@ class Store extends Model
     ];
 
     /**
-     * Whether /akcijos/{slug} is a real offers page for this store. Stores
+     * Whether /{slug} is a real offers page for this store. Stores
      * without one only have leaflets — their /akcijos URL 301s to
      * /leidinys/{slug} (AkcijosController::show()) and every link to it
      * should point at the leaflet hub instead.

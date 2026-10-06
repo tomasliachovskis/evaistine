@@ -37,7 +37,7 @@ class KeywordCsvImporter
         $candidates = $data['candidates'] ?? [];
 
         $candidates = array_filter($candidates, function ($c) use ($priorities) {
-            if (!str_starts_with($c['page_url'], '/akcijos/')) {
+            if (!str_starts_with($c['page_url'], '/')) {
                 return false;
             }
             if (!in_array($c['page_type'], ['category', 'brand', 'product'], true)) {
@@ -125,8 +125,13 @@ class KeywordCsvImporter
             $matchCount = $this->keywordPageService->countMatchingOffersForPage($page);
             $displayedCount = $this->keywordPageService->countDisplayedOffersForPage($page);
             $recommendation = $matchCount >= $pageData['min_active_offers'] ? 'PUBLISH' : 'KEEP UNPUBLISHED';
+            // Keyword pages live at /{slug}, next to pharmacies, categories
+            // and other routes; a taken slug would never be reachable.
+            if ($slugConflict = \App\Rules\FreeTopLevelSlug::conflict($pageData['slug'])) {
+                $recommendation = "SKIP (slug taken: {$slugConflict})";
+            }
 
-            if ($apply) {
+            if ($apply && ! $slugConflict) {
                 $persist = $pageData;
                 $persist['is_published'] = $matchCount >= $persist['min_active_offers'];
                 $persist['matching_offers_count'] = $matchCount;
@@ -300,8 +305,13 @@ class KeywordCsvImporter
             $matchCount = $this->keywordPageService->countMatchingOffersForPage($page);
             $displayedCount = $this->keywordPageService->countDisplayedOffersForPage($page);
             $recommendation = $matchCount >= $pageData['min_active_offers'] ? 'PUBLISH' : 'KEEP UNPUBLISHED';
+            // Keyword pages live at /{slug}, next to pharmacies, categories
+            // and other routes; a taken slug would never be reachable.
+            if ($slugConflict = \App\Rules\FreeTopLevelSlug::conflict($pageData['slug'])) {
+                $recommendation = "SKIP (slug taken: {$slugConflict})";
+            }
 
-            if ($apply) {
+            if ($apply && ! $slugConflict) {
                 $persist = $pageData;
                 $persist['is_published'] = $matchCount >= $persist['min_active_offers'];
                 $persist['matching_offers_count'] = $matchCount;

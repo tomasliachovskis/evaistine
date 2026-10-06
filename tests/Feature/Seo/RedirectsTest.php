@@ -18,15 +18,15 @@ class RedirectsTest extends TestCase
     {
         $store = Store::factory()->create(['slug' => 'seo-leidinio-vaistine', 'show_discounts_page' => false]);
 
-        $this->get("/akcijos/{$store->slug}")->assertStatus(301)->assertRedirect("/leidinys/{$store->slug}");
-        $this->get("/akcijos/{$store->slug}/pieno-produktai")->assertStatus(301)->assertRedirect("/leidinys/{$store->slug}");
+        $this->get("/{$store->slug}")->assertStatus(301)->assertRedirect("/leidinys/{$store->slug}");
+        $this->get("/{$store->slug}/pieno-produktai")->assertStatus(301)->assertRedirect("/leidinys/{$store->slug}");
     }
 
     public function test_store_with_offers_page_is_served_directly(): void
     {
         $seed = $this->seedListing();
 
-        $this->get("/akcijos/{$seed['store']->slug}")->assertOk();
+        $this->get("/{$seed['store']->slug}")->assertOk();
     }
 
     public function test_keyword_page_wins_over_a_leaflet_only_store_with_the_same_slug(): void
@@ -41,7 +41,7 @@ class RedirectsTest extends TestCase
             'is_published' => true,
         ]);
 
-        $this->get('/akcijos/seo-pienas')->assertOk();
+        $this->get('/seo-pienas')->assertOk();
     }
 
     public function test_unpublished_keyword_page_is_not_served(): void
@@ -54,7 +54,7 @@ class RedirectsTest extends TestCase
             'is_published' => false,
         ]);
 
-        $this->get('/akcijos/seo-juodrastis')->assertNotFound();
+        $this->get('/seo-juodrastis')->assertNotFound();
     }
 
     public function test_uppercase_and_lithuanian_letter_slugs_redirect_to_lowercase_ascii(): void
@@ -63,45 +63,61 @@ class RedirectsTest extends TestCase
         $store = $seed['store']->slug;
         $category = $seed['category']->slug;
 
-        $this->get('/akcijos/'.strtoupper($store))->assertStatus(301)->assertRedirect("/akcijos/{$store}");
-        $this->get('/akcijos/seo-pieno-produktaį?page=2')
+        $this->get('/'.strtoupper($store))->assertStatus(301)->assertRedirect("/{$store}");
+        $this->get('/seo-pieno-produktaį?page=2')
             ->assertStatus(301)
-            ->assertRedirect("/akcijos/{$category}?page=2");
+            ->assertRedirect("/{$category}?page=2");
     }
 
     public function test_first_page_query_redirects_to_clean_url_keeping_other_params(): void
     {
         $seed = $this->seedListing();
-        $path = "/akcijos/{$seed['category']->slug}";
+        $path = "/{$seed['category']->slug}";
 
         $this->get("{$path}?page=1")->assertStatus(301)->assertRedirect($path);
         $this->get("{$path}?page=1&order=price_min")->assertStatus(301)->assertRedirect("{$path}?order=price_min");
     }
 
-    public function test_product_under_wrong_category_redirects_to_its_real_category(): void
+    public function test_product_url_does_not_change_with_its_category(): void
     {
         $seed = $this->seedListing();
+        $path = "/p/{$seed['product']->slug}";
+        $canonical = fn () => $this->get($path)->assertOk()->getContent();
+
+        $this->assertStringContainsString('rel="canonical" href="https://evaistine.lt'.$path.'"', $canonical());
+
         $other = Category::factory()->create(['slug' => 'seo-kita-kategorija']);
+        $seed['product']->update(['category_id' => $other->id]);
 
-        $this->get("/akcijos/{$other->slug}/{$seed['product']->slug}")
-            ->assertStatus(301)
-            ->assertRedirect("/akcijos/{$seed['category']->slug}/{$seed['product']->slug}");
+        $this->assertStringContainsString('rel="canonical" href="https://evaistine.lt'.$path.'"', $canonical());
     }
 
-    public function test_missing_product_redirects_to_its_category(): void
+    public function test_category_and_product_two_segment_path_is_404(): void
     {
         $seed = $this->seedListing();
 
-        $this->get("/akcijos/{$seed['category']->slug}/seo-istrinta-preke")
-            ->assertStatus(301)
-            ->assertRedirect("/akcijos/{$seed['category']->slug}");
+        $this->get("/{$seed['category']->slug}/{$seed['product']->slug}")->assertNotFound();
     }
 
-    public function test_missing_product_under_retired_category_redirects_to_its_successor(): void
+    public function test_missing_product_is_404(): void
     {
-        $this->get('/akcijos/alkoholiniai-ir-nealkoholiniai-gerimai/seo-istrinta-preke')
+        $this->get('/p/seo-istrinta-preke')->assertNotFound();
+    }
+
+    public function test_uppercase_product_slug_redirects_to_lowercase(): void
+    {
+        $seed = $this->seedListing();
+
+        $this->get('/p/'.strtoupper($seed['product']->slug))
             ->assertStatus(301)
-            ->assertRedirect('/akcijos/nealkoholiniai-gerimai');
+            ->assertRedirect("/p/{$seed['product']->slug}");
+    }
+
+    public function test_real_routes_win_over_flat_listing_slugs(): void
+    {
+        $this->get('/apie')->assertOk();
+        $this->get('/vaistines')->assertOk();
+        $this->get('/akcijos')->assertOk();
     }
 
     public function test_missing_flyer_of_a_known_store_redirects_to_its_leaflet_hub(): void
@@ -118,14 +134,14 @@ class RedirectsTest extends TestCase
         $this->get('/leidinys/seo-nera-vaistines/seo-leidinys')->assertNotFound();
     }
 
-    public function test_missing_product_under_unknown_category_is_404(): void
+    public function test_unknown_two_segment_path_is_404(): void
     {
-        $this->get('/akcijos/seo-nera-kategorijos/seo-nera-prekes')->assertNotFound();
+        $this->get('/seo-nera-kategorijos/seo-nera-prekes')->assertNotFound();
     }
 
     public function test_unknown_listing_slug_is_404(): void
     {
-        $this->get('/akcijos/seo-nezinomas-puslapis')->assertNotFound();
+        $this->get('/seo-nezinomas-puslapis')->assertNotFound();
     }
 
     /**
@@ -141,8 +157,6 @@ class RedirectsTest extends TestCase
         return [
             'contacts' => ['/kontaktai', '/apie#kontaktai'],
             'old homepage' => ['/nauja-pradzia', '/'],
-            'split drinks category' => ['/akcijos/alkoholiniai-ir-nealkoholiniai-gerimai', '/akcijos/nealkoholiniai-gerimai'],
-            'split drinks category under a store' => ['/akcijos/iki/alkoholiniai-ir-nealkoholiniai-gerimai', '/akcijos/iki/nealkoholiniai-gerimai'],
             'store address page' => ['/vaistines/maxima/vilnius/gedimino-pr-1', '/vaistines/maxima/vilnius'],
         ];
     }
@@ -152,9 +166,9 @@ class RedirectsTest extends TestCase
         $this->app['env'] = 'production';
 
         try {
-            $this->get('http://api.evaistine.lt/akcijos/iki?page=2')
+            $this->get('http://api.evaistine.lt/iki?page=2')
                 ->assertStatus(301)
-                ->assertRedirect('https://evaistine.lt/akcijos/iki?page=2');
+                ->assertRedirect('https://evaistine.lt/iki?page=2');
         } finally {
             $this->app['env'] = 'testing';
         }

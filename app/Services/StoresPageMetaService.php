@@ -29,8 +29,8 @@ class StoresPageMetaService
 
         $categorySlug = $discount->product->category?->slug;
         $productHref = $categorySlug
-            ? "/akcijos/{$store->slug}/{$categorySlug}"
-            : "/akcijos/{$store->slug}";
+            ? "/{$store->slug}/{$categorySlug}"
+            : "/{$store->slug}";
 
         return [
             'product_name' => $discount->product->name,
@@ -99,9 +99,9 @@ class StoresPageMetaService
             return [
                 'store_name' => $store->name,
                 'store_slug' => $store->slug,
-                'store_href' => "/akcijos/{$store->slug}",
+                'store_href' => "/{$store->slug}",
                 'product_name' => $bestOffer['product_name'] ?? 'Peržiūrėti visas akcijas',
-                'product_href' => $bestOffer['product_href'] ?? "/akcijos/{$store->slug}",
+                'product_href' => $bestOffer['product_href'] ?? "/{$store->slug}",
                 'discount_percent' => $bestOffer['discount_percent'] ?? $this->getMaxDiscountPercentForStore($store) ?? 0,
                 'valid_to' => $bestOffer['valid_to'] ?? $validTo,
             ];

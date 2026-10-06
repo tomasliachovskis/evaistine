@@ -26,7 +26,7 @@ class KeywordPagesTable
                 TextColumn::make('slug')
                     ->label('Slug')
                     ->searchable()
-                    ->url(fn ($record) => 'https://evaistine.lt/akcijos/' . $record->slug, shouldOpenInNewTab: true),
+                    ->url(fn ($record) => 'https://evaistine.lt/' . $record->slug, shouldOpenInNewTab: true),
                 IconColumn::make('is_published')
                     ->label('Publikuota')
                     ->boolean(),

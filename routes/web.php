@@ -59,25 +59,15 @@ Route::get('/{key}.txt', function (string $key) {
     return response($expected, 200, ['Content-Type' => 'text/plain']);
 })->where('key', '[a-zA-Z0-9-]{8,128}');
 
-// Order matters: /akcijos/paieska[...] must resolve before the generic
-// {slug1}/{slug2?} catch-all below, or "paieska" would be parsed as a
-// store/category/keyword slug instead.
+// URL shapes are described in App\Support\PageUrl. Products live at
+// /p/{slug}, without their category, so a product keeps its URL when it
+// changes category. Listings (category, pharmacy, keyword page, pharmacy x
+// category) are flat: see the fallback route at the end of this file.
 Route::get('/akcijos/_deals', ListingDealsPartialController::class)->name('akcijos.deals.partial');
 Route::get('/akcijos', [AkcijosController::class, 'index']);
-Route::get('/akcijos/paieska', [AkcijosController::class, 'searchForm']);
-Route::get('/akcijos/paieska/{query}', [AkcijosController::class, 'search'])->where('query', '.*');
-
-// "Alkoholiniai ir nealkoholiniai gėrimai" category was split 2026-09-08
-// into "Alkoholiniai gėrimai" (kept the old id, products/subcategories
-// were already all alcohol types) and a new "Nealkoholiniai gėrimai" root
-// — the old combined URL redirects to the non-alcoholic side, per explicit
-// choice (not the alcoholic side, even though the old id was kept there).
-Route::redirect('/akcijos/alkoholiniai-ir-nealkoholiniai-gerimai', '/akcijos/nealkoholiniai-gerimai', 301);
-Route::get('/akcijos/{store}/alkoholiniai-ir-nealkoholiniai-gerimai', function (string $store) {
-    return redirect("/akcijos/{$store}/nealkoholiniai-gerimai", 301);
-});
-
-Route::get('/akcijos/{slug1}/{slug2?}', [AkcijosController::class, 'show']);
+Route::get('/paieska', [AkcijosController::class, 'searchForm']);
+Route::get('/paieska/{query}', [AkcijosController::class, 'search'])->where('query', '.*');
+Route::get('/p/{slug}', [AkcijosController::class, 'product'])->name('product');
 
 Route::get('/vaistines', [StoreController::class, 'index']);
 Route::get('/vaistines/{slug}/{city?}', [StoreController::class, 'show']);
@@ -129,3 +119,12 @@ Route::post('/favorites/toggle/{product}', [FavoritesController::class, 'toggle'
 Route::match(['GET', 'POST'], '/price-watch/unsubscribe/{user}', [PriceWatchController::class, 'unsubscribe'])
     ->middleware('signed')
     ->name('price-watch.unsubscribe');
+
+// Flat listing pages: /{category}, /{pharmacy}, /{keyword},
+// /{pharmacy}/{category}. Marked as a fallback so Laravel tries it only after
+// every other route (including package routes like Livewire's), whatever the
+// registration order. A slug that equals another route's first segment can
+// never be reached, which App\Rules\FreeTopLevelSlug prevents.
+Route::get('/{slug1}/{slug2?}', [AkcijosController::class, 'show'])
+    ->name('listing')
+    ->fallback();

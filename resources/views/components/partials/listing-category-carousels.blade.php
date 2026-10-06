@@ -25,7 +25,7 @@
         icon="shopping-basket"
         :category-slug="$section['slug']"
         layout="carousel"
-        :see-all-href="$secondarySlug ? null : ($primarySlug ? '/akcijos/'.$primarySlug.'/'.$section['slug'] : '/akcijos/'.$section['slug'])"
+        :see-all-href="$secondarySlug ? null : ($primarySlug ? '/'.$primarySlug.'/'.$section['slug'] : '/'.$section['slug'])"
         :see-all-count="collect($availableCategories)->firstWhere('slug', $section['slug'])['offers_count'] ?? null"
         :context-store-slug="$contextStoreSlug"
     />

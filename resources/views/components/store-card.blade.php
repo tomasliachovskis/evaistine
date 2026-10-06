@@ -14,7 +14,7 @@
     // stores with 0 offers right now link their leaflet hub instead.
     // Missing key (older cached payload) keeps the offers link.
     $showsDiscountsPage = ($store['shows_discounts_page'] ?? true) && $hasOffers;
-    $storeHref = $showsDiscountsPage ? "/akcijos/{$store['slug']}" : "/leidinys/{$store['slug']}";
+    $storeHref = $showsDiscountsPage ? "/{$store['slug']}" : "/leidinys/{$store['slug']}";
     $widthClass = $layout === 'slider'
         ? 'w-[calc((100%-0.75rem)/2.2)] min-w-[calc((100%-0.75rem)/2.2)] max-w-[calc((100%-0.75rem)/2.2)] shrink-0 grow-0 basis-[calc((100%-0.75rem)/2.2)] sm:w-[200px] sm:min-w-[200px] sm:max-w-none sm:basis-auto lg:w-[210px]'
         : '';
@@ -65,7 +65,7 @@
                 <a href="/leidinys/{{ $store['slug'] }}" class="{{ $buttonClass }}">{{ $leafletsCount > 0 ? $leafletsCount.' '.LithuanianPlural::leafletWord($leafletsCount) : 'Leidiniai' }}</a>
             @endif
             @if ($showsDiscountsPage)
-                <a href="/akcijos/{{ $store['slug'] }}" class="{{ $buttonClass }} tabular-nums">{{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::promotionWord((int) $store['discounts_count']) }}</a>
+                <a href="/{{ $store['slug'] }}" class="{{ $buttonClass }} tabular-nums">{{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::promotionWord((int) $store['discounts_count']) }}</a>
             @endif
         </div>
     </div>

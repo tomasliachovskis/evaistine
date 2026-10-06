@@ -19,7 +19,7 @@
             Leidiniai
             <span class="{{ $pillClass($active === 'leidiniai') }}">{{ number_format($leafletsCount, 0, ',', ' ') }}</span>
         </a>
-        <a href="/akcijos/{{ $storeSlug }}" class="{{ $active === 'akcijos' ? $activeClass : $mutedClass }}">
+        <a href="/{{ $storeSlug }}" class="{{ $active === 'akcijos' ? $activeClass : $mutedClass }}">
             Akcijos
             <span class="{{ $pillClass($active === 'akcijos') }}">{{ number_format($totalOffers, 0, ',', ' ') }}</span>
         </a>
@@ -55,7 +55,7 @@
                     </div>
                     <div class="min-h-0 flex-1 overflow-y-auto p-2">
                         @foreach ($categories as $category)
-                            <a href="{{ $category['href'] ?? '/akcijos/' . $storeSlug . '/' . $category['slug'] }}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 min-h-12">
+                            <a href="{{ $category['href'] ?? '/' . $storeSlug . '/' . $category['slug'] }}" class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 min-h-12">
                                 <span class="min-w-0 flex-1 truncate">{{ $category['name'] }}</span>
                                 <span class="shrink-0 text-xs text-gray-400">{{ number_format($category['offers_count'] ?? 0, 0, ',', ' ') }}</span>
                             </a>

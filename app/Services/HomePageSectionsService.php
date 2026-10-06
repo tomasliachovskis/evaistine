@@ -155,8 +155,8 @@ class HomePageSectionsService
                 $category = $d->product->category;
                 $categorySlug = $category ? $category->slug : null;
                 $href = $categorySlug
-                    ? "/akcijos/{$categorySlug}/{$d->product->slug}"
-                    : "/akcijos/{$store->slug}";
+                    ? "/p/{$d->product->slug}"
+                    : "/{$store->slug}";
 
                 return [
                     'name' => $d->product->name,

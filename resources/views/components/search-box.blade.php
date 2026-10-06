@@ -14,7 +14,7 @@
         ? 'flex w-full max-w-3xl items-center gap-3 rounded-3xl bg-white p-2 pl-4 shadow-[0_1px_2px_rgba(22,32,26,0.06),0_12px_32px_rgba(22,32,26,0.09)] sm:p-2.5 sm:pl-6'
         : 'flex w-full max-w-xl items-center gap-2 rounded-full border border-gray-200 bg-white p-1.5 pl-5 shadow-sm') }}
     x-data="{ q: @js($value) }"
-    @submit.prevent="if (q.trim()) window.location = '/akcijos/paieska/' + encodeURIComponent(q.trim())"
+    @submit.prevent="if (q.trim()) window.location = '/paieska/' + encodeURIComponent(q.trim())"
 >
     @if ($isLarge)
         <x-app-icon name="search" class="size-6 shrink-0 text-gray-500" />

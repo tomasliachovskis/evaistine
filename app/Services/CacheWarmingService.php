@@ -168,15 +168,15 @@ class CacheWarmingService
         $paths = collect(['/', '/akcijos']);
 
         foreach (Store::pluck('slug') as $slug) {
-            $paths->push("/akcijos/{$slug}");
+            $paths->push("/{$slug}");
         }
 
         foreach (Category::whereNull('parent_id')->pluck('slug') as $slug) {
-            $paths->push("/akcijos/{$slug}");
+            $paths->push("/{$slug}");
         }
 
         foreach ($this->storeCategoryPairsQuery()->get() as $pair) {
-            $paths->push("/akcijos/{$pair->store_slug}/{$pair->category_slug}");
+            $paths->push("/{$pair->store_slug}/{$pair->category_slug}");
         }
 
         $paths = $paths->unique()->values();

@@ -51,7 +51,7 @@ use App\Support\ProductPageMeta;
     // clean per-item price, so every row here can filter out to nothing even
     // when $history itself has rows. Gating the "Kainų istorija" tab on the
     // raw row count instead of this filtered result showed a tab that led to
-    // a blank section — confirmed on /akcijos/gyvunu-prekes/kaciu-sunu-dubeneliams,
+    // a blank section — confirmed on /gyvunu-prekes/kaciu-sunu-dubeneliams,
     // whose single history row + single active discount both have no price,
     // discount_percent only.
     // ~36% of discount_histories rows only ever recorded an end_at (some
@@ -199,7 +199,7 @@ use App\Support\ProductPageMeta;
                                         @foreach ($genericAlternatives as $alt)
                                             @php
                                                 $altP = $alt['product'];
-                                                $altPHref = '/akcijos/' . $altP['full_slug'];
+                                                $altPHref = '/' . $altP['full_slug'];
                                                 $altPPrice = (float) ($alt['discounted_price'] ?? 0);
                                                 $altPStore = collect($alt['offers'] ?? [])->pluck('store')->filter()->first();
                                             @endphp
@@ -333,7 +333,7 @@ use App\Support\ProductPageMeta;
                                 @foreach ($genericAlternatives as $alt)
                                     @php
                                         $altP = $alt['product'];
-                                        $altPHref = '/akcijos/' . $altP['full_slug'];
+                                        $altPHref = '/' . $altP['full_slug'];
                                         $altPPrice = (float) ($alt['discounted_price'] ?? 0);
                                         $altPStore = collect($alt['offers'] ?? [])->pluck('store')->filter()->first();
                                     @endphp

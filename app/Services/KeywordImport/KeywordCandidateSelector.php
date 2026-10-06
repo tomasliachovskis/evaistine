@@ -133,7 +133,7 @@ class KeywordCandidateSelector
         usort($keywords, fn ($a, $b) => $b['volume'] <=> $a['volume']);
         $totalVolume = array_sum(array_column($keywords, 'volume'));
         $mainKeyword = $keywords[0]['keyword'];
-        $pageUrl = $url ?? '/akcijos/' . $group['slug'];
+        $pageUrl = $url ?? '/' . $group['slug'];
 
         $priority = $this->resolvePriority($totalVolume, $pageType);
         $reason = $this->buildReason($group, $pageType, $totalVolume);

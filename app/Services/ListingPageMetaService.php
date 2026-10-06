@@ -464,7 +464,7 @@ class ListingPageMetaService
 
         return [
             'name' => 'Maisto prekės',
-            'href' => "/akcijos/{$store->slug}",
+            'href' => "/{$store->slug}",
             'max_discount_percent' => (int) round($aggregate->max_discount_percent ?? 0),
             'image_slug' => $imageSlug,
             'offers_count' => $offersCount,
@@ -508,7 +508,7 @@ class ListingPageMetaService
             return [
                 'name' => trim($row->name),
                 'slug' => $row->slug,
-                'href' => "/akcijos/{$store->slug}/{$row->slug}",
+                'href' => "/{$store->slug}/{$row->slug}",
                 'max_discount_percent' => (int) round($row->max_discount_percent ?? 0),
                 'image_slug' => $row->slug,
                 'offers_count' => (int) $row->offers_count,
@@ -577,7 +577,7 @@ class ListingPageMetaService
                 // Where a listing page should send a visitor: the store's
                 // akcijos page when it has one, else its leaflets (the
                 // akcijos URL just 301s there).
-                'listing_href' => $s->showsDiscountsPage() ? "/akcijos/{$s->slug}" : "/leidinys/{$s->slug}",
+                'listing_href' => $s->showsDiscountsPage() ? "/{$s->slug}" : "/leidinys/{$s->slug}",
                 'has_discounts_page' => $s->showsDiscountsPage(),
                 'discounts_count' => $s->discounts_count,
             ])
@@ -613,7 +613,7 @@ class ListingPageMetaService
                 // store+category page only exists with show_discounts_page;
                 // otherwise that URL 301s to the leaflets page, so link
                 // there directly.
-                'href' => $row->show_discounts_page ? "/akcijos/{$row->store_slug}/{$category->slug}" : "/leidinys/{$row->store_slug}",
+                'href' => $row->show_discounts_page ? "/{$row->store_slug}/{$category->slug}" : "/leidinys/{$row->store_slug}",
                 'offers_count' => (int) $row->offers_count,
                 'max_discount_percent' => (int) round($row->max_discount_percent ?? 0),
                 'avg_discount_percent' => (int) round($row->avg_discount_percent ?? 0),
@@ -666,7 +666,7 @@ class ListingPageMetaService
                     'price' => (float) $d->discounted_price,
                     'original_price' => (float) $d->original_price,
                     'image_url' => $formatted['product']['image_url'] ?? null,
-                    'href' => '/akcijos/' . $formatted['product']['full_slug'],
+                    'href' => '/' . $formatted['product']['full_slug'],
                 ];
             })
             ->values()
@@ -688,7 +688,7 @@ class ListingPageMetaService
 
         return $rows->map(fn ($row) => [
             'name' => $row->name,
-            'href' => "/akcijos/{$category->slug}",
+            'href' => "/{$category->slug}",
             'deals_count' => (int) $row->deals_count,
         ])->values()->all();
     }
@@ -704,7 +704,7 @@ class ListingPageMetaService
             ->get()
             ->map(fn (Discount $d) => [
                 'name' => $d->product->name,
-                'href' => "/akcijos/{$categorySlug}",
+                'href' => "/{$categorySlug}",
                 'discount_percent' => (int) round($d->discount_percent),
                 'store_name' => $d->store->name,
                 'image_slug' => $categorySlug,
@@ -720,8 +720,8 @@ class ListingPageMetaService
         return array_map(function ($module) use ($categorySlug) {
             $hrefSuffix = $module['href_suffix'] ?? '';
             $href = $hrefSuffix !== ''
-                ? "/akcijos/{$hrefSuffix}"
-                : "/akcijos/{$categorySlug}";
+                ? "/{$hrefSuffix}"
+                : "/{$categorySlug}";
 
             return [
                 'title' => $module['title'],
@@ -737,8 +737,8 @@ class ListingPageMetaService
     {
         $categorySlug = $d->product->category?->slug;
         $href = $categorySlug
-            ? "/akcijos/{$categorySlug}/{$d->product->slug}"
-            : "/akcijos/{$store->slug}";
+            ? "/p/{$d->product->slug}"
+            : "/{$store->slug}";
 
         return [
             'name' => $d->product->name,
@@ -989,7 +989,7 @@ class ListingPageMetaService
     // Multiple headed content sections for the leidinys hub (/leidinys/{store}).
     // Intent here is strictly the LEIDINYS (catalog: cadence, format, pages,
     // PDF) — NOT akcijos/nuolaidos (discounts), which is the separate
-    // /akcijos/{store} hub's job. Copy must stay about the catalog itself —
+    // /{store} hub's job. Copy must stay about the catalog itself —
     // how often it's published, what kinds exist, how to read/download it —
     // not savings/loyalty-card advice, which belongs on the other page.
     // Stores in HAND_WRITTEN_HUB_COPY_SLUGS get hand-written,
@@ -1266,7 +1266,7 @@ class ListingPageMetaService
         $storeName = $store->name;
         $storeSlug = $store->slug;
         $words = $this->getStoreLeafletWords($storeSlug);
-        $listingUrl = $this->siteUrl("/akcijos/{$storeSlug}");
+        $listingUrl = $this->siteUrl("/{$storeSlug}");
         $hubLink = $this->faqLink($this->siteUrl("/leidinys/{$storeSlug}"), "{$storeName} leidinio puslapyje");
         $listingLink = $this->faqLink($listingUrl, "{$storeName} akcijų sąraše");
         $weeklyAkcijosLink = $this->faqLink($listingUrl, "šią savaitę galiojančias {$storeName} akcijas");
@@ -1311,7 +1311,7 @@ class ListingPageMetaService
             $categoryName = mb_strtolower(trim($preferredCategory->name));
 
             return $this->faqLink(
-                $this->siteUrl("/akcijos/{$store->slug}/{$preferredCategory->slug}"),
+                $this->siteUrl("/{$store->slug}/{$preferredCategory->slug}"),
                 "{$categoryName} akcijas {$store->name}"
             );
         }
@@ -1325,7 +1325,7 @@ class ListingPageMetaService
         $categoryName = mb_strtolower($topCategory['name']);
 
         return $this->faqLink(
-            $this->siteUrl("/akcijos/{$store->slug}/{$topCategory['slug']}"),
+            $this->siteUrl("/{$store->slug}/{$topCategory['slug']}"),
             "{$categoryName} akcijas {$store->name}"
         );
     }

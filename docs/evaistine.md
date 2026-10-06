@@ -46,6 +46,39 @@ inflected from `config('stores.name_forms')`; add a new chain there too.
 Internal identifiers (`StoreController`, `MyStores`, the
 `evaistine_parduotuves*` cookie and localStorage keys) were left as they are.
 
+## URL structure (2026-10-07)
+
+Chosen before launch, so it never has to change:
+
+| Page | URL |
+|---|---|
+| Category | `/{category}` (e.g. `/vitaminai-ir-maisto-papildai`) |
+| Pharmacy offers | `/{pharmacy}` (e.g. `/eurovaistine`) |
+| Pharmacy x category | `/{pharmacy}/{category}` |
+| Keyword page | `/{keyword}` (e.g. `/ibuprofenas`) |
+| Product | `/p/{product}` |
+| All offers | `/akcijos` |
+| Search (noindex) | `/paieska/{query}` |
+| Addresses, leaflets | `/vaistines/...`, `/leidiniai`, `/leidinys/...` (unchanged) |
+
+- **Products carry no category in the URL.** On superakcijos a product's
+  category was part of its URL, which produced ~500 "duplicate, Google chose
+  a different canonical" pages whenever categories were re-mapped. Now a
+  category can be renamed, merged or a product moved, and only the one
+  category URL changes.
+- **Listings are flat**, like Gintarinė and Benu. The route is the last one
+  in `routes/web.php`, marked `->fallback()`, so every real route (and
+  Livewire's hashed one) wins whatever the registration order.
+- **Slugs can't collide.** `App\Rules\FreeTopLevelSlug` refuses a keyword
+  page slug that equals a pharmacy, a category, another route's first
+  segment or a `public/` entry. The Filament form and both keyword importers
+  use it. Future ailment and brand pages go into the same space and must
+  use it too.
+- Build URLs with `App\Support\PageUrl` (`product()`, `listing()`,
+  `search()`).
+- Category slugs stayed as they were (long slugs don't hurt SEO; shortening
+  would only be cosmetic).
+
 ## Categories (seeded 2026-10-07, no icons)
 
 Researched on Eurovaistinė, Gintarinė, Camelia, Benu, Apotheka and

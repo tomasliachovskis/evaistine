@@ -18,17 +18,17 @@ class CanonicalUrlTest extends TestCase
     public static function canonicalProvider(): array
     {
         return [
-            'plain path' => ['/akcijos/iki', [], 'https://evaistine.lt/akcijos/iki'],
-            'page 1 dropped' => ['/akcijos/iki', ['page' => '1'], 'https://evaistine.lt/akcijos/iki'],
-            'page 2 kept' => ['/akcijos/iki', ['page' => '2'], 'https://evaistine.lt/akcijos/iki?page=2'],
-            'default order dropped' => ['/akcijos/iki', ['order' => 'popular'], 'https://evaistine.lt/akcijos/iki'],
-            'other order kept' => ['/akcijos/iki', ['order' => 'price_min'], 'https://evaistine.lt/akcijos/iki?order=price_min'],
+            'plain path' => ['/iki', [], 'https://evaistine.lt/iki'],
+            'page 1 dropped' => ['/iki', ['page' => '1'], 'https://evaistine.lt/iki'],
+            'page 2 kept' => ['/iki', ['page' => '2'], 'https://evaistine.lt/iki?page=2'],
+            'default order dropped' => ['/iki', ['order' => 'popular'], 'https://evaistine.lt/iki'],
+            'other order kept' => ['/iki', ['order' => 'price_min'], 'https://evaistine.lt/iki?order=price_min'],
             'filters and tracking stripped' => [
-                '/akcijos/iki',
+                '/iki',
                 ['store' => 'maxima', 'category' => 'pienas', 'card' => '1', 'plus' => '1', 'utm_source' => 'fb', 'gclid' => 'x'],
-                'https://evaistine.lt/akcijos/iki',
+                'https://evaistine.lt/iki',
             ],
-            'page kept, filter stripped' => ['/akcijos/iki', ['page' => '3', 'store' => 'maxima'], 'https://evaistine.lt/akcijos/iki?page=3'],
+            'page kept, filter stripped' => ['/iki', ['page' => '3', 'store' => 'maxima'], 'https://evaistine.lt/iki?page=3'],
         ];
     }
 
@@ -45,14 +45,14 @@ class CanonicalUrlTest extends TestCase
         $noindex = 'noindex, nofollow, noarchive, nosnippet';
 
         return [
-            'plain page is indexed' => ['/akcijos/iki', [], 'index, follow'],
-            'page 1 is indexed' => ['/akcijos/iki', ['page' => '1'], 'index, follow'],
-            'page 2 is noindex but followed' => ['/akcijos/iki', ['page' => '2'], 'noindex, follow'],
-            'filter param' => ['/akcijos/iki', ['store' => 'maxima'], $noindex],
-            'tracking param' => ['/akcijos/iki', ['utm_source' => 'fb'], $noindex],
-            'any order, even the default' => ['/akcijos/iki', ['order' => 'popular'], $noindex],
-            'search results' => ['/akcijos/paieska/pienas', [], $noindex],
-            'empty param ignored' => ['/akcijos/iki', ['store' => ''], 'index, follow'],
+            'plain page is indexed' => ['/iki', [], 'index, follow'],
+            'page 1 is indexed' => ['/iki', ['page' => '1'], 'index, follow'],
+            'page 2 is noindex but followed' => ['/iki', ['page' => '2'], 'noindex, follow'],
+            'filter param' => ['/iki', ['store' => 'maxima'], $noindex],
+            'tracking param' => ['/iki', ['utm_source' => 'fb'], $noindex],
+            'any order, even the default' => ['/iki', ['order' => 'popular'], $noindex],
+            'search results' => ['/paieska/pienas', [], $noindex],
+            'empty param ignored' => ['/iki', ['store' => ''], 'index, follow'],
         ];
     }
 }

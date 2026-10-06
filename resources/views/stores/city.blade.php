@@ -35,7 +35,7 @@
             <div class="flex flex-wrap gap-2">
                 @if ($offersCount > 0)
                     <a
-                        href="/akcijos/{{ $store->slug }}"
+                        href="/{{ $store->slug }}"
                         class="inline-flex w-fit items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 hover:border-green hover:text-dark-green"
                     >
                         <x-app-icon name="tag" class="size-4" />

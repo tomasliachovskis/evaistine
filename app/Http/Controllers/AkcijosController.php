@@ -10,6 +10,7 @@ use App\Models\KeywordPage;
 use App\Models\Store;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
+use App\Support\PageUrl;
 use App\Support\FaqSchema;
 use App\Support\ItemListSchema;
 use App\Support\PageHtmlCache;
@@ -28,20 +29,15 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
-// Ported from discount/src/app/akcijos/page.tsx and .../[...slug]/page.tsx —
+// Ported from discount/src/app/page.tsx and .../[...slug]/page.tsx —
 // the [...slug] catch-all's resolveRouteType() dispatch (store / category /
-// store-category / product / keyword) becomes the branching in show() below.
+// store-category / keyword) becomes the branching in show() below; products
+// have their own /p/{slug} route (product()).
 // Every branch calls the existing Api\ProductController methods in-process
 // (no HTTP hop) and decodes their JSON, reusing the exact same cached
 // query/formatting logic the old JSON API used.
 class AkcijosController extends Controller
 {
-    // Retired category slug => the category its listing now redirects to
-    // (same target as the route-level redirects in routes/web.php).
-    private const LEGACY_CATEGORY_SLUGS = [
-        'alkoholiniai-ir-nealkoholiniai-gerimai' => 'nealkoholiniai-gerimai',
-    ];
-
     public function index(Request $request, ProductController $api, HomePageMetaService $metaService)
     {
         // Verified against production (not the invented category-tile grid
@@ -98,12 +94,14 @@ class AkcijosController extends Controller
             return $this->redirectToLeafletHub($store->slug);
         }
 
+        // Two segments are only ever pharmacy x category; products live at
+        // /p/{slug}.
         if ($slug2 !== null) {
             if ($store) {
                 return $this->renderDiscountsListing($request, $api, $slug1, $slug2);
             }
 
-            return $this->renderProduct($request, $api, $slug1, $slug2);
+            abort(404);
         }
 
         if ($store || Category::where('slug', $slug1)->exists()) {
@@ -121,7 +119,7 @@ class AkcijosController extends Controller
     // Slug columns use utf8mb4_unicode_ci, so `uzkandžiai` or `IKI` match the
     // real `uzkandziai`/`iki` rows and would render a 200 duplicate whose
     // canonical is built from the requested path — Google reported
-    // /akcijos/iki/saldumynai-ir-uzkandžiai as "Google chose different
+    // /iki/saldumynai-ir-uzkandžiai as "Google chose different
     // canonical than user". Every real slug is lowercase ASCII, so 301 any
     // other spelling to it.
     private function redirectToAsciiSlugs(Request $request, string $slug1, ?string $slug2): ?RedirectResponse
@@ -141,7 +139,22 @@ class AkcijosController extends Controller
 
         $query = $request->getQueryString();
 
-        return redirect()->to('/akcijos/'.implode('/', $normalized).($query ? "?{$query}" : ''), 301);
+        return redirect()->to('/'.implode('/', $normalized).($query ? "?{$query}" : ''), 301);
+    }
+
+    // /p/{slug}. The URL carries no category, so a product keeps it when its
+    // category changes (superakcijos had ~500 "duplicate, Google chose a
+    // different canonical" pages from category-in-URL product paths).
+    public function product(Request $request, ProductController $api, string $slug)
+    {
+        $normalized = Str::lower(Str::ascii($slug, 'lt'));
+        if ($normalized !== $slug && preg_match('/^[a-z0-9_-]+$/', $normalized)) {
+            $query = $request->getQueryString();
+
+            return redirect()->to(PageUrl::product($normalized).($query ? "?{$query}" : ''), 301);
+        }
+
+        return $this->renderProduct($request, $api, $slug);
     }
 
     // Permanent for search engines, but capped at a day in browsers — a
@@ -155,7 +168,7 @@ class AkcijosController extends Controller
 
     public function searchForm()
     {
-        $path = '/akcijos/paieska';
+        $path = '/paieska';
 
         return view('akcijos.search-form', [
             'canonical' => CanonicalUrl::build($path),
@@ -169,7 +182,7 @@ class AkcijosController extends Controller
         $response = $api->search($request, $query);
         $payload = json_decode($response->getContent(), true);
 
-        $path = "/akcijos/paieska/{$query}";
+        $path = "/paieska/{$query}";
 
         // Same site-wide store list/cache the discount-filters sidebar
         // already uses (Api\ProductController::getStores(), versioned cache)
@@ -205,7 +218,7 @@ class AkcijosController extends Controller
         }
 
         $payload = json_decode($response->getContent(), true);
-        $path = $category ? "/akcijos/{$storeOrCategory}/{$category}" : "/akcijos/{$storeOrCategory}";
+        $path = $category ? "/{$storeOrCategory}/{$category}" : "/{$storeOrCategory}";
 
         // Ported from akcijos/[...slug]/page.tsx's showStoreCarousels: a plain
         // store page (no path category segment, no ?category= filter) gets
@@ -229,7 +242,7 @@ class AkcijosController extends Controller
         $response = $keywordApi->show($request, $slug);
         $payload = json_decode($response->getContent(), true);
 
-        return $this->renderListingPayload($request, $payload, "/akcijos/{$slug}", 'keyword', $slug, null);
+        return $this->renderListingPayload($request, $payload, "/{$slug}", 'keyword', $slug, null);
     }
 
     private function renderListingPayload(Request $request, array $payload, string $path, string $filtersMode, ?string $filtersPrimarySlug, ?string $filtersSecondarySlug, array $sections = [], array $topOffers = [], ?array $hubMeta = null): View|Response
@@ -326,8 +339,8 @@ class AkcijosController extends Controller
             'activeCategorySlug' => $activeCategorySlug,
             // Legal age gate (LT: alcohol deals require confirming the
             // visitor is 20+) — $activeCategorySlug already resolves
-            // correctly for both /akcijos/alkoholiniai-gerimai and
-            // /akcijos/{store}/alkoholiniai-gerimai, so this one check
+            // correctly for both /alkoholiniai-gerimai and
+            // /{store}/alkoholiniai-gerimai, so this one check
             // covers both URL shapes.
             'requiresAgeVerification' => $activeCategorySlug === 'alkoholiniai-gerimai',
             'sections' => $sections,
@@ -349,31 +362,18 @@ class AkcijosController extends Controller
             // real matches reported "numberOfItems": 20).
             'itemListSchema' => ! empty($itemListDeals) ? ItemListSchema::build($pageTitle, collect($itemListDeals)->map(fn ($d) => [
                 'name' => $d['product']['name'],
-                'href' => '/akcijos/'.$d['product']['full_slug'],
+                'href' => '/'.$d['product']['full_slug'],
                 'image' => $d['product']['image_url'],
                 'price' => $d['discounted_price'] ?? $d['min_price'] ?? null,
             ])->all(), $data['total'] ?? null) : null,
         ]));
     }
 
-    private function renderProduct(Request $request, ProductController $api, string $categorySlug, string $productSlug): \Illuminate\Http\RedirectResponse|\Illuminate\View\View
+    private function renderProduct(Request $request, ProductController $api, string $productSlug): \Illuminate\View\View
     {
         $response = $api->getProductWithSimilar($productSlug);
 
         if ($response->getStatusCode() === 404) {
-            // Original permanently redirects a stale/removed product URL to its
-            // category listing rather than a bare 404 — preserves link equity.
-            if (Category::where('slug', $categorySlug)->exists()) {
-                return redirect("/akcijos/{$categorySlug}", 301);
-            }
-
-            // A removed product under a category slug that no longer exists
-            // (e.g. the 2026-09-08 drinks split) has nothing to resolve its
-            // real category from — Search Console listed these as 404s.
-            if (isset(self::LEGACY_CATEGORY_SLUGS[$categorySlug])) {
-                return redirect('/akcijos/'.self::LEGACY_CATEGORY_SLUGS[$categorySlug], 301);
-            }
-
             abort(404);
         }
 
@@ -383,24 +383,6 @@ class AkcijosController extends Controller
         $breadcrumbs = $payload['breadcrumbs'] ?? [];
         $seo = $payload['seo'] ?? [];
 
-        // The product's real, current category — from breadcrumbs (derived
-        // from $product->category in ProductController::generateBreadcrumbs),
-        // not from the request URL. A product's category can change after a
-        // URL has already been shared/indexed (e.g. category re-mapping), so
-        // $categorySlug (the route segment) can go stale while the product
-        // itself still resolves fine by slug alone. Redirecting to the real
-        // category here, and always building the canonical from it, stops
-        // the same product being servable — and self-declaring itself
-        // canonical — under multiple category URLs at once (seen in Search
-        // Console as "Duplicate, Google chose different canonical than
-        // user" across ~500 pages).
-        $categoryCrumb = collect($breadcrumbs)->first(fn ($crumb) => ($crumb['type'] ?? null) === 'category');
-        $realCategorySlug = $categoryCrumb ? Str::after($categoryCrumb['slug'], 'akcijos/') : null;
-
-        if ($realCategorySlug && $realCategorySlug !== $categorySlug) {
-            return redirect("/akcijos/{$realCategorySlug}/{$productSlug}", 301);
-        }
-
         // pickPrimaryProductDiscount in product-page-meta.ts: the cheapest
         // active discount, not just the first row — $deals' order isn't
         // price-sorted.
@@ -409,7 +391,7 @@ class AkcijosController extends Controller
         usort($pool, fn ($a, $b) => (float) ($a['min_price'] ?? $a['discounted_price'] ?? PHP_INT_MAX) <=> (float) ($b['min_price'] ?? $b['discounted_price'] ?? PHP_INT_MAX));
         $primaryDeal = $pool[0] ?? null;
 
-        $path = '/akcijos/'.($realCategorySlug ?? $categorySlug)."/{$productSlug}";
+        $path = PageUrl::product($productSlug);
         $canonicalUrl = CanonicalUrl::build($path);
 
         $productSchema = $primaryDeal

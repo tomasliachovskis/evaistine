@@ -21,7 +21,8 @@ class KeywordPageForm
                     ->required()
                     ->maxLength(120)
                     ->unique(ignoreRecord: true)
-                    ->helperText('URL: /akcijos/{slug}'),
+                    ->rule(new \App\Rules\FreeTopLevelSlug)
+                    ->helperText('URL: /{slug}'),
                 TextInput::make('title')
                     ->label('Pavadinimas')
                     ->required()

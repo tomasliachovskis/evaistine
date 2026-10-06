@@ -61,7 +61,7 @@ class LeafletController extends Controller
                 ($payload['seo']['seo_title'] ?? 'Leidinys').' – akcijos',
                 collect($payload['flyer_offers']['offers'])->map(fn ($d) => [
                     'name' => $d['product']['name'],
-                    'href' => '/akcijos/'.$d['product']['full_slug'],
+                    'href' => '/'.$d['product']['full_slug'],
                     'image' => $d['product']['image_url'],
                     'price' => $d['discounted_price'] ?? null,
                     'price_valid_until' => $d['to_date'] ?? null,
@@ -114,7 +114,7 @@ class LeafletController extends Controller
                 ($payload['seo']['seo_title'] ?? 'Leidinys').' – akcijos',
                 collect($payload['flyer_offers'])->map(fn ($d) => [
                     'name' => $d['product']['name'],
-                    'href' => '/akcijos/'.$d['product']['full_slug'],
+                    'href' => '/'.$d['product']['full_slug'],
                     'image' => $d['product']['image_url'],
                     'price' => $d['discounted_price'] ?? null,
                     'price_valid_until' => $d['to_date'] ?? null,
@@ -168,7 +168,7 @@ class LeafletController extends Controller
                 'box' => array_map('intval', $d['flyer_box']),
                 'name' => $d['product']['name'],
                 'image' => $d['product']['image_url'],
-                'href' => '/akcijos/'.$d['product']['full_slug'],
+                'href' => '/'.$d['product']['full_slug'],
                 'flyer_href' => "/leidinys/{$storeSlug}/{$flyerSlug}#psl-{$d['flyer_page']}",
                 'price' => (float) ($d['discounted_price'] ?? 0),
                 'original' => (float) ($d['original_price'] ?? 0),

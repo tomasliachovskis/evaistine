@@ -12,10 +12,10 @@
         $activeTab = 'leaflets';
     } elseif (request()->is('vaistines') || request()->is('vaistines/*')) {
         $activeTab = 'stores';
-    } elseif (request()->is('akcijos') || request()->is('akcijos/paieska*')) {
+    } elseif (request()->is('akcijos') || request()->is('paieska*') || request()->routeIs('product')) {
         $activeTab = 'products';
-    } elseif (request()->is('akcijos/*')) {
-        $segment = explode('/', trim(request()->path(), '/'))[1] ?? null;
+    } elseif (request()->routeIs('listing')) {
+        $segment = explode('/', trim(request()->path(), '/'))[0] ?? null;
         $activeTab = ($segment && StoreDisplayMeta::isStoreSlug($segment)) ? 'stores' : 'categories';
     }
 
@@ -119,7 +119,7 @@
             <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3 max-h-[calc(82vh-68px)]">
                 <div class="grid grid-cols-1 gap-2.5">
                     @forelse ($categories as $category)
-                        <a href="/akcijos/{{ $category['slug'] }}" class="flex min-h-16 items-center gap-3 rounded-xl border border-gray-200 p-3 transition-colors hover:bg-gray-50">
+                        <a href="/{{ $category['slug'] }}" class="flex min-h-16 items-center gap-3 rounded-xl border border-gray-200 p-3 transition-colors hover:bg-gray-50">
                             <div class="flex min-w-0 flex-1 items-center justify-between gap-3">
                                 <span class="line-clamp-2 text-lg font-semibold leading-snug text-gray-900">{{ $category['name'] }}</span>
                                 <span class="shrink-0 text-base font-bold tabular-nums text-gray-700">{{ number_format($category['discounts_count'] ?? 0, 0, ',', ' ') }}</span>
@@ -159,7 +159,7 @@
                         @endphp
                         @continue($discountsCount === 0 && $leafletsCount === 0)
                         {{-- Leaflet-only stores: link their leaflet hub directly (their /akcijos URL 301s there). --}}
-                        <a href="{{ ($store['shows_discounts_page'] ?? true) ? '/akcijos/' . $store['slug'] : '/leidinys/' . $store['slug'] }}" class="flex flex-col items-start gap-2 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
+                        <a href="{{ ($store['shows_discounts_page'] ?? true) ? '/' . $store['slug'] : '/leidinys/' . $store['slug'] }}" class="flex flex-col items-start gap-2 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
                             <x-store-logo :slug="$store['slug']" :name="$store['name']" size="lg" />
                             {{-- Both rows always render (one `invisible` when its count is 0)
                                  instead of being conditionally omitted — every card in the grid

@@ -52,9 +52,8 @@ class IndexNowPing extends Command
         $since = $this->option('since') ? Carbon::parse($this->option('since')) : now()->subDay();
 
         $urls = Product::whereHas('discounts', fn ($q) => $q->where('updated_at', '>=', $since))
-            ->with('category:id,slug')
-            ->get(['id', 'slug', 'category_id'])
-            ->map(fn (Product $p) => CanonicalUrl::build('/akcijos/'.($p->category ? "{$p->category->slug}/" : '').$p->slug))
+            ->get(['id', 'slug'])
+            ->map(fn (Product $p) => CanonicalUrl::build(\App\Support\PageUrl::product($p->slug)))
             ->unique()
             ->values();
 

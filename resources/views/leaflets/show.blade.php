@@ -453,7 +453,7 @@
                     @endforeach
                 </div>
                 @if ($flyerOffersTotal > count($flyerOffers) && $showsDiscountsPage)
-                    <a href="/akcijos/{{ $storeSlug }}" class="section-link mt-4">
+                    <a href="/{{ $storeSlug }}" class="section-link mt-4">
                         Visos {{ $storeName }} akcijos
                         <x-app-icon name="chevron-right" class="size-3.5" />
                     </a>
