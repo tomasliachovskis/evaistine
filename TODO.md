@@ -4,16 +4,35 @@ Running list for eVaistine.lt. Not a sprint board — check items off or
 delete them once done, and add context inline rather than a bare title.
 Project decisions are in `docs/evaistine.md`.
 
-## Where we left off (2026-10-06, end of the first session)
+## Where we left off (2026-10-07, end of the second session)
 
 State: everything is local and committed in this repo; nothing was pushed or
 deployed (the owner's rule: "į prodą nieko nekelk"). Sail stack `vaistines`
-is up on http://localhost:8081 with 31 test products (see "Local test data"
-in `docs/evaistine.md`). Full test suite passes (289).
+is up on http://localhost:8081 with 31 test products in 4 of the 12 real
+categories (see "Local test data" in `docs/evaistine.md`). Full test suite
+passes (298).
+
+Done this session (details under "Done" below and in `docs/evaistine.md`):
+12 root categories without icons, flat URLs with products at `/p/{slug}`,
+15 pharmacies (8 online ones added from VVKT's list).
+
+**Next step agreed with the owner: e-shop scrapers, starting with
+Eurovaistinė** (full catalog, EAN, skip prescription items; parser research
+in `scripts/research/eurovaistine-category-json.py`). After the first full
+scrape: recount products per category (merge one under ~50 products, add an
+ailment/keyword level for one over ~2000), then the ailment layer.
+
+Small open items the owner saw but didn't decide:
+- `/vaistines` shows all 15 cards; the 8 new ones have no data yet and
+  their button goes to an empty leaflet page. Offered to hide stores with
+  no data until scraped; no answer yet.
+- Page copy is still grocery-era (store names in nominative: "Visos Piliulė
+  akcijos", FAQ "Kur rasti Maxima akcijas?"): phase 5, see "Copy and SEO".
 
 How the owner works: writes in Lithuanian, wants answers in Lithuanian;
 approves look by seeing it, so show screenshots or open the page before
-asking. Plans get approved before code (`/plan`).
+asking. Bigger changes go through `/plan` first. Prefers the simple version
+when a plan looks complex ("nebus per daug sudėtinga?").
 
 Look decisions and how we got there (don't re-propose the rejected ones):
 - Rejected: plain green (taken by Eurovaistinė/Benu/Camelia), teal ("labai
@@ -39,12 +58,13 @@ Tools kept in the repo:
   name). Starting point for the Eurovaistinė e-shop scraper.
 - `storage/app/seed-test-products.php` + `storage/app/test-products.json`
   (not in git): the local test data.
+- `storage/app/logos/` (not in git): the scripts that pulled each pharmacy's
+  header logo (`find.cjs`, `build.cjs`) and the logo sheet (`sheet.cjs`).
 
-Suggested next step: the Eurovaistinė e-shop scraper (phase 3), or the
-ailment layer (rest of phase 2). The phased roadmap with time estimates is in
-`docs/evaistine.md` ("Roadmap"); open items are under "Next" below.
+The phased roadmap with time estimates is in `docs/evaistine.md`
+("Roadmap"); open items are under "Next" below.
 
-## Done (2026-10-06)
+## Done (2026-10-06 – 10-07)
 
 - [x] Fork superakcijos.lt into `/Users/tomas/www/vaistines` with its own
       Sail stack, DB and ports; scrapers, deploy and Meilisearch can't reach
@@ -70,20 +90,24 @@ ailment layer (rest of phase 2). The phased roadmap with time estimates is in
       `docs/evaistine.md`.
 - [x] 15 pharmacies (2026-10-07): 8 online pharmacies from VVKT's
       remote-sale list added with real logos; grocery logos removed.
-- [x] Test suite green (289 tests): the 125 failures were one data migration
-      that used the deleted `EnergyDrinkCategory`.
+- [x] Test suite green (298 tests): the 125 earlier failures were one data
+      migration that used the deleted `EnergyDrinkCategory`.
 
 ## Next
 
-- [ ] **Ailment layer**: `product_ailments` table, mapping from each
-      pharmacy's own ailment categories (Gintarinė, Benu, Apotheka) plus GPT
-      for the rest, `/nuo/{ailment}` pages on the shared listing template.
-- [ ] **E-shop scrapers**, full catalog with EAN, skipping prescription items:
+- [ ] **E-shop scrapers** (next), full catalog with EAN, skipping prescription items:
       Eurovaistinė (product JSON is in the category page HTML), Gintarinė,
       Camelia, Benu, Apotheka, N vaistinė, then the online pharmacies added
       2026-10-07: InternetineVaistine.lt, Mano vaistinė, Piliulė,
       Universiteto vaistinė, Ąžuolyno vaistinė, Rx vaistinė, LSMU vaistinė,
       100 metų vaistinė. Watch for Cloudflare.
+- [ ] **Ailment layer** (after the first full scrape): `product_ailments`
+      table, mapping from each pharmacy's own ailment categories (Gintarinė,
+      Benu, Apotheka) plus GPT for the rest. Pages go in the flat URL space
+      (`/vaistai-nuo-skausmo`) and their slugs must pass
+      `App\Rules\FreeTopLevelSlug`.
+- [ ] **Hide stores without data** on `/vaistines` until scraped (offered,
+      not decided).
 - [ ] **Cross-pharmacy matching**: EAN first; name normalization for
       strength (`400 mg`), count (`N20`) and form (tabletės, sirupas).
 - [ ] **Unit price for pharmacy goods**: €/l on 10 ml drops is meaningless;
@@ -92,7 +116,9 @@ ailment layer (rest of phase 2). The phased roadmap with time estimates is in
       and grocery search examples), listing titles ("Visos vitaminai ir
       maisto papildai akcijos" grammar), GPT prompts in
       `DescriptionGenerationService`, `ListingPageMetaService`,
-      `HomePageMetaService` and `KeywordPage*`, hand-written chain copy in
+      `HomePageMetaService` and `KeywordPage*`, store names in nominative
+      ("Visos Piliulė akcijos" -> `PharmacyName::phrase()`), grocery FAQ
+      ("Kur rasti Maxima akcijas?"), hand-written chain copy in
       `ListingPageMetaService::getPriorityStore*()`, and the domain strings
       hardcoded across services (centralize on `CanonicalUrl`). No treatment
       advice or health claims (YMYL).
