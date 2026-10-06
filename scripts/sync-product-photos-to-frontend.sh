@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "This script still targets the superakcijos.lt server; set up the vaistines server first." >&2; exit 1
 
 set -e
 
