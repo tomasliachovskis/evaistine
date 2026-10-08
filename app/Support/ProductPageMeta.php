@@ -318,12 +318,12 @@ class ProductPageMeta
         $items = [
             ...$items,
             [
-                'question' => 'Kokios ' . mb_strtolower($category) . ' akcijos galioja šią savaitę?',
+                'question' => 'Kokios ' . mb_strtolower($category) . ' akcijos galioja dabar?',
                 'answer' => 'Akcijų galiojimo datos nurodytos prie kiekvieno pasiūlymo. Filtruokite ' . mb_strtolower($category) . ' akcijas kategorijos puslapyje arba palyginkite kainas čia, produkto puslapyje.',
             ],
             [
                 'question' => "Ar {$genitive} kainos atnaujinamos kasdien?",
-                'answer' => 'Taip — kainos ir akcijos atnaujinamos reguliariai, kai pasikeičia prekybos tinklų leidiniai. Rekomenduojame bookmarkinti puslapį ir tikrinti prieš apsipirkimą.',
+                'answer' => 'Taip — kainas ir akcijas vaistinėse tikriname kasdien, todėl čia matote šiuo metu galiojančias kainas. Prieš perkant verta pasitikrinti dar kartą, nes vaistinės akcijas gali pakeisti bet kada.',
             ],
         ];
 

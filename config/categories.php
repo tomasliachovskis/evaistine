@@ -95,6 +95,15 @@ return [
         'mamai-ir-vaikui',
     ],
 
+    // Keyword pages are split into two blocks on the home page and
+    // /pigiausios-prekes: medicines and supplements (these roots) and care
+    // (every other root).
+    'keyword_medicine_group' => [
+        'nereceptiniai-vaistai',
+        'vitaminai-ir-maisto-papildai',
+        'sportas-svorio-kontrole-arbatos-ir-spec-maistas',
+    ],
+
     // Root categories kept out of the home page's "top products" sections.
     'excluded_top_product_slugs' => [],
 ];

@@ -112,8 +112,9 @@ class Kernel extends ConsoleKernel
             ->dailyAt('04:00')
             ->withoutOverlapping(60)
             ->onSuccess(function () {
-                if (app()->environment('production')) {
+                if (config('services.meilisearch.enabled')) {
                     \Illuminate\Support\Facades\Artisan::call('discounts:index-meilisearch');
+                    \Illuminate\Support\Facades\Artisan::call('products:index-meilisearch');
                 }
             });
 
@@ -142,7 +143,8 @@ class Kernel extends ConsoleKernel
         // keyword page or a search_terms/category_slugs edit wouldn't show
         // up in curated_deals until someone remembered to run it by hand.
         // Scheduled 15 min before deal-pool:refresh so the mapping is fresh
-        // by the time that reads it.
+        // by the time that reads it. Maps through the Meilisearch products
+        // index reindexed at 04:00 above.
         $schedule->command('keywords:map-products')
             ->dailyAt('04:15')
             ->withoutOverlapping(60);
@@ -174,6 +176,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('db:backup')
             ->dailyAt('02:00')
             ->withoutOverlapping(120)
+            ->environments(['production']);
+
+        // Search log rows (with IP) older than 12 months, as the privacy
+        // policy says.
+        $schedule->command('model:prune', ['--model' => [\App\Models\SearchResult::class]])
+            ->dailyAt('03:30')
             ->environments(['production']);
 
         // Hotlinked store-CDN product images hurt LCP (Clarity: 3.5-7.8s on

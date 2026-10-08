@@ -21,11 +21,11 @@ use Illuminate\Support\Facades\Cache;
  */
 class HomeBetaController extends Controller
 {
-    // Everyday groceries lead the card list when they're among the keyword
-    // candidates; the rest follow by offer count.
+    // Everyday pharmacy staples lead the card list when they're among the
+    // keyword candidates; the rest follow by offer count.
     private const EVERYDAY_SLUGS = [
-        'pienas', 'duona', 'kiausiniai', 'sviestas', 'suris', 'desra', 'kiauliena', 'kava',
-        'bananai', 'varske', 'jogurtas', 'vistiena', 'makaronai', 'aliejus', 'cukrus', 'miltai',
+        'vitaminas-d', 'magnis', 'vitaminas-c', 'omega-3', 'probiotikai', 'ibuprofenas',
+        'paracetamolis', 'nosies-purskalas', 'melatoninas', 'cinkas', 'kolagenas', 'vitaminas-b12',
     ];
 
     private const CARD_LIMIT = 16;
@@ -78,7 +78,7 @@ class HomeBetaController extends Controller
 
         return view('home-beta', [
             'title' => 'Ką šiandien perkate? | eVaistine.lt',
-            'description' => 'Kur šiandien pigiausia: kasdienių prekių kainos 40 vaistinių vienoje vietoje.',
+            'description' => 'Kur šiandien pigiausia: vaistų kainos visose vaistinėse vienoje vietoje.',
             'canonical' => url('/pradzia-beta'),
             'robots' => 'noindex, nofollow',
             'storeTiles' => $storeTiles,
@@ -99,7 +99,7 @@ class HomeBetaController extends Controller
      */
     private function keywordCards(): array
     {
-        $candidates = collect($this->keywordPageService->topCandidatesByCategoryGroup()['food'] ?? []);
+        $candidates = collect($this->keywordPageService->topCandidatesByCategoryGroup()['medicines'] ?? []);
         $everydayRank = array_flip(self::EVERYDAY_SLUGS);
         $today = Carbon::today()->toDateString();
 

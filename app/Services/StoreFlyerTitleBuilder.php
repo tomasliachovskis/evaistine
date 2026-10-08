@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Store;
 use App\Models\StoreFlyer;
 use App\Support\FlyerStorage;
+use App\Support\PharmacyName;
 use Carbon\Carbon;
 
 class StoreFlyerTitleBuilder
@@ -14,15 +15,7 @@ class StoreFlyerTitleBuilder
         $issuePart = $flyer->issue_number ? " Nr.{$flyer->issue_number}" : '';
 
         if ($flyer->title) {
-            // A themed campaign title (e.g. Aibė's "Mes - Jūsų kaimynai!")
-            // carries no store context or issue number at all on its own —
-            // shown bare, a visitor landing straight on the page (not via
-            // the store's own hub, where the logo/breadcrumb already say
-            // which store) has no way to tell which store it's even for.
-            // Only titles that already name the store are left untouched.
-            if ($this->mentionsStore($flyer->title, $store->name)) {
-                return $flyer->title;
-            }
+            $title = $this->tidyCase($flyer->title);
 
             // Don't append $issuePart when the scraped title already states
             // the same issue number itself (seen live: a scraped title of
@@ -30,11 +23,20 @@ class StoreFlyerTitleBuilder
             // produced "... Nr. 34 Nr.34" — the number twice, in two
             // different spacings). Case/spacing-insensitive: source titles
             // aren't consistently formatted ("Nr.34" vs "Nr. 34").
-            if ($flyer->issue_number && preg_match('/\bNr\.?\s*'.preg_quote((string) $flyer->issue_number, '/').'\b/iu', $flyer->title)) {
+            if ($flyer->issue_number && preg_match('/\bNr\.?\s*'.preg_quote((string) $flyer->issue_number, '/').'\b/iu', $title)) {
                 $issuePart = '';
             }
 
-            return trim("Naujas {$store->name} nuolaidų leidinys - {$flyer->title}{$issuePart}");
+            // A title that already says whose leaflet it is ("Benu mėnesio
+            // leidinys", or N vaistinė's own "Norfos vaistinės spalio
+            // mėnesio leidinys") is shown as is. A themed campaign title
+            // ("Kartu vienas dėl kito") gets the pharmacy in front, so a
+            // visitor landing straight on the page knows which one it is.
+            if ($this->mentionsStore($title, $store->name) || mb_stripos($title, 'vaistin') !== false) {
+                return trim("{$title}{$issuePart}");
+            }
+
+            return trim(PharmacyName::phrase($store->name, 'genitive')." leidinys „{$title}“{$issuePart}");
         }
 
         $catalogName = $flyer->catalog_name ?: $this->defaultCatalogName($store);
@@ -45,6 +47,23 @@ class StoreFlyerTitleBuilder
         }
 
         return trim("{$catalogName} akcijų leidinys{$issuePart} {$datePart}");
+    }
+
+    /**
+     * Pharmacy leaflet titles come half in capitals ("GINTARINĖS vaistinės
+     * spalio mėnesio leidinys", "KARTU VIENAS DĖL KITO"). Words of three or
+     * more letters written all in capitals are lowercased (a title with no
+     * lowercase letter at all is lowercased whole) and the title gets a
+     * capital first letter; short all-caps words (SPF, D3) are kept.
+     */
+    private function tidyCase(string $title): string
+    {
+        $title = trim(preg_replace('/\s+/u', ' ', $title));
+        $title = preg_match('/\p{Ll}/u', $title)
+            ? preg_replace_callback('/\b\p{Lu}{3,}\b/u', fn ($m) => mb_strtolower($m[0]), $title)
+            : mb_strtolower($title);
+
+        return mb_strtoupper(mb_substr($title, 0, 1)).mb_substr($title, 1);
     }
 
     /**
@@ -61,7 +80,13 @@ class StoreFlyerTitleBuilder
             'š' => 's', 'ų' => 'u', 'ū' => 'u', 'ž' => 'z',
         ]);
 
-        return mb_strlen($storeName) > 0 && str_contains($fold($title), $fold($storeName));
+        // "Benu vaistinė" is named "Benu" in its own titles: the chain part
+        // alone counts too.
+        $chain = trim(preg_replace('/\s*vaistin\S*/iu', '', $storeName));
+
+        return collect([$storeName, $chain])
+            ->filter(fn ($name) => mb_strlen($name) >= 3)
+            ->contains(fn ($name) => str_contains($fold($title), $fold($name)));
     }
 
     public function toListingArray(StoreFlyer $flyer, Store $store): array
@@ -109,7 +134,7 @@ class StoreFlyerTitleBuilder
             return 'IKI SAVAITĖLĖ';
         }
 
-        return mb_strtoupper($store->name);
+        return PharmacyName::phrase($store->name, 'genitive');
     }
 
     private function formatDateRange(?Carbon $from, ?Carbon $to): string

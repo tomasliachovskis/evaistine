@@ -91,7 +91,7 @@
                         <input
                             type="text"
                             wire:model.live.debounce.300ms="query"
-                            placeholder="pvz. sviestas, Maxima, Norfa leidinys"
+                            placeholder="pvz. vitaminas D, Eurovaistinė leidinys"
                             autocomplete="off"
                             inputmode="search"
                             class="h-14 w-full rounded-xl border border-gray-200 pl-12 text-lg focus:border-dark-green focus:outline-none"

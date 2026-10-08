@@ -18,7 +18,7 @@
         <div class="flex flex-col gap-2">
             <x-type-hero
                 title="Pigiausios prekės vaistinėse"
-                subtitle="Kelių kasdienių prekių kainos didžiausiuose prekybos tinkluose — kiekvienos prekės kaina matoma iš karto, jokių papildomų paspaudimų."
+                subtitle="Populiarių vaistų ir kitų vaistinės prekių kainos skirtingose vaistinėse — kiekvienos prekės kaina matoma iš karto, jokių papildomų paspaudimų."
             />
             <x-hero-stats :freshness="$freshnessLabel" />
         </div>
@@ -79,14 +79,14 @@
             @endforeach
 
             <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-dark-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">
-                <h2>Kodėl verta sekti maisto prekių kainas kiekvieną savaitę</h2>
-                <p>Kainos didžiuosiuose prekybos tinkluose — <a href="/maxima">Maxima</a>, <a href="/lidl">Lidl</a>, <a href="/rimi">Rimi</a>, <a href="/norfa">Norfa</a> ir <a href="/iki">Iki</a> — tam pačiam produktui gali skirtis nemažai, o kuris tinklas tuo metu pigiausias priklauso nuo konkrečios prekių kategorijos ir savaitės akcijų. Todėl vienkartinis apsipirkimas vienoje vaistinėje retai būna pats pigiausias variantas — verta palyginti prieš renkantis, kur eiti su pirkinių sąrašu.</p>
+                <h2>Kodėl verta palyginti vaistų kainas skirtingose vaistinėse</h2>
+                <p>Ta pati prekė skirtingose vaistinėse — {!! collect(\App\Support\StoreListPriority::mainNames())->map(fn ($name, $slug) => '<a href="'.e(\App\Support\PageUrl::listing($slug)).'">'.e($name).'</a>')->join(', ', ' ir ') !!} — gali kainuoti nevienodai, o kuri vaistinė tuo metu pigiausia, priklauso nuo jos akcijų. Todėl verta palyginti kainas prieš perkant, ypač prekes, kurias perkate reguliariai.</p>
 
-                <h2>Kaip kinta maisto kainos Lietuvoje</h2>
-                <p>Maisto kainos nekyla tolygiai visose kategorijose — šviežių vaisių ir daržovių kainos paprastai svyruoja stipriausiai, priklausomai nuo derliaus sezono, o perdirbti ir ilgai laikomi produktai (pvz. makaronai, ryžiai, aliejus) keičiasi lėčiau. Todėl tos pačios prekės vienu mėnesiu gali atrodyti brangesnės, o kitu — pigesnės, net jei bendra infliacija nepasikeitė. Sekti kelių konkrečių prekių kainas kiekvieną savaitę leidžia pastebėti šiuos svyravimus anksčiau, nei jie atsispindi oficialioje statistikoje.</p>
+                <h2>Kaip keičiasi kainos vaistinėse</h2>
+                <p>Vaistinės akcijas skelbia skirtingu ritmu: vienos keičia pasiūlymus kas kelias savaites, kitos leidžia mėnesinius leidinius, o internetinės vaistinės kainas gali keisti dažniau. Dėl to pigiausia vaistinė tai pačiai prekei skirtingais mėnesiais gali būti vis kita.</p>
 
-                <h2>Kaip sutaupyti apsiperkant kiekvieną savaitę</h2>
-                <p>Be šio bendro prekių palyginimo, verta pasitikrinti konkrečių kategorijų akcijas — pavyzdžiui <a href="/vaisiai-ir-darzoves">vaisius ir daržoves</a>, <a href="/pieno-produktai-ir-kiausiniai">pieno produktus</a> ar <a href="/mesa-ir-zuvis">mėsą ir žuvį</a> — nes būtent šiose kategorijose kainų skirtumai tarp tinklų dažniausiai būna didžiausi. Taip pat naudinga sekti savaitės <a href="/leidiniai">akcijų leidinius</a>, kad pastebėtumėte naujus pasiūlymus, kol jie dar galioja.</p>
+                <h2>Kaip rasti pigiausią pasiūlymą</h2>
+                <p>Be šio prekių palyginimo, verta peržiūrėti konkrečių kategorijų akcijas — pavyzdžiui <a href="{{ \App\Support\PageUrl::listing('vitaminai-ir-maisto-papildai') }}">vitaminus ir maisto papildus</a>, <a href="{{ \App\Support\PageUrl::listing('nereceptiniai-vaistai') }}">nereceptinius vaistus</a> ar <a href="{{ \App\Support\PageUrl::listing('veido-prieziura') }}">veido priežiūros priemones</a>. Naujus pasiūlymus rasite ir vaistinių <a href="/leidiniai">akcijų leidiniuose</a>.</p>
             </div>
 
             <div class="category-description mt-6 w-full max-w-none border-t border-gray-200 pt-6 text-sm prose prose-sm py-[5px] [&>p]:mb-4 [&>p:last-child]:mb-0 [&_a]:text-dark-green [&_a]:transition-colors [&_a]:hover:text-dark-green [&_a]:hover:underline">

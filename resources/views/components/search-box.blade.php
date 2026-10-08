@@ -1,4 +1,4 @@
-@props(['value' => '', 'placeholder' => 'Pienas, kava, kiaulienos nugarinė…', 'autofocus' => false, 'size' => 'md'])
+@props(['value' => '', 'placeholder' => 'Vitaminas D, ibuprofenas, kremas nuo saulės…', 'autofocus' => false, 'size' => 'md'])
 
 {{-- The home page's search pill, shared with the search pages so a reader
      can fix a typo or search again right where the results are. size="lg"

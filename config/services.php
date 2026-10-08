@@ -46,6 +46,9 @@ return [
             env('LARAVEL_SAIL') ? 'http://host.docker.internal:7700' : 'http://127.0.0.1:7700'
         ),
         'key' => env('MEILISEARCH_KEY'),
+        // True when this environment has its own Meilisearch (production, and
+        // dev since the Sail stack runs one). Gates indexing and keyword mapping.
+        'enabled' => (bool) env('MEILISEARCH_HOST'),
     ],
 
     // Still used by AuthController::oauth() for the old Next.js app (discount

@@ -58,11 +58,6 @@
     :canonical="$canonical"
     :robots="$robots"
 >
-    @if($requiresAgeVerification ?? false)
-        @push('body-end')
-            <x-age-verification-modal />
-        @endpush
-    @endif
 
     @push('head')
         <script type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
@@ -206,6 +201,14 @@
             </div>
         @endif
 
+        {{-- Medicine/supplement warning on category and keyword pages that
+             list them (store pages mix every category, so they get only the
+             footer notice). --}}
+        <x-product-notice
+            :category-slug="$isKeyword ? ($listingMeta['keyword_categories'][0]['slug'] ?? null) : ($listingMeta['category_slug'] ?? null)"
+            class="mb-4"
+        />
+
         @if ($noOffers)
             {{-- No live offers for this keyword right now — the page stays
                  200/indexable (a 404 here cost the URL its rankings every
@@ -213,12 +216,25 @@
                  links to close keyword pages that have offers today. Same
                  notice box as the store+category $fallbackOtherStores case
                  below. --}}
-            <div class="mt-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 sm:p-5">
+            @php
+                // Pharmacies sell the full catalog, so "no offers" means none
+                // of them has it right now, not "no promotion this week". The
+                // category link keeps somewhere to go even with no close
+                // keyword pages.
+                $emptyCategory = $listingMeta['keyword_categories'][0] ?? null;
+            @endphp
+            <div class="mt-6 rounded-lg border border-gray-200 bg-white p-4 text-base text-gray-700 sm:p-5">
                 <p>
-                    Šiuo metu {{ $listingMeta['keyword_grammar']['genitive'] ?? mb_strtolower($pageTitle) }} akcijų nėra. Naujos akcijos atsiranda kas savaitę{{ !empty($alternativePages) ? ' — kol kas pažiūrėkite panašius pasiūlymus:' : '.' }}
+                    Šiuo metu {{ $listingMeta['keyword_grammar']['genitive'] ?? mb_strtolower($pageTitle) }} vaistinėse neradome. Kainas tikriname kas dieną, todėl prekės čia atsiras, kai tik jas pasiūlys kuri nors vaistinė.
                 </p>
+                @if ($emptyCategory)
+                    <p class="mt-3">
+                        <a href="{{ $emptyCategory['href'] }}" class="font-semibold text-dark-green underline underline-offset-4">Visos {{ \App\Http\Controllers\Api\ProductController::categoryGenitiveLabel($emptyCategory['name']) }} kainos</a>
+                    </p>
+                @endif
                 @if (!empty($alternativePages))
-                    <div class="mt-4">
+                    <p class="mt-4">Panašios prekės, kurias vaistinės turi dabar:</p>
+                    <div class="mt-3">
                         @include('components.partials.related-keyword-links', ['links' => $alternativePages])
                     </div>
                 @endif

@@ -4,7 +4,6 @@ use App\Http\Controllers\AkcijosController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CheapestProductsController;
-use App\Http\Controllers\CouponController;
 use App\Http\Controllers\EmailSubscriptionController;
 use App\Http\Controllers\MyStoresController;
 use App\Http\Controllers\FavoritesController;
@@ -32,6 +31,7 @@ Route::get('/_health', function () {
 Route::get('/', [NewHomeController::class, 'index'])->name('home');
 
 Route::get('/privatumo-politika', [StaticPageController::class, 'privacyPolicy']);
+Route::get('/naudojimosi-taisykles', [StaticPageController::class, 'terms']);
 Route::get('/apie', [StaticPageController::class, 'about']);
 Route::redirect('/kontaktai', '/apie#kontaktai', 301);
 
@@ -80,9 +80,6 @@ Route::get('/vaistines/{slug}/{city}/{address}', function (string $slug, string 
 Route::get('/leidiniai', [LeafletController::class, 'index']);
 Route::get('/leidinys/{store}/{flyerSlug}', [LeafletController::class, 'show']);
 Route::get('/leidinys/{store}', [LeafletController::class, 'hub']);
-
-Route::get('/kuponai', [CouponController::class, 'index']);
-Route::get('/kuponai/{website}', [CouponController::class, 'hub']);
 
 // Named "login" so the `auth` middleware's default guest-redirect has
 // somewhere to send people — there's no standalone login page, just the

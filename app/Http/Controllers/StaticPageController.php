@@ -11,8 +11,21 @@ class StaticPageController extends Controller
             'description' => 'eVaistine.lt privatumo politika. Sužinokite, kaip tvarkome jūsų asmeninę informaciją.',
             'canonical' => url('/privatumo-politika'),
             'breadcrumbs' => [
-                ['name' => 'Akcijos', 'href' => '/'],
+                ['name' => 'Pradžia', 'href' => '/'],
                 ['name' => 'Privatumo politika', 'href' => '/privatumo-politika'],
+            ],
+        ]);
+    }
+
+    public function terms()
+    {
+        return view('static.terms', [
+            'title' => 'Naudojimosi taisyklės',
+            'description' => 'eVaistine.lt naudojimosi taisyklės: esame vaistų kainų palyginimo svetainė, ne vaistinė. Kas atsako už prekes, kainas ir pirkimą.',
+            'canonical' => url('/naudojimosi-taisykles'),
+            'breadcrumbs' => [
+                ['name' => 'Pradžia', 'href' => '/'],
+                ['name' => 'Naudojimosi taisyklės', 'href' => '/naudojimosi-taisykles'],
             ],
         ]);
     }
@@ -24,7 +37,7 @@ class StaticPageController extends Controller
             'description' => 'Kas yra eVaistine.lt, iš kur renkame kainas ir akcijas, ir kaip su mumis susisiekti.',
             'canonical' => url('/apie'),
             'breadcrumbs' => [
-                ['name' => 'Akcijos', 'href' => '/'],
+                ['name' => 'Pradžia', 'href' => '/'],
                 ['name' => 'Apie mus', 'href' => '/apie'],
             ],
         ]);

@@ -21,7 +21,7 @@ class BlogController extends Controller
         $query = $request->query();
 
         $breadcrumbs = [
-            ['name' => 'Akcijos', 'href' => '/'],
+            ['name' => 'Pradžia', 'href' => '/'],
             ['name' => 'Naujienos', 'href' => '/naujienos'],
         ];
 
@@ -41,7 +41,7 @@ class BlogController extends Controller
         $post = BlogPost::published()->where('slug', $slug)->firstOrFail();
 
         $breadcrumbs = [
-            ['name' => 'Akcijos', 'href' => '/'],
+            ['name' => 'Pradžia', 'href' => '/'],
             ['name' => 'Naujienos', 'href' => '/naujienos'],
             ['name' => $post->title, 'href' => "/naujienos/{$post->slug}"],
         ];

@@ -69,8 +69,8 @@
         <div class="flex flex-col gap-2">
             <h1>Naujausi akcijų leidiniai iš visų vaistinių</h1>
             <x-collapsible-intro class="mt-1.5">
-                Visi Maxima, Lidl, Iki, Rimi, Norfa ir kitų vaistinių akcijų leidiniai vienoje vietoje.
-                Peržiūrėkite naujausius pasiūlymus ir sutaupykite apsipirkdami.
+                {{ \App\Support\StoreListPriority::leafletChainsGenitiveText() }} ir kitų vaistinių akcijų leidiniai vienoje vietoje.
+                Peržiūrėkite naujausius pasiūlymus ir palyginkite kainas prieš perkant.
             </x-collapsible-intro>
             @php
                 $leafletCount = (int) $activeLeafletsCount;

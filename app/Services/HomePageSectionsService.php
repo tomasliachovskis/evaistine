@@ -43,8 +43,10 @@ class HomePageSectionsService
     {
         return [
             'best_pool' => $this->formatDeals($this->poolFromScope('home_best', self::HOME_BEST_DISPLAY_LIMIT)),
-            'food_pool' => $this->formatDeals($this->poolFromScope('home_food')),
-            'non_food_pool' => $this->formatDeals($this->poolFromScope('home_non_food')),
+            // The grocery food/non-food pools are gone; kept empty for the
+            // unrouted old home view (home.blade.php) that still reads them.
+            'food_pool' => [],
+            'non_food_pool' => [],
             'store_ranking' => $this->getStoreRanking(),
         ];
     }

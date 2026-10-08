@@ -99,10 +99,15 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
         Artisan::call('products:merge-duplicates', ['--cross-source' => true]);
         app(DuplicateDiscountRemover::class)->remove();
         Artisan::call('discounts:archive-expired');
-        // Only production has its own Meilisearch; the SSH tunnel to the
-        // evaistine.lt server this used to open from dev was removed.
-        if (app()->environment('production')) {
+        // Every environment with its own Meilisearch (production, and dev's
+        // Sail container): site search index, then the products index that
+        // keyword pages map through, then the mapping and the page counts,
+        // so new products show on keyword pages right after the scrape.
+        if (config('services.meilisearch.enabled')) {
             Artisan::call('discounts:index-meilisearch');
+            Artisan::call('products:index-meilisearch');
+            Artisan::call('keywords:map-products');
+            Artisan::call('keywords:refresh-counts');
         }
         // Product pages with a new/changed offer → Bing & co. (no-op outside
         // production or without INDEXNOW_KEY; never throws).

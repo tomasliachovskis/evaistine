@@ -7,7 +7,6 @@ use App\Models\KeywordPage;
 use App\Services\KeywordPageCategoryResolver;
 use App\Services\KeywordPageService;
 use App\Support\CacheVersion;
-use App\Support\FoodCategorySlugs;
 
 class KeywordCsvImporter
 {
@@ -133,7 +132,10 @@ class KeywordCsvImporter
 
             if ($apply && ! $slugConflict) {
                 $persist = $pageData;
-                $persist['is_published'] = $matchCount >= $persist['min_active_offers'];
+                // Publishes, never unpublishes a live page (see
+                // KeywordManualImporter).
+                $persist['is_published'] = $matchCount >= $persist['min_active_offers']
+                    || KeywordPage::where('slug', $persist['slug'])->where('is_published', true)->exists();
                 $persist['matching_offers_count'] = $matchCount;
                 $persist['displayed_offers_count'] = $displayedCount;
                 $persist['offers_counted_at'] = now();
@@ -313,7 +315,10 @@ class KeywordCsvImporter
 
             if ($apply && ! $slugConflict) {
                 $persist = $pageData;
-                $persist['is_published'] = $matchCount >= $persist['min_active_offers'];
+                // Publishes, never unpublishes a live page (see
+                // KeywordManualImporter).
+                $persist['is_published'] = $matchCount >= $persist['min_active_offers']
+                    || KeywordPage::where('slug', $persist['slug'])->where('is_published', true)->exists();
                 $persist['matching_offers_count'] = $matchCount;
                 $persist['displayed_offers_count'] = $displayedCount;
                 $persist['offers_counted_at'] = now();
@@ -364,11 +369,7 @@ class KeywordCsvImporter
             return $resolved;
         }
 
-        return match ($slug) {
-            'kava' => ['gerimai-kava-arbata'],
-            'skalbimo' => ['buitine-chemija-valymo-priemones'],
-            default => [],
-        };
+        return [];
     }
 
     /**
@@ -378,7 +379,7 @@ class KeywordCsvImporter
     {
         return Category::query()
             ->where('hide', 0)
-            ->whereIn('slug', FoodCategorySlugs::ALL)
+            ->whereIn('slug', array_values(config('categories.roots', [])))
             ->orderBy('name')
             ->get(['slug', 'name'])
             ->map(fn ($c) => ['slug' => $c->slug, 'name' => $c->name])

@@ -240,7 +240,7 @@
                     @include('leaflets.partials.beta.below')
                 @endif
 
-                <x-email-signup :title="'Gaukite naujus ' . $storeName . ' leidinius el. paštu'" :store="$storeSlug" id="leaflet" :compact="true" />
+                <x-email-signup :title="'Gaukite naujus ' . \App\Support\PharmacyName::phrase($storeName, 'genitive') . ' leidinius el. paštu'" :store="$storeSlug" id="leaflet" :compact="true" />
 
                 @if ($sidebarLeaflets !== [])
                     <section aria-labelledby="other-leaflets-heading">

@@ -101,45 +101,44 @@ class KeywordPageGptService
     private function systemPrompt(): string
     {
         return <<<'PROMPT'
-Tu esi eVaistine.lt turinio specialistas. Gauni keyword grupę su:
+Tu esi eVaistine.lt (vaistų kainų palyginimo svetainės) turinio specialistas. Svetainė lygina Lietuvos vaistinių prekių kainas: vaistų, vitaminų ir maisto papildų, kosmetikos, higienos, prekių mamai ir vaikui, medicinos prekių. Gauni keyword grupę su:
 - primary_keywords (3 exact frazės – jos jau naudojamos H1/meta, NEGENERUOK jų)
 - secondary_keywords (likę raktažodžiai – turinio šaltinis)
 - candidate_brands (galimi prekės ženklai/linijos)
-- store_keyword_variants (variantai kaip „kava akcija maxima“, „kava akcija norfa“ - naudok natūraliai bendrame puslapyje, bet NEKURK store atskiro URL)
+- store_keyword_variants (variantai kaip „vitaminas d akcija eurovaistinė“, „vitaminas d akcija camelia“ – naudok natūraliai bendrame puslapyje, bet NEKURK atskiro vaistinės URL)
 
 Tavo užduotis: nuspręsti ar kurti puslapį, ir jei taip – sugeneruoti TIK turinį (ne H1, ne meta title/description).
 
-SKIP (skip: true) jei: tik vaistinės pavadinimas (IKI akcija), lojalumas, miestai, skaičiai, visiškai neproduktinė grupė.
+SKIP (skip: true) jei: tik vaistinės pavadinimas („Camelia akcija“), lojalumas, miestai, skaičiai, receptiniai vaistai, visiškai neproduktinė grupė.
 
 Jei kurk puslapį:
-- intro_html: 1–2 natūralūs <p> paragrafai lietuviškai. Naudok secondary keywords, brands ir dalį store_keyword_variants natūraliai – BE keyword stuffing
-- tips: 2–4 patarimai (title, text)
+- intro_html: 1–2 natūralūs <p> paragrafai lietuviškai. Naudok secondary keywords, brands ir dalį store_keyword_variants natūraliai – BE keyword stuffing. Rašyk apie prekę kaip apie pirkinį (rūšys, formos, pakuotės, kur ir kaip palyginti kainas), NIEKADA apie poveikį sveikatai: jokių gydymo patarimų, dozavimo, teiginių, kad prekė gydo, padeda, apsaugo ar stiprina. Nerašyk ir teiginių apie tai, ko puslapis nedaro ar nerodo (pvz. „nevertinant poveikio sveikatai“, „receptinių vaistų nėra“) – tiesiog aprašyk prekes ir kainų palyginimą. Vaistinę vadink „vaistinė“, niekada „parduotuvė“ jokia forma (taip pat tips tekstuose). Vaistinių pavadinimus linksniuok taip: Eurovaistinėje, Gintarinėje vaistinėje, Camelia vaistinėje, Benu vaistinėje, Apotheka vaistinėje (niekada „Apothekoje“, „Camelioje“, „Benu vaistinė vaistinėje“).
+- tips: 2–4 patarimai (title, text) apie pirkimą ir kainas (pakuotės dydis ir vieneto kaina, to paties produkto kaina skirtingose vaistinėse, lojalumo kortelė), ne apie vartojimą ar sveikatą. Antraštės aiškios ir orientuotos į paiešką.
 - search_terms: 4–10 Meilisearch termų. Paieška laisva (atleidžia rašybos klaidas, nukerpa galūnes, pagauna prekę jau per vieną žodį), todėl kiekvienas terminas turi reikšti TIK šio puslapio prekę:
-  - Siauram puslapiui NEDĖK bendro žodžio, kuris pagauna kitas rūšis: „kavos pupelės“ puslapyje ne „kava“ (pagautų maltą, tirpią kavą, kapsules), „kukurūzai“ puslapyje ne „kukurūzų“ (pagautų traškučius, spragėsius), „galvijų liežuviai“ puslapyje ne „galvijų“.
-  - Pirmas terminas – pati prekės frazė iš primary_keywords (pvz. „kavos pupelės“), toliau jos linksniai ir sinonimai („kava pupelėmis“). Brando frazės („lavazza pupelės“) – tik papildymas, ne vietoj jos; nesiaurink iki konkrečių modelių ar linijų.
-  - Tik prekės pavadinimo žodžiai, kaip jie būna vaistinės prekės pavadinime (su lietuviškomis raidėmis, keli linksniai jei reikia). NEDĖK: vaistinių pavadinimų („tirpi kava maxima“), kiekių („100g“), žodžių „kaina“, „pigiausi“, „receptai“, „akcija“, gretimų kitų prekių („pyragai“ puslapyje ne „tortai“, „keksiukai“).
-- category_slugs: tiksliai 1 iš available_category_slugs – pagrindinė kategorija, kurioje realiai parduodamas produktas (pvz. citrinos → vaisiai-ir-darzoves, NE gerimai-kava-arbata)
-- exclude_terms: 3–10 poeilučių (mažosiomis, lietuviškai), kurios išmeta prekes, pagaunamas search_terms, bet nesančias šia preke. Galvok, kas tipiškai pakliūva: tokio skonio kitos prekės (visa frazė „kavos skonio“, „su kava“ – niekada vien „skonio“ ar „su“), priedai ir aksesuarai („kapsulės“ kavos pupelių puslapyje, „šepetėliai“ dantų pastos puslapyje), kito gyvūno ėdalas („šunų“ kačių maisto puslapyje), užkandžiai iš to paties produkto („traškuč“, „užkand“, „spraginti“), paruošti patiekalai („salotos“, „sumuštinis“). Kai žodis kaitomas, rašyk kamieną („traškuč“, ne „traškučiai“). NEDĖK brandų, kurie gamina ir šią prekę (pvz. „rokiškio“ grietinėlės puslapyje), ir žodžių, kurie būna tinkamos prekės pavadinime (to paties produkto variantai tinka: tarkuotas Džiugas yra Džiugo sūris). NIEKADA neįtrauk: akcija, akcijos, nuolaida, iki, maxima, lidl, rimi, norfa
-- brands: tik tikri prekės ženklai, kurių VISOS prekės priklauso šiam puslapiui (jie tampa paieškos terminais ir pagauna bet kurią to brando prekę). Brandas, gaminantis ir kitas rūšis (Lavazza gamina ir maltą kavą, kapsules), į brands NEDEDAMAS – naudok jį tik frazėje su prekės žodžiu search_terms („lavazza pupelės“). Ne bendri žodžiai („Kava“, „Kapsulės“, „Club“). Siauram puslapiui dažniausiai – tuščias sąrašas
+  - Siauram puslapiui NEDĖK bendro žodžio, kuris pagauna kitas rūšis: „vitaminas d vaikams“ puslapyje ne vien „vitaminas“ (pagautų visus vitaminus), „magnio citratas“ puslapyje ne vien „magnio“ (pagautų magnio oksidą, kompleksus), „kremas nuo saulės vaikams“ puslapyje ne vien „kremas“.
+  - Pirmas terminas – pati prekės frazė iš primary_keywords (pvz. „magnio citratas“), toliau jos linksniai ir sinonimai („magnio citrato“). Brando frazės („solgar magnis“) – tik papildymas, ne vietoj jos; nesiaurink iki konkrečių modelių ar linijų.
+  - Tik prekės pavadinimo žodžiai, kaip jie būna vaistinės prekės pavadinime (su lietuviškomis raidėmis, keli linksniai jei reikia). NEDĖK: vaistinių pavadinimų („magnis eurovaistinė“), kiekių („100 mg“, „N60“), žodžių „kaina“, „pigiausi“, „akcija“, gretimų kitų prekių („šampūnas“ puslapyje ne „kondicionierius“).
+- category_slugs: tiksliai 1 iš available_category_slugs – pagrindinė kategorija, kurioje realiai parduodamas produktas (pvz. magnis → vitaminai-ir-maisto-papildai, NE nereceptiniai-vaistai; kremas nuo saulės → kuno-prieziura-ir-apsauga-nuo-saules)
+- exclude_terms: 3–10 poeilučių (mažosiomis, lietuviškai), kurios išmeta prekes, pagaunamas search_terms, bet nesančias šia preke. Galvok, kas tipiškai pakliūva: kitai grupei skirtos prekės tik tada, kai puslapis pats siauresnis („šunims“ žmonių papildų puslapyje; „vaikams“ tik puslapyje, kurio pavadinime yra „suaugusiems“), priedai ir aksesuarai („šepetėliai“ dantų pastos puslapyje, „dėklas“ lęšių puslapyje), kompleksai, kai puslapis apie vieną medžiagą („kompleksas“, „multivitamin“). Kai žodis kaitomas, rašyk kamieną („multivitamin“, ne „multivitaminai“). NEDĖK brandų, kurie gamina ir šią prekę, ir žodžių, kurie būna tinkamos prekės pavadinime. NIEKADA neįtrauk: žodžių, kurie yra paties puslapio pavadinime ar secondary_keywords variantuose (pvz. „vaikams“, „kūdikiams“, „lašai“, „sirupas“ bendrame puslapyje – tai to paties puslapio prekės), akcija, akcijos, nuolaida, vaistinių pavadinimų
+- brands: tik tikri prekės ženklai, kurių VISOS prekės priklauso šiam puslapiui (jie tampa paieškos terminais ir pagauna bet kurią to brando prekę). Brandas, gaminantis ir kitas rūšis (Solgar gamina daugybę papildų), į brands NEDEDAMAS – naudok jį tik frazėje su prekės žodžiu search_terms („solgar magnis“). Ne bendri žodžiai („Vitaminai“, „Kremas“, „Forte“). Siauram puslapiui dažniausiai – tuščias sąrašas
 - grammar_plural, grammar_genitive, grammar_dative – taisyklinga lietuvių kalba
 - slug: lowercase, lotyniškos raidės ir brūkšneliai
 
-NEGENERUOK: h1, meta_title, meta_description.
+NEGENERUOK: h1, meta_title, meta_description, emoji (svetainėje emoji nenaudojami).
 
 JSON formatas:
 {
   "skip": false,
   "skip_reason": "",
-  "slug": "lego",
-  "title": "Lego",
-  "emoji": "🧱",
+  "slug": "magnio-citratas",
+  "title": "Magnio citratas",
   "grammar_plural": "...",
   "grammar_genitive": "...",
   "grammar_dative": "...",
-  "brands": ["Lego"],
-  "search_terms": ["lego", "lego duplo", "lego technic"],
+  "brands": [],
+  "search_terms": ["magnio citratas", "magnio citrato", "solgar magnio citratas"],
   "category_slugs": ["..."],
-  "exclude_terms": ["dėžė lego", "suderinama su lego"],
+  "exclude_terms": ["vaikams", "kompleksas"],
   "intro_html": "<p>...</p>",
   "tips": [{"title": "...", "text": "..."}],
   "related_slugs": []
@@ -177,7 +176,7 @@ PROMPT;
         $page = [
             'slug' => $slug,
             'title' => (string) ($parsed['title'] ?? ucfirst($slug)),
-            'emoji' => (string) ($parsed['emoji'] ?? '🏷️'),
+            'emoji' => '',
             'grammar_plural' => (string) ($parsed['grammar_plural'] ?? $parsed['title'] ?? $slug),
             'grammar_genitive' => (string) ($parsed['grammar_genitive'] ?? $parsed['title'] ?? $slug),
             'grammar_dative' => (string) ($parsed['grammar_dative'] ?? $parsed['title'] ?? $slug),
@@ -221,7 +220,7 @@ PROMPT;
      */
     private function buildStoreKeywordVariants(array $primaryKeywords): array
     {
-        $stores = ['Maxima', 'Norfa', 'Rimi', 'Lidl', 'Iki'];
+        $stores = array_values(\App\Support\StoreListPriority::mainNames());
         $variants = [];
 
         foreach (array_slice($primaryKeywords, 0, 2) as $keyword) {

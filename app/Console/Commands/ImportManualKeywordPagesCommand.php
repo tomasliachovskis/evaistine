@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 class ImportManualKeywordPagesCommand extends Command
 {
     protected $signature = 'keywords:import-manual
-                            {file=database/data/bulk-keyword-pages-2026.json : Path to JSON keyword list}
+                            {file=database/data/pharmacy-keyword-pages-2026-10.json : Path to JSON keyword list}
                             {--dry-run : List keywords only, no GPT}
                             {--apply : GPT + save to database}
                             {--slug= : Process only one slug}
@@ -100,12 +100,12 @@ class ImportManualKeywordPagesCommand extends Command
         if ($result['imported'] !== []) {
             $this->newLine();
             $this->table(
-                ['Slug', 'H1', 'Primary', 'Matches', 'Rec.'],
+                ['Slug', 'Primary', 'Offers', 'Pharmacies', 'Rec.'],
                 array_map(fn ($r) => [
                     $r['slug'],
-                    $r['h1'],
                     $r['primary'],
                     $r['matches'],
+                    $r['pharmacies'],
                     $r['recommendation'],
                 ], $result['imported'])
             );

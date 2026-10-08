@@ -11,7 +11,7 @@
                         <div class="min-w-0">
                             <h1 class="font-extrabold text-gray-900">Daug akcijų ir nuolaidų vienoje vietoje</h1>
                             <p class="mt-1 text-sm leading-snug text-gray-600 sm:mt-1.5 sm:text-base">
-                                Raskite naujausias Maxima, Lidl, Rimi, Norfa, Iki ir kitų vaistinių akcijas vienoje vietoje.
+                                Raskite naujausias {{ \App\Support\StoreListPriority::mainNamesText() }} ir kitų vaistinių akcijas vienoje vietoje.
                             </p>
                         </div>
                         <a href="/vaistines" class="hidden shrink-0 items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900 transition-colors hover:border-gray-400 hover:bg-gray-50 sm:inline-flex sm:px-4 sm:py-2 min-h-12">
@@ -39,7 +39,7 @@
             <x-landing-deals-section
                 id="food-deals"
                 title="Šiandien geriausi pasiūlymai"
-                subtitle="Gėrimai, saldumynai, pieno, mėsos, žuvies, vaisių ir daržovių pasiūlymai"
+                subtitle="Vitaminų, maisto papildų, nereceptinių vaistų ir kitų vaistinės prekių pasiūlymai"
                 :deals="array_slice($sections['food_pool'], 0, 10)"
                 icon="shopping-basket"
                 layout="grid"
@@ -47,8 +47,8 @@
 
             <x-landing-deals-section
                 id="non-food-deals"
-                title="Namų, grožio ir buities akcijos"
-                subtitle="Kosmetika, higiena, buitinė chemija, gyvūnų prekės ir kiti kasdieniai pasiūlymai"
+                title="Grožio ir higienos akcijos"
+                subtitle="Veido ir kūno priežiūra, kosmetika, higiena ir prekės mamai ir vaikui"
                 :deals="$sections['non_food_pool']"
                 icon="package"
                 layout="carousel"

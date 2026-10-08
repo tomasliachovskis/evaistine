@@ -10,7 +10,6 @@ use App\Models\KeywordPage;
 use App\Models\KeywordPageProduct;
 use App\Models\Store;
 use App\Support\CacheVersion;
-use App\Support\FoodCategorySlugs;
 use App\Support\LithuanianDate;
 use App\Support\LithuanianPlural;
 use Carbon\Carbon;
@@ -23,21 +22,24 @@ class KeywordPageService
 {
     private const PER_PAGE = 20;
 
-    private const MAX_LISTING_FETCH = 1000;
-
-    private const MEILISEARCH_FETCH_BUFFER = 50;
-
     private const MIN_CHIP_OFFERS = 3;
+
+    /** @var array<int, array<int, int>> keyword page id => flipped product ids */
+    private array $mappedProductIds = [];
 
     // Same 5 chains buildStoreKeywordVariants()/KeywordPageGptService already
     // treat as "the main stores" — guarantees each of these a row in
     // buildStorePriceTable() even when it isn't among the top-8-by-offer-
-    // count brands (found live: Norfa's cheapest match for "kava" has no
-    // brand at all, so Norfa never appeared in the old per-brand table).
-    private const PRIORITY_STORE_NAMES = ['Maxima', 'Norfa', 'Lidl', 'Iki', 'Rimi'];
+    // count brands (found live on superakcijos: a cheapest match with no
+    // brand at all never appeared in the old per-brand table).
+    // The main pharmacy chains' names (config('stores.main_slugs') order),
+    // listed first in keyword-page price tables.
+    private static function priorityStoreNames(): array
+    {
+        return array_values(\App\Support\StoreListPriority::mainNames());
+    }
 
     public function __construct(
-        private MeilisearchService $meilisearchService,
         private DiscountResponseFormatter $formatter,
         private PageFreshnessService $freshnessService,
         private StoreFlyerTitleBuilder $flyerTitleBuilder,
@@ -87,26 +89,19 @@ class KeywordPageService
             ->orderBy('title')
             ->get(['slug', 'title', 'h1', 'emoji', 'matching_offers_count', 'category_slugs']);
 
-        $food = [];
-        $nonFood = [];
+        $medicines = [];
+        $care = [];
         $other = [];
 
         foreach ($pages as $page) {
-            $primary = $this->categoryResolver->resolvePrimaryListingCategorySlugs(
-                (array) ($page->category_slugs ?? []),
-            );
-            $categorySlug = $primary[0] ?? null;
-
-            if (in_array($categorySlug, FoodCategorySlugs::FOOD, true)) {
-                $food[] = $page;
-            } elseif (in_array($categorySlug, FoodCategorySlugs::NON_FOOD, true)) {
-                $nonFood[] = $page;
-            } else {
-                $other[] = $page;
-            }
+            match ($this->keywordGroup($page)) {
+                'medicines' => $medicines[] = $page,
+                'care' => $care[] = $page,
+                default => $other[] = $page,
+            };
         }
 
-        return collect([...$food, ...$nonFood, ...$other])
+        return collect([...$medicines, ...$care, ...$other])
             ->map(fn (KeywordPage $page) => $this->mapPublishedPageSummary($page))
             ->values()
             ->all();
@@ -142,9 +137,7 @@ class KeywordPageService
 
     public function refreshOfferCounts(KeywordPage $page): KeywordPage
     {
-        // Both columns hold the count the page actually lists. Meilisearch's
-        // raw total also counts hits exclude_terms/category drop, and that
-        // inflated number used to show on chips, home links and the page.
+        // Both columns hold the count the page actually lists.
         $displayed = $this->countDisplayedOffersForPage($page);
 
         $page->forceFill([
@@ -185,8 +178,8 @@ class KeywordPageService
             'matching_offers_count' => (int) ($page->matching_offers_count ?? 0),
             // "{Genitive} akcijos" link label, when the caller selected
             // grammar_genitive (listPublishedPagesForCategory() does).
-            'link_label' => ($genitive = trim((string) ($page->getAttributes()['grammar_genitive'] ?? ''))) !== ''
-                ? $this->capitalizeFirst($genitive) . ' akcijos'
+            'link_label' => trim((string) ($page->getAttributes()['grammar_genitive'] ?? '')) !== ''
+                ? $this->capitalizeFirst($this->dynamicMetaService->genitive($page)) . ' akcijos'
                 : $page->title,
         ];
     }
@@ -199,7 +192,7 @@ class KeywordPageService
 
     public function countDisplayedOffersForPage(KeywordPage $page): int
     {
-        return $this->collectMatchingDiscountsCollection($page)->count();
+        return $this->countMatchingOffers($page);
     }
 
     public function buildListingResponse(KeywordPage $page, array $filters): array
@@ -210,11 +203,7 @@ class KeywordPageService
         // always renders (200, indexable): an empty-state notice plus links
         // to close keyword pages that do have offers right now
         // (alternative_pages), and it recovers on its own once offers return.
-        // The shown total is what the page lists after exclude_terms and
-        // category filtering, not Meilisearch's raw total.
-        $allDiscounts = $this->countMatchingOffers($page) > 0
-            ? $this->collectMatchingDiscountsCollection($page)
-            : collect();
+        $allDiscounts = $this->collectMatchingDiscountsCollection($page);
         $matchingTotal = $allDiscounts->count();
         if ($matchingTotal < $page->min_active_offers) {
             $allDiscounts = collect();
@@ -225,17 +214,7 @@ class KeywordPageService
         // A filter (?store=, ?card=...) narrowing to nothing just renders an
         // empty grid — those URLs are noindex anyway, and a 404 here also
         // broke the Livewire filter request.
-        // The listing fetch stops at MAX_LISTING_FETCH hits across all
-        // stores, so on a very large keyword page a store filter ("Mano
-        // vaistinės") applied to that set could miss its own matches.
-        // Then fetch again with the stores in the Meilisearch filter.
-        $source = $allDiscounts;
-        $storeSlugs = array_values(array_filter(array_map('trim', explode(',', (string) ($filters['store'] ?? '')))));
-        if ($storeSlugs !== [] && ! $noOffers && $this->countMatchingOffers($page) > self::MAX_LISTING_FETCH - self::MEILISEARCH_FETCH_BUFFER) {
-            $storeIds = Store::whereIn('slug', $storeSlugs)->pluck('id')->all();
-            $source = $this->collectMatchingDiscountsCollection($page, $storeIds);
-        }
-        $filtered = $this->applyCollectionFilters($source, $filters);
+        $filtered = $this->applyCollectionFilters($allDiscounts, $filters);
         $sorted = $this->sortDiscounts($filtered, (string) ($filters['order'] ?? 'popular'));
         $filteredTotal = $sorted->count();
 
@@ -272,9 +251,15 @@ class KeywordPageService
             ->exists();
     }
 
+    // Whether the discount's product is mapped to the page
+    // (keyword_page_products), loaded once per page per request.
     public function productMatchesKeywordPage(Discount $discount, KeywordPage $page): bool
     {
-        return $this->passesKeywordFilters($discount, $page);
+        $this->mappedProductIds[$page->id] ??= array_flip(
+            KeywordPageProduct::where('keyword_page_id', $page->id)->pluck('product_id')->all()
+        );
+
+        return isset($this->mappedProductIds[$page->id][$discount->product_id]);
     }
 
     /**
@@ -369,8 +354,8 @@ class KeywordPageService
                 // can fill every remaining slot from whichever single store
                 // happens to run the deepest storewide discount (confirmed
                 // live: a "Vanduo" teaser landed all 5 cards on Rimi even
-                // though Maxima/Norfa/Lidl/Iki also had matching products).
-                $priorityRank = array_flip(self::PRIORITY_STORE_NAMES);
+                // though other main chains also had matching products).
+                $priorityRank = array_flip(self::priorityStoreNames());
 
                 $candidates = DiscountHistory::query()
                     ->whereIn('product_id', $productIds)
@@ -474,7 +459,7 @@ class KeywordPageService
     public function refreshHomeTeasers(int $limitPerGroup = 20, int $dealsPerPage = 5): void
     {
         $candidates = $this->topCandidatesByCategoryGroup($limitPerGroup);
-        $pages = collect($candidates['food'])->concat($candidates['non_food'])->unique('id');
+        $pages = collect($candidates['medicines'])->concat($candidates['care'])->unique('id');
 
         $rows = [];
         $now = now();
@@ -532,17 +517,17 @@ class KeywordPageService
             ->with(['product.category', 'store'])
             ->get();
 
-        // Same PRIORITY_STORE_NAMES-first ordering buildStorePriceTable()
+        // Same priorityStoreNames()-first ordering buildStorePriceTable()
         // already uses for the keyword page's own "Kainos pagal vaistinę"
         // table — without it, a teaser capped at 5 stores can silently miss
-        // a main chain (Maxima/Norfa/Lidl/Iki/Rimi) whenever a niche store's
+        // a main chain (config stores.main_slugs) whenever a niche store's
         // match happens to have a bigger discount. Within a store, the
         // primary pick is the biggest discount_percent — per explicit
         // product decision, a teaser's whole point is "best deals", so the
         // headline number here is the discount size, not the lowest absolute
         // price (a €0.30 item at -10% would otherwise beat a €20 item at
         // -60% just for being cheaper in absolute terms).
-        $priorityRank = array_flip(self::PRIORITY_STORE_NAMES);
+        $priorityRank = array_flip(self::priorityStoreNames());
 
         // One card per product — a product discounted in several stores
         // shows once, at its cheapest offer (the card itself already lists
@@ -666,11 +651,10 @@ class KeywordPageService
      * page — restricted to is_chip=true (the existing "worth surfacing as a
      * popular page" flag, same one keyword-chips-row/home already key off)
      * instead of every published page, ranked by matching_offers_count,
-     * split food/non-food using the same FoodCategorySlugs groups
-     * ListingPageMetaService already uses for a store's featured-category
-     * pick — no new categorization scheme.
+     * split into medicines/supplements and care by the page's root category
+     * (config('categories.keyword_medicine_group')).
      *
-     * @return array{food: list<KeywordPage>, non_food: list<KeywordPage>}
+     * @return array{medicines: list<KeywordPage>, care: list<KeywordPage>}
      */
     public function topCandidatesByCategoryGroup(int $limitPerGroup = 20): array
     {
@@ -684,44 +668,57 @@ class KeywordPageService
                 ->orderByDesc('matching_offers_count')
                 ->get();
 
-            $food = [];
-            $nonFood = [];
+            $groups = ['medicines' => [], 'care' => []];
 
             foreach ($pages as $page) {
-                if (count($food) >= $limitPerGroup && count($nonFood) >= $limitPerGroup) {
-                    break;
-                }
-
-                $primary = $this->categoryResolver->resolvePrimaryListingCategorySlugs(
-                    (array) ($page->category_slugs ?? []),
-                );
-                $categorySlug = $primary[0] ?? null;
-
-                if (in_array($categorySlug, FoodCategorySlugs::FOOD, true) && count($food) < $limitPerGroup) {
-                    $food[] = $page;
-                } elseif (in_array($categorySlug, FoodCategorySlugs::NON_FOOD, true) && count($nonFood) < $limitPerGroup) {
-                    $nonFood[] = $page;
+                $group = $this->keywordGroup($page);
+                if ($group !== null && count($groups[$group]) < $limitPerGroup) {
+                    $groups[$group][] = $page;
                 }
             }
 
-            return ['food' => $food, 'non_food' => $nonFood];
+            return $groups;
         });
     }
 
-    private function collectMatchingDiscountsCollection(KeywordPage $page, array $storeIds = []): Collection
+    // 'medicines' or 'care' by the page's root category, null without one.
+    private function keywordGroup(KeywordPage $page): ?string
     {
-        $limit = min(
-            max($this->countMatchingOffers($page) + self::MEILISEARCH_FETCH_BUFFER, self::PER_PAGE),
-            self::MAX_LISTING_FETCH,
-        );
+        $categorySlug = $this->categoryResolver->resolvePrimaryListingCategorySlugs(
+            (array) ($page->category_slugs ?? []),
+        )[0] ?? null;
 
-        $discounts = $this->fetchDisplayedDiscountsFromMeilisearch($page, $limit, $storeIds);
-
-        if ($discounts->isEmpty()) {
-            $discounts = $this->fallbackCollectDisplayedDiscounts($page, $limit);
+        if ($categorySlug === null) {
+            return null;
         }
 
-        return $discounts->values();
+        return in_array($categorySlug, config('categories.keyword_medicine_group', []), true) ? 'medicines' : 'care';
+    }
+
+    // Active offers for the page's mapped products (keyword_page_products,
+    // built by KeywordPageProductMapper), best match first, then the biggest
+    // discount. One indexed query per render; no search engine call.
+    private function collectMatchingDiscountsCollection(KeywordPage $page, array $storeIds = []): Collection
+    {
+        if (! $page->exists) {
+            return collect();
+        }
+
+        return $this->activeMappedDiscountsQuery($page)
+            ->when($storeIds !== [], fn ($query) => $query->whereIn('discounts.store_id', $storeIds))
+            ->with(['product.category', 'store'])
+            ->orderByDesc('keyword_page_products.score')
+            ->orderByDesc('discounts.discount_percent')
+            ->select('discounts.*')
+            ->get();
+    }
+
+    private function activeMappedDiscountsQuery(KeywordPage $page)
+    {
+        return Discount::query()
+            ->join('keyword_page_products', 'keyword_page_products.product_id', '=', 'discounts.product_id')
+            ->where('keyword_page_products.keyword_page_id', $page->id)
+            ->where(fn ($query) => $query->whereNull('discounts.end_at')->orWhere('discounts.end_at', '>=', now()->startOfDay()));
     }
 
     private function sortDiscounts(Collection $discounts, string $order): Collection
@@ -742,40 +739,7 @@ class KeywordPageService
 
     private function countMatchingOffers(KeywordPage $page): int
     {
-        $query = $this->buildSearchQuery($page);
-        if ($query === '') {
-            return $this->fallbackCountMatchingOffers($page);
-        }
-
-        try {
-            $results = $this->meilisearchService->search(
-                $query,
-                $this->buildMeilisearchFilters($this->resolveCategoryIds($page)),
-                [],
-                1,
-                1,
-            );
-
-            return (int) ($results['total'] ?? 0);
-        } catch (\Exception $e) {
-            \Log::warning('Keyword page Meilisearch count failed', [
-                'slug' => $page->slug,
-                'query' => $query,
-                'error' => $e->getMessage(),
-            ]);
-
-            return $this->fallbackCountMatchingOffers($page);
-        }
-    }
-
-    private function buildSearchQuery(KeywordPage $page): string
-    {
-        $terms = array_values(array_filter(array_map(
-            fn ($term) => trim((string) $term),
-            $page->search_terms ?? [],
-        )));
-
-        return implode(' ', $terms);
+        return $page->exists ? $this->activeMappedDiscountsQuery($page)->count() : 0;
     }
 
     private function resolvePrimarySearchTerm(KeywordPage $page): string
@@ -788,105 +752,6 @@ class KeywordPageService
         }
 
         return $page->slug;
-    }
-
-    private function fetchDisplayedDiscountsFromMeilisearch(KeywordPage $page, ?int $maxResults = null, array $storeIds = []): Collection
-    {
-        $limit = $maxResults ?? self::MAX_LISTING_FETCH;
-
-        $query = $this->buildSearchQuery($page);
-        if ($query === '') {
-            return collect();
-        }
-
-        $filters = $this->buildMeilisearchFilters($this->resolveCategoryIds($page));
-        if ($storeIds !== []) {
-            $filters['store_ids'] = $storeIds;
-        }
-
-        try {
-            $results = $this->meilisearchService->search(
-                $query,
-                $filters,
-                [],
-                1,
-                min($limit + self::MEILISEARCH_FETCH_BUFFER, self::MAX_LISTING_FETCH),
-            );
-        } catch (\Exception $e) {
-            \Log::warning('Keyword page displayed deals Meilisearch search failed', [
-                'slug' => $page->slug,
-                'query' => $query,
-                'error' => $e->getMessage(),
-            ]);
-
-            return collect();
-        }
-
-        $discountIds = collect($results['hits'] ?? [])
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->filter()
-            ->values()
-            ->all();
-
-        if (empty($discountIds)) {
-            return collect();
-        }
-
-        $discountsById = Discount::query()
-            ->with(['product.category', 'store'])
-            ->whereIn('id', $discountIds)
-            ->get()
-            ->keyBy('id');
-
-        $ordered = collect();
-        foreach ($discountIds as $discountId) {
-            $discount = $discountsById->get($discountId);
-            if (!$discount || !$this->passesKeywordFilters($discount, $page)) {
-                continue;
-            }
-            $ordered->push($discount);
-            if ($ordered->count() >= $limit) {
-                break;
-            }
-        }
-
-        return $ordered;
-    }
-
-    private function fallbackCollectDisplayedDiscounts(KeywordPage $page, ?int $maxResults = null): Collection
-    {
-        $categoryIds = $this->resolveCategoryIds($page);
-        $discountIds = $this->fallbackSearchDiscountIds($page, $categoryIds);
-
-        if (empty($discountIds)) {
-            return collect();
-        }
-
-        return Discount::query()
-            ->with(['product.category', 'store'])
-            ->whereIn('id', $discountIds)
-            ->get()
-            ->filter(fn (Discount $discount) => $this->passesKeywordFilters($discount, $page))
-            ->take($maxResults ?? self::MAX_LISTING_FETCH)
-            ->values();
-    }
-
-    private function fallbackCountMatchingOffers(KeywordPage $page): int
-    {
-        $categoryIds = $this->resolveCategoryIds($page);
-        $discountIds = $this->fallbackSearchDiscountIds($page, $categoryIds);
-
-        if (empty($discountIds)) {
-            return 0;
-        }
-
-        return Discount::query()
-            ->with(['product.category'])
-            ->whereIn('id', $discountIds)
-            ->get()
-            ->filter(fn (Discount $discount) => $this->passesKeywordFilters($discount, $page))
-            ->count();
     }
 
     private function applyCollectionFilters(Collection $discounts, array $filters): Collection
@@ -917,77 +782,6 @@ class KeywordPageService
 
             return true;
         })->values();
-    }
-
-    private function buildMeilisearchFilters(array $categoryIds): array
-    {
-        if (empty($categoryIds)) {
-            return [];
-        }
-
-        if (count($categoryIds) === 1) {
-            return ['category_id' => $categoryIds[0]];
-        }
-
-        return ['category_ids' => $categoryIds];
-    }
-
-    private function fallbackSearchDiscountIds(KeywordPage $page, array $categoryIds): array
-    {
-        $query = Discount::query()->with(['product']);
-
-        if (!empty($categoryIds)) {
-            $query->whereHas('product', fn ($q) => $q->whereIn('category_id', $categoryIds));
-        }
-
-        $terms = $page->search_terms ?? [];
-        if (empty($terms)) {
-            return [];
-        }
-
-        $query->whereHas('product', function ($q) use ($terms) {
-            $q->where(function ($sub) use ($terms) {
-                foreach ($terms as $term) {
-                    $sub->orWhere('name', 'like', '%' . $term . '%');
-                }
-            });
-        });
-
-        return $query->pluck('discounts.id')->all();
-    }
-
-    private function resolveCategoryIds(KeywordPage $page): array
-    {
-        $slugs = $page->category_slugs ?? [];
-        if (empty($slugs)) {
-            return [];
-        }
-
-        return $this->categoryResolver->resolvePrimaryCategoryTreeIds($slugs);
-    }
-
-    private function passesKeywordFilters(Discount $discount, KeywordPage $page): bool
-    {
-        $productName = mb_strtolower($discount->product?->name ?? '');
-        $brand = mb_strtolower($discount->product?->brand ?? '');
-
-        foreach ($page->exclude_terms ?? [] as $exclude) {
-            $exclude = mb_strtolower(trim((string) $exclude));
-            if ($exclude !== '' && (mb_strpos($productName, $exclude) !== false || mb_strpos($brand, $exclude) !== false)) {
-                return false;
-            }
-        }
-
-        if (!empty($page->category_slugs)) {
-            if (!$this->categoryResolver->productMatchesAllowedCategories(
-                $discount->product?->category,
-                (array) $page->category_slugs,
-            )) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private function buildListingMeta(KeywordPage $page, Collection $displayedDiscounts, int $matchingTotal): array
@@ -1134,13 +928,13 @@ class KeywordPageService
                 ->map(fn (array $row) => e($row['store_name']) . " — {$price($row['min_price'])} (" . e($row['product_name']) . ')')
                 ->implode('; ');
             $faq[] = [
-                'question' => "Kur šią savaitę pigiausi {$genitive} pasiūlymai?",
-                'answer' => "Pigiausiai šią savaitę: {$top}.",
+                'question' => "Kurioje vaistinėje pigiausi {$genitive} pasiūlymai?",
+                'answer' => "Šiuo metu pigiausia: {$top}.",
             ];
         }
 
         $mainChains = collect($table)
-            ->filter(fn (array $row) => in_array($row['store_name'], self::PRIORITY_STORE_NAMES, true))
+            ->filter(fn (array $row) => in_array($row['store_name'], self::priorityStoreNames(), true))
             ->values();
         if ($mainChains->isNotEmpty()) {
             $names = $mainChains->pluck('store_name')->all();
@@ -1431,7 +1225,7 @@ class KeywordPageService
      * per-brand table's guarantee is "top 8 brands", not "every main store",
      * so a main store whose cheapest match happens to have no brand or a
      * low-volume brand can silently vanish from it. This table guarantees a
-     * row for every PRIORITY_STORE_NAMES entry that has any match at all,
+     * row for every priorityStoreNames() entry that has any match at all,
      * still shows the real brand/product per row, and lists any remaining
      * (non-priority) stores afterwards, cheapest first.
      *
@@ -1439,7 +1233,7 @@ class KeywordPageService
      */
     private function buildStorePriceTable(Collection $discounts): array
     {
-        $priorityRank = array_flip(self::PRIORITY_STORE_NAMES);
+        $priorityRank = array_flip(self::priorityStoreNames());
 
         $rows = $discounts
             ->filter(fn (Discount $discount) => (float) $discount->discounted_price > 0)
@@ -1489,7 +1283,7 @@ class KeywordPageService
         $parts = [];
 
         foreach ($storePriceTable as $row) {
-            if (!in_array($row['store_name'], self::PRIORITY_STORE_NAMES, true)) {
+            if (!in_array($row['store_name'], self::priorityStoreNames(), true)) {
                 continue;
             }
 
@@ -1659,7 +1453,7 @@ class KeywordPageService
         $second = $topDeals[1];
 
         return sprintf(
-            'Šią savaitę ryškiausios %s nuolaidos: %s su –%d%% už %s € ir %s (%s).',
+            'Šiuo metu ryškiausios %s nuolaidos: %s su –%d%% už %s € ir %s (%s).',
             mb_strtolower($title),
             $first['name'],
             $first['discount_percent'],
@@ -1673,7 +1467,7 @@ class KeywordPageService
     {
         $storeCount = $discounts->pluck('store_id')->unique()->count();
 
-        return "Šiuo metu stebime {$matchingTotal} aktyvių " . mb_strtolower($page->title) . " akcijų {$storeCount} prekybos tinkluose.";
+        return "Šiuo metu stebime {$matchingTotal} aktyvių " . mb_strtolower($page->title) . " akcijų, kurias siūlo {$storeCount} " . \App\Support\LithuanianPlural::storeWord($storeCount) . '.';
     }
 
     /**
@@ -1681,11 +1475,11 @@ class KeywordPageService
      */
     private function buildStoreKeywordVariants(KeywordPage $page): array
     {
-        $stores = ['Maxima', 'Norfa', 'Rimi', 'Lidl', 'Iki'];
+        $stores = self::priorityStoreNames();
         $base = trim((string) (($page->primary_keywords ?? [])[0] ?? ''));
 
         if ($base === '') {
-            $base = mb_strtolower(trim($page->h1 ?: $page->title)) . ' akcija';
+            $base = mb_strtolower(trim((string) $page->title)) . ' kaina';
         }
 
         $preferredStores = array_slice($stores, 0, 2);
@@ -1762,7 +1556,7 @@ class KeywordPageService
     {
         $breadcrumbs = [
             [
-                'name' => 'Akcijos',
+                'name' => 'Pradžia',
                 'slug' => '/',
                 'type' => 'home',
             ],

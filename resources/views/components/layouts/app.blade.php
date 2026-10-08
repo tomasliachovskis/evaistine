@@ -19,7 +19,7 @@
         // here once instead of in every controller's description builder.
         $metaDescription = trim((string) ($description ?? '')) !== ''
             ? $description
-            : 'Akcijos ir nuolaidos iš Maxima, Lidl, Iki, Rimi ir kitų tinklų vienoje vietoje. Peržiūrėkite šviežiausius savaitės pasiūlymus.';
+            : 'Vaistų kainų palyginimas ir akcijos: ' . \App\Support\StoreListPriority::mainNamesText() . ' ir kitos vaistinės vienoje vietoje.';
         if (mb_strlen($metaDescription) > 158) {
             $metaDescription = rtrim(mb_substr($metaDescription, 0, 155));
             $metaDescription = rtrim(preg_replace('/\s+\S*$/u', '', $metaDescription), " \t.,;:–-") . '…';
@@ -67,7 +67,7 @@
                 'name' => 'eVaistine.lt',
                 'url' => 'https://evaistine.lt',
                 'logo' => 'https://evaistine.lt/assets/logo.svg',
-                'description' => 'Naujausi akcijų ir nuolaidų leidiniai vienoje vietoje. Rask geriausias MAXIMA, IKI, LIDL, NORFA, RIMI ir kitų prekybos tinklų akcijas.',
+                'description' => 'Vaistų kainų ir akcijų palyginimas Lietuvos vaistinėse: nereceptiniai vaistai, vitaminai ir maisto papildai, kosmetika, higiena ir prekės mamai ir vaikui.',
             ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
         </script>
         <script type="application/ld+json">
@@ -91,25 +91,10 @@
 
     @stack('head')
 
-    {{-- Ported from discount/src/app/layout.tsx — never carried over in the
-         Blade rebuild, so GA4 (even automatic page_view events) and Clarity
-         hadn't been recording anything on this site at all. Loaded
-         unconditionally regardless of the cookie-consent banner's choice,
-         same as the original. --}}
-    <script src="https://www.googletagmanager.com/gtag/js?id=G-WD8DH3ZRD3" async></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-WD8DH3ZRD3');
-    </script>
-    <script>
-        (function(c,l,a,r,i,t,y){
-            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-        })(window, document, "clarity", "script", "v3dr99seco");
-    </script>
+    {{-- No analytics (owner, 2026-10-08): the GA4/Clarity tags inherited from
+         superakcijos sent this site's visits to superakcijos' accounts. Only
+         strictly necessary cookies are set, so there is no consent banner
+         either; add both back together (<x-cookie-consent>) with our own IDs. --}}
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -140,7 +125,6 @@
     <x-auth-modal />
     <x-price-watch-modal />
     <x-my-stores-sheet />
-    <x-cookie-consent />
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('authModal', {

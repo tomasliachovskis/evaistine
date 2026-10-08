@@ -48,20 +48,98 @@ website, so no prices; Mano vaistinė's members, whose prices are the shared
 manovaistine.lt shop; Asfarma (site down) and Vaistinė plius ("coming
 soon"). Recheck the VVKT list before launch.
 
-The 7 chains have leaflet scrapers in `scrapers/flyers/`. E-shop scrapers
-don't exist yet (`config/scrapers.php` is empty). Until a store has offers,
-the `/vaistines` directory shows its card with a "Leidiniai" button.
+The 7 chains have leaflet scrapers in `scrapers/flyers/`. Until a store has
+offers, the `/vaistines` directory shows its card with a "Leidiniai" button.
+
+## Leaflets (2026-10-08)
+
+Monthly leaflets for 7 pharmacies, shown page by page; no offers are
+extracted from them (`extract_discounts_from_flyer` is off for all, the
+`/{slug}` price lists come from the e-shops).
+
+| Pharmacy | Source | Dates |
+|---|---|---|
+| Gintarinė | own site | month in the title (`monthRangeFromText()`) |
+| Benu | Issuu flipbook (`reader4.json`) | month in the Issuu docname |
+| N vaistinė | nvaistine.lt/leidiniai (JS page, Puppeteer), PDF link | listing page |
+| Ramunėlės | direct PDF on /akcijos/10 | upload folder month |
+| Camelia | Yumpu direct download PDF | cover OCR |
+| Eurovaistinė, Apotheka | Yumpu page images | Yumpu `validity`, else month in the title |
+
+Yumpu's document JSON (page image list) is behind AWS WAF since 2026-10. A
+plain fetch gets 202/403, plain headless Chrome 403, and stealth Chrome
+opening the `yumpu.com/lt/embed/view/...` URL directly also 403. What works
+(checked 2026-10-08, Eurovaistinė 40 pages, Apotheka 8): stealth Chrome opens
+the pharmacy's own leaflet page (eurovaistine.lt/menesio-leidinys,
+apotheka.lt/leidinys), and the viewer iframe's own `document/json` request
+returns 200. `fetchYumpuDocumentViaPage()` in `scrapers/flyers/_shared.js`
+catches that response; the page images themselves download with a plain
+fetch.
+
+Without a leaflet: Mano vaistinė publishes a monthly leaflet, but only
+aggregators (raskakcija.lt) show it, not manovaistine.lt, so we don't take it.
+The online-only pharmacies (Rx, 100 metų, Piliulė, InternetineVaistine.lt,
+Universiteto, Ąžuolyno, LSMU) publish none. `/leidinys/{slug}` for a pharmacy
+with no current (active, ready, still valid) leaflet 301s to `/{slug}`
+(`LeafletController::hub`), and such pharmacies are left out of the hub's
+"Kitos vaistinės" list and the sitemap. The page comes back by itself when a
+leaflet is ready.
+
+Copy: leaflet titles come from `StoreFlyerTitleBuilder` (no "Naujas ...
+nuolaidų leidinys -" prefix; all-caps words lowercased; a title that doesn't
+name the pharmacy gets "{genitive} leidinys „...“"). Hub/index headings and
+meta use the genitive (`PharmacyName::phrase`), and `/leidiniai` names only
+chains with a current leaflet (`StoreListPriority::leafletChainsGenitiveText`).
+The `store-leaflet` GPT prompt no longer claims we collect the leaflet's
+products.
 
 A new pharmacy needs: a migration (name, slug, `show_discounts_page`), its
 entry in `config('stores.stores')` with the website, case forms in
 `config('stores.name_forms')` if the name contains "vaistinė" (a unit test
 fails otherwise), and its real logo at `public/assets/stores/{slug}.svg`.
 
-Eurovaistinė's category pages carry the full product JSON in the HTML (name,
-EAN in `sku`, `price`/`regularPrice` in cents, `ev_large` image, `slug`).
-That's the starting point for its e-shop scraper.
+## E-shop scrapers (written 2026-10-06)
+
+13 scrapers in `scrapers/`, registered in `config/scrapers.php`. They take
+the full non-prescription catalog, use plain HTTP (no Puppeteer: every shop
+has either an open JSON endpoint or server-rendered HTML) and share
+`scrapers/lib/pharmacy.js`: the Monday–Sunday validity week (no pharmacy
+publishes dates), GTIN check-digit validation, retries with a long pause on
+429, the POST, and the env switches for test runs. Test without writing to
+the DB:
+
+    ./vendor/bin/sail bash -c 'SCRAPER_DRY_RUN=1 SCRAPER_MAX_PAGES=1 SCRAPER_ONLY=<category> node scrapers/<store>.js'
+
+| Pharmacy | Source | EAN | Note |
+|---|---|---|---|
+| Eurovaistinė | JSON `api.eurovaistine.lt/eshop-api/luigi/search/api/taxon/render` | ~30 %, from `sku` | 12-digit `sku` is the EAN-13 without its check digit; 6–7 digits are internal codes |
+| Gintarinė | HTML, first-level categories, 20 a page | product page (`itemprop="gtin"`), cached | rate-limits by User-Agent (429 for ~1 h after parallel requests) |
+| Camelia | JSON `api.camelia.lt/api/v2/shop/search/products` | ~97 % | `prescriptionMedicine` flag, loyalty price = `card` |
+| Benu | Luigi's Box `live.luigisbox.com/search`, tracker `232949-269214` | ~90 % | one main category per query (10 000-hit cap), `drugType` RX skipped |
+| Apotheka | HTML (Magento, GraphQL off), 34 a page, `?cat=` subcategories | product page JSON-LD, cached | |
+| InternetineVaistine.lt | HTML + JSON-LD `gtin13` | ~99 % | send `Accept: text/html`, or the shop answers with a JSON fragment |
+| Mano vaistinė | HTML, `/{category}/{n}-psl`, 63 a page | product page, cached | medicines filtered with `?attrib[8]=2` (non-prescription) |
+| 100 metų vaistinė | JSON `productsdata?cat=0`, paged with `Range: 0-199` | ~95 % | Ramunėlės' online shop |
+| Rx vaistinė | HTML (PrestaShop), `?resultsPerPage=500` | in the product URL | |
+| LSMU vaistinė | HTML + JSON-LD | ~35 % | only cosmetics, herbal teas, aromatherapy; mostly its own products |
+| Piliulė, Universiteto vaistinė | HTML (Verskis, `scrapers/lib/verskis.js`) | none | small shops; sold-out products skipped (almost all of Piliulė's) |
+| Ąžuolyno vaistinė | WooCommerce Store API | none | ~170 products |
+
+The small shops (Piliulė, LSMU, Ąžuolyno) are shown like the big chains (owner's decision, 2026-10-08), even with few offers.
+
+N vaistinė and Ramunėlės vaistinė have no e-shop: their "buy online" links
+go to gintarine.lt and 100metu.lt.
+
+Where the barcode is only on the product page, `loadEanCache()` keeps
+product URL -> EAN in `storage/app/scrapers/ean-{store}.json` and fetches at
+most `SCRAPER_EAN_LIMIT` (default 1500) new pages per run, one at a time, so
+the first runs post some rows without an EAN and the cache fills over a few
+nights. Product categories are sent as `Root/Subcategory` from each shop's
+own tree, ready for `categories:map-mappers`.
 
 ## Wording: "vaistinė", not "parduotuvė"
+
+Page copy rules and the GPT prompt rules ("vaistų kainos", SEO headings, no prescription mentions, YMYL) are in `docs/copy-and-prompts.md`.
 
 Every URL and text says vaistinė: `/vaistines`, `/vaistines/{slug}/{city}`,
 `POST /mano-vaistines`, "Visos vaistinės", "Kainos vaistinėse". The two
@@ -150,9 +228,17 @@ non-prescription medicines.
   superakcijos. They hold the navy palette now.
 - Discount badges use `--color-deal` (raspberry `#b5125e`, white text 6.5:1),
   through `bg-deal text-deal-foreground`. Never hardcode a badge color.
-- Logo (`public/assets/logo.svg`, `logo-white.svg`): navy rounded tile with a
-  green pharmacy cross (`#58A618`), wordmark "eVaistine" navy and ".lt" green,
-  outlined from Inter 600. Green appears only in the logo and favicon.
+- Logo (`public/assets/logo.svg`, `logo-white.svg`), recolored 2026-10-08:
+  mid-blue `#2b5ba8` rounded tile with a white cross, wordmark "eVaistine"
+  navy `#0f234a` and ".lt" mid-blue, outlined from Inter 600. `logo-white.svg`
+  (navy footer, email headers) is a white tile with a mid-blue cross, white
+  wordmark and ".lt" `#9db8e3` (mid-blue is too dark on navy). The old
+  pharmacy green `#58A618` was dropped because no other part of the site used
+  it. Variants compared: navy mono, mid-blue tile (picked), raspberry ".lt", and
+  a two-tone "e". Keep the cross white or blue. A red or raspberry cross on a
+  light background is too close to the protected Red Cross emblem.
+  `public/favicon.ico` (16/32/48) is the tile and cross alone. It was rendered
+  with `rsvg-convert` and packed with PHP Imagick inside the Sail container.
 - The site keeps superakcijos' older-reader rules (`docs/ui-older-readers.md`).
 
 ## Fresh-DB schema
@@ -162,6 +248,28 @@ changed by hand). `2026_10_06_130000_align_schema_with_production` makes a
 fresh DB match it column for column: `discount_temp` keeps raw strings and a
 store *name* (`store`, not `store_id`), and prices, dates and category ids are
 nullable. Without it every real scraper row was rejected.
+
+## Removed grocery features (2026-10-08)
+
+Owner's call: keep `/pradzia-beta` (HomeBeta) and `/pigiausios-prekes`, drop
+the rest of the superakcijos leftovers.
+- Coupons (`/kuponai`): controller, views, models, Filament resources and
+  sitemap entries removed; tables dropped by
+  `2026_10_08_130000_drop_coupon_tables` (both were empty).
+- `resources/views/welcome.blade.php` (unused Laravel stub) and the alcohol
+  age-check modal (only for `alkoholiniai-gerimai`) removed.
+- `FoodCategorySlugs` removed, with the food-only code around it: the
+  "Maisto prekės" featured block and "Maisto prekėms / Chemijai / Namams"
+  most-saved block in `ListingPageMetaService` (no view rendered them), the
+  food filter of store top categories, the flyer page's "2 most common food
+  categories" filter (now any 2 categories) and the food preference in
+  `topFlyerDiscounts()`. `DealPoolRefresher` builds one `home_best` pool from
+  every root category (max 4 per category); `home_food`/`home_non_food` are
+  gone (`HomePageSectionsService` returns them empty for the unrouted old
+  `home.blade.php`). `/akcijos` keeps its per-category carousels.
+- Breadcrumb root is "Pradžia" → `/` everywhere (was "Akcijos", from
+  superakcijos, where the home page was the offers). The product page cache
+  key went to `product_with_similar_v15_` so cached product pages pick it up.
 
 ## Safety: nothing reaches superakcijos.lt
 
@@ -175,6 +283,72 @@ nullable. Without it every real scraper row was rejected.
   database (`vaistines`). A copied `.env` with `COMPOSE_PROJECT_NAME=nuolaidos`
   once recreated the superakcijos containers on this checkout, so check that
   line first in any new copy.
+- The deploy scripts still carry superakcijos' server (`deploy@84.247.186.143`,
+  `/var/www/api`) and `deploy/supervisor-nuolaidos-*.conf`. Change them to the
+  eVaistine server before removing the guard line.
+- No analytics: the GA4 (`G-WD8DH3ZRD3`) and Clarity (`v3dr99seco`) tags in the
+  layout were superakcijos' accounts and were removed 2026-10-08 (owner: "kol
+  kas be analitikos"). The footer's Facebook link (`profile.php?id=61586857013836`)
+  is probably superakcijos' page too, so check it before launch.
+
+## Cache namespace (fixed 2026-10-08)
+
+`/leidiniai` kept showing an old empty list although `CacheVersion::bump('flyers')`
+ran. The cause: `REDIS_PREFIX` and `CACHE_PREFIX` defaulted from `APP_NAME`, and
+the web process (`artisan serve --no-reload`, which reads `.env` only at start)
+had started while `APP_NAME` was still `vaistines`. Web read and wrote
+`vaistines_database_vaistines_cache*`, CLI (scrapers, commands, bumps)
+`evaistinelt_database_evaistinelt_cache*`, so no CLI bump ever reached the site.
+Both prefixes are now pinned in `.env`/`.env.example`
+(`REDIS_PREFIX=evaistinelt_database_`, `CACHE_PREFIX=evaistinelt_cache`, the
+values CLI and queues already used). The production `.env` needs the same two
+lines. After changing `.env` locally, restart the app container
+(`./vendor/bin/sail restart laravel.test`); in production `deploy.sh` runs
+`config:cache`.
+
+## Legal (2026-10-08)
+
+Not legal advice; the texts should still go past a lawyer before launch.
+
+How others do it: medizinfuchs.de (German medicine price comparison) says it is
+"keine Apotheke, kein Hersteller oder Lieferant", that orders, delivery and
+pharmaceutical advice are "ausschließlich" the pharmacy's, that it isn't liable
+for the correctness or timeliness of outside data, and that its product info
+"ersetzen nicht Packungsbeilage ... oder Beratung durch Arzt oder Apotheke".
+It asks users to report wrong prices. Lithuanian comparison sites (pricer.lt,
+kainos.lt) show medicines with no special notice. Lithuanian advertising rules
+for non-prescription medicines shown to the public require "Prašome įdėmiai
+perskaityti pakuotės lapelį ir vaistą vartoti kaip nurodyta. Netinkamai
+vartojamas vaistas gali pakenkti Jūsų sveikatai". Directive 2001/83 art. 86(2)
+does not count price lists without product claims as advertising, but our
+keyword pages and generated copy could be read as advertising, so we show the
+text anyway.
+
+What the site shows:
+- `<x-pharmacy-disclaimer>` in the footer on every page: a comparison site, not
+  a pharmacy; the pharmacy is responsible for the product, price and delivery;
+  prices may be out of date; no medical advice. It links to the terms.
+- `<x-product-notice :category-slug>`: the medicine text for the
+  `nereceptiniai-vaistai` root and a food-supplement text for
+  `vitaminai-ir-maisto-papildai`. It appears on product pages (bottom of the
+  hero card) and on category and keyword pages (keyword pages use their first
+  `keyword_categories` slug). Store pages mix categories and get the footer only.
+- Product offers line: "Pirksite pasirinktos vaistinės svetainėje, už prekę,
+  kainą ir pristatymą atsako vaistinė."
+- `/naudojimosi-taisykles` (new, `static/terms.blade.php`), rewritten
+  `/privatumo-politika`. The operator is written as "eVaistine.lt valdytojas"
+  (owner's choice; no company details). The privacy policy lists what is really
+  stored: account (email, Google/Facebook login), favorites and chosen
+  pharmacies, email subscriptions (consent), search log with IP (12 months,
+  pruned daily by `model:prune` on `SearchResult`), and server logs (30 days, to
+  be set up on the server). Only strictly necessary cookies are set, so the
+  consent banner (`<x-cookie-consent>`) is off; put it back together with any
+  analytics.
+- Generated copy was checked for health claims (gydo, padeda nuo, malšina,
+  saugus, ...) in keyword pages, category, store and store-category
+  descriptions. The 44 hits were all about price comparison or real product
+  names. Product descriptions are empty for now; check them the same way once
+  generated.
 
 ## Roadmap (estimate from 2026-10-06, days of work with Claude)
 
@@ -188,7 +362,7 @@ nullable. Without it every real scraper row was rejected.
 | 5 | Copy and SEO: GPT prompts, meta templates, schema, static pages, emails | 2–3 | |
 | 6 | Design: palette, logo, favicon, OG images, hero | 1–2 | palette/logo done |
 | 7 | Pharmacy keyword pages | 1–2 | |
-| 8 | Legal: prescription rules, disclaimer, no treatment claims | 0.5 + lawyer | |
+| 8 | Legal: prescription rules, disclaimer, no treatment claims | 0.5 + lawyer | texts done 2026-10-08, lawyer review left |
 | 9 | Full scrape, deploy, GSC, sitemap, IndexNow | 1 | |
 
 Total about 15–22 working days; a usable MVP (categories, three main

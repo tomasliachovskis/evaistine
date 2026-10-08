@@ -377,6 +377,11 @@ use App\Support\ProductPageMeta;
                     @endif
 
                 </div>
+
+                <x-product-notice
+                    :category-slug="$product['category']['slug'] ?? config('categories.roots')[$product['category']['name'] ?? ''] ?? null"
+                    class="mt-4 sm:mt-5"
+                />
             </div>
         </div>
 
@@ -431,7 +436,7 @@ use App\Support\ProductPageMeta;
         @if ($hasOffers)
             <section id="offers" class="base-container scroll-mt-40 pb-6 pt-3 sm:pt-4 lg:pt-5">
                 <h2 class="mb-1 text-lg font-bold text-gray-900">{{ \App\Support\ProductPageMeta::offersHeading() }}</h2>
-                <p class="mb-4 text-sm text-gray-500">Palyginome {{ $offerGroups->count() }} {{ $offerGroups->count() === 1 ? 'vaistinės pasiūlymą' : 'vaistinių pasiūlymus' }}.</p>
+                <p class="mb-4 text-sm text-gray-500">Palyginome {{ $offerGroups->count() }} {{ $offerGroups->count() === 1 ? 'vaistinės pasiūlymą' : 'vaistinių pasiūlymus' }}. Pirksite pasirinktos vaistinės svetainėje, už prekę, kainą ir pristatymą atsako vaistinė.</p>
 
                 {{-- Ported from product-store-offer-card.tsx (via
                      ProductStoreOffersSection/buildStoreGroups) — one card per

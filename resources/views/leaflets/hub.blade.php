@@ -118,7 +118,7 @@
             <section aria-labelledby="hub-flyer-offers-heading">
                 <div class="section-heading-row">
                     <h2 id="hub-flyer-offers-heading" class="section-heading">
-                        Naujausio {{ $storeName }} {{ $storeSlug === 'iki' ? 'leidynio' : 'leidinio' }} akcijos
+                        Naujausio {{ \App\Support\PharmacyName::phrase($storeName, 'genitive') }} {{ $storeSlug === 'iki' ? 'leidynio' : 'leidinio' }} akcijos
                         <span class="font-normal text-gray-500">({{ $flyerOffers['total'] }})</span>
                     </h2>
                 </div>
@@ -202,7 +202,7 @@
                         <h2 class="text-base font-extrabold text-gray-900 sm:text-lg">Kitos vaistinės</h2>
                         <div class="mt-2 flex flex-wrap gap-2">
                             @foreach ($otherStores as $otherStore)
-                                <a href="{{ $otherStore['href'] }}" class="rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:border-gray-300 hover:bg-gray-50 min-h-12 inline-flex items-center">{{ $otherStore['name'] }} leidinys</a>
+                                <a href="{{ $otherStore['href'] }}" class="rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:border-gray-300 hover:bg-gray-50 min-h-12 inline-flex items-center">{{ $otherStore['name_genitive'] ?? $otherStore['name'] }} leidinys</a>
                             @endforeach
                         </div>
                     </div>

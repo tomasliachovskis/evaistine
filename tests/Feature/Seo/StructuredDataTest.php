@@ -167,7 +167,7 @@ class StructuredDataTest extends TestCase
 
         $breadcrumbs = $this->getJson('/api/search/pienas')->assertOk()->json('breadcrumbs');
 
-        $this->assertSame(['Akcijos', 'Paieška'], array_column($breadcrumbs, 'name'));
+        $this->assertSame(['Pradžia', 'Paieška'], array_column($breadcrumbs, 'name'));
         $this->assertSame('paieska/pienas', end($breadcrumbs)['slug']);
     }
 
@@ -216,22 +216,23 @@ class StructuredDataTest extends TestCase
         $this->assertTrue($images[0]['representativeOfPage']);
     }
 
-    public function test_leaflet_page_title_leads_with_bare_store_name(): void
+    public function test_leaflet_page_title_names_the_pharmacy_in_the_genitive(): void
     {
-        $store = Store::factory()->create(['name' => 'Seo Leidiniai', 'slug' => 'seo-leidiniai']);
-        $this->createFlyer($store, 'seo-ne-maisto', '2026-09-21', '2026-09-27', [
-            'title' => 'NE MAISTO PREKIŲ PASIŪLYMAI',
+        $store = Store::factory()->create(['name' => 'Seo Ramunė', 'slug' => 'seo-ramune']);
+        $this->createFlyer($store, 'seo-rudens', '2026-09-21', '2026-09-27', [
+            'title' => 'RUDENS PASIŪLYMAI',
             'issue_number' => 39,
         ]);
 
-        $response = $this->get("/leidinys/{$store->slug}/seo-ne-maisto");
+        $response = $this->get("/leidinys/{$store->slug}/seo-rudens");
 
+        // A themed all-caps title gets the pharmacy in front, in the
+        // genitive, and is lowercased; no "Naujas ... nuolaidų leidinys -".
         $this->assertSame(
-            'Seo Leidiniai NE MAISTO PREKIŲ PASIŪLYMAI Nr.39 – 2026.09.21–2026.09.27 | eVaistine.lt',
+            'Seo Ramunė vaistinės leidinys „Rudens pasiūlymai“ Nr.39 – 2026.09.21–2026.09.27 | eVaistine.lt',
             $this->seoHead($response)['title']
         );
-        // H1 keeps the builder's own wording.
-        $response->assertSee('Naujas Seo Leidiniai nuolaidų leidinys - NE MAISTO PREKIŲ PASIŪLYMAI Nr.39', false);
+        $response->assertSee('Seo Ramunė vaistinės leidinys „Rudens pasiūlymai“ Nr.39', false);
     }
 
     public function test_news_article_has_news_article_schema(): void

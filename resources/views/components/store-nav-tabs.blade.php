@@ -1,4 +1,4 @@
-@props(['storeSlug', 'leafletsCount', 'totalOffers', 'categories' => [], 'featuredCategory' => null, 'allCategoriesCount' => null, 'ariaLabel', 'active' => 'leidiniai', 'currentCategory' => null])
+@props(['storeSlug', 'leafletsCount', 'totalOffers', 'categories' => [], 'allCategoriesCount' => null, 'ariaLabel', 'active' => 'leidiniai', 'currentCategory' => null])
 
 @php
     // Matches the mockup's .nav-tabs-row exactly: always exactly 3 items —

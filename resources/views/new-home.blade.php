@@ -4,55 +4,44 @@
          redirect pattern as akcijos/search-form.blade.php) — search is the
          primary action here, not an afterthought. --}}
     <div class="relative overflow-hidden border-b border-gray-100 bg-green/5">
-        <div class="base-container relative z-10 mx-auto flex flex-col items-center gap-4 py-6 text-center sm:py-8">
-            {{-- Dot inline with the text, so it stays with the first word
-                 when the line wraps on narrow phones. --}}
-            <span class="text-sm font-extrabold uppercase tracking-wide text-dark-green">
-                <span class="mr-1.5 inline-block size-1.5 rounded-full bg-action align-middle"></span>Akcijos ir nuolaidos Lietuvoje
-            </span>
-            <h1 class="max-w-2xl font-extrabold text-gray-900">Kur pigiausia pirkti — palyginome už tave</h1>
-            <p class="max-w-xl text-base leading-snug text-gray-600 sm:text-lg">
-                {{-- 20 is a static number by explicit product decision, not
-                     derived from active_store_count anymore. --}}
-                Palygink kasdienių prekių kainas Maxima, Lidl, Iki, Rimi, Norfa ir dar 20+ vaistinių.
-            </p>
+        {{-- Kept short on purpose (owner, 2026-10-08): heading, search,
+             popular keyword links (desktop only) and pharmacy logos. Phones
+             keep the compact version (gap-3 py-5, no keyword line). --}}
+        @php
+            $pharmacies = array_column(config('stores.stores', []), 'name', 'slug');
+            $pharmacyCount = count($pharmacies);
+            $heroKeywords = ['vitaminas-d' => 'Vitaminas D', 'ibuprofenas' => 'Ibuprofenas', 'magnis' => 'Magnis', 'nosies-purskalas' => 'Nosies purškalas', 'omega-3' => 'Omega-3'];
+        @endphp
+        <div class="base-container relative z-10 mx-auto flex flex-col items-center gap-3 py-5 text-center sm:gap-5 sm:py-10">
+            {{-- H1 is the main query ("vaistų kainų palyginimas", same as the
+                 meta title, from HomePageMetaService); the hero must not
+                 reuse superakcijos' wording (docs/copy-and-prompts.md).
+                 Pharmacy count from config('stores.stores'), not the live
+                 active-store count. --}}
+            <h1 class="max-w-2xl font-extrabold text-gray-900">
+                {{ $seo['h1'] ?? 'Vaistų kainų palyginimas' }}
+                <span class="mt-1 block text-lg font-semibold text-gray-600 sm:text-xl">{{ $pharmacyCount }} {{ \App\Support\LithuanianPlural::storeWord($pharmacyCount) }} kainos vienoje vietoje<span class="hidden sm:inline"> · atnaujinama kasdien</span></span>
+            </h1>
 
             <x-search-box />
 
-            {{-- Lets someone start comparing without typing anything —
-                 straight to real keyword pages, same ones the search box
-                 itself would land on for these terms. --}}
-            <div class="hidden flex-wrap items-center justify-center gap-2 sm:flex">
-                @foreach (['kava' => 'Kava', 'sviestas' => 'Sviestas', 'pienas' => 'Pienas', 'kiausiniai' => 'Kiaušiniai'] as $slug => $label)
-                    <a href="/{{ $slug }}" class="rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:border-green hover:text-dark-green min-h-12 inline-flex items-center">
-                        {{ $label }}
-                    </a>
+            {{-- Popular keyword pages as one light text line (desktop). --}}
+            <p class="hidden flex-wrap items-center justify-center gap-x-1 text-base text-gray-600 sm:flex">
+                <span>Dažnai ieškoma:</span>
+                @foreach ($heroKeywords as $slug => $label)
+                    <a href="/{{ $slug }}" class="inline-flex min-h-12 items-center px-1 font-semibold text-dark-green underline underline-offset-4 hover:no-underline">{{ $label }}</a>@if (! $loop->last)<span aria-hidden="true">·</span>@endif
                 @endforeach
-            </div>
-
-            <p class="text-sm text-gray-500 sm:text-base">
-                {{-- Rounded down to the nearest thousand — the exact live
-                     count changes minute to minute, so a precise-looking
-                     "15 033+" read as an odd, oddly-specific number. --}}
-                <strong class="text-gray-700 tabular-nums">{{ number_format((int) floor($stats['total_deals'] / 1000) * 1000, 0, '', ' ') }}+</strong> aktyvių akcijų šiuo metu
-                <span class="hidden sm:inline">
-                    · <strong class="text-gray-700 tabular-nums">{{ $stats['new_today_count_label'] }}</strong> naujų šiandien
-                </span>
             </p>
 
-            {{-- Trust row — real logos of the 5 main chains the subtitle
-                 above already names, so the pitch isn't just a text claim.
-                 Horizontally scrollable on mobile instead of wrapping, same
-                 "don't grow the hero" reasoning as everything else here. --}}
-            <div class="flex w-full max-w-xl flex-col items-center gap-2">
-                <div class="scroll-cards-x flex w-full items-center justify-start gap-2 sm:justify-center sm:flex-wrap">
-                    @foreach (\App\Support\StoreListPriority::mainSlugs() as $slug)
-                        <a href="/{{ $slug }}" data-ga-event="filter_select" data-ga-item="store:{{ $slug }}" data-ga-source="home_trust_row" class="flex min-h-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 transition-colors hover:border-green/40">
-                            <x-store-logo :slug="$slug" size="sm" />
-                        </a>
-                    @endforeach
-                    <a href="/vaistines" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="home_trust_row" class="inline-flex min-h-12 shrink-0 items-center whitespace-nowrap px-3 text-base font-semibold text-dark-green underline underline-offset-4 hover:no-underline">+20 kitų</a>
-                </div>
+            {{-- Real logos of the main chains (alt = the pharmacy's name).
+                 One row from sm: up; horizontally scrollable on phones. --}}
+            <div class="scroll-cards-x flex w-full max-w-3xl items-center justify-start gap-2 sm:justify-center">
+                @foreach (\App\Support\StoreListPriority::mainSlugs() as $slug)
+                    <a href="/{{ $slug }}" data-ga-event="filter_select" data-ga-item="store:{{ $slug }}" data-ga-source="home_trust_row" class="flex min-h-12 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white px-3 transition-colors hover:border-green/40">
+                        <x-store-logo :slug="$slug" :name="$pharmacies[$slug] ?? ''" size="sm" />
+                    </a>
+                @endforeach
+                <a href="/vaistines" data-ga-event="filter_select" data-ga-item="store:all" data-ga-source="home_trust_row" class="inline-flex min-h-12 shrink-0 items-center whitespace-nowrap px-3 text-base font-semibold text-dark-green underline underline-offset-4 hover:no-underline">+{{ max(0, $pharmacyCount - count(\App\Support\StoreListPriority::mainSlugs())) }} kitų</a>
             </div>
         </div>
     </div>
@@ -162,10 +151,9 @@
 
             <div class="flex flex-wrap gap-x-6 gap-y-2 border-t border-gray-200 pt-5 text-base text-gray-600">
                 <span><strong class="text-gray-900 tabular-nums">{{ $stats['total_deals_label'] }}</strong> aktyvios akcijos</span>
-                {{-- 40 is a static number by explicit product decision, same
-                     reasoning as the hero subtitle's "20 kitų vaistinių" —
-                     not derived from active_store_count. --}}
-                <span><strong class="text-gray-900 tabular-nums">40</strong> vaistinės su akcijomis ir leidiniais</span>
+                {{-- Same config count as the hero subtitle. --}}
+                @php($pharmacyCount = count(config('stores.stores', [])))
+                <span><strong class="text-gray-900 tabular-nums">{{ $pharmacyCount }}</strong> {{ \App\Support\LithuanianPlural::storeWord($pharmacyCount) }} su akcijomis ir leidiniais</span>
                 @if ($stats['top_discount_percent'])
                     <span><strong class="text-gray-900 tabular-nums">{{ $stats['top_discount_percent'] }}%</strong> didžiausia nuolaida šiandien</span>
                 @endif

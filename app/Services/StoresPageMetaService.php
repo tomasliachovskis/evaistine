@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Discount;
 use App\Models\Store;
+use App\Support\PharmacyName;
+use App\Support\StoreListPriority;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -56,11 +58,13 @@ class StoresPageMetaService
         // Batched once for the whole collection (not per-store inside the
         // map below) — this method also feeds /vaistines, where $stores
         // can be every store site-wide, not just the homepage's 5.
+        // Only leaflets a visitor can open (a pending one has no pages yet,
+        // and its store's /leidinys page still redirects).
         $leafletCounts = \App\Models\StoreFlyer::query()
             ->whereIn('store_id', $stores->pluck('id'))
-            ->where(function ($query) {
-                $query->whereNull('valid_to')->orWhere('valid_to', '>=', now()->startOfDay());
-            })
+            ->active()
+            ->ready()
+            ->currentlyValid()
             ->selectRaw('store_id, count(*) as aggregate')
             ->groupBy('store_id')
             ->pluck('aggregate', 'store_id');
@@ -113,8 +117,8 @@ class StoresPageMetaService
             'seo' => [
                 'h1' => 'Vaistinių akcijos Lietuvoje',
                 'intro' => "Akcijų leidiniai ir nuolaidos iš {$topNames} bei kitų Lietuvos vaistinių. Pasirinkite vaistinę žemiau.",
-                'meta_title' => 'Vaistinių akcijos ir leidiniai – Maxima, Lidl, Iki, Rimi',
-                'meta_description' => "Visų {$storeCount} prekybos tinklų akcijų leidiniai: {$topNames}. Palyginkite savaitės nuolaidas vienoje vietoje.",
+                'meta_title' => 'Vaistinių akcijos ir leidiniai – ' . StoreListPriority::mainNamesText(3),
+                'meta_description' => "Visų {$storeCount} vaistinių akcijos ir leidiniai: {$topNames}. Palyginkite kainas ir nuolaidas vienoje vietoje.",
             ],
             'best_offers' => [
                 'title' => 'Geriausi pasiūlymai pagal vaistinę',
@@ -127,7 +131,7 @@ class StoresPageMetaService
     private function formatStoreList(array $names): string
     {
         if (count($names) === 0) {
-            return 'Maxima, Lidl, Iki, Rimi';
+            return StoreListPriority::mainNamesText(4);
         }
         if (count($names) === 1) {
             return $names[0];
@@ -145,24 +149,24 @@ class StoresPageMetaService
     {
         return [
             [
-                'question' => 'Kur rasti Maxima akcijas?',
-                'answer' => 'Maxima akcijas rasite paspaudę Maxima kortelę arba nuorodą „Maxima akcijos“. Visos aktyvios nuolaidos atnaujinamos pagal naujausius leidinius.',
+                'question' => 'Kur rasti ' . ($exampleGenitive = PharmacyName::phrase($exampleName = array_values(StoreListPriority::mainNames(1))[0] ?? 'Eurovaistinė', 'genitive')) . ' akcijas?',
+                'answer' => mb_ucfirst($exampleGenitive) . ' akcijas rasite paspaudę ' . PharmacyName::phrase($exampleName, 'genitive') . ' kortelę šiame sąraše. Visos aktyvios nuolaidos atnaujinamos kasdien.',
             ],
             [
                 'question' => 'Ar eVaistine.lt rodo visas Lietuvos vaistines?',
-                'answer' => 'Taip – stebime pagrindinius prekybos tinklus: Maxima, Lidl, Iki, Rimi, Norfa, Aibė ir kitus. Sąrašas nuolat plečiamas.',
+                'answer' => 'Stebime didžiuosius vaistinių tinklus (' . StoreListPriority::mainNamesText() . ') ir internetines vaistines, turinčias leidimą prekiauti nuotoliniu būdu. Sąrašas nuolat plečiamas.',
             ],
             [
                 'question' => 'Kaip dažnai atnaujinamos vaistinių akcijos?',
-                'answer' => 'Akcijos atnaujinamos kasdien. Savaitės leidiniai paprastai galioja nuo pirmadienio – kainos keičiasi kiekvieną savaitę.',
+                'answer' => 'Kainas ir akcijas tikriname kasdien. Vaistinių leidiniai dažniausiai galioja kelias savaites ar mėnesį, o atskiros akcijos gali keistis dažniau.',
             ],
             [
                 'question' => 'Ar galiu palyginti kainas tarp vaistinių?',
-                'answer' => 'Taip. Pasirinkite kategoriją, pvz. vaisiai ir daržovės, ir palyginkite akcijas Maxima, Lidl, Iki ir kituose tinkluose vienoje vietoje.',
+                'answer' => 'Taip. Pasirinkite kategoriją, pvz. vitaminai ir maisto papildai, ir palyginkite visų vaistinių akcijas vienoje vietoje. Atidarę prekę matysite jos kainą kiekvienoje vaistinėje.',
             ],
             [
                 'question' => 'Kuo skiriasi vaistinės ir kategorijos puslapiai?',
-                'answer' => 'Vaistinės puslapyje matote vieno tinklo akcijas. Kategorijos puslapyje – tos pačios prekės akcijas visuose tinkluose.',
+                'answer' => 'Vaistinės puslapyje matote vienos vaistinės akcijas. Kategorijos puslapyje – tos kategorijos akcijas visose vaistinėse.',
             ],
         ];
     }

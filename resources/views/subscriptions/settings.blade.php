@@ -72,7 +72,7 @@
 
             <section class="flex flex-col gap-3">
                 <h2 class="text-xl font-bold">Kurių vaistinių?</h2>
-                <p class="text-base text-gray-700">Nepažymėjus jokios, siųsime Maxima, Norfa, Lidl, Rimi ir Iki.</p>
+                <p class="text-base text-gray-700">Nepažymėjus jokios, siųsime {{ \App\Support\StoreListPriority::mainNamesText() }}.</p>
                 <template x-for="slug in picked" :key="slug">
                     <input type="hidden" name="stores[]" :value="slug">
                 </template>

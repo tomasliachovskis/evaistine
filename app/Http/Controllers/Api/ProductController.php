@@ -469,7 +469,7 @@ class ProductController extends Controller
 
     public function getStores()
     {
-        $cacheKey = 'stores_'.CacheVersion::suffix(['discounts']);
+        $cacheKey = 'stores_'.CacheVersion::suffix(['discounts', 'flyers']);
 
         $payload = Cache::remember($cacheKey, 3600, function () {
             $stores = \App\Models\Store::select('id', 'name', 'slug', 'show_discounts_page')
@@ -817,7 +817,7 @@ class ProductController extends Controller
         // cached — v13->v14: similar-products tier 1+2 could combine past
         // the intended 10-item cap with nothing to trim it back down)
         // would otherwise linger for up to a week after deploy.
-        return "product_with_similar_v14_{$slug}";
+        return "product_with_similar_v15_{$slug}";
     }
 
     public function resolveDiscountsCacheKey($storeOrCategory, $category = null): string
@@ -1057,7 +1057,7 @@ class ProductController extends Controller
     {
         $breadcrumbs = [
             [
-                'name' => 'Akcijos',
+                'name' => 'Pradžia',
                 'slug' => '/',
                 'type' => 'home',
             ],
@@ -1066,7 +1066,7 @@ class ProductController extends Controller
         switch ($type) {
             case 'store_leaflet':
                 // Leidiniai section has its own root ("Leidiniai" -> /leidiniai)
-                // instead of the generic "Akcijos" home crumb every other case
+                // instead of the generic "Pradžia" home crumb every other case
                 // uses — this section isn't reached via /akcijos at all, and a
                 // visitor on /leidinys/{store} should be able to hop back to
                 // the full leaflets index, not the discount listing.
@@ -1079,7 +1079,7 @@ class ProductController extends Controller
                         'type' => 'leaflets_index',
                     ],
                     [
-                        'name' => $entity->name.' '.$leafletNounPlural,
+                        'name' => \App\Support\PharmacyName::phrase($entity->name, 'genitive').' '.$leafletNounPlural,
                         'slug' => 'leidinys/'.$entity->slug,
                         'type' => 'store_leaflet',
                     ],
@@ -1088,8 +1088,7 @@ class ProductController extends Controller
             case 'store_flyer_detail':
                 $words = $this->getStoreLeafletWords($entity->slug);
                 $leafletNounPlural = substr($words['nominative'], 0, -2).'iai';
-                $flyerTitle = $secondaryEntity->title
-                    ?: app(\App\Services\StoreFlyerTitleBuilder::class)->build($secondaryEntity, $entity);
+                $flyerTitle = app(\App\Services\StoreFlyerTitleBuilder::class)->build($secondaryEntity, $entity);
                 $breadcrumbs = [
                     [
                         'name' => 'Leidiniai',
@@ -1097,7 +1096,7 @@ class ProductController extends Controller
                         'type' => 'leaflets_index',
                     ],
                     [
-                        'name' => $entity->name.' '.$leafletNounPlural,
+                        'name' => \App\Support\PharmacyName::phrase($entity->name, 'genitive').' '.$leafletNounPlural,
                         'slug' => 'leidinys/'.$entity->slug,
                         'type' => 'store_leaflet',
                     ],
@@ -1223,6 +1222,9 @@ class ProductController extends Controller
                 // ("...akcijų leidinius", object of "peržiūrėkite").
                 $leafletNounPlural = substr($words['nominative'], 0, -2).'iai';
                 $leafletNounAccusativePlural = substr($words['nominative'], 0, -2).'ius';
+                // "Benu vaistinės", "Eurovaistinės": the chain name is never
+                // left in the nominative next to "leidiniai"/"katalogai".
+                $storeGenitive = \App\Support\PharmacyName::phrase($entity->name, 'genitive');
 
                 // The single newest currently-valid flyer (not the unreliable
                 // is_active flag — same "expired means valid_to < today" rule
@@ -1242,8 +1244,8 @@ class ProductController extends Controller
                     $currentLabel = $currentFlyer->metaLabel();
 
                     $metaDescription = $entity->showsDiscountsPage()
-                        ? "Dabar galioja „{$currentLabel}“. Peržiūrėkite katalogą ir kitus naujausius „{$entity->name}“ akcijų {$leafletNounAccusativePlural}."
-                        : "Dabar galioja „{$currentLabel}“. Peržiūrėkite {$entity->name} akcijas ir kitus naujausius akcijų {$leafletNounAccusativePlural}.";
+                        ? "Dabar galioja „{$currentLabel}“. Peržiūrėkite leidinį ir kitus naujausius {$storeGenitive} akcijų {$leafletNounAccusativePlural}."
+                        : "Dabar galioja „{$currentLabel}“. Peržiūrėkite {$storeGenitive} akcijas ir kitus naujausius akcijų {$leafletNounAccusativePlural}.";
                 } else {
                     // No currently-valid flyer found at all — fall back to
                     // the previous generic validity-range sentence (same
@@ -1252,26 +1254,26 @@ class ProductController extends Controller
                     $validity = $this->resolveStoreValidity($entity);
                     $validFromDot = Carbon::parse($validity['valid_from'])->format('Y.m.d');
                     $validToDot = Carbon::parse($validity['valid_to'])->format('Y.m.d');
-                    $metaDescription = "Naujas {$entity->name} {$words['nominative']} galioja nuo {$validFromDot} iki {$validToDot}.";
+                    $metaDescription = "{$storeGenitive} {$words['nominative']} galioja nuo {$validFromDot} iki {$validToDot}.";
                 }
 
                 return [
-                    'seo_title' => $entity->name.' '.$words['nominative'],
+                    'seo_title' => $storeGenitive.' '.$words['nominative'],
                     'seo_description' => $entity->description,
                     // No date/issue-number in the title anymore — see
                     // meta_description instead.
                     // "katalogai" in the title, not "leidiniai" (owner's
                     // call, 2026-10-02); the H1 keeps "leidiniai".
                     'meta_title' => $entity->showsDiscountsPage()
-                        ? "Naujausi {$entity->name} akcijų katalogai"
-                        : "{$entity->name} akcijos ir naujausi katalogai",
+                        ? "Naujausi {$storeGenitive} akcijų katalogai"
+                        : "{$storeGenitive} akcijos ir naujausi katalogai",
                     'meta_description' => $metaDescription,
                     // A store without its own offers page (/{slug}
                     // 301s here) has its offers only in the leaflets, so
                     // this page is the one for "{store} akcijos" searches.
                     'h1' => $entity->showsDiscountsPage()
-                        ? "Visi {$entity->name} akcijų {$leafletNounPlural}"
-                        : "{$entity->name} akcijos ir akcijų {$leafletNounPlural}",
+                        ? "Visi {$storeGenitive} akcijų {$leafletNounPlural}"
+                        : "{$storeGenitive} akcijos ir akcijų {$leafletNounPlural}",
                 ];
             case 'store':
                 // limit=2: title/H1 only ever use the first (best) category
@@ -1460,8 +1462,8 @@ class ProductController extends Controller
                     'meta_title' => $metaTitle,
                     'meta_description' => $displayName.($priceTextDesc
                         ? ' akcija – kaina nuo '.$priceTextDesc.($storeNames ? " ({$storeNames})" : '').'. '
-                            .($isLowestIn90Days ? 'Mažiausia kaina per 90 d. ' : '').'Palyginkite kainas prekybos centruose!'
-                        : ' – palyginkite kainas prekybos centruose.'),
+                            .($isLowestIn90Days ? 'Mažiausia kaina per 90 d. ' : '').'Palyginkite kainas vaistinėse!'
+                        : ' – palyginkite kainas vaistinėse.'),
                 ];
             case 'search':
                 return [
@@ -1471,34 +1473,42 @@ class ProductController extends Controller
                     'meta_description' => 'Paieškos rezultatai pagal užklausą: '.$entity,
                 ];
             case 'all_discounts':
-                // Hand-written (not GPT-generated, unlike Store/Category::description) —
-                // this is a single global page, not one of hundreds of per-entity rows,
-                // so it doesn't need the generation pipeline. Grounded in real search
-                // research (WebSearch, Sep 2026) into how people actually look for this
-                // kind of page: "akcijos šią savaitę", "savaitės pasiūlymai", "akcijų
-                // leidiniai", "palyginti kainas vienoje vietoje", "rask akciją" — mirrors
-                // the real competitive space (akcijos.lt, kainos.lt, gudrusis.lt,
-                // topakcijos.lt, raskakcija.lt) rather than generic aggregator copy.
-                // "Rask akciją" specifically forced in below — confirmed high-volume
-                // search phrase for this page type, not just a competitor's brand name.
+                // Hand-written (not GPT-generated, unlike Store/Category::description):
+                // one global page. Chains and categories come from config, so the
+                // copy follows config('stores.main_slugs') and the category roots.
+                $pharmacyLinks = [];
+                foreach (\App\Support\StoreListPriority::mainNames() as $slug => $name) {
+                    $pharmacyLinks[] = '<a href="'.\App\Support\PageUrl::listing($slug).'">'.e($name).'</a>';
+                }
+                $lastPharmacyLink = array_pop($pharmacyLinks);
+                $pharmacyLinksText = $pharmacyLinks ? implode(', ', $pharmacyLinks).' ir '.$lastPharmacyLink : (string) $lastPharmacyLink;
+
+                $categoryLinks = [];
+                $rootSlugs = array_flip(config('categories.roots', []));
+                foreach (config('categories.popular_slugs', []) as $slug) {
+                    if (isset($rootSlugs[$slug])) {
+                        $categoryLinks[] = '<a href="'.\App\Support\PageUrl::listing($slug).'">'.e(mb_strtolower(self::shortCategoryLabel($rootSlugs[$slug]))).'</a>';
+                    }
+                }
+                $lastCategoryLink = array_pop($categoryLinks);
+                $categoryLinksText = $categoryLinks ? implode(', ', $categoryLinks).' ar '.$lastCategoryLink : (string) $lastCategoryLink;
+
                 return [
-                    'seo_title' => 'Visos akcijos ir nuolaidos Lietuvoje',
+                    'seo_title' => 'Visos vaistinių akcijos ir nuolaidos',
                     'seo_description' => '<div class="space-y-4">
-  <h2 class="text-2xl md:text-3xl font-semibold leading-tight mb-3">Akcijos ir nuolaidos Lietuvoje – visi prekybos tinklai vienoje vietoje</h2>
-  <p class="leading-relaxed">Norite greitai rasti akciją, o ne vartytis po kiekvieno prekybos tinklo puslapį atskirai? Čia rasite šios savaitės pasiūlymus iš <a href="/maxima">Maxima</a>, <a href="/lidl">Lidl</a>, <a href="/iki">Iki</a>, <a href="/rimi">Rimi</a>, <a href="/norfa">Norfa</a> ir kitų vaistinių sudėtus į vieną vietą – patogu palyginti kainas prieš perkant, o ne po to.</p>
-  <p class="leading-relaxed">Akcijos rūšiuojamos pagal kategorijas, tad greičiau rasite tai, ko šiuo metu ieškote: <a href="/vaisiai-ir-darzoves">vaisius ir daržoves</a>, <a href="/mesa-ir-zuvis">mėsą ir žuvį</a>, <a href="/buitine-chemija-valymo-priemones">buitinę chemiją</a>, <a href="/kosmetika-ir-higiena">kosmetiką ir higienos prekes</a> ar <a href="/namu-ukio-ir-laisvalaikio-prekes">namų ūkio prekes</a>. Kiekvienos kategorijos viduje matysite, kuris tinklas tuo metu siūlo geriausią kainą, be reikalo neapsiperkant kitur.</p>
-  <p class="leading-relaxed">Pasiūlymai atnaujinami kiekvieną savaitę, kai prekybos tinklai išleidžia naujus akcijų leidinius – jei ieškote konkretaus tinklo savaitės leidinio, jį rasite ir čia, ir per <a href="/leidiniai">visų vaistinių leidinių sąrašą</a>.</p>
+  <h2 class="text-2xl md:text-3xl font-semibold leading-tight mb-3">Vaistinių akcijos ir nuolaidos – visos vaistinės vienoje vietoje</h2>
+  <p class="leading-relaxed">Ta pati prekė skirtingose vaistinėse dažnai kainuoja nevienodai, o akcijos keičiasi kas kelias savaites. Čia rasite dabar galiojančius '.$pharmacyLinksText.' ir kitų vaistinių pasiūlymus vienoje vietoje – patogu palyginti kainas prieš perkant.</p>
+  <p class="leading-relaxed">Akcijos suskirstytos pagal kategorijas: '.$categoryLinksText.'. Kiekvienoje kategorijoje matysite, kurioje vaistinėje ta pati prekė šiuo metu pigiausia.</p>
+  <p class="leading-relaxed">Pasiūlymai atnaujinami kasdien, kai vaistinės keičia kainas ir paskelbia naujas akcijas. Jei ieškote konkrečios vaistinės akcijų leidinio, jį rasite <a href="/leidiniai">vaistinių leidinių sąraše</a>.</p>
 </div>',
-                    'meta_title' => 'Akcijos ir nuolaidos Lietuvoje – Maxima, Lidl, Iki, Rimi',
-                    'meta_description' => 'Rask akciją greičiau – visi akcijų leidiniai vienoje vietoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai, savaitės ir savaitgalio akcijos.',
+                    'meta_title' => 'Vaistinių akcijos ir nuolaidos – '.\App\Support\StoreListPriority::mainNamesText(3),
+                    'meta_description' => 'Visos vaistinių akcijos vienoje vietoje: '.\App\Support\StoreListPriority::mainNamesText().'. Palyginkite vitaminų, kosmetikos ir nereceptinių vaistų kainas.',
                 ];
             case 'leaflets_index':
-                // $entity is the real distinct-store count for this case
-                // (passed by getAllLeaflets(), free from data already
-                // fetched — see its own comment). Guarded: fall back to the
-                // count-free copy rather than ever render "0 vaistinių".
-                $storeCount = (int) $entity;
-                $description = 'Peržiūrėkite naujausius „Maxima“, „Lidl“, „Iki“, „Rimi“, „Norfa“ ir kitų vaistinių akcijų leidinius. Visi aktualūs katalogai vienoje vietoje.';
+                // Named after the chains that have a leaflet now, in the
+                // genitive ("Gintarinės, Camelia, Benu ir kitų vaistinių").
+                $chains = \App\Support\StoreListPriority::leafletChainsGenitiveText();
+                $description = 'Peržiūrėkite naujausius '.$chains.' ir kitų vaistinių akcijų leidinius. Visi galiojantys leidiniai vienoje vietoje.';
 
                 return [
                     // H1 is plain/static — no store count in it anymore
@@ -1506,9 +1516,9 @@ class ProductController extends Controller
                     // longer needs its own conditional 'leaflet_store_count_label').
                     'seo_title' => 'Naujausi akcijų leidiniai iš visų vaistinių',
                     'seo_description' => $description,
-                    'meta_title' => $storeCount > 0
-                        ? "Akcijų leidiniai iš daugiau nei {$storeCount} vaistinių"
-                        : 'Akcijų leidiniai iš visų vaistinių',
+                    'meta_title' => $chains !== ''
+                        ? "{$chains} ir kitų vaistinių akcijų leidiniai"
+                        : 'Vaistinių akcijų leidiniai',
                     'meta_description' => $description,
                 ];
             default:
@@ -1599,13 +1609,7 @@ class ProductController extends Controller
             $dateRangeLabel = $hasValidity ? " – {$validFromDot}–{$validToDot}" : '';
             $validityClause = $hasValidity ? ", galioja {$validFromDot}–{$validToDot}" : '';
             $pagesCount = $flyer->pages->count();
-            // "Naujausias" instead of "Naujas" for the description only —
-            // explicit product decision, H1/title keep "Naujas". Only swaps
-            // a genuine leading match; flyers whose own scraped title
-            // already names the store (see StoreFlyerTitleBuilder::
-            // mentionsStore()) are returned bare with no "Naujas " prefix
-            // at all, so this is a no-op for those.
-            $descriptionTitle = preg_replace('/^Naujas /', 'Naujausias ', $title, 1);
+            $descriptionTitle = $title;
 
             // Offers Gemini extracted from this exact flyer (store_flyer_id,
             // set by PdfFlyerProcessingService), so the page carries
@@ -1636,7 +1640,7 @@ class ProductController extends Controller
             $flyerOffersTotal = $flyerDiscounts->unique('product_id')->count();
             $topClause = $this->topDiscountsClause($this->topFlyerDiscounts($flyerDiscounts->unique('product_id')));
             $flyerOffersIntro = $flyerOffersTotal > 0
-                ? "Iš šio {$storeModel->name} leidinio surinkome {$flyerOffersTotal} akcijų "
+                ? "Iš šio ".\App\Support\PharmacyName::phrase($storeModel->name, 'genitive')." leidinio surinkome {$flyerOffersTotal} akcijų "
                     .\App\Support\LithuanianPlural::offerWordAccusative($flyerOffersTotal)
                     .' su kainomis. Jie išdėstyti taip pat kaip leidinyje, puslapis po puslapio.'
                     .($topClause !== '' ? " Geriausi pasiūlymai: {$topClause}." : '')
@@ -1650,19 +1654,10 @@ class ProductController extends Controller
                 'breadcrumbs' => $this->generateBreadcrumbs('store_flyer_detail', $storeModel, $flyer),
                 'seo' => [
                     'seo_title' => $title,
-                    'seo_description' => "{$title} – {$storeModel->name} akcijų leidinys.",
-                    // meta_title only: just "{Store} " instead of
-                    // "Naujas {Store} nuolaidų leidinys - " — explicit product
-                    // decision, H1/seo_title/description keep the builder's
-                    // wording unchanged. Titles without that prefix (store-
-                    // named or catalog_name-based) pass through as-is.
-                    'meta_title' => preg_replace(
-                        '/^Naujas '.preg_quote($storeModel->name, '/').' nuolaidų leidinys - /u',
-                        "{$storeModel->name} ",
-                        $title,
-                        1
-                    ).$dateRangeLabel,
-                    'meta_description' => "{$descriptionTitle} – {$storeModel->name} leidinys, {$pagesCount} psl.{$offersClause}{$validityClause}. Peržiūrėkite visus akcijų puslapius.",
+                    'seo_description' => "{$title} – ".\App\Support\PharmacyName::phrase($storeModel->name, 'genitive').' akcijų leidinys.',
+                    // StoreFlyerTitleBuilder already names the pharmacy.
+                    'meta_title' => $title.$dateRangeLabel,
+                    'meta_description' => "{$descriptionTitle} – ".\App\Support\PharmacyName::phrase($storeModel->name, 'genitive')." leidinys, {$pagesCount} psl.{$offersClause}{$validityClause}. Peržiūrėkite visus akcijų puslapius.",
                 ],
                 'total_offers' => Discount::where('store_id', $storeModel->id)->count(),
                 'flyer_offers' => $flyerOffers,
@@ -1738,10 +1733,10 @@ class ProductController extends Controller
             // Every store with a live leaflet has a /leidinys/{slug} hub,
             // with or without its own offers — reusing $stores here left
             // leaflet-only stores' hubs (Jysk, Senukai...) out entirely.
+            // Same rule as LeafletController::hub(): a pharmacy without a
+            // current leaflet has its /leidinys/{slug} redirected.
             $leafletStores = \App\Models\Store::query()
-                ->whereHas('flyers', fn ($q) => $q
-                    ->where('is_active', true)
-                    ->where('processing_status', \App\Models\StoreFlyer::STATUS_READY))
+                ->whereHas('flyers', fn ($q) => $q->active()->ready()->currentlyValid())
                 ->pluck('slug')
                 ->all();
 
@@ -2021,16 +2016,14 @@ class ProductController extends Controller
 
     private function topFlyerDiscounts($discounts, int $limit = 3)
     {
-        $priced = $discounts->filter(fn ($d) => $d->discounted_price > 0 && $d->discount_percent > 0);
-        $food = $priced->filter(fn ($d) => in_array($d->product?->category?->slug, \App\Support\FoodCategorySlugs::FOOD, true));
-
-        return ($food->isNotEmpty() ? $food : $priced)
+        return $discounts
+            ->filter(fn ($d) => $d->discounted_price > 0 && $d->discount_percent > 0)
             ->sortByDesc(fn ($d) => \App\Services\HomeDealPoolService::staticDealScore($d))
             ->take($limit)
             ->values();
     }
 
-    // "Sviestas GHEE (-41 %), Grietinė ROKIŠKIO (-36 %)" for intro text.
+    // "Magnis B6 (-41 %), Vitaminas D3 (-36 %)" for intro text.
     private function topDiscountsClause($top): string
     {
         return $top->map(fn ($d) => $d->product->name.' (-'.(int) round($d->discount_percent).' %)')->implode(', ');
@@ -2399,7 +2392,7 @@ class ProductController extends Controller
         return self::shortCategoryLabel($name);
     }
 
-    // "mėsos ir žuvies" for a root category's full DB name, lowercased
+    // "nereceptinių vaistų" for a root category's full DB name, lowercased
     // nominative of the short name when no hand-checked form exists.
     // Shared with ListingPageMetaService's category intro copy.
     public static function categoryGenitiveLabel(string $name): string

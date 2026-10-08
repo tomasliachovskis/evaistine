@@ -5,7 +5,7 @@ description: Playbook for generating or revising GPT-written SEO copy for store/
 
 # SEO content generation playbook
 
-> Written for superakcijos.lt (groceries). For eVaistine.lt the same mechanics apply, plus two pharmacy rules: the copy is health-related (YMYL), so no treatment advice, dosing, efficacy or health claims, and prescription medicines are never mentioned or promoted. Examples below are grocery ones.
+> Written for superakcijos.lt (groceries). For eVaistine.lt the same mechanics apply, plus the pharmacy rules every prompt in `DescriptionGenerationService` gets from `pharmacyRules()`: the copy is health-related (YMYL), so no treatment advice, dosing, efficacy or health claims; prescription medicines are never mentioned (not even to say they aren't listed); the site compares "vaistų kainos"; headings are SEO-oriented and plain; pharmacy names are declined from `store_name_forms` (built with `PharmacyName::phrase()`). Some examples below are still grocery ones; the mechanics are what matter.
 
 Distilled from the `/leidinys/{store}` content project — several real correction cycles (too thin → too padded → wrong intent → stale data baked into evergreen copy → headings that didn't match the real reference page → sections too thin) are captured here so they don't have to be rediscovered.
 
@@ -46,7 +46,7 @@ The semantic-research JSON files are the anti-generic mechanism. Before asking t
 
 ## 7. Internal linking conventions
 
-Embed contextual `<a href>` links with natural anchor text, sourced only from a link list built in PHP from real data (category listings, keyword pages, a store's own contacts/locations page) — never let the model invent a URL. Specify the exact anchor-text convention when it matters (e.g. `"[store_name] parduotuvės ir kontaktai"` for a store's locations page) rather than leaving phrasing to the model.
+Embed contextual `<a href>` links with natural anchor text, sourced only from a link list built in PHP from real data (category listings, keyword pages, a store's own contacts/locations page) — never let the model invent a URL. Specify the exact anchor-text convention when it matters (e.g. `"[store_name_forms.plural] ir kontaktai"` — "Benu vaistinės ir kontaktai" — for a pharmacy's locations page) rather than leaving phrasing to the model.
 
 ## 8. Site-wide style rules
 

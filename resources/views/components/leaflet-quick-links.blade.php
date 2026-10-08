@@ -43,7 +43,7 @@
     @if ($showsDiscountsPage)
         <a href="/{{ $storeSlug }}" data-ga-event="filter_select" data-ga-item="akcijos:{{ $storeSlug }}" data-ga-source="leaflet_quick_links" class="{{ $linkClass }}">
             <x-app-icon name="tag" class="{{ $iconSizeClass }}" />
-            <span class="truncate">{{ $storeName }} akcijos ({{ number_format($totalOffers, 0, ',', ' ') }})</span>
+            <span class="truncate">{{ \App\Support\PharmacyName::phrase($storeName, 'genitive') }} akcijos ({{ number_format($totalOffers, 0, ',', ' ') }})</span>
         </a>
     @endif
 </div>

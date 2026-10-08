@@ -92,8 +92,10 @@ class AuditKeywordPagesCommand extends Command
             return 'PUBLISH – enough matching offers';
         }
 
+        // Published pages are never taken offline for a lack of offers: they
+        // show the empty state and recover on their own.
         if ($count < $minRequired && $page->is_published) {
-            return 'UNPUBLISH – below min_active_offers';
+            return 'KEEP PUBLISHED – no offers now, shows the empty state';
         }
 
         if ($count < $minRequired) {

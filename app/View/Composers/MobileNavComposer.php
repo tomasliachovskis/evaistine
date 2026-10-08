@@ -27,7 +27,10 @@ class MobileNavComposer
                 ->all();
         });
 
-        $stores = Cache::remember("mobile_nav_stores_{$suffix}", 1800, function () {
+        // Stores carry leaflets_count (header "Leidiniai (N)"), so a new
+        // leaflet has to refresh this list too, not only new discounts.
+        $storesSuffix = CacheVersion::suffix(['discounts', 'flyers']);
+        $stores = Cache::remember("mobile_nav_stores_{$storesSuffix}", 1800, function () {
             $response = App::make(ProductController::class)->getStores();
 
             return $response->getData(true)['data'];

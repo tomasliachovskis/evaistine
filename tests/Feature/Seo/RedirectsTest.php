@@ -44,7 +44,9 @@ class RedirectsTest extends TestCase
         $this->get('/seo-pienas')->assertOk();
     }
 
-    public function test_unpublished_keyword_page_is_not_served(): void
+    // Not served, but not a 404 either: without a category it goes to /akcijos
+    // (with one, to the category — KeywordPageAlwaysAvailableTest).
+    public function test_unpublished_keyword_page_redirects_instead_of_404(): void
     {
         KeywordPage::create([
             'slug' => 'seo-juodrastis',
@@ -54,7 +56,7 @@ class RedirectsTest extends TestCase
             'is_published' => false,
         ]);
 
-        $this->get('/seo-juodrastis')->assertNotFound();
+        $this->get('/seo-juodrastis')->assertStatus(301)->assertRedirect('/akcijos');
     }
 
     public function test_uppercase_and_lithuanian_letter_slugs_redirect_to_lowercase_ascii(): void

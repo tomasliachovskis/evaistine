@@ -25,17 +25,16 @@ class NewsArticleService
     private string $geminiImageApiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent';
 
     /**
-     * Curated, Lithuania-relevant retail/pricing search terms — deliberately
-     * narrower than pricer.lt's broad international trade-press aggregation,
-     * since our audience is Lithuanian deal-shoppers, not retail industry
-     * professionals.
+     * Curated, Lithuania-relevant pharmacy/medicine-pricing search terms:
+     * our audience is people buying at Lithuanian pharmacies, not pharma
+     * industry professionals.
      */
     private const SEARCH_QUERIES = [
-        'maisto kainos Lietuvoje',
-        'Maxima Lidl Rimi Norfa naujiena',
-        'prekybos tinklai Lietuva akcijos',
-        'infliacija maisto prekės Lietuva',
-        'vartotojų kainos Lietuva statistika',
+        'vaistų kainos Lietuvoje',
+        'vaistinės Lietuva naujiena',
+        'Eurovaistinė Gintarinė vaistinė Camelia Benu naujiena',
+        'nereceptiniai vaistai kainos',
+        'maisto papildai Lietuva rinka',
     ];
 
     public function __construct()
@@ -74,9 +73,10 @@ class NewsArticleService
 
         $prompt = 'A clean, professional editorial illustration for a Lithuanian news article. '
             . "The article is about: {$post->title}. Context: {$subject}. "
-            . 'Depict the real subject matter with simple, literal visual metaphors (e.g. a shopping basket for '
-            . 'grocery prices, a storefront for a new store opening, a stock chart for market/exchange news, '
-            . 'a utility pylon for energy prices) — not an abstract generic scene. '
+            . 'Depict the real subject matter with simple, literal visual metaphors (e.g. a pharmacy shelf for '
+            . 'medicine prices, a pharmacy storefront for a new pharmacy opening, a stock chart for market news, '
+            . 'a price tag on a pill box for pricing rules) — not an abstract generic scene. '
+            . 'Never show people taking medicine or any medical treatment. '
             . 'Flat-design editorial illustration style, green and white color palette, minimalist. '
             . 'Absolutely no text, no logos, no real brand names or company names anywhere in the image. '
             . 'Wide banner aspect ratio suitable for a news article cover image.';
@@ -233,7 +233,7 @@ class NewsArticleService
 
     /**
      * GPT occasionally leaves a stray trailing space inside href="..." (seen
-     * live: href="/mesa-ir-zuvis "). Browsers are lenient about it,
+     * live: href="/higiena "). Browsers are lenient about it,
      * but trim it anyway rather than rely on that.
      */
     private function cleanHrefWhitespace(string $html): string
@@ -471,14 +471,14 @@ class NewsArticleService
 
     private function getSystemPrompt(): string
     {
-        return "You are a Lithuanian editorial writer for a deals-aggregator site (evaistine.lt)'s news section ('Naujienos'). You will receive ONE real search-engine news result: a headline, a source name, a short excerpt/snippet, a link, and a publish date, about Lithuanian retail/grocery pricing. Sometimes it also includes 'full_page_text' — the actual publisher page's raw visible text (best-effort fetched; may contain leftover site navigation/boilerplate mixed in with the real article, and is only present when the fetch succeeded).
+        return "You are a Lithuanian editorial writer for a pharmacy price comparison site (evaistine.lt)'s news section ('Naujienos'). You will receive ONE real search-engine news result: a headline, a source name, a short excerpt/snippet, a link, and a publish date, about Lithuanian pharmacies or medicine pricing. Sometimes it also includes 'full_page_text' — the actual publisher page's raw visible text (best-effort fetched; may contain leftover site navigation/boilerplate mixed in with the real article, and is only present when the fetch succeeded).
 
-RELEVANCE CHECK FIRST: this site is specifically about retail pricing, discounts, and grocery/retail chains in Lithuania — NOT general human-interest, restaurant reviews, travel, or lifestyle stories that merely mention a store in passing. If the story is not genuinely about retail chain business/pricing/market news (e.g. a chain's finances, a new store opening, a management change, an industry price trend, a market entry) — for example a human-interest piece like someone's restaurant road trip — set insufficient_information: true immediately, regardless of how much you could write about it.
+RELEVANCE CHECK FIRST: this site is specifically about pharmacies and the prices of pharmacy goods (medicines, vitamins and supplements, cosmetics, hygiene) in Lithuania — NOT general health advice, medical research, treatments, lifestyle stories, or grocery retail. If the story is not genuinely about pharmacy business/pricing/market news (e.g. a pharmacy chain's finances, a new pharmacy or e-pharmacy opening, a management change, medicine price regulation or reimbursement changes, a market entry) set insufficient_information: true immediately, regardless of how much you could write about it. Stories about how a medicine works, treatment advice or disease prevalence are out of scope.
 
 GROUNDING RULES — CRITICAL, read carefully:
 - If 'full_page_text' is present: first mentally separate the real article body from any leftover nav/menu/footer/cookie-banner/'related articles' text mixed into it (a capable reader can tell — look for the coherent narrative paragraphs). Use ONLY facts that are genuinely part of the article body — ignore boilerplate, unrelated headline lists, and navigation entirely. This real text is your primary source — use its real names, quotes, numbers, dates, roles generously; you have much more to work with than a bare snippet, so write a properly substantive piece (see length below).
 - If 'full_page_text' is absent, you only have the headline + short snippet — use every genuine fact in it, write AROUND those facts with your own framing, and keep the piece shorter and more modest in scope (do not pad with generic filler to reach a target length).
-- Regardless of source depth: NEVER invent facts, numbers, quotes, or details not present in what you were given. You may add genuinely obvious, generic context (e.g. explaining what a management change at a retailer typically means for shoppers) — never fabricated specifics.
+- Regardless of source depth: NEVER invent facts, numbers, quotes, or details not present in what you were given. You may add genuinely obvious, generic context (e.g. explaining what a management change at a pharmacy chain typically means for buyers) — never fabricated specifics.
 - If even the richest available material is too thin to support a genuine, factually-grounded article, set insufficient_information: true and leave other fields empty. Returning nothing is much better than fabricating.
 - ALWAYS attribute the story to its real source by name in the article body (e.g. 'Kaip skelbia 15min.lt...', '„Delfi\" praneša...') — never present the source's reporting as your own original finding.
 - This must be a TRANSFORMATIVE piece — your own commentary/framing/relevance-to-shoppers angle woven around the real facts — never a close paraphrase or reordering of the source's own sentences. Do not reproduce any direct quote from the source verbatim for more than a short phrase; paraphrase quotes and attribute them (e.g. 'naujasis vadovas teigė, kad...') rather than reprinting them as a blockquote.
@@ -486,7 +486,7 @@ GROUNDING RULES — CRITICAL, read carefully:
 INTERNAL LINKS (important — this is why we publish these at all, not just to credit an external source): the JSON includes 'internal_link_targets' with our own real store and category pages ({name, url} pairs). Whenever the article genuinely discusses/names a store or product category that appears in that list, link it inline the first time it's mentioned using '<a href=\"[url]\">[name]</a>' (relative URL, exactly as given — do not prefix a domain). Do NOT force a link where the topic doesn't naturally fit, and NEVER invent a URL for a store/category not present in internal_link_targets. If the story is about a store not in our list (e.g. a foreign chain, or a brand new entrant we don't carry yet), don't link it — just name it plainly. Aim for 1-3 genuine internal links per article, not one in every sentence.
 
 OUTPUT: a single JSON object: {\"title\": \"...\", \"content\": \"<HTML>...\", \"meta_title\": \"...\", \"meta_description\": \"...\", \"insufficient_information\": false}.
-- content: HTML paragraphs (<p class=\"leading-relaxed\">...</p>), Lithuanian, conversational but factual tone — no bold/italic emphasis (<strong>/<b>/<em>/<i> — reads as generated filler), no invented statistics. With full_page_text available, write 4-6 substantive paragraphs genuinely earning their length from real facts (what happened, the real people/numbers/roles involved, background context, what it means for shoppers). With only a snippet, write 2-3 shorter paragraphs — do not stretch thin material.
+- content: HTML paragraphs (<p class=\"leading-relaxed\">...</p>), Lithuanian, conversational but factual tone — no bold/italic emphasis (<strong>/<b>/<em>/<i> — reads as generated filler), no invented statistics. With full_page_text available, write 4-6 substantive paragraphs genuinely earning their length from real facts (what happened, the real people/numbers/roles involved, background context, what it means for buyers). Never give treatment advice, dosing or health claims, and never discuss prescription medicines beyond plainly reporting a pricing or regulation fact from the source. Call pharmacies 'vaistinė', never 'parduotuvė'. With only a snippet, write 2-3 shorter paragraphs — do not stretch thin material.
 - title: a genuine, non-clickbait Lithuanian headline for OUR article (can echo the source headline's real content, don't just copy it verbatim).
 - meta_title/meta_description: SEO fields, evergreen-safe (don't bake in an exact date that will look stale in a week unless the story is explicitly about a dated event).
 - Keep the whole thing honest — a well-attributed, properly fleshed-out piece built on real facts, never padded with content those facts don't support.

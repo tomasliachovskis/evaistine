@@ -89,6 +89,15 @@ class AkcijosController extends Controller
             return $this->renderKeyword($request, $keywordApi, $slug1);
         }
 
+        // A keyword page taken offline (unpublished in Filament) may still be
+        // indexed or linked: send it to its category instead of a 404.
+        if ($slug2 === null && ($draft = KeywordPage::where('slug', $slug1)->first(['slug', 'category_slugs']))) {
+            $categorySlug = collect((array) ($draft->category_slugs ?? []))
+                ->first(fn ($slug) => Category::where('slug', $slug)->exists());
+
+            return redirect($categorySlug ? PageUrl::listing($categorySlug) : '/akcijos', 301);
+        }
+
         $store = Store::where('slug', $slug1)->first();
         if ($store && ! $store->showsDiscountsPage()) {
             return $this->redirectToLeafletHub($store->slug);
@@ -337,12 +346,6 @@ class AkcijosController extends Controller
             'showSort' => $showSort,
             'activeStoreSlug' => $activeStoreSlug,
             'activeCategorySlug' => $activeCategorySlug,
-            // Legal age gate (LT: alcohol deals require confirming the
-            // visitor is 20+) — $activeCategorySlug already resolves
-            // correctly for both /alkoholiniai-gerimai and
-            // /{store}/alkoholiniai-gerimai, so this one check
-            // covers both URL shapes.
-            'requiresAgeVerification' => $activeCategorySlug === 'alkoholiniai-gerimai',
             'sections' => $sections,
             'topOffers' => $topOffers,
             'hubMeta' => $hubMeta,

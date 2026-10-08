@@ -3,10 +3,17 @@
 namespace App\Services;
 
 use App\Models\Category;
-use App\Support\FoodCategorySlugs;
 
 class KeywordPageCategoryResolver
 {
+    // The 12 pharmacy roots (config/categories.php). Keyword pages only ever
+    // point at a root, like products and category mappers.
+    /** @return list<string> */
+    private static function rootSlugs(): array
+    {
+        return array_values(config('categories.roots', []));
+    }
+
     /**
      * @param  list<string>  $slugs
      * @return list<string>
@@ -21,7 +28,7 @@ class KeywordPageCategoryResolver
                 continue;
             }
 
-            if (in_array($slug, FoodCategorySlugs::ALL, true) && !in_array($slug, $resolved, true)) {
+            if (in_array($slug, self::rootSlugs(), true) && !in_array($slug, $resolved, true)) {
                 $resolved[] = $slug;
             }
 
@@ -36,7 +43,7 @@ class KeywordPageCategoryResolver
             }
 
             $slug = trim((string) $slug);
-            if ($slug === '' || in_array($slug, FoodCategorySlugs::ALL, true)) {
+            if ($slug === '' || in_array($slug, self::rootSlugs(), true)) {
                 continue;
             }
 
@@ -122,13 +129,13 @@ class KeywordPageCategoryResolver
 
     private function resolveSubcategoryToListingSlug(string $slug): ?string
     {
-        if (in_array($slug, FoodCategorySlugs::ALL, true)) {
+        if (in_array($slug, self::rootSlugs(), true)) {
             return $slug;
         }
 
         $category = Category::query()->where('slug', $slug)->first();
         while ($category !== null) {
-            if (in_array($category->slug, FoodCategorySlugs::ALL, true)) {
+            if (in_array($category->slug, self::rootSlugs(), true)) {
                 return $category->slug;
             }
 

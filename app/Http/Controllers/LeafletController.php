@@ -6,8 +6,8 @@ use App\Http\Controllers\Api\ProductController;
 use App\Models\Store;
 use App\Support\BreadcrumbSchema;
 use App\Support\CanonicalUrl;
-use App\Support\FoodCategorySlugs;
 use App\Support\ItemListSchema;
+use App\Support\PageUrl;
 use App\Support\PriceComparison;
 use App\Support\UnitPrice;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -36,6 +36,18 @@ class LeafletController extends Controller
 
     public function hub(ProductController $api, string $store)
     {
+        // A pharmacy with no current leaflet (the online-only ones never
+        // publish one) would get a page about a leaflet that isn't there:
+        // send it to its offers instead. Once a leaflet is ready the hub
+        // comes back by itself. Not cached by the browser for long, since
+        // the answer changes each month.
+        $storeModel = Store::where('slug', $store)->first();
+        if ($storeModel
+            && $storeModel->showsDiscountsPage()
+            && ! $storeModel->flyers()->active()->ready()->currentlyValid()->exists()) {
+            return redirect(PageUrl::listing($storeModel->slug), 301)->header('Cache-Control', 'public, max-age=3600');
+        }
+
         try {
             $response = $api->getStoreLeafletHub($store);
         } catch (ModelNotFoundException $e) {
@@ -182,10 +194,10 @@ class LeafletController extends Controller
             ->values();
 
         // At most 4 filters, in plain words: cheapest here, big discounts,
-        // and the flyer's 2 most common food categories. More choices at
-        // once is harder to scan, especially for older readers.
+        // and the flyer's 2 most common categories. More choices at once is
+        // harder to scan, especially for older readers.
         $categoryFilters = $hotspots
-            ->filter(fn ($h) => in_array($h['category'], FoodCategorySlugs::FOOD, true))
+            ->filter(fn ($h) => $h['category'] !== null)
             ->groupBy('category')
             ->map(function ($group, $slug) use ($offers) {
                 $name = collect($offers)->firstWhere('product.category.slug', $slug)['product']['category']['name'] ?? $slug;

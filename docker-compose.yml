@@ -44,6 +44,7 @@ services:
             - mysql
             - redis
             - mailhog
+            - meilisearch
     mysql:
         image: 'mysql/mysql-server:8.0'
         ports:
@@ -84,10 +85,31 @@ services:
             - '${FORWARD_MAILHOG_DASHBOARD_PORT:-8025}:8025'
         networks:
             - sail
+    # Keyword pages map their products through Meilisearch (keywords:
+    # map-products), and site search reads it, so dev runs its own instance.
+    # Same major version as meilisearch/meilisearch-php in composer.lock.
+    meilisearch:
+        image: 'getmeili/meilisearch:v1.16'
+        ports:
+            - '${FORWARD_MEILISEARCH_PORT:-7700}:7700'
+        environment:
+            MEILI_MASTER_KEY: '${MEILISEARCH_KEY}'
+            MEILI_NO_ANALYTICS: 'true'
+            MEILI_ENV: development
+        volumes:
+            - 'sail-meilisearch:/meili_data'
+        networks:
+            - sail
+        healthcheck:
+            test: ["CMD", "wget", "--no-verbose", "--spider", "http://127.0.0.1:7700/health"]
+            retries: 3
+            timeout: 5s
 networks:
     sail:
         driver: bridge
 volumes:
+    sail-meilisearch:
+        driver: local
     sail-mysql:
         driver: local
     sail-redis:

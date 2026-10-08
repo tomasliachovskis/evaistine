@@ -4,12 +4,6 @@ namespace App\Services\KeywordImport;
 
 class KeywordGroupAnalyzer
 {
-    private const KAVA_PRIMARY_KEYWORDS = [
-        'kava akcija',
-        'kavos pupelės akcija',
-        'kavos kapsules akcija',
-    ];
-
     /**
      * @param  array{term_group: string, slug: string, keywords: list<array{keyword: string, volume: int, category: string, intents: string}>, total_volume: int, source_groups?: list<string>}  $group
      * @return array{primary_keywords: list<string>, secondary_keywords: list<array>, h1: string, candidate_brands: list<string>}
@@ -18,10 +12,6 @@ class KeywordGroupAnalyzer
     {
         $keywords = $group['keywords'];
         usort($keywords, fn ($a, $b) => $b['volume'] <=> $a['volume']);
-
-        if ($group['slug'] === 'kava') {
-            return $this->analyzeKava($keywords);
-        }
 
         $primaryKeywords = [];
         foreach ($keywords as $row) {
@@ -54,30 +44,6 @@ class KeywordGroupAnalyzer
     }
 
     /**
-     * @param  list<array{keyword: string, volume: int, category: string, intents: string}>  $keywords
-     * @return array{primary_keywords: list<string>, secondary_keywords: list<array>, h1: string, candidate_brands: list<string>}
-     */
-    private function analyzeKava(array $keywords): array
-    {
-        $primaryKeywords = self::KAVA_PRIMARY_KEYWORDS;
-        $primarySet = array_flip(array_map('mb_strtolower', $primaryKeywords));
-
-        $secondary = array_values(array_filter(
-            $keywords,
-            fn ($row) => !isset($primarySet[mb_strtolower(trim($row['keyword']))]),
-        ));
-
-        $mainKw = $primaryKeywords[0];
-
-        return [
-            'primary_keywords' => $primaryKeywords,
-            'secondary_keywords' => $secondary,
-            'h1' => $this->capitalizeKeyword($mainKw),
-            'candidate_brands' => $this->extractCandidateBrands('kava', $secondary),
-        ];
-    }
-
-    /**
      * @param  list<array{keyword: string, volume: int, category: string, intents: string}>  $secondary
      * @return list<string>
      */
@@ -90,7 +56,7 @@ class KeywordGroupAnalyzer
         foreach ($secondary as $row) {
             $kw = mb_strtolower(trim($row['keyword']));
             $kw = preg_replace('/\s+akcija(\s|$)/u', ' ', $kw);
-            $kw = preg_replace('/\b(iki|maxima|lidl|rimi|norfa)\b/u', '', $kw);
+            $kw = preg_replace('/(?<!\pL)(eurovaistin\pL*|gintarin\pL*|camelia|benu|apotheka|piliul\pL*|vaistin\pL*)(?!\pL)/u', '', $kw);
             $kw = trim((string) $kw);
 
             foreach (preg_split('/\s+/u', $kw) ?: [] as $part) {

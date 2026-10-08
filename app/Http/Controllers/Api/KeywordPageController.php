@@ -31,8 +31,10 @@ class KeywordPageController extends Controller
 
     public function show(Request $request, string $slug)
     {
-        // Unpublished drafts stay a real 404 — only published pages get the
-        // always-200 empty state (see KeywordPageService::buildListingResponse()).
+        // Published pages always answer 200 (an empty state when offers run
+        // out, see KeywordPageService::buildListingResponse()). The web route
+        // 301s an unpublished page to its category (AkcijosController::show),
+        // so this API 404 is never what a visitor sees.
         $page = KeywordPage::query()
             ->published()
             ->where('slug', $slug)

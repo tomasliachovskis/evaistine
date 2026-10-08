@@ -79,8 +79,8 @@ class NewHomeController extends Controller
             return ['name' => $name, 'total_items' => $items->count(), 'items' => $items->all()];
         };
         $comparisonCategories = collect([
-            $buildComparisonBlock('Maisto prekių kainų palyginimas', $candidates['food']),
-            $buildComparisonBlock('Ne maisto prekių kainų palyginimas', $candidates['non_food']),
+            $buildComparisonBlock('Vaistų ir papildų kainų palyginimas', $candidates['medicines']),
+            $buildComparisonBlock('Kosmetikos ir higienos prekių kainų palyginimas', $candidates['care']),
         ])->filter(fn (array $block) => !empty($block['items']))->values()->all();
 
         $latestLeaflets = HomeLatestLeaflets::pick();
@@ -103,8 +103,9 @@ class NewHomeController extends Controller
         // versioned Cache::remember() calls inside buildHomeTeaser()/
         // getStores()/etc. this view's own data already goes through.
         return view('new-home', [
-            'title' => $seo['meta_title'] ?: 'Daug akcijų ir nuolaidų Lietuvoje | eVaistine.lt',
-            'description' => $seo['meta_description'] ?: 'Visos akcijos ir nuolaidos Lietuvoje vienoje vietoje.',
+            'title' => $seo['meta_title'] ?: 'Vaistų kainų palyginimas ir vaistinių akcijos | eVaistine.lt',
+            'description' => $seo['meta_description'] ?: 'Palyginkite nereceptinių vaistų, vitaminų ir kosmetikos kainas Lietuvos vaistinėse vienoje vietoje.',
+            'seo' => $seo,
             'canonical' => url('/'),
             'robots' => null,
             'stats' => $pageMeta['stats'],

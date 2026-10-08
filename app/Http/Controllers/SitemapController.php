@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Api\ProductController;
-use App\Models\CouponWebsite;
 use App\Support\CanonicalUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -84,6 +83,7 @@ class SitemapController extends Controller
             ['loc' => CanonicalUrl::build('/naujienos'), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.6'],
             ['loc' => CanonicalUrl::build('/apie'), 'lastmod' => $defaultLastmod, 'changefreq' => 'monthly', 'priority' => '0.4'],
             ['loc' => CanonicalUrl::build('/privatumo-politika'), 'lastmod' => $defaultLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
+            ['loc' => CanonicalUrl::build('/naudojimosi-taisykles'), 'lastmod' => $defaultLastmod, 'changefreq' => 'yearly', 'priority' => '0.3'],
         ];
 
         $leafletStoreSlugs = $data['leaflet_stores'] ?? $data['stores'] ?? [];
@@ -121,15 +121,6 @@ class SitemapController extends Controller
 
         foreach ($data['store_city_pages'] ?? [] as $path) {
             $urls[] = ['loc' => CanonicalUrl::build("/vaistines/{$path}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'weekly', 'priority' => '0.5'];
-        }
-
-        $urls[] = ['loc' => CanonicalUrl::build('/kuponai'), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.8'];
-
-        $couponWebsiteSlugs = CouponWebsite::whereHas('coupons', fn ($q) => $q->active()->currentlyValid())
-            ->pluck('slug');
-
-        foreach ($couponWebsiteSlugs as $slug) {
-            $urls[] = ['loc' => CanonicalUrl::build("/kuponai/{$slug}"), 'lastmod' => $defaultLastmod, 'changefreq' => 'daily', 'priority' => '0.6'];
         }
 
         return response()

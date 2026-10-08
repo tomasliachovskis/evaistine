@@ -21,7 +21,7 @@ class CheapestProductsController extends Controller
         $path = '/pigiausios-prekes';
 
         $breadcrumbs = [
-            ['name' => 'Akcijos', 'href' => '/'],
+            ['name' => 'Pradžia', 'href' => '/'],
             ['name' => 'Pigiausios prekės', 'href' => $path],
         ];
 
@@ -35,13 +35,13 @@ class CheapestProductsController extends Controller
                 ->all(),
         ];
         $groups = collect([
-            $buildGroup('Maisto prekių kainų palyginimas', $candidates['food']),
-            $buildGroup('Ne maisto prekių kainų palyginimas', $candidates['non_food']),
+            $buildGroup('Vaistų ir papildų kainų palyginimas', $candidates['medicines']),
+            $buildGroup('Kosmetikos ir higienos prekių kainų palyginimas', $candidates['care']),
         ])->filter(fn (array $group) => !empty($group['items']))->values()->all();
 
         return view('pigiausios-prekes.show', [
             'title' => 'Pigiausios prekės vaistinėse',
-            'description' => 'Kiekvieną savaitę sekame kasdienių prekių kainas didžiausiuose prekybos tinkluose ir parodome, kur šiuo metu pigiausia apsipirkti.',
+            'description' => 'Kasdien sekame populiarių vaistų ir kitų vaistinės prekių kainas visose vaistinėse ir parodome, kurioje šiuo metu pigiausia.',
             'canonical' => CanonicalUrl::build($path),
             'robots' => null,
             'breadcrumbs' => $breadcrumbs,

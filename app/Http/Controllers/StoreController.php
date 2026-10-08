@@ -25,7 +25,7 @@ class StoreController extends Controller
         $pageMeta = $payload['page_meta'];
         $path = '/vaistines';
         $faq = $pageMeta['faq'] ?? [];
-        $breadcrumbs = [['name' => 'Akcijos', 'href' => '/akcijos'], ['name' => 'Vaistinės', 'href' => $path]];
+        $breadcrumbs = [['name' => 'Pradžia', 'href' => '/'], ['name' => 'Vaistinės', 'href' => $path]];
 
         return view('stores.index', [
             'stores' => $stores,
@@ -61,7 +61,7 @@ class StoreController extends Controller
 
         $path = "/vaistines/{$slug}";
         $breadcrumbs = [
-            ['name' => 'Akcijos', 'href' => '/akcijos'],
+            ['name' => 'Pradžia', 'href' => '/'],
             ['name' => 'Vaistinės', 'href' => '/vaistines'],
             ['name' => $store->name, 'href' => $path],
         ];
@@ -123,7 +123,7 @@ class StoreController extends Controller
 
         $path = "/vaistines/{$store->slug}/{$citySlug}";
         $breadcrumbs = [
-            ['name' => 'Akcijos', 'href' => '/akcijos'],
+            ['name' => 'Pradžia', 'href' => '/'],
             ['name' => 'Vaistinės', 'href' => '/vaistines'],
             ['name' => $store->name, 'href' => "/vaistines/{$store->slug}"],
             ['name' => $cityName, 'href' => $path],

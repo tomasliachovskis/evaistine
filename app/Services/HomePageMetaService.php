@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Category;
 use App\Models\Discount;
 use App\Models\Store;
+use App\Support\PharmacyName;
+use App\Support\StoreListPriority;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -38,7 +40,6 @@ class HomePageMetaService
             'stats' => $this->buildStats($stores),
             'category_highlights' => $this->buildCategoryHighlights($categories),
             'all_category_footer_links' => $this->buildCategoryFooterLinks($categories),
-            'cheapest_basket' => $this->buildCheapestBasket($stores),
             'faq' => $this->getFaq(),
         ];
     }
@@ -49,11 +50,11 @@ class HomePageMetaService
             ->sortByDesc('discounts_count')
             ->values();
         $topNames = $this->formatStoreList($activeStores->take(4)->pluck('name')->all());
-        // Real top store (usually Maxima) reused for the branded-query
-        // examples below ("{Store} akcija", "{Store} leidinys") — not
-        // hardcoded, so it stays accurate if the #1 store by discount count
-        // ever changes.
-        $topStoreName = $activeStores->first()?->name ?? 'Maxima';
+        // Real top pharmacy reused for the branded-query examples below
+        // ("{Store} akcijos", "{Store} leidinys"), so it stays accurate if
+        // the #1 pharmacy by discount count changes.
+        $topStoreName = $activeStores->first()?->name ?? (array_values(StoreListPriority::mainNames(1))[0] ?? 'Eurovaistinė');
+        $topStoreGenitive = PharmacyName::phrase($topStoreName, 'genitive');
         $totalDeals = $stores->sum('discounts_count');
         $dealsLabel = number_format($totalDeals, 0, '', ' ');
 
@@ -67,15 +68,15 @@ class HomePageMetaService
             // and kainos.lt — our real functional peers (price comparison,
             // not just leaflet aggregation) — lead with "kainų palyginimas",
             // which this now does too.
-            'h1' => 'Akcijos, nuolaidos ir kainų palyginimas Lietuvoje',
-            'intro_lead' => "Agreguojame {$dealsLabel}+ akcijų iš {$topNames} ir kitų Lietuvos tinklų.",
-            'intro_support' => 'Palyginkite prekybos tinklų savaitės nuolaidas ir akcijas vienoje vietoje – duomenys atnaujinami kasdien.',
-            'meta_title' => 'Visos akcijos ir nuolaidos Lietuvoje – kainų palyginimas | eVaistine.lt',
+            'h1' => 'Vaistų kainų palyginimas',
+            'intro_lead' => "Surenkame {$dealsLabel}+ prekių kainų ir akcijų iš {$topNames} ir kitų Lietuvos vaistinių.",
+            'intro_support' => 'Palyginkite vitaminų, kosmetikos, higienos ir nereceptinių vaistų kainas skirtingose vaistinėse vienoje vietoje – duomenys atnaujinami kasdien.',
+            'meta_title' => 'Vaistų kainų palyginimas ir vaistinių akcijos | eVaistine.lt',
             // Explicit keywords per direct request: "akcijos"/"leidiniai"
             // (generic terms) plus a real branded-query example pairing
             // ("{Store} akcija", "{Store} leidinys" — how people actually
             // type single-store searches) — not just generic copy.
-            'meta_description' => "Palyginome {$dealsLabel}+ akcijų ir akcijų leidinius iš {$topNames} bei kitų Lietuvos vaistinių – pvz., {$topStoreName} akcija, {$topStoreName} leidinys. Rask, kur šiuo metu pigiausia.",
+            'meta_description' => "Palyginkite {$dealsLabel}+ prekių kainas ir akcijų leidinius iš {$topNames} bei kitų Lietuvos vaistinių – pvz., {$topStoreGenitive} akcijos, {$topStoreGenitive} leidinys. Raskite, kur šiuo metu pigiausia.",
         ];
     }
 
@@ -184,45 +185,10 @@ class HomePageMetaService
         return $links;
     }
 
-    private function buildCheapestBasket(Collection $stores): array
-    {
-        $products = config('listing.home_basket_products', []);
-        $items = array_map(fn ($name) => ['name' => $name], $products);
-        $itemsCount = count($items);
-
-        $comparison = $this->assistantService->calculateCartPrices($products);
-        $cartComparison = $comparison['cart_comparison'] ?? [];
-
-        $rows = [];
-        $rank = 1;
-
-        foreach ($cartComparison as $entry) {
-            if (($entry['product_count'] ?? 0) < $itemsCount) {
-                continue;
-            }
-
-            $rows[] = [
-                'store_name' => $entry['store_name'],
-                'store_slug' => $entry['store_slug'],
-                'store_href' => '/' . $entry['store_slug'],
-                'total_price' => round($entry['total'], 2),
-                'items_count' => $itemsCount,
-                'rank' => $rank++,
-            ];
-        }
-
-        return [
-            'title' => 'Pigiausias krepšelis',
-            'subtitle' => "{$itemsCount} kasdieniai produktai savaitės akcijomis",
-            'items' => $items,
-            'rows' => $rows,
-        ];
-    }
-
     private function formatStoreList(array $names): string
     {
         if (count($names) === 0) {
-            return 'Maxima, Lidl, Iki, Rimi';
+            return StoreListPriority::mainNamesText(4);
         }
         if (count($names) === 1) {
             return $names[0];
@@ -241,7 +207,7 @@ class HomePageMetaService
         return [
             [
                 'question' => 'Kas yra eVaistine.lt?',
-                'answer' => 'eVaistine.lt – akcijų agregatorius. Surenkame Maxima, Lidl, Iki, Rimi, Norfa ir kitų tinklų nuolaidas vienoje vietoje, kad nereikėtų tikrinti kiekvienos vaistinės atskirai.',
+                'answer' => 'eVaistine.lt – vaistų kainų palyginimo svetainė. Surenkame ' . StoreListPriority::mainNamesText() . ' ir kitų vaistinių kainas bei akcijas vienoje vietoje, kad nereikėtų tikrinti kiekvienos vaistinės atskirai.',
             ],
             [
                 'question' => 'Kaip dažnai atnaujinamos akcijos?',
@@ -249,15 +215,15 @@ class HomePageMetaService
             ],
             [
                 'question' => 'Iki kada galioja akcijos?',
-                'answer' => 'Dauguma savaitės akcijų galioja iki sekmadienio. Tikslią datą matote prie kiekvieno pasiūlymo arba hero bloke.',
+                'answer' => 'Kiekviena vaistinė akcijų trukmę nustato pati: vienos galioja kelias dienas, kitos – visą mėnesį. Tikslią datą matote prie kiekvieno pasiūlymo.',
             ],
             [
-                'question' => 'Kaip rasti geriausius pasiūlymus Maxima ar Lidl?',
-                'answer' => 'Peržiūrėkite savaitės pasiūlymus arba populiariausius pasiūlymus pagal kategoriją.',
+                'question' => 'Kaip rasti geriausius pasiūlymus konkrečioje vaistinėje?',
+                'answer' => 'Pasirinkite vaistinę, pvz. ' . StoreListPriority::mainNamesText(2, 'ar') . ', ir peržiūrėkite jos akcijas arba populiariausius pasiūlymus pagal kategoriją.',
             ],
             [
                 'question' => 'Ar galima palyginti kainas tarp vaistinių?',
-                'answer' => 'Taip. Pasirinkite kategoriją ir palyginkite akcijas visuose tinkluose vienoje vietoje.',
+                'answer' => 'Taip. Atidarę prekę matysite jos kainą visose vaistinėse, kurios ją parduoda, o kategorijos puslapyje – visų vaistinių akcijas vienoje vietoje.',
             ],
         ];
     }

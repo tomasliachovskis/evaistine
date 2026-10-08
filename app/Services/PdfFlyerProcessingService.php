@@ -1071,7 +1071,7 @@ NO THOUGHTS. NO REASONING. NO INTERNAL ANALYSIS.
 Output ONLY the final JSON starting with { and ending with }.
 Do not generate any text, explanations, or thinking blocks before or after the JSON.
 
-        Extract discount data from Lithuanian grocery flyer images.
+        Extract discount data from Lithuanian pharmacy flyer images.
 Return ONLY valid JSON using SHORT field names.
 
 ### FIELD MAP
@@ -1119,11 +1119,11 @@ SAFETY MARGIN: Do not add artificial padding or safety margins. Keep the box tig
    - The final box must include the complete product image, complete product name and complete price area, while excluding neighbouring offers.
 ### STRICT PRODUCT NAME RULE
 1. The product name (n) MUST include ALL text that identifies the product.
-2. Start the name from the VERY FIRST word of the text block, even if it is a brand (e.g., "VIČI", "Bocmano").
+2. Start the name from the VERY FIRST word of the text block, even if it is a brand (e.g., "Solgar", "La Roche-Posay").
 3. If a comma (,) exists: text BEFORE it is "n", text AFTER is "info".
-   - Example: "Lašišų filė VIČI, su oda, 160 g" -> n: "Lašišų filė VIČI", info: "su oda, 160 g".
+   - Example: "Vitaminas D3 SOLGAR 2200 TV, kapsulės N100" -> n: "Vitaminas D3 SOLGAR 2200 TV", info: "kapsulės N100".
 4. If there is no comma, but a line break separates the name from details (like weight), everything on the top line(s) is the name.
-5. DO NOT shorten or simplify the name. If you see "BOCMANO silkių filė", the name is "BOCMANO silkių filė", not just "silkių filė".
+5. DO NOT shorten or simplify the name. If you see "BIODERMA Sensibio micelinis vanduo", the name is "BIODERMA Sensibio micelinis vanduo", not just "micelinis vanduo".
 
 ### BRAND RULE
 * Brand (b): Extract the brand name if it is part of the product name or shown as a logo/label.

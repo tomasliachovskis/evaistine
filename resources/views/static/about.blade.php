@@ -9,19 +9,20 @@
             <h2 class="mb-4 text-xl font-semibold">Kas mes esame</h2>
             <p class="mb-6 text-base">
                 eVaistine.lt yra kainų ir akcijų palyginimo svetainė — mes nesame vaistinė ir
-                nieko patys neparduodame. Renkame ir vienoje vietoje sudedame Lietuvos prekybos tinklų
-                (Maxima, Lidl, Iki, Rimi, Norfa ir kitų) viešai skelbiamas akcijas, nuolaidas ir
-                savaitės leidinius, kad galėtumėte greitai palyginti kainas ir rasti geriausią pasiūlymą,
-                nereikalaudami vaikščioti po kiekvienos vaistinės svetainę atskirai.
+                nieko patys neparduodame. Renkame ir vienoje vietoje sudedame Lietuvos vaistinių
+                ({{ \App\Support\StoreListPriority::mainNamesText() }} ir kitų) viešai skelbiamas kainas,
+                akcijas ir leidinius, kad galėtumėte greitai palyginti kainas ir rasti geriausią pasiūlymą,
+                nereikėdami tikrinti kiekvienos vaistinės svetainės atskirai.
             </p>
 
             <h2 class="mb-4 text-xl font-semibold">Kaip veikia kainų rinkimas</h2>
             <p class="mb-6 text-base">
-                Kainos, nuolaidos ir leidiniai renkami automatizuotai iš viešai prieinamų prekybos
-                tinklų šaltinių ir atnaujinami reguliariai. Kadangi duomenys renkami automatiškai,
+                Kainos, nuolaidos ir leidiniai renkami automatizuotai iš viešai prieinamų vaistinių
+                svetainių ir atnaujinami reguliariai. Kadangi duomenys renkami automatiškai,
                 tarp faktinio kainos pasikeitimo vaistinėje ir jos atsiradimo mūsų svetainėje gali
                 praeiti šiek tiek laiko — visada rekomenduojame galutinę kainą patikrinti vaistinėje
-                ar prekybos tinklo svetainėje prieš perkant.
+                ar jos svetainėje prieš perkant. Informacija svetainėje nėra medicininė konsultacija —
+                dėl vaistų vartojimo pasitarkite su vaistininku ar gydytoju.
             </p>
 
             <h2 class="mb-4 text-xl font-semibold" id="kontaktai">Kontaktai</h2>
@@ -33,6 +34,8 @@
             <p class="text-base">
                 Su asmens duomenų tvarkymu susijusius klausimus rasite
                 <a href="/privatumo-politika" class="text-primary underline hover:text-dark-green">privatumo politikoje</a>.
+                Kas atsako už prekes, kainas ir pirkimą, aprašyta
+                <a href="/naudojimosi-taisykles" class="text-primary underline hover:text-dark-green">naudojimosi taisyklėse</a>.
             </p>
         </div>
     </div>

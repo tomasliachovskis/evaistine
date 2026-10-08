@@ -53,6 +53,7 @@
                         <ul class="flex flex-col gap-2">
                             <li><a href="/apie" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Apie mus</a></li>
                             <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Naujienos</a></li>
+                            <li><a href="/naudojimosi-taisykles" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Naudojimosi taisyklės</a></li>
                             <li><a href="/privatumo-politika" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Privatumo politika</a></li>
                             <li><a href="/vaistines" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Vaistinės</a></li>
                         </ul>
@@ -115,8 +116,9 @@
             </div>
         </div>
 
-        <div class="py-6 text-center text-base text-white/60">
-            <p>&copy; {{ date('Y') }} eVaistine.lt &ndash; Rask visas akcijas ir nuolaidas</p>
+        <div class="flex flex-col gap-4 py-6">
+            <x-pharmacy-disclaimer class="max-w-4xl text-white/80 [&_a]:text-white" />
+            <p class="text-base text-white/60">&copy; {{ date('Y') }} eVaistine.lt &ndash; vaistų kainų palyginimas</p>
         </div>
     </div>
 </footer>

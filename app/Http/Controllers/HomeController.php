@@ -66,8 +66,8 @@ class HomeController extends Controller
             ->all();
 
         $seo = $pageMeta['seo'];
-        $title = $seo['meta_title'] ?: 'Akcijos ir nuolaidos Lietuvoje | eVaistine.lt';
-        $description = $seo['meta_description'] ?: 'Rask visas akcijas ir nuolaidas Lietuvoje. Naujausi Maxima, Lidl, Iki, Rimi ir Norfa leidiniai.';
+        $title = $seo['meta_title'] ?: 'Vaistų kainų palyginimas ir vaistinių akcijos | eVaistine.lt';
+        $description = $seo['meta_description'] ?: 'Palyginkite vaistų kainas ir akcijas visose vaistinėse vienoje vietoje: '.\App\Support\StoreListPriority::mainNamesText().'.';
 
         return PageHtmlCache::remember($request, '/', fn () => view('home', [
             'title' => $title,

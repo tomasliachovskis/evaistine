@@ -8,6 +8,8 @@ use App\Models\DiscountTemp;
 // every store: no store has needed its own price/discount parsing so far.
 class DefaultRules
 {
+    private const MIN_REAL_PRICE = 0.05;
+
     protected DiscountTemp $tempDiscount;
 
     public function __construct(DiscountTemp $tempDiscount)
@@ -48,6 +50,14 @@ class DefaultRules
 
     public function validate(): bool
     {
+        // Gifts with purchase come through at a token price (Benu: 0.01 €,
+        // "DOVANA ..."). They aren't for sale and would become every
+        // listing's "nuo 0.01 €" cheapest price.
+        $price = $this->normalizePrice($this->tempDiscount->discounted_price);
+        if ($price > 0 && $price < self::MIN_REAL_PRICE) {
+            return false;
+        }
+
         return !empty($this->tempDiscount->name)
             && ($this->normalizePrice($this->tempDiscount->original_price) > 0
                 || $this->normalizePrice($this->tempDiscount->discounted_price) > 0
