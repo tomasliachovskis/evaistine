@@ -3,7 +3,7 @@
 namespace App\Support;
 
 // Ported from discount/src/lib/product-page-meta.ts — only the pieces that
-// drive visible product-page UI (hero copy, price-deal signal, FAQ).
+// drive visible product-page UI (price-deal signal, FAQ).
 // Deliberately NOT ported: a fabricated per-product "follower count" (same
 // fake-social-proof pattern removed from StoreSocialProof — a deterministic
 // number with no real feature behind it), popular-search-link generation, attribute
@@ -12,55 +12,15 @@ namespace App\Support;
 // in AkcijosController/ProductController, this class is presentation-only.
 class ProductPageMeta
 {
-    private const VOLUME_PATTERN = '/\b(\d+(?:[.,]\d+)?\s*(?:ml|l|kg|g|vnt\.?|vnt))\b/iu';
-
-    public static function heroTitle(string $productName, ?string $description): string
+    /**
+     * The product name for the page's H1: the full name, minus a trailing
+     * ", 1 vnt" (1 546 of 51k names end that way; it says nothing). Real pack
+     * sizes ("N12", "50 ml", "21 vnt.") stay, because they tell one pack
+     * from another across pharmacies.
+     */
+    public static function headingName(string $name): string
     {
-        return self::stripVolumeSuffix($productName, $description) . ' akcija';
-    }
-
-    private static function stripVolumeSuffix(string $productName, ?string $description): string
-    {
-        $trimmed = trim($productName);
-        $volume = self::parseVolume($productName, $description);
-
-        if ($volume === null) {
-            return $trimmed;
-        }
-
-        $parts = array_map('trim', explode(',', $trimmed));
-        $last = end($parts);
-        $volumeNorm = mb_strtolower(preg_replace('/\s+/', ' ', $volume));
-
-        if ($last !== false && mb_strtolower(preg_replace('/\s+/', ' ', $last)) === $volumeNorm) {
-            array_pop($parts);
-
-            return trim(implode(', ', $parts)) ?: $trimmed;
-        }
-
-        $escaped = preg_quote($volume, '/');
-
-        return trim(preg_replace('/,\s*$/', '', preg_replace("/\\s*,?\\s*{$escaped}\\s*$/iu", '', $trimmed)));
-    }
-
-    private static function parseVolume(string $productName, ?string $description): ?string
-    {
-        if (preg_match(self::VOLUME_PATTERN, $productName, $m)) {
-            return trim(preg_replace('/\s+/', ' ', $m[1]));
-        }
-
-        if ($description && preg_match(self::VOLUME_PATTERN, $description, $m)) {
-            return trim(preg_replace('/\s+/', ' ', $m[1]));
-        }
-
-        $parts = array_map('trim', explode(',', $productName));
-        $last = end($parts);
-
-        if ($last !== false && preg_match(self::VOLUME_PATTERN, $last)) {
-            return $last;
-        }
-
-        return null;
+        return preg_replace('/,?\s+1\s?vnt\.?$/u', '', trim($name)) ?: trim($name);
     }
 
     /**

@@ -168,7 +168,9 @@ use App\Support\ProductPageMeta;
                             @if ($product['brand'])
                                 <span class="text-sm font-semibold uppercase text-gray-500">{{ $product['brand'] }}</span>
                             @endif
-                            <h1 class="m-0 text-xl font-semibold leading-tight text-gray-900 sm:text-2xl lg:text-3xl">{{ ProductPageMeta::heroTitle($product['name'], $product['description'] ?? null) }}</h1>
+                            {{-- The full product name, no "akcija" (owner, 2026-10-08): most
+                                 products have no discount, and a cut name hid the pack size. --}}
+                            <h1 class="m-0 text-xl font-semibold leading-tight text-gray-900 sm:text-2xl lg:text-3xl">{{ ProductPageMeta::headingName($product['name']) }}</h1>
                         </div>
 
                         @if ($isNoActivePromotion)
