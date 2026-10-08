@@ -51,12 +51,6 @@ return [
         'enabled' => (bool) env('MEILISEARCH_HOST'),
     ],
 
-    // Still used by AuthController::oauth() for the old Next.js app (discount
-    // repo) during its Phase 7 parallel run — see that method's docblock.
-    'nextauth' => [
-        'secret' => env('NEXTAUTH_SECRET'),
-    ],
-
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

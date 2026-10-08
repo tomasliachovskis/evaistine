@@ -68,11 +68,8 @@ return [
 
     'links' => [
         public_path('storage') => storage_path('app/public'),
-        // Preserves the pre-migration image URL shape (/assets/product/{file}),
-        // which the old separate Next.js frontend served via its own
-        // /var/www/images alias — kept exactly the same for SEO (indexed
-        // image-search URLs and any external hotlinks/backlinks to it would
-        // 404 otherwise). See DiscountResponseFormatter::resolveProductImageUrl().
+        // Product photo URLs are /assets/product/{file}. See
+        // DiscountResponseFormatter::resolveProductImageUrl().
         public_path('assets/product') => storage_path('app/public/products'),
     ],
 

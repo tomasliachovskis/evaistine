@@ -18,9 +18,7 @@ use Illuminate\Support\Facades\Validator;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
 
-// Session-based auth for the Blade/Livewire frontend, replacing the old
-// Sanctum-token + NextAuth-JWT flow that Api\AuthController still serves to
-// the old Next.js app during its parallel run (see that controller).
+// Session-based auth for the Blade/Livewire frontend.
 class AuthController extends Controller
 {
     // Stashed by product-price-watch-banner.blade.php's toggle() the moment
@@ -246,8 +244,8 @@ class AuthController extends Controller
         }
 
         // Match by provider id first (returning OAuth user), then fall back
-        // to email — this is how the old NextAuth bridge matched accounts
-        // too, so a user who first signed up there keeps the same row here.
+        // to email, so a user who first signed up with a password keeps the
+        // same row.
         $user = User::where('oauth_provider', $provider)
             ->where('oauth_provider_id', $socialUser->getId())
             ->first()

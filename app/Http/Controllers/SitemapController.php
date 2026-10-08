@@ -133,8 +133,7 @@ class SitemapController extends Controller
         $products = $this->productSitemapProducts($page);
 
         if (count($products) === 0) {
-            // Same reasoning as the Next.js route this replaces: an in-range
-            // page with zero products, or a fetch failure, is a signal
+            // An in-range page with zero products, or a fetch failure, is a signal
             // something's wrong upstream -- not a legitimately empty sitemap.
             // Serve a real error so crawlers back off and retry instead of
             // Search Console recording a false "0 pages discovered".

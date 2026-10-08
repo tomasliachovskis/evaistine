@@ -29,19 +29,6 @@ use App\Support\ProductPageMeta;
     $hasSimilar = !empty($similar);
     $hasFaq = count($faqItems ?? []) > 0;
 
-    // MOCKUP (idea #10, not yet a permanent feature): when this product has
-    // no active discount, feature up to 3 cheapest currently-discounted
-    // "generic siblings" (AkcijosController passes this from
-    // ProductController::activeGenericAlternatives — same real-world item
-    // across stores/pack sizes, matched via generic_product_id) instead of
-    // loosely-related $similar entries from the same broad category (that
-    // surfaced blueberries on a cucumber page — same category, not the same
-    // product). Mobile shows just the first one with an explicit button
-    // (clearer tap target for an older audience); desktop has room to show
-    // all of them as directly clickable cards instead.
-    $genericAlternatives = $isNoActivePromotion ? ($genericAlternatives ?? []) : [];
-    $bestAlternative = $genericAlternatives[0] ?? null;
-
     // Same "current price counts as a history point too" fix the old
     // min/avg/max block had ($bestPrice isn't in $history — that table only
     // has past discount records, not the live current one). Computed up here
@@ -172,7 +159,7 @@ use App\Support\ProductPageMeta;
                 <div class="grid grid-cols-1 items-start gap-x-4 gap-y-4 sm:grid-cols-[144px_minmax(0,1fr)] sm:gap-x-5 sm:gap-y-7 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-x-8">
                     <div class="flex min-w-0 items-start justify-center self-start overflow-hidden sm:pt-3 sm:pl-2 lg:p-3">
                         @if ($product['image_url'])
-                            <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" fetchpriority="high" loading="eager" class="aspect-square h-auto max-h-48 w-full max-w-full origin-center object-contain sm:max-h-[144px] sm:scale-[1.15] {{ $bestAlternative ? 'lg:max-h-[320px]' : 'lg:max-h-[190px]' }} lg:scale-100">
+                            <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" fetchpriority="high" loading="eager" class="aspect-square h-auto max-h-48 w-full max-w-full origin-center object-contain sm:max-h-[144px] sm:scale-[1.15] lg:max-h-[190px] lg:scale-100">
                         @endif
                     </div>
 
@@ -186,51 +173,6 @@ use App\Support\ProductPageMeta;
 
                         @if ($isNoActivePromotion)
                             <p class="rounded-lg bg-amber-50 px-3 py-2.5 text-base text-amber-800">Akcija nebegalioja.</p>
-
-                            {{-- Desktop keeps the original nested-in-text-column placement
-                                 (narrower, next to the product photo) — only the lg:hidden
-                                 col-span-2 copy further down goes full-card-width, since below
-                                 lg that's where the dead space next to the (now much smaller)
-                                 image column was. --}}
-                            @if ($bestAlternative)
-                                <div class="mt-1 hidden w-full rounded-2xl border border-green/30 bg-green/5 p-4 lg:block">
-                                    <p class="text-base font-bold text-dark-green">Radome panašų produktą su aktyvia nuolaida:</p>
-                                    <div class="mt-3 grid grid-cols-2 gap-2.5 lg:grid-cols-3">
-                                        @foreach ($genericAlternatives as $alt)
-                                            @php
-                                                $altP = $alt['product'];
-                                                $altPHref = '/' . $altP['full_slug'];
-                                                $altPPrice = (float) ($alt['discounted_price'] ?? 0);
-                                                $altPStore = collect($alt['offers'] ?? [])->pluck('store')->filter()->first();
-                                            @endphp
-                                            <a href="{{ $altPHref }}" data-ga-event="product_card_click" data-ga-product-id="{{ $altP['id'] }}" data-ga-product-name="{{ $altP['name'] }}" data-ga-source="alternative"
-                                               class="flex items-center gap-2.5 rounded-xl bg-white p-2.5 transition-colors hover:bg-gray-50">
-                                                <div class="relative aspect-square w-20 shrink-0 overflow-hidden rounded-lg bg-white">
-                                                    @if ($altP['image_url'])
-                                                        <img src="{{ $altP['image_url'] }}" alt="{{ $altP['name'] }}" loading="lazy" class="h-full w-full object-contain p-1.5">
-                                                    @endif
-                                                </div>
-                                                <div class="min-w-0 flex-1">
-                                                    <p class="line-clamp-2 text-sm font-medium leading-snug text-gray-900">{{ $altP['name'] }}</p>
-                                                    <div class="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                                                        @if ($altPPrice > 0)
-                                                            <span class="text-base font-bold tabular-nums text-gray-900">{{ number_format($altPPrice, 2, ',', ' ') }} €</span>
-                                                        @endif
-                                                        @if (!empty($alt['discount_percent']))
-                                                            <x-discount-badge :percent="$alt['discount_percent']" size="sm" />
-                                                        @endif
-                                                    </div>
-                                                    @if ($altPStore)
-                                                        <div class="mt-1">
-                                                            <x-store-logo :slug="$altPStore['slug']" :name="$altPStore['name']" size="xs" />
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
                         @else
                             @if ($bestOffer)
                                 @php
@@ -316,65 +258,6 @@ use App\Support\ProductPageMeta;
                             :variant="$isNoActivePromotion ? 'noOffers' : 'offersHero'"
                         />
                     </div>
-
-                    {{-- MOCKUP (idea #10), redesigned for an older (50-60+) audience — below
-                         lg only (lg:hidden): a grid SIBLING of the image/title columns
-                         (col-span-2, same pattern as the price-watch banner below), not nested
-                         inside the narrow text column, which left a wide dead gap next to the
-                         product photo at those widths. At lg+, the nested hidden-lg:block copy
-                         above (next to the photo, narrower) is used instead. Every alternative
-                         is its own directly clickable card (no separate button) — always at
-                         least 2 up even on narrow phones (max 2 shown there), 3 from lg. --}}
-                    @if ($bestAlternative)
-                        <div class="col-span-full rounded-2xl border border-green/30 bg-green/5 p-4 lg:hidden">
-                            <p class="text-base font-bold text-dark-green">Radome panašų produktą su aktyvia nuolaida:</p>
-
-                            <div class="mt-3 grid grid-cols-2 gap-2.5 lg:grid-cols-3">
-                                @foreach ($genericAlternatives as $alt)
-                                    @php
-                                        $altP = $alt['product'];
-                                        $altPHref = '/' . $altP['full_slug'];
-                                        $altPPrice = (float) ($alt['discounted_price'] ?? 0);
-                                        $altPStore = collect($alt['offers'] ?? [])->pluck('store')->filter()->first();
-                                    @endphp
-                                    {{-- Stacked (image on top) below lg, not the
-                                         side-by-side row the desktop card
-                                         (above, hidden here) uses — at 2-up on
-                                         a phone-width grid cell, an 80px image
-                                         next to text left almost no room for
-                                         the name/price, truncating badly
-                                         (confirmed live 2026-09-20: "Vaisiu
-                                         sk....", price wrapping mid-number).
-                                         lg+ still gets the compact row shape,
-                                         where 3-up leaves enough width. --}}
-                                    <a href="{{ $altPHref }}" data-ga-event="product_card_click" data-ga-product-id="{{ $altP['id'] }}" data-ga-product-name="{{ $altP['name'] }}" data-ga-source="alternative"
-                                       class="{{ $loop->index >= 2 ? 'hidden lg:flex' : 'flex' }} flex-col items-stretch gap-2 rounded-xl bg-white p-2.5 transition-colors hover:bg-gray-50 lg:flex-row lg:items-center lg:gap-2.5">
-                                        <div class="relative aspect-square w-full overflow-hidden rounded-lg bg-white lg:w-20 lg:shrink-0">
-                                            @if ($altP['image_url'])
-                                                <img src="{{ $altP['image_url'] }}" alt="{{ $altP['name'] }}" loading="lazy" class="h-full w-full object-contain p-1.5">
-                                            @endif
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <p class="line-clamp-2 text-sm font-medium leading-snug text-gray-900">{{ $altP['name'] }}</p>
-                                            <div class="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                                                @if ($altPPrice > 0)
-                                                    <span class="text-base font-bold tabular-nums text-gray-900">{{ number_format($altPPrice, 2, ',', ' ') }} €</span>
-                                                @endif
-                                                @if (!empty($alt['discount_percent']))
-                                                    <x-discount-badge :percent="$alt['discount_percent']" size="sm" />
-                                                @endif
-                                            </div>
-                                            @if ($altPStore)
-                                                <div class="mt-1">
-                                                    <x-store-logo :slug="$altPStore['slug']" :name="$altPStore['name']" size="xs" />
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
 
                 </div>
 

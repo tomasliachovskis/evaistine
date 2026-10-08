@@ -39,7 +39,7 @@ class FinalizeScrapedStoresJob implements ShouldBeUnique, ShouldQueue
     public function __construct(public array $stores)
     {
         // Its own queue (a dedicated worker, see
-        // deploy/supervisor-nuolaidos-discounts.conf), not 'flyers' — this
+        // deploy/supervisor-evaistine-discounts.conf), not 'flyers' — this
         // job finalizes scraped data into live discounts and needs to run on
         // schedule (every 5 min via discounts:dispatch-store-processing);
         // sharing a single worker with the 'flyers' queue's jobs

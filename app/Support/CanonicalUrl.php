@@ -2,10 +2,9 @@
 
 namespace App\Support;
 
-// Ported from discount/src/lib/canonical-utils.ts. Canonical URLs only ever
-// carry `page` (if != 1) and `order` (if != 'popular') — every other filter
-// param is stripped to avoid duplicate-content canonicals. Search-result and
-// filtered pages are noindexed the same way the Next.js frontend did.
+// Canonical URLs only ever carry `page` (if != 1) and `order` (if !=
+// 'popular') — every other filter param is stripped to avoid
+// duplicate-content canonicals. Search-result and filtered pages are noindexed.
 class CanonicalUrl
 {
     private const BASE_URL = 'https://evaistine.lt';

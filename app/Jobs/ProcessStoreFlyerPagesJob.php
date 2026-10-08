@@ -18,7 +18,7 @@ class ProcessStoreFlyerPagesJob implements ShouldQueue, ShouldBeUnique
 
     public function __construct(public int $storeFlyerId)
     {
-        // 2 parallel workers on this queue (deploy/supervisor-nuolaidos-
+        // 2 parallel workers on this queue (deploy/supervisor-evaistine-
         // flyers.conf, numprocs=2) — confirmed live 2026-09-18 a single
         // huge catalog (Oriflame, 148 pages, ~114s/page) can otherwise tie
         // up the only worker for ~4.7h, blocking every other flyer behind

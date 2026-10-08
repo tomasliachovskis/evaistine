@@ -13,11 +13,8 @@ use Illuminate\Support\Collection;
  * variants (e.g. 5 flavors of the same chips bag at the same price) crowding
  * out real variety. Checked in priority order:
  *
- * 1. products.generic_product_id — most precise, DB-backed, commodity-level
- *    grouping (~64% of active discounts have one).
- * 2. keyword-page match — broader, topic-level (e.g. "šokoladas"), covers
- *    most of the remainder.
- * 3. category slug — always available, coarsest fallback.
+ * 1. keyword-page match — topic-level (e.g. "vitaminas-d").
+ * 2. category slug — always available, coarsest fallback.
  */
 class DealFamilyKeyResolver
 {
@@ -31,11 +28,6 @@ class DealFamilyKeyResolver
 
     public function resolve(Discount $discount): string
     {
-        $genericProductId = $discount->product?->generic_product_id;
-        if ($genericProductId !== null) {
-            return "generic:{$genericProductId}";
-        }
-
         $keywordSlug = $this->resolveKeywordSlug($discount);
         if ($keywordSlug !== null) {
             return "keyword:{$keywordSlug}";

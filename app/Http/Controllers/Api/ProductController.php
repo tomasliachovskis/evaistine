@@ -24,7 +24,6 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
@@ -724,32 +723,6 @@ class ProductController extends Controller
         }
     }
 
-    public function getFavoriteProduct($slug)
-    {
-        $filters = $this->getFilters();
-        $cacheKey = $this->generateFavoriteProductCacheKey($slug, $this->normalizeFiltersForCacheKey($filters));
-
-        if (! Product::where('slug', $slug)->exists()) {
-            return response()->json(['error' => 'Product not found'], 404);
-        }
-
-        return Cache::remember($cacheKey, 86400, function () use ($slug, $filters) {
-            $product = Product::where('slug', $slug)->firstOrFail();
-
-            $query = Discount::whereHas('product', function ($query) use ($slug, $product) {
-                $query->where('slug', '!=', $slug)
-                    ->where('category_id', $product->category_id);
-            })
-                ->with(['product.category', 'store'])
-                ->orderBy('discount_percent', 'desc')
-                ->limit(10);
-
-            $discounts = $this->buildDiscountQuery($query, $filters)->get();
-
-            return response()->json($this->formatter->format($discounts));
-        });
-    }
-
     public function getFavoriteCategory($id)
     {
         $filters = $this->getFilters();
@@ -979,34 +952,11 @@ class ProductController extends Controller
             $data = $this->formatter->formatProductDiscounts($product);
         }
 
-        // $product->discounts->isEmpty() alone is wrong here — it's true for
-        // any product that has ever had a discount row, including one whose
-        // only discount already ended (e.g. end_at yesterday). That silently
-        // hid the alternatives block on expired-promo product pages even
-        // though the page itself (product.blade.php's $isNoActivePromotion,
-        // which checks end_at against now()) correctly showed "no active
-        // promotion" UI — https://evaistine.lt/mesa-ir-zuvis/virtos-hot-dog-desreles-1-kg
-        // was one such case. Match that same "is there a discount active
-        // right now" check instead of "has a discount row ever existed".
-        $hasActiveDiscount = $product->discounts->contains(
-            fn ($discount) => empty($discount->end_at) || $discount->end_at->endOfDay()->gte(now())
-        );
-
         $responseData = [
             'data' => $data,
             'breadcrumbs' => $this->generateBreadcrumbs('product', $product),
             'seo' => $this->generateSeoData('product', $product),
             'similar' => $this->formatter->formatList($similarDiscounts),
-            // MOCKUP (idea #10): when this exact product has no active
-            // discount, the true "get this instead" pick is another Product
-            // row sharing the same generic_product_id (the same real-world
-            // item — e.g. every "agurkai" variant across stores/brands), not
-            // a loosely-related $similar entry from the same broad category.
-            // $similar surfaced blueberries for a cucumber page — same
-            // category, no actual relation to the product itself.
-            'generic_alternatives' => ! $hasActiveDiscount
-                ? $this->activeGenericAlternatives($product)
-                : [],
         ];
 
         $jsonString = json_encode($responseData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -1016,41 +966,6 @@ class ProductController extends Controller
         return response($jsonString, 200, ['Content-Type' => 'application/json'])
             ->header('X-Cache', 'MISS')
             ->header('X-Cache-Key', $cacheKey);
-    }
-
-    /**
-     * MOCKUP (idea #10, not a permanent feature yet): up to $limit currently
-     * active discounts among the product's generic-product siblings (same
-     * real-world item across stores/pack sizes/brands, matched by
-     * MatchGenericProducts), cheapest first, one per distinct sibling
-     * product — the actual right "buy this instead" picks, not a loosely
-     * related $similar entry from the same broad category.
-     */
-    private function activeGenericAlternatives(Product $product, int $limit = 3): array
-    {
-        if (! $product->generic_product_id) {
-            return [];
-        }
-
-        $discounts = Discount::with(['store', 'product.category'])
-            ->whereHas('product', function ($query) use ($product) {
-                $query->where('generic_product_id', $product->generic_product_id)
-                    ->where('id', '!=', $product->id);
-            })
-            ->where(function ($query) {
-                // now()->startOfDay(): end_at is a DATE stored at midnight
-                // ("valid through this day") — comparing against plain
-                // now() wrongly expired a discount at the START of its last
-                // valid day instead of the end of it.
-                $query->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay());
-            })
-            ->orderByRaw('CASE WHEN discounted_price > 0 THEN discounted_price ELSE 999999 END')
-            ->get()
-            ->unique('product_id')
-            ->take($limit)
-            ->values();
-
-        return $discounts->map(fn ($discount) => $this->formatter->formatListDiscount($discount))->all();
     }
 
     private function generateBreadcrumbs($type, $entity = null, $secondaryEntity = null)
@@ -2103,17 +2018,6 @@ class ProductController extends Controller
         return 'all_discounts_'.md5(serialize($filters)).'_'.CacheVersion::suffix(['discounts']);
     }
 
-    private function generateFavoriteProductCacheKey($slug, $filters = [])
-    {
-        $key = "favorite_product_{$slug}";
-
-        if (! empty($filters)) {
-            $key .= '_'.md5(serialize($filters));
-        }
-
-        return $key.'_'.CacheVersion::suffix(['discounts']);
-    }
-
     private function generateFavoriteCategoryCacheKey($id, $filters = [])
     {
         $key = "favorite_category_{$id}";
@@ -2134,56 +2038,6 @@ class ProductController extends Controller
         }
 
         return $key.'_'.CacheVersion::suffix(['discounts']);
-    }
-
-    public function toggleFavorite(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'product_id' => 'required|integer|exists:products,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'error' => 'Validation failed',
-                'messages' => $validator->errors(),
-            ], 422);
-        }
-
-        $user = $request->user();
-        $productId = $request->input('product_id');
-
-        $favorite = ProductFavorite::where('user_id', $user->id)
-            ->where('product_id', $productId)
-            ->first();
-
-        if ($favorite) {
-            $favorite->delete();
-        } else {
-            ProductFavorite::create([
-                'user_id' => $user->id,
-                'product_id' => $productId,
-            ]);
-        }
-
-        $productIds = ProductFavorite::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->pluck('product_id');
-
-        return response()->json([
-            'status' => $favorite ? 'removed' : 'added',
-            'favorites' => $productIds,
-        ]);
-    }
-
-    public function getFavorites(Request $request)
-    {
-        $user = $request->user();
-
-        $productIds = ProductFavorite::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->pluck('product_id');
-
-        return response()->json($productIds);
     }
 
     public function getFavoriteProducts(Request $request)

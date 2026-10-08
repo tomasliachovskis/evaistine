@@ -166,14 +166,26 @@ The phased roadmap with time estimates is in `docs/evaistine.md`
       privacy policy, superakcijos GA4/Clarity and the cookie banner removed.
 - [ ] **Legal leftovers**: lawyer review of the texts; server log retention
       30 days (Laravel `daily` channel + nginx logrotate), as the privacy policy
-      says; footer Facebook/Instagram links are probably superakcijos'
-      accounts; analytics with our own IDs + consent banner, if wanted.
+      says; analytics with our own IDs + consent banner, if wanted. Footer
+      social links removed 2026-10-08 (were superakcijos'); add ours later.
 - [x] **Cache namespace bug** (2026-10-08): web and CLI used different cache
       prefixes; pinned `REDIS_PREFIX`/`CACHE_PREFIX` (see `docs/evaistine.md`).
       Production `.env` needs both lines.
-- [ ] **Production**: GitHub repo, server, nginx vhost, `deploy.sh` for the
-      new server (remove the guard lines), Meilisearch index, GSC property,
-      sitemap, IndexNow key.
+- [ ] **Production**: server, nginx vhost, `deploy.sh` for the new server
+      (`DEPLOY_SERVER=user@host`, remove the guard line), supervisor configs
+      `deploy/supervisor-evaistine-*.conf`, Meilisearch index, GSC property,
+      sitemap, IndexNow key. GitHub repo: `tomasliachovskis/evaistine`.
+- [ ] **Own API keys**: OpenAI, Gemini and Meilisearch keys are still
+      superakcijos' (same values in `.env`); create eVaistine's own and drop
+      `NEXTAUTH_SECRET` from `.env`.
+
+- [x] **Pharmacy addresses and hours** (2026-10-08, `docs/evaistine.md`
+      "Pharmacy addresses and hours"): 1 157 locations for all 15 pharmacies
+      via `hours:scrape --all`.
+- [ ] **Addresses follow-ups**: read the five big chains from their own sites
+      instead of nuolaidos.lt (a spot check found stale entries); coordinates
+      for Mano vaistinė and the manual pharmacies (geocoding), so they get map
+      pins; hours for Piliulė and Rx (not published).
 
 ## Ideas carried over from superakcijos
 

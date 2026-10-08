@@ -58,23 +58,9 @@
                             <li><a href="/vaistines" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Vaistinės</a></li>
                         </ul>
                     </div>
-                    <div class="border-t border-white/10 pt-6">
-                        <h3 class="mb-4 text-lg font-bold">Sekite mus</h3>
-                        <ul class="flex flex-col gap-2">
-                            <li>
-                                <a href="https://www.facebook.com/profile.php?id=61586857013836" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-base text-white/80 transition-colors hover:text-white hover:underline">
-                                    <x-app-icon name="facebook" class="h-6 w-6 shrink-0" />
-                                    Facebook
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://www.instagram.com/evaistine.lt/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-base text-white/80 transition-colors hover:text-white hover:underline">
-                                    <x-app-icon name="instagram" class="h-6 w-6 shrink-0" />
-                                    Instagram
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+                    {{-- "Sekite mus" (Facebook/Instagram) removed 2026-10-08: the links
+                         were superakcijos' accounts. Add the block back (see git history)
+                         once eVaistine has its own pages. --}}
                 </div>
 
                 <div>

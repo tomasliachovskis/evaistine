@@ -19,10 +19,10 @@ class ProcessStoreFlyerDiscountsJob implements ShouldQueue, ShouldBeUnique
     public function __construct(public int $storeFlyerId)
     {
         // Own queue, not 'flyers' — that one now runs 2 parallel workers
-        // (deploy/supervisor-nuolaidos-flyers.conf) for page-splitting,
+        // (deploy/supervisor-evaistine-flyers.conf) for page-splitting,
         // since two of those can safely overlap. Gemini extraction stays
         // capped at exactly 1 concurrent job (deploy/supervisor-
-        // nuolaidos-flyers-gemini.conf) — confirmed live 2026-09-18 that
+        // evaistine-flyers-gemini.conf) — confirmed live 2026-09-18 that
         // mixing page-splitting and Gemini calls on the same 3-core box is
         // safe (disjoint temp files/DB columns), but by explicit choice
         // this queue is kept single-worker regardless.

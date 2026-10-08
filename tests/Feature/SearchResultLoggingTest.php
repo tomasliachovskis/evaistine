@@ -12,15 +12,15 @@ class SearchResultLoggingTest extends TestCase
 
     public function test_search_log_stores_cloudflare_country_code(): void
     {
-        $this->getJson('/api/search/pienas', ['CF-IPCountry' => 'lt'])->assertOk();
+        $this->get('/paieska/pienas', ['CF-IPCountry' => 'lt'])->assertOk();
 
         $this->assertSame('LT', SearchResult::latest('id')->value('country_code'));
     }
 
     public function test_unknown_or_missing_country_is_stored_as_null(): void
     {
-        $this->getJson('/api/search/pienas', ['CF-IPCountry' => 'XX'])->assertOk();
-        $this->getJson('/api/search/kava')->assertOk();
+        $this->get('/paieska/pienas', ['CF-IPCountry' => 'XX'])->assertOk();
+        $this->get('/paieska/kava')->assertOk();
 
         $this->assertSame([null, null], SearchResult::orderBy('id')->pluck('country_code')->all());
     }

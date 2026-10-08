@@ -137,6 +137,25 @@ the first runs post some rows without an EAN and the cache fills over a few
 nights. Product categories are sent as `Root/Subcategory` from each shop's
 own tree, ready for `categories:map-mappers`.
 
+## Pharmacy addresses and hours (2026-10-08)
+
+`store_locations` feeds `/vaistines/{slug}` and `/vaistines/{slug}/{city}`. `scrapers/hours/scrape.js` collects it per pharmacy and POSTs to `/api/scrapers/store-locations`, which upserts by `external_id`, deactivates locations that disappeared, and stores the `source`. Run all with `sail artisan hours:scrape --all` (scheduled weekly in `Kernel.php`) or one with `sail artisan hours:scrape "N vaistinė"`. Use `SCRAPER_DRY_RUN=1 node scrapers/hours/scrape.js {slug}` inside the container to print without saving.
+
+| Pharmacy | Source (`scrapers/hours/sources/`) | Locations (2026-10-08) |
+|---|---|---|
+| Eurovaistinė, Gintarinė, Camelia, Benu, Apotheka | `nuolaidos.js`: www.nuolaidos.lt/{slug}-darbo-laikas, a third-party directory | 261 / 230 / 298 / 85 / 56 |
+| N vaistinė | `nvaistine.js`: the `_markers_data_main` JSON on nvaistine.lt/vaistines/ | 125 |
+| Mano vaistinė | `mano-vaistine.js`: the cards on manovaistine.lt/visos-vaistines, no coordinates | 48 |
+| Ramunėlės vaistinė, 100 metų vaistinė | `ramuneles.js`: the `deliveryStores` JSON on 100metu.lt/vaistines/57 (the same company and pharmacies) | 22 each |
+| Ąžuolyno, LSMU, Universiteto, Piliulė, Rx, InternetineVaistine.lt | `manual.js`: hand-checked `scrapers/hours/manual-locations.json` from their contact pages | 1, 1, 4, 1, 1, 1 |
+
+Notes:
+- Every source returns nuolaidos' `workTimes` notation (`"I-V 08:00-20:00"`, `"VII Nedirba"`), which `WorkingHoursParser` reads. `_shared.js` converts each site's own notation (`normalizeHours()`, `workTimesFromRows()`, `rowsFromLine()`). A lunch break is kept as `"09:00-13:00, 14:00-16:00"`, shown as text. A day left out is unknown (no hours shown), and "Nedirba" shows it closed.
+- Towns: addresses that name only a municipality ("Šilalės r. sav.") get its centre town (`municipalityCentre()`). One N vaistinė address has no town at all and is mapped by id (`TOWN_BY_ID`, Palanga, checked against its coordinates).
+- Piliulė and Rx publish no hours, only an address. Mano vaistinė and the manual pharmacies have no coordinates, so they get no map pins.
+- nuolaidos.lt is not always current. A spot check against the chains' own lists found Camelia "V. Krėvės pr. 97H" (the site says 97A) and a Gintarinė "Vilniaus g. 174" missing from gintarine.lt. If that matters, the next step is reading the big chains from their own sites, the way N vaistinė's is read.
+- The manual file needs a manual update when those pages change. Its `_comment` says when it was last checked.
+
 ## Wording: "vaistinė", not "parduotuvė"
 
 Page copy rules and the GPT prompt rules ("vaistų kainos", SEO headings, no prescription mentions, YMYL) are in `docs/copy-and-prompts.md`.
@@ -274,22 +293,34 @@ the rest of the superakcijos leftovers.
 ## Safety: nothing reaches superakcijos.lt
 
 - Scrapers POST to `http://localhost/api/scrapers`.
-- `deploy.sh`, `deploy-photos.sh` and `scripts/sync-product-photos-to-frontend.sh`
-  exit immediately until an eVaistine server exists.
-- Meilisearch indexing runs only in production, and the SSH tunnel to the
+- `deploy.sh` exits immediately until an eVaistine server exists. Its server
+  is `DEPLOY_SERVER` (user@host) from the environment, with no default.
+- Meilisearch is this Sail stack's own container. The SSH tunnel to the
   superakcijos server was removed.
 - Local Sail uses its own project name (`COMPOSE_PROJECT_NAME=vaistines`),
   ports (app 8081, MySQL 3307, Redis 6380, Mailhog 1026/8026, Vite 5175) and
   database (`vaistines`). A copied `.env` with `COMPOSE_PROJECT_NAME=nuolaidos`
   once recreated the superakcijos containers on this checkout, so check that
   line first in any new copy.
-- The deploy scripts still carry superakcijos' server (`deploy@84.247.186.143`,
-  `/var/www/api`) and `deploy/supervisor-nuolaidos-*.conf`. Change them to the
-  eVaistine server before removing the guard line.
 - No analytics: the GA4 (`G-WD8DH3ZRD3`) and Clarity (`v3dr99seco`) tags in the
   layout were superakcijos' accounts and were removed 2026-10-08 (owner: "kol
-  kas be analitikos"). The footer's Facebook link (`profile.php?id=61586857013836`)
-  is probably superakcijos' page too, so check it before launch.
+  kas be analitikos").
+
+### Ties removed 2026-10-08 (audit for superakcijos links)
+
+Code mentions of "superakcijos" are now comments only. What was removed or changed:
+
+- **Old Next.js app** (owner: no longer used): the token API `POST /api/auth/{login,register,oauth,refresh}` and `GET /api/user` (`Api\AuthController` deleted). `/api/auth/oauth` accepted NextAuth JWTs signed with a secret shared with superakcijos. Also removed: `services.nextauth`, `NEXTAUTH_SECRET`, the direct `firebase/php-jwt` dependency (Socialite still pulls it in), `deploy-photos.sh` and `scripts/sync-product-photos-to-frontend.sh` (photo sync to the Next.js server), and the comments that explained code by the Next.js app. Site login (session + Google/Facebook through Socialite) is unchanged.
+- **Superakcijos server IPs** (`84.247.186.143`, `195.181.245.125`) removed from `deploy.sh` and the nginx config comment. Supervisor configs renamed to `deploy/supervisor-evaistine-*.conf` (program names `evaistine-discounts`, `evaistine-flyers`, `evaistine-flyers-gemini`).
+- **Footer "Sekite mus"** removed. Facebook `profile.php?id=61586857013836` was superakcijos' page, and `instagram.com/evaistine.lt` isn't ours. Add the block back when eVaistine has its own pages.
+- **Grocery blog posts** (one titled "... - SuperAkcijos.lt") deleted by migration `2026_10_08_140000_delete_grocery_blog_posts`. `/naujienos` is empty now.
+- Kept on purpose: `www.nuolaidos.lt` in `scrapers/hours/` is a third-party source of pharmacy addresses and hours, not superakcijos. "Ported from discount/src/..." comments only record where a file was copied from.
+- **Old JSON API removed** (owner: "išimti"). The `/api/*` routes the Next.js frontend used (`/discount*`, `/search`, `/stores`, `/categories`, `/keywords`, `/leidiniai`, `/leidinys/*`, `/product/*/with-similar`, `/sitemap*`, `/favorite/*`, `/blog-posts*`, `/assistant/cart-comparison`) are gone, along with `Api\ProductWithSimilarController`, `Api\BlogPostController`, `Api\ProductAssistantController`, the unused favorite methods and the `laravel/sanctum` package. What's left in `routes/api.php`: `/api/scrapers*` (the Node scrapers) and `GET /api/store-locations/{slug}` (the store page's map loads it from `resources/js/app.js`). The `Api\ProductController` and `Api\KeywordPageController` methods stay: Blade controllers, Livewire and services call them as PHP. Tests that used the API URLs now call those methods or the Blade pages.
+- **Unused tables dropped** (owner approved 2026-10-08, migration `2026_10_08_150000_drop_generic_products_and_tokens`):
+  - `personal_access_tokens` (Sanctum).
+  - `generic_products` with `products.generic_product_id`: grocery commodity groups, empty here. Their code went too: the `GenericProduct` model, the `generic-products:match` command, `DealFamilyKeyResolver`'s first branch, and the product page's "Radome panašų produktą su aktyvia nuolaida" mockup block, which only these groups fed.
+  - Kept on the owner's choice: `cache` and `cache_locks`, unused because the cache is Redis. Every other table is written or read by live code.
+- **Still shared, owner to replace:** local `.env` has the same `OPENAI_API_KEY`, `GEMINI_API_KEY` and `MEILISEARCH_KEY` as superakcijos (same billing and limits), plus a leftover `NEXTAUTH_SECRET` that nothing reads any more. Use eVaistine's own keys in production.
 
 ## Cache namespace (fixed 2026-10-08)
 

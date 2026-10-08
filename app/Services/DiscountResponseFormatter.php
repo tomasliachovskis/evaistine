@@ -268,14 +268,9 @@ class DiscountResponseFormatter
             return $product->image_url;
         }
 
-        // Keep the exact pre-migration URL shape — the old separate Next.js
-        // frontend served this at '/assets/product/' + filename via its own
-        // /var/www/images alias. Changing it to '/storage/products/' (this
-        // app's own real storage:link path) would 404 every indexed
-        // image-search URL and external hotlink/backlink pointing at the
-        // old path, so `assets/product` is symlinked to the same files too
-        // (see config/filesystems.php's `links`) and this keeps emitting
-        // the old path rather than the new one.
+        // Product photos are served at '/assets/product/' + filename:
+        // `assets/product` is symlinked to storage/app/public/products (see
+        // config/filesystems.php's `links`), next to the usual /storage link.
         $relativePath = '/assets/product/' . $filename;
 
         // Dev-only: these flyer-extracted files only actually exist on the

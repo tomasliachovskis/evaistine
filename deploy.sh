@@ -3,8 +3,8 @@ echo "deploy.sh still targets the evaistine.lt server; set up the vaistines serv
 set -euo pipefail
 
 # Define server and project details
-SERVER="deploy@84.247.186.143"
-#SERVER="root@195.181.245.125"
+# user@host of the eVaistine server, e.g. DEPLOY_SERVER=deploy@1.2.3.4 ./deploy.sh
+SERVER="${DEPLOY_SERVER:?Set DEPLOY_SERVER to the eVaistine server (user@host)}"
 REMOTE_DIR="/var/www/api"
 
 ensure_rsync() {
@@ -270,20 +270,15 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     # No explicit supervisorctl restart needed for the flyers queue worker:
     # queue:restart above already signals every queue worker (not just the
     # default queue) to gracefully exit after its current job, and
-    # supervisor's autorestart=true (deploy/supervisor-nuolaidos-flyers.conf)
+    # supervisor's autorestart=true (deploy/supervisor-evaistine-flyers.conf)
     # brings it back up running the freshly deployed code. An explicit
-    # `sudo supervisorctl restart nuolaidos-flyers` here always failed
+    # `sudo supervisorctl restart evaistine-flyers` here always failed
     # anyway (no TTY for the sudo password over a non-interactive SSH
     # heredoc) — it was a no-op wrapped in `|| true`, not a working restart.
 EOF
 
-# NOTE (Phase 7, manual/one-time, not automated here): the public domain's
-# nginx vhost still needs to be pointed at this app (deploy/nginx-public-domain.conf)
-# instead of proxying to the old Next.js/PM2 app on port 3000. That vhost swap
-# is a deliberate server-side step for whenever cutover happens — deploy.sh
-# does not touch nginx config or DNS. Until then, /var/www/nuolaidos-front and
-# its PM2 process are left running untouched by this script, by design, so
-# the old and new frontends can be compared side by side before cutover.
+# deploy.sh does not touch nginx or DNS: install deploy/nginx-public-domain.conf
+# on the server once, by hand.
 
 mkdir -p storage/app/flyers-incoming
 find storage/app/flyers-incoming -mindepth 1 -delete 2>/dev/null || true

@@ -208,8 +208,7 @@ class AkcijosController extends Controller
             'allStores' => $allStores,
             'selectedStore' => $request->get('store'),
             'canonical' => CanonicalUrl::build($path),
-            // Search results are never indexed — matches getRobotsMeta()'s
-            // "/paieska/" pathname check in the Next.js frontend.
+            // Search results are never indexed.
             'robots' => 'noindex, nofollow, noarchive, nosnippet',
         ]);
     }
@@ -455,7 +454,6 @@ class AkcijosController extends Controller
             'bestPrice' => $bestPrice,
             'flyerLinks' => $flyerLinks,
             'similar' => $similar,
-            'genericAlternatives' => $payload['generic_alternatives'] ?? [],
             'breadcrumbs' => $breadcrumbs,
             'seo' => $seo,
             'canonical' => $canonicalUrl,

@@ -19,8 +19,7 @@
                         <h1 class="mb-3">{{ $post->title }}</h1>
                         <p class="mb-4 text-sm text-gray-600">{{ $post->published_at?->day }} {{ \App\Support\LithuanianDate::shortMonth($post->published_at) }} {{ $post->published_at?->year }}</p>
                     </div>
-                    {{-- $post->content is trusted admin-authored HTML, same as the
-                         Next.js dangerouslySetInnerHTML it replaces. --}}
+                    {{-- $post->content is trusted admin-authored HTML. --}}
                     <div class="blog-content">{!! $post->content !!}</div>
 
                     @if ($post->source_url)

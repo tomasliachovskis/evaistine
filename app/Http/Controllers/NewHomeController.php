@@ -54,8 +54,8 @@ class NewHomeController extends Controller
         );
         $stores = collect(StoreListPriority::sort($stores))->take(5)->values()->all();
 
-        // Each block's items are real keyword pages now (not a GenericProduct
-        // basket) — topCandidatesByCategoryGroup() ranks by each page's own
+        // Each block's items are real keyword pages
+        // — topCandidatesByCategoryGroup() ranks by each page's own
         // matching_offers_count and is itself cached, so only the random-2
         // pick and the ~4 buildHomeTeaser() calls it triggers run fresh per
         // request; buildHomeTeaser() is cached per keyword page too, so a

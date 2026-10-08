@@ -165,7 +165,11 @@ class StructuredDataTest extends TestCase
     {
         $this->seedListing();
 
-        $breadcrumbs = $this->getJson('/api/search/pienas')->assertOk()->json('breadcrumbs');
+        // /paieska/{q} renders this payload (ProductController::search, called
+        // as PHP since the /api/search URL was removed).
+        $payload = json_decode(app(\App\Http\Controllers\Api\ProductController::class)
+            ->search(request(), 'pienas')->getContent(), true);
+        $breadcrumbs = $payload['breadcrumbs'];
 
         $this->assertSame(['Pradžia', 'Paieška'], array_column($breadcrumbs, 'name'));
         $this->assertSame('paieska/pienas', end($breadcrumbs)['slug']);

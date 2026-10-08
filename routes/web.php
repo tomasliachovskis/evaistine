@@ -17,10 +17,7 @@ use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\StoreController;
 use Illuminate\Support\Facades\Route;
 
-// Was a bare ping response before this app served the public site directly
-// (the public domain pointed at the separate Next.js app; this route was
-// only ever hit on the API-only :8080 vhost). Kept as a lightweight health
-// check now that "/" renders the real home page.
+// Lightweight health check.
 Route::get('/_health', function () {
     return response()->json('ping');
 });
