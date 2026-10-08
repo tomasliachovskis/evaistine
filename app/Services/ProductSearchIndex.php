@@ -15,6 +15,9 @@ class ProductSearchIndex
 {
     private const INDEX = 'products';
 
+    // INDEX with services.meilisearch.index_prefix in front.
+    private string $index;
+
     private const BATCH = 5000;
 
     private Client $client;
@@ -23,6 +26,7 @@ class ProductSearchIndex
     {
         $config = Config::get('services.meilisearch');
         $this->client = new Client($config['host'], $config['key']);
+        $this->index = ($config['index_prefix'] ?? '').self::INDEX;
     }
 
     public static function enabled(): bool
@@ -32,7 +36,7 @@ class ProductSearchIndex
 
     public function configure(): void
     {
-        $index = $this->client->index(self::INDEX);
+        $index = $this->client->index($this->index);
 
         $this->wait($index->updateSearchableAttributes(['name', 'brand', 'name_stem']));
         $this->wait($index->updateFilterableAttributes(['category_id']));
@@ -49,10 +53,10 @@ class ProductSearchIndex
     public function indexAll(): int
     {
         // Fails harmlessly (as a task) when the index already exists.
-        $this->wait($this->client->createIndex(self::INDEX, ['primaryKey' => 'id']));
+        $this->wait($this->client->createIndex($this->index, ['primaryKey' => 'id']));
         $this->configure();
 
-        $index = $this->client->index(self::INDEX);
+        $index = $this->client->index($this->index);
         $this->wait($index->deleteAllDocuments());
 
         $count = 0;
@@ -97,7 +101,7 @@ class ProductSearchIndex
             'id' => (int) $hit['id'],
             'name' => (string) ($hit['name'] ?? ''),
             'brand' => (string) ($hit['brand'] ?? ''),
-        ], $this->client->index(self::INDEX)->search($term, $params)->getHits());
+        ], $this->client->index($this->index)->search($term, $params)->getHits());
     }
 
     private function wait(mixed $task, int $seconds = 30): void

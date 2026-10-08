@@ -49,6 +49,10 @@ return [
         // True when this environment has its own Meilisearch (production, and
         // dev since the Sail stack runs one). Gates indexing and keyword mapping.
         'enabled' => (bool) env('MEILISEARCH_HOST'),
+        // Prepended to every index name ("evaistine_discounts"). Production
+        // shares one Meilisearch with superakcijos.lt, whose indexes are the
+        // bare "discounts"/"products"; empty locally and in tests.
+        'index_prefix' => env('MEILISEARCH_INDEX_PREFIX', ''),
     ],
 
     'google' => [

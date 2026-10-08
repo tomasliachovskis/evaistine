@@ -171,8 +171,11 @@ The phased roadmap with time estimates is in `docs/evaistine.md`
 - [x] **Cache namespace bug** (2026-10-08): web and CLI used different cache
       prefixes; pinned `REDIS_PREFIX`/`CACHE_PREFIX` (see `docs/evaistine.md`).
       Production `.env` needs both lines.
-- [ ] **Production**: server, nginx vhost, `deploy.sh` for the new server
-      (`DEPLOY_SERVER=user@host`, remove the guard line), supervisor configs
+- [ ] **Production** (same server as superakcijos: follow `docs/evaistine.md`
+      "Sharing the server with superakcijos"): nginx vhost
+      `sites-available/evaistine`, `deploy.sh` (`DEPLOY_SERVER=user@host`,
+      remove the guard line), production `.env` with Redis DBs 2/3 and
+      `MEILISEARCH_INDEX_PREFIX=evaistine_`, own MySQL user, supervisor configs
       `deploy/supervisor-evaistine-*.conf`, Meilisearch index, GSC property,
       sitemap, IndexNow key. GitHub repo: `tomasliachovskis/evaistine`.
 - [ ] **Own API keys**: OpenAI, Gemini and Meilisearch keys are still

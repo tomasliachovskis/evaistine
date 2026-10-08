@@ -322,6 +322,33 @@ Code mentions of "superakcijos" are now comments only. What was removed or chang
   - Kept on the owner's choice: `cache` and `cache_locks`, unused because the cache is Redis. Every other table is written or read by live code.
 - **Still shared, owner to replace:** local `.env` has the same `OPENAI_API_KEY`, `GEMINI_API_KEY` and `MEILISEARCH_KEY` as superakcijos (same billing and limits), plus a leftover `NEXTAUTH_SECRET` that nothing reads any more. Use eVaistine's own keys in production.
 
+## Sharing the server with superakcijos (2026-10-08)
+
+Production is planned on the same server as superakcijos.lt. As forked, eVaistine would have clashed with it in several places. What was changed, and what the production setup must keep:
+
+| Shared thing | Risk as forked | Now |
+|---|---|---|
+| Code directory | `deploy.sh` rsynced into `/var/www/api` (superakcijos' directory) with `--delete` | `/var/www/evaistine` in `deploy.sh` (passed into the SSH script as `$REMOTE_DIR`), the nginx vhost and the supervisor configs |
+| nginx | vhost installed as `sites-available/api`; Cloudflare `real_ip_header` at http level, which a second site makes a duplicate (`nginx -t` fails, checked in Docker with both files); `api-*.log`; an `:8080` `default_server` vhost | Install as `sites-available/evaistine`; the real-IP block sits inside the `server` block; logs `evaistine-*.log`; `deploy/nginx-8080-nossl.conf` deleted |
+| Meilisearch | same index names `discounts`/`products`, so either app's reindex overwrites the other's | `MEILISEARCH_INDEX_PREFIX=evaistine_` in production (`services.meilisearch.index_prefix`, read by `MeilisearchService` and `ProductSearchIndex`; empty locally). Give eVaistine its own Meilisearch API key limited to `evaistine_*` |
+| Redis | same DB numbers 0/1; `deploy.sh`'s `optimize:clear` runs `cache:clear`, which FLUSHDBs the whole cache DB | Production `.env`: `REDIS_DB=2`, `REDIS_CACHE_DB=3` (superakcijos keeps 0/1), plus the pinned `REDIS_PREFIX`/`CACHE_PREFIX` |
+| php-fpm | `deploy.sh` restarted the shared pool (502s on both sites) | `systemctl reload` (graceful, fresh opcache) |
+| Backups | the purge deleted every old `*.sql.gz` in the folder, superakcijos' too | purges only `{database}_*.sql.gz`; production `DB_BACKUP_PATH=/var/www/backups/evaistine` |
+| Supervisor, cron, MySQL | | programs are `evaistine-*`; its own `* * * * * cd /var/www/evaistine && php artisan schedule:run` line; own database `vaistines` and its own MySQL user (don't reuse superakcijos' user) |
+
+Production `.env` lines specific to sharing the server:
+```
+APP_ENV=production
+REDIS_PREFIX=evaistinelt_database_
+CACHE_PREFIX=evaistinelt_cache
+REDIS_DB=2
+REDIS_CACHE_DB=3
+MEILISEARCH_INDEX_PREFIX=evaistine_
+DB_BACKUP_PATH=/var/www/backups/evaistine
+```
+
+Also check the server has room for both: two sets of queue workers, both MySQL databases, and, if scrapers run on the server, two Chrome instances.
+
 ## Cache namespace (fixed 2026-10-08)
 
 `/leidiniai` kept showing an old empty list although `CacheVersion::bump('flyers')`

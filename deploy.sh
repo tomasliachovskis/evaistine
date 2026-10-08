@@ -5,7 +5,10 @@ set -euo pipefail
 # Define server and project details
 # user@host of the eVaistine server, e.g. DEPLOY_SERVER=deploy@1.2.3.4 ./deploy.sh
 SERVER="${DEPLOY_SERVER:?Set DEPLOY_SERVER to the eVaistine server (user@host)}"
-REMOTE_DIR="/var/www/api"
+# Own directory: superakcijos.lt runs on the same server from /var/www/api,
+# and this script's rsync --delete would wipe it. See docs/evaistine.md
+# "Sharing the server with superakcijos".
+REMOTE_DIR="/var/www/evaistine"
 
 ensure_rsync() {
     if command -v rsync >/dev/null 2>&1; then
@@ -88,7 +91,7 @@ rsync -avz --no-perms --no-owner --no-group --delete -e "ssh $SSH_OPTS" \
   resources/ "$SERVER:$REMOTE_DIR/resources/"
 
 # Run Laravel commands on the server
-ssh $SSH_OPTS $SERVER << 'EOF'
+ssh $SSH_OPTS $SERVER "REMOTE_DIR='$REMOTE_DIR' bash -s" << 'EOF'
     # This heredoc is a SEPARATE remote bash invocation — the outer script's
     # `set -euo pipefail` (line 2) has no effect here at all. Without its
     # own copy, a failing step (e.g. the public/build-new swap below) was
@@ -97,7 +100,7 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     # completed successfully!" over a genuinely broken production site.
     set -euo pipefail
 
-    cd /var/www/api
+    cd "$REMOTE_DIR"
 
     if [ ! -f .env ]; then
         echo "Missing .env on server"
@@ -172,6 +175,9 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     find storage bootstrap/cache -type f -exec chmod g+w {} + 2>/dev/null || true
 
     composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+    # optimize:clear includes cache:clear, which FLUSHDBs the whole Redis
+    # cache database. Safe only because production .env puts this app on its
+    # own Redis DBs (REDIS_DB=2, REDIS_CACHE_DB=3); superakcijos uses 0/1.
     php artisan optimize:clear
     # --force recreates existing links too, so this is safe to run on every
     # deploy — not just the first. config/filesystems.php's `links` includes
@@ -259,7 +265,10 @@ ssh $SSH_OPTS $SERVER << 'EOF'
     # deploy that touches a view/controller (caught this deploying a Blade
     # fix: the fix was on disk and view:cache'd, but every cached page kept
     # serving the pre-fix HTML until the next unrelated fpm restart).
-    sudo systemctl restart php8.4-fpm
+    # reload, not restart: the pool is shared with superakcijos.lt, and a
+    # graceful reload replaces the workers (fresh opcache) without dropping
+    # in-flight requests on either site.
+    sudo systemctl reload php8.4-fpm
 
     # PageHtmlCache keys include CacheVersion suffix — bump so stale HTML
     # (e.g. baked with wrong APP_URL) is not served after deploy, then warm

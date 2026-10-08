@@ -16,6 +16,7 @@ class MeilisearchService
     {
         $config = Config::get('services.meilisearch');
         $this->client = new Client($config['host'], $config['key']);
+        $this->indexName = ($config['index_prefix'] ?? '').$this->indexName;
     }
 
     public function ensureIndexConfigured(): void

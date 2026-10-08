@@ -83,7 +83,7 @@ class DatabaseBackupCommand extends Command
         $size = $this->formatBytes(filesize($destination));
         $this->info("Backup completed: {$destination} ({$size})");
 
-        $deleted = $this->purgeOldBackups($backupPath, $retentionDays);
+        $deleted = $this->purgeOldBackups($backupPath, $retentionDays, $database);
         if ($deleted > 0) {
             $this->info("Removed {$deleted} backup(s) older than {$retentionDays} day(s).");
         }
@@ -147,7 +147,7 @@ class DatabaseBackupCommand extends Command
         return $args;
     }
 
-    private function purgeOldBackups(string $backupPath, int $retentionDays): int
+    private function purgeOldBackups(string $backupPath, int $retentionDays, string $database): int
     {
         if ($retentionDays < 1) {
             return 0;
@@ -156,7 +156,9 @@ class DatabaseBackupCommand extends Command
         $cutoff = now()->subDays($retentionDays)->getTimestamp();
         $deleted = 0;
 
-        foreach (glob(rtrim($backupPath, '/').'/*.sql.gz') ?: [] as $file) {
+        // Only this database's dumps: another app on the same server
+        // (superakcijos.lt) may keep its backups in the same folder.
+        foreach (glob(rtrim($backupPath, '/').'/'.$database.'_*.sql.gz') ?: [] as $file) {
             if (! is_file($file)) {
                 continue;
             }
