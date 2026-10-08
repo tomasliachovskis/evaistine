@@ -14,11 +14,11 @@ class DealPoolFillTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function offer(Store $store, Category $category, string $name, float $price, ?int $percent): Discount
+    private function offer(Store $store, Category $category, string $name, float $price, ?int $percent, ?string $brand = null): Discount
     {
         return Discount::factory()->create([
             'store_id' => $store->id,
-            'product_id' => Product::factory()->create(['category_id' => $category->id, 'name' => $name])->id,
+            'product_id' => Product::factory()->create(['category_id' => $category->id, 'name' => $name, 'brand' => $brand])->id,
             'discounted_price' => $price,
             'original_price' => $percent ? round($price / (1 - $percent / 100), 2) : $price,
             'discount_percent' => $percent ?? 0,
@@ -65,5 +65,29 @@ class DealPoolFillTest extends TestCase
         $this->offer($store, $category, 'Varškė', 0.99, null);
 
         $this->assertCount(2, app(HomeDealPoolService::class)->bestForCategory($category->id, 2, $store->id));
+    }
+
+    public function test_carousel_shows_different_product_lines_before_repeating_one(): void
+    {
+        $store = Store::factory()->create();
+        $category = Category::factory()->create();
+        // The expensive line scores highest (big absolute savings), so plain
+        // score order would fill the whole carousel with it.
+        foreach (['1300 vyrams', '1300 moterims', '500 moterims', '500 vyrams'] as $i => $variant) {
+            $this->offer($store, $category, "CRESCINA TRANSDERMIC HFSC {$variant}", 150 - $i, 40, 'Crescina');
+        }
+        $this->offer($store, $category, 'Plaukų šampūnas nuo pleiskanų', 9.99, 20, 'Dermedic');
+        $this->offer($store, $category, 'NIOXIN plaukų serumas', 39.99, 25, 'NIOXIN');
+        $plain = $this->offer($store, $category, 'Kondicionierius sausiems plaukams', 6.49, null);
+
+        $result = app(HomeDealPoolService::class)->bestForCategory($category->id, 4, $store->id);
+
+        $this->assertCount(4, $result);
+        $this->assertSame(1, $result->filter(fn (Discount $d) => $d->product->brand === 'Crescina')->count());
+        // A new line without a discount beats a second CRESCINA kit.
+        $this->assertContains($plain->id, $result->pluck('id')->all());
+
+        // With more slots than lines, repeats come back to fill the carousel.
+        $this->assertCount(7, app(HomeDealPoolService::class)->bestForCategory($category->id, 8, $store->id));
     }
 }

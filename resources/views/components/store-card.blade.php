@@ -15,9 +15,11 @@
     // Missing key (older cached payload) keeps the offers link.
     $showsDiscountsPage = ($store['shows_discounts_page'] ?? true) && $hasOffers;
     $storeHref = $showsDiscountsPage ? "/{$store['slug']}" : "/leidinys/{$store['slug']}";
+    // Grid cards fill their cell, so a row with a leaflet-only or offers-only
+    // store keeps every card the same height (the buttons sit at the bottom).
     $widthClass = $layout === 'slider'
         ? 'w-[calc((100%-0.75rem)/2.2)] min-w-[calc((100%-0.75rem)/2.2)] max-w-[calc((100%-0.75rem)/2.2)] shrink-0 grow-0 basis-[calc((100%-0.75rem)/2.2)] sm:w-[200px] sm:min-w-[200px] sm:max-w-none sm:basis-auto lg:w-[210px]'
-        : '';
+        : 'h-full';
 @endphp
 
 @if ($layout === 'chip')
@@ -66,6 +68,10 @@
             @endif
             @if ($showsDiscountsPage)
                 <a href="/{{ $store['slug'] }}" class="{{ $buttonClass }} tabular-nums">{{ LithuanianPlural::formatCount($store['discounts_count']) }} {{ LithuanianPlural::promotionWord((int) $store['discounts_count']) }}</a>
+            @elseif (! $hasOffers)
+                {{-- Pharmacies without scraped offers stay listed (owner's
+                     decision, 2026-10-08) and say so plainly. --}}
+                <p class="flex min-h-12 items-center justify-center text-center text-base text-gray-600">Šiuo metu akcijų nėra</p>
             @endif
         </div>
     </div>

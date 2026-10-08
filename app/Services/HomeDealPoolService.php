@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Discount;
+use App\Support\ProductLineKey;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -41,6 +42,23 @@ class HomeDealPoolService
      */
     private const MIN_SECTION_SIZE = 5;
 
+    /**
+     * How many scored candidates bestForCategory() considers. A pharmacy
+     * category holds thousands of discounts, and deal_score favours big
+     * absolute savings, so the top 30-40 are often one expensive product line
+     * (5 CRESCINA HFSC kits, then 3 NIOXIN serums, owner's report
+     * 2026-10-08). A wider pool gives the line-key rule enough other lines to
+     * pick from. Only ids are kept (DealPoolRefresher), so these load just
+     * product + category, not the offer/history relations.
+     */
+    private const CATEGORY_CANDIDATE_LIMIT = 150;
+
+    /** @var array<int, string> */
+    private array $familyKeyCache = [];
+
+    /** @var array<int, list<string>> */
+    private array $lineKeyCache = [];
+
     /** @var DealFamilyKeyResolver */
     private $familyKeyResolver;
 
@@ -74,9 +92,11 @@ class HomeDealPoolService
                 $query->where('discounts.store_id', $storeId);
             })
             ->where('products.category_id', $categoryId)
+            ->setEagerLoads([])
+            ->with(['product.category', 'store'])
             ->orderByDesc('deal_score')
             ->orderByDesc('discounts.discount_percent')
-            ->limit(min($limit * 4, 40))
+            ->limit(max($limit * 4, self::CATEGORY_CANDIDATE_LIMIT))
             ->get();
 
         // A global (unscoped, $storeId === null) category carousel mixes
@@ -89,9 +109,15 @@ class HomeDealPoolService
         // that one store.
         $maxPerStore = $storeId === null ? max(2, (int) ceil($limit / 2)) : PHP_INT_MAX;
 
-        $picked = $this->applyFamilyCap($candidates, $limit, 1, $maxPerStore);
+        // A new product line beats a repeated one, even when the repeat has
+        // a discount and the new line doesn't: the scored pick and the fill-up
+        // both run with the line rule first, and only then is the line rule
+        // dropped (scored duplicates first, then fill-up duplicates).
+        $picked = $this->applyFamilyCap($candidates, $limit, 1, $maxPerStore, relaxLine: false);
+        $picked = [...$picked, ...$this->fillCategory($categoryId, $storeId, $picked, $limit - count($picked), $maxPerStore, relaxLine: false)];
+        $picked = $this->applyFamilyCap($candidates, $limit, 1, $maxPerStore, relaxLine: true, seed: $picked);
 
-        return collect([...$picked, ...$this->fillCategory($categoryId, $storeId, $picked, $limit - count($picked), $maxPerStore)]);
+        return collect([...$picked, ...$this->fillCategory($categoryId, $storeId, $picked, $limit - count($picked), $maxPerStore, relaxLine: true)]);
     }
 
     /**
@@ -102,12 +128,13 @@ class HomeDealPoolService
      * remaining discounts by biggest discount, then products without a
      * discount by lowest price. No family cap here (a second flavour beats
      * an empty slot), but one card per product and the same per-store cap
-     * on global carousels.
+     * on global carousels. Product lines (lineKeys()) already in the carousel
+     * are skipped, and allowed again only with $relaxLine.
      *
      * @param  list<Discount>  $picked
      * @return list<Discount>
      */
-    private function fillCategory(int $categoryId, ?int $storeId, array $picked, int $missing, int $maxPerStore): array
+    private function fillCategory(int $categoryId, ?int $storeId, array $picked, int $missing, int $maxPerStore, bool $relaxLine): array
     {
         if ($missing <= 0) {
             return [];
@@ -116,11 +143,15 @@ class HomeDealPoolService
         $pickedIds = array_map(fn (Discount $d) => $d->id, $picked);
         $productIds = array_map(fn (Discount $d) => $d->product_id, $picked);
         $storeCounts = array_count_values(array_map(fn (Discount $d) => $d->store_id, $picked));
+        $usedLines = [];
+        foreach ($picked as $discount) {
+            $this->markLine($discount, $usedLines);
+        }
 
         $candidates = Discount::query()
             ->select('discounts.*')
             ->join('products', 'products.id', '=', 'discounts.product_id')
-            ->with(['product.category', 'product.discounts.store', 'product.discountHistories.store', 'store'])
+            ->with(['product.category', 'store'])
             ->where('products.category_id', $categoryId)
             ->when($storeId, fn ($query) => $query->where('discounts.store_id', $storeId))
             ->whereNotIn('discounts.id', $pickedIds ?: [0])
@@ -128,23 +159,29 @@ class HomeDealPoolService
             ->orderByRaw('COALESCE(discounts.discount_percent, 0) > 0 DESC')
             ->orderByDesc('discounts.discount_percent')
             ->orderBy('discounts.discounted_price')
-            ->limit($missing * 4)
+            ->limit(max($missing * 4, self::CATEGORY_CANDIDATE_LIMIT))
             ->get();
 
         $filled = [];
-        foreach ($candidates as $discount) {
-            if (count($filled) >= $missing) {
-                break;
+        foreach ($relaxLine ? [true, false] : [true] as $useLine) {
+            foreach ($candidates as $discount) {
+                if (count($filled) >= $missing) {
+                    break 2;
+                }
+                if (in_array($discount->product_id, $productIds, true)) {
+                    continue;
+                }
+                if (($storeCounts[$discount->store_id] ?? 0) >= $maxPerStore) {
+                    continue;
+                }
+                if ($useLine && $this->lineTaken($discount, $usedLines)) {
+                    continue;
+                }
+                $filled[] = $discount;
+                $productIds[] = $discount->product_id;
+                $storeCounts[$discount->store_id] = ($storeCounts[$discount->store_id] ?? 0) + 1;
+                $this->markLine($discount, $usedLines);
             }
-            if (in_array($discount->product_id, $productIds, true)) {
-                continue;
-            }
-            if (($storeCounts[$discount->store_id] ?? 0) >= $maxPerStore) {
-                continue;
-            }
-            $filled[] = $discount;
-            $productIds[] = $discount->product_id;
-            $storeCounts[$discount->store_id] = ($storeCounts[$discount->store_id] ?? 0) + 1;
         }
 
         return $filled;
@@ -281,6 +318,7 @@ class HomeDealPoolService
         $picked = [];
         $pickedIds = [];
         $pickedFamilyKeys = [];
+        $usedLines = [];
         $pricelessCount = 0;
 
         while (count($picked) < $limit) {
@@ -309,12 +347,16 @@ class HomeDealPoolService
                         continue;
                     }
 
-                    // Same-family skip mirrors applyFamilyCap() below — a
-                    // category-diverse pool can still stack several near-
-                    // identical variants (e.g. chip flavors) inside one
-                    // category slot without this.
-                    $familyKey = $this->familyKeyResolver->resolve($discount);
+                    // Same-family and same-line skips mirror applyFamilyCap()
+                    // below — a category-diverse pool can still stack several
+                    // near-identical variants (e.g. chip flavors, CRESCINA
+                    // kits) inside one category slot without this.
+                    $familyKey = $this->familyKey($discount);
                     if (in_array($familyKey, $pickedFamilyKeys, true)) {
+                        continue;
+                    }
+
+                    if ($this->lineTaken($discount, $usedLines)) {
                         continue;
                     }
 
@@ -325,6 +367,7 @@ class HomeDealPoolService
                     $picked[] = $discount;
                     $pickedIds[] = $discount->id;
                     $pickedFamilyKeys[] = $familyKey;
+                    $this->markLine($discount, $usedLines);
                     if ($this->isPriceless($discount)) {
                         $pricelessCount++;
                     }
@@ -339,26 +382,31 @@ class HomeDealPoolService
             }
         }
 
-        // Two-tier backfill, same reasoning as applyFamilyCap(): the
+        // Tiered backfill, same reasoning as applyFamilyCap(): the
         // round-robin loop above can legitimately fall short of $limit
-        // because of the category/family caps rather than genuinely thin
-        // inventory (e.g. only 2 categories have any candidates left) — fill
-        // remaining slots still respecting the family cap first, and only
-        // ignore it as a last resort so two Oral-B toothbrushes don't both
-        // land in "Geriausi pasiūlymai" just because the diversity loop
-        // stopped early.
-        if (count($picked) < $limit) {
+        // because of the category/family/line caps rather than genuinely thin
+        // inventory (e.g. only 2 categories have any candidates left). Each
+        // tier drops one more rule: first the family key, then the product
+        // line, so two CRESCINA kits or two Oral-B toothbrushes only both
+        // land in "Geriausi pasiūlymai" when nothing else is left. The
+        // priceless cap is never dropped: flooding a thin section with
+        // "Sutaupyk iki X%" pills is the opposite of what that cap is for.
+        foreach ([[true, true], [false, true], [false, false]] as [$useFamily, $useLine]) {
             foreach ($available as $discount) {
                 if (count($picked) >= $limit) {
-                    break;
+                    break 2;
                 }
 
                 if (in_array($discount->id, $pickedIds, true)) {
                     continue;
                 }
 
-                $familyKey = $this->familyKeyResolver->resolve($discount);
-                if (in_array($familyKey, $pickedFamilyKeys, true)) {
+                $familyKey = $this->familyKey($discount);
+                if ($useFamily && in_array($familyKey, $pickedFamilyKeys, true)) {
+                    continue;
+                }
+
+                if ($useLine && $this->lineTaken($discount, $usedLines)) {
                     continue;
                 }
 
@@ -369,34 +417,7 @@ class HomeDealPoolService
                 $picked[] = $discount;
                 $pickedIds[] = $discount->id;
                 $pickedFamilyKeys[] = $familyKey;
-                if ($this->isPriceless($discount)) {
-                    $pricelessCount++;
-                }
-            }
-        }
-
-        // Last resort ignores the family cap (a repeated product beats an
-        // empty slot) but deliberately still enforces the priceless cap —
-        // unlike a same-family duplicate, flooding a thin section with
-        // "Sutaupyk iki X%" pills instead of stopping short is the opposite
-        // of what this cap is for; a shorter, honestly-priced section is
-        // better than padding it out with priceless ones.
-        if (count($picked) < $limit) {
-            foreach ($available as $discount) {
-                if (count($picked) >= $limit) {
-                    break;
-                }
-
-                if (in_array($discount->id, $pickedIds, true)) {
-                    continue;
-                }
-
-                if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
-                    continue;
-                }
-
-                $picked[] = $discount;
-                $pickedIds[] = $discount->id;
+                $this->markLine($discount, $usedLines);
                 if ($this->isPriceless($discount)) {
                     $pricelessCount++;
                 }
@@ -409,92 +430,84 @@ class HomeDealPoolService
     /**
      * Greedily picks up to $limit discounts from an already deal_score-sorted
      * candidate list, allowing at most $maxPerFamily per DealFamilyKeyResolver
-     * family key — falls back to filling remaining slots ignoring the cap if
-     * the candidate pool is too thin for the family rule alone to reach the
-     * limit (thin inventory beats an artificially short list).
+     * family key and one card per product line (lineKeys()), with an optional
+     * per-store cap. When the pool is too thin for every rule, it fills the
+     * remaining slots in tiers (thin inventory beats an artificially short
+     * list), dropping one rule per tier:
+     *
+     * 1. family + line + store
+     * 2. line + store: for pharmacies the family key is usually just the
+     *    category slug, so it would allow only one card per carousel
+     * 3. line only: a thin category may genuinely have just 1-2 stores
+     * 4. none but the priceless cap
+     *
+     * The product line goes last because repeated lines are what the owner
+     * noticed (2026-10-08: five CRESCINA HFSC kits in "Plaukų priežiūra").
+     * $relaxLine = false stops before tier 4, so bestForCategory() can try
+     * other lines from the fill-up first; $seed carries cards already picked.
      *
      * @return list<Discount>
      */
-    private function applyFamilyCap(Collection $candidates, int $limit, int $maxPerFamily = 1, int $maxPerStore = PHP_INT_MAX): array
-    {
+    private function applyFamilyCap(
+        Collection $candidates,
+        int $limit,
+        int $maxPerFamily = 1,
+        int $maxPerStore = PHP_INT_MAX,
+        bool $relaxLine = true,
+        array $seed = []
+    ): array {
         $picked = [];
+        $pickedIds = [];
         $familyCounts = [];
         $storeCounts = [];
+        $usedLines = [];
         $pricelessCount = 0;
 
-        foreach ($candidates as $discount) {
-            if (count($picked) >= $limit) {
-                break;
-            }
-
-            $familyKey = $this->familyKeyResolver->resolve($discount);
-            if (($familyCounts[$familyKey] ?? 0) >= $maxPerFamily) {
-                continue;
-            }
-
-            if (($storeCounts[$discount->store_id] ?? 0) >= $maxPerStore) {
-                continue;
-            }
-
-            if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
-                continue;
-            }
-
+        foreach ($seed as $discount) {
             $picked[] = $discount;
+            $pickedIds[$discount->id] = true;
+            $familyKey = $this->familyKey($discount);
             $familyCounts[$familyKey] = ($familyCounts[$familyKey] ?? 0) + 1;
             $storeCounts[$discount->store_id] = ($storeCounts[$discount->store_id] ?? 0) + 1;
+            $this->markLine($discount, $usedLines);
             if ($this->isPriceless($discount)) {
                 $pricelessCount++;
             }
         }
 
-        // Same reasoning as pickDiversePool()'s tiered backfill: relax the
-        // store cap first if still short (a thin category may genuinely
-        // only have 1-2 stores with any offer at all), then the family cap,
-        // but keep the priceless cap as long as possible so a thin category
-        // doesn't fill up entirely with "Sutaupyk iki X%" pills instead of
-        // real priced cards.
-        if (count($picked) < $limit) {
-            $pickedIds = array_map(fn (Discount $d) => $d->id, $picked);
-            foreach ($candidates as $discount) {
-                if (count($picked) >= $limit) {
-                    break;
-                }
-                if (in_array($discount->id, $pickedIds, true)) {
-                    continue;
-                }
-                if (($familyCounts[$this->familyKeyResolver->resolve($discount)] ?? 0) >= $maxPerFamily) {
-                    continue;
-                }
-                if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
-                    continue;
-                }
-
-                $picked[] = $discount;
-                $pickedIds[] = $discount->id;
-                $familyCounts[$this->familyKeyResolver->resolve($discount)] = ($familyCounts[$this->familyKeyResolver->resolve($discount)] ?? 0) + 1;
-                if ($this->isPriceless($discount)) {
-                    $pricelessCount++;
-                }
-            }
+        $tiers = [[true, true, true], [false, true, true], [false, true, false]];
+        if ($relaxLine) {
+            $tiers[] = [false, false, false];
         }
 
-        // Last resort ignores the family cap but still enforces the
-        // priceless cap — see the matching comment in pickDiversePool().
-        if (count($picked) < $limit) {
-            $pickedIds = array_map(fn (Discount $d) => $d->id, $picked);
+        foreach ($tiers as [$useFamily, $useLine, $useStore]) {
             foreach ($candidates as $discount) {
                 if (count($picked) >= $limit) {
-                    break;
+                    break 2;
                 }
-                if (in_array($discount->id, $pickedIds, true)) {
+                if (isset($pickedIds[$discount->id])) {
+                    continue;
+                }
+
+                $familyKey = $this->familyKey($discount);
+                if ($useFamily && ($familyCounts[$familyKey] ?? 0) >= $maxPerFamily) {
+                    continue;
+                }
+                if ($useLine && $this->lineTaken($discount, $usedLines)) {
+                    continue;
+                }
+                if ($useStore && ($storeCounts[$discount->store_id] ?? 0) >= $maxPerStore) {
                     continue;
                 }
                 if ($this->isPriceless($discount) && $this->pricelessCapReached($pricelessCount, count($picked))) {
                     continue;
                 }
+
                 $picked[] = $discount;
-                $pickedIds[] = $discount->id;
+                $pickedIds[$discount->id] = true;
+                $familyCounts[$familyKey] = ($familyCounts[$familyKey] ?? 0) + 1;
+                $storeCounts[$discount->store_id] = ($storeCounts[$discount->store_id] ?? 0) + 1;
+                $this->markLine($discount, $usedLines);
                 if ($this->isPriceless($discount)) {
                     $pricelessCount++;
                 }
@@ -503,6 +516,38 @@ class HomeDealPoolService
 
         return $picked;
     }
+
+    private function familyKey(Discount $discount): string
+    {
+        return $this->familyKeyCache[$discount->id] ??= $this->familyKeyResolver->resolve($discount);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lineKeys(Discount $discount): array
+    {
+        return $this->lineKeyCache[$discount->id] ??= ProductLineKey::for($discount->product?->brand, $discount->product?->name);
+    }
+
+    /**
+     * @param  array<string, true>  $usedLines
+     */
+    private function lineTaken(Discount $discount, array $usedLines): bool
+    {
+        return ProductLineKey::taken($this->lineKeys($discount), $usedLines);
+    }
+
+    /**
+     * @param  array<string, true>  $usedLines
+     */
+    private function markLine(Discount $discount, array &$usedLines): void
+    {
+        foreach ($this->lineKeys($discount) as $key) {
+            $usedLines[$key] = true;
+        }
+    }
+
 
     private function isPriceless(Discount $discount): bool
     {

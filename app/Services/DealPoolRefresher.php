@@ -6,7 +6,7 @@ use App\Models\Category;
 use App\Models\CuratedDeal;
 use App\Models\Discount;
 use App\Models\Store;
-use App\Support\FoodCategorySlugs;
+use App\Support\ProductLineKey;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -25,28 +25,14 @@ class DealPoolRefresher
 
     private const TOP_OFFERS_LIMIT = 10;
 
-    // Persists a wider candidate pool than the 10 actually shown on the
-    // homepage — HomePageSectionsService::poolFromScope() randomly samples
-    // 10 out of these each request, so the "best deals" strip visibly
-    // rotates without needing its own refresh schedule. 40 is the real
-    // ceiling here, not an arbitrary round number: home_best only draws from
-    // 5 eligible non-food categories (see EXCLUDED_FROM_BEST_AND_NON_FOOD),
-    // each already capped at CATEGORY_LIMIT=8 rows upstream in the
-    // global_category scope — 5 × 8 = 40 is everything there is to draw
-    // from without also widening CATEGORY_LIMIT itself, which feeds store
-    // carousels too and would be a much wider blast radius for this.
+    // Persists a wider candidate pool than the 10 actually shown —
+    // HomePageSectionsService::poolFromScope() randomly samples 10 out of
+    // these each request, so the "best deals" strip visibly rotates without
+    // its own refresh schedule. Drawn from every root category, at most 4
+    // per category so one category can't fill it.
     private const HOME_BEST_LIMIT = 40;
 
-    private const HOME_BEST_MAX_PER_CATEGORY = 8;
-
-    private const HOME_NON_FOOD_LIMIT = 25;
-
-    private const HOME_NON_FOOD_MAX_PER_CATEGORY = 4;
-
-    private const HOME_FOOD_LIMIT = 40;
-
-    private const HOME_FOOD_MAX_PER_CATEGORY = 6;
-
+    private const HOME_BEST_MAX_PER_CATEGORY = 4;
 
     public function __construct(
         private HomeDealPoolService $pool,
@@ -135,8 +121,9 @@ class DealPoolRefresher
      * to HomeKeywordDealPoolBuilder's per-keyword-page product-name LIKE
      * search across ~38 keyword pages — measured at ~19s cold (219 queries).
      * Reusing global_category avoids that entirely: no extra query beyond
-     * reading rows that already exist, classified into food/non-food by
-     * root category slug (FoodCategorySlugs) instead of by keyword page.
+     * reading rows that already exist. The grocery food/non-food split
+     * (home_food/home_non_food) is gone; pharmacies get one home_best pool
+     * across every root category.
      * That's why this can now run on every batch instead of its own
      * separate 30-minute schedule — see refreshAfterBatch().
      */
@@ -153,25 +140,17 @@ class DealPoolRefresher
             ->orderBy('position')
             ->get(['category_id', 'position', 'discount_id', 'deal_score']);
 
-        $foodCategoryIds = Category::whereIn('slug', FoodCategorySlugs::FOOD)->pluck('id')->all();
-        $nonFoodCategoryIds = Category::whereIn('slug', FoodCategorySlugs::NON_FOOD)
-            ->whereNotIn('slug', FoodCategorySlugs::EXCLUDED_FROM_BEST_AND_NON_FOOD)
-            ->pluck('id')->all();
+        $categoryIds = $rows->pluck('category_id')->unique()->values()->all();
+        $best = $this->pickFromCategoryRows($rows, $categoryIds, self::HOME_BEST_LIMIT, self::HOME_BEST_MAX_PER_CATEGORY);
 
-        $best = $this->pickFromCategoryRows($rows, $nonFoodCategoryIds, self::HOME_BEST_LIMIT, self::HOME_BEST_MAX_PER_CATEGORY);
-        $nonFood = $this->pickFromCategoryRows($rows, $nonFoodCategoryIds, self::HOME_NON_FOOD_LIMIT, self::HOME_NON_FOOD_MAX_PER_CATEGORY);
-        $food = $this->pickFromCategoryRows($rows, $foodCategoryIds, self::HOME_FOOD_LIMIT, self::HOME_FOOD_MAX_PER_CATEGORY);
-
-        DB::transaction(function () use ($best, $nonFood, $food) {
+        DB::transaction(function () use ($best) {
+            // home_food/home_non_food are deleted too: rows left from the
+            // grocery split.
             CuratedDeal::whereNull('store_id')
                 ->whereIn('scope', ['home_food', 'home_non_food', 'home_best'])
                 ->delete();
 
-            $rows = array_merge(
-                $this->buildRowsFromPicks($best, 'home_best'),
-                $this->buildRowsFromPicks($food, 'home_food'),
-                $this->buildRowsFromPicks($nonFood, 'home_non_food'),
-            );
+            $rows = $this->buildRowsFromPicks($best, 'home_best');
 
             $this->insertRows($rows);
         });
@@ -191,16 +170,56 @@ class DealPoolRefresher
      */
     private function pickFromCategoryRows(Collection $rows, array $categoryIds, int $limit, int $maxPerCategory): array
     {
-        $byCategory = $rows->whereIn('category_id', $categoryIds)
+        $rows = $rows->whereIn('category_id', $categoryIds);
+        $byCategory = $rows
             ->groupBy('category_id')
             ->map(fn (Collection $group) => $group->sortBy('position')->values());
 
+        // Each category's rows are already one per product line, but the
+        // same line can top two categories (CRESCINA in hair care and in
+        // skin care), so the pool checks lines across categories too
+        // (ProductLineKey), and repeats one only in the second pass.
+        $lineKeys = Discount::query()
+            ->join('products', 'products.id', '=', 'discounts.product_id')
+            ->whereIn('discounts.id', $rows->pluck('discount_id')->all() ?: [0])
+            ->get(['discounts.id', 'products.brand', 'products.name'])
+            ->mapWithKeys(fn ($row) => [$row->id => ProductLineKey::for($row->brand, $row->name)])
+            ->all();
+
         $categoryKeys = $byCategory->keys()->all();
-        $indexes = array_fill_keys($categoryKeys, 0);
         $counts = array_fill_keys($categoryKeys, 0);
         $pickedDiscountIds = [];
+        $usedLines = [];
         $picked = [];
 
+        foreach ([true, false] as $useLine) {
+            $indexes = array_fill_keys($categoryKeys, 0);
+            $this->pickRoundRobin($byCategory, $categoryKeys, $indexes, $counts, $pickedDiscountIds, $usedLines, $picked, $lineKeys, $useLine, $limit, $maxPerCategory);
+        }
+
+        return $picked;
+    }
+
+    /**
+     * One round-robin pass over the categories for pickFromCategoryRows().
+     *
+     * @param  array<int, list<string>>  $lineKeys
+     * @param  array<string, true>  $usedLines
+     * @param  list<array{discount_id:int, deal_score:?float}>  $picked
+     */
+    private function pickRoundRobin(
+        Collection $byCategory,
+        array $categoryKeys,
+        array $indexes,
+        array &$counts,
+        array &$pickedDiscountIds,
+        array &$usedLines,
+        array &$picked,
+        array $lineKeys,
+        bool $useLine,
+        int $limit,
+        int $maxPerCategory
+    ): void {
         while (count($picked) < $limit) {
             $addedThisRound = false;
 
@@ -224,8 +243,16 @@ class DealPoolRefresher
                         continue;
                     }
 
+                    $keys = $lineKeys[$row->discount_id] ?? [];
+                    if ($useLine && ProductLineKey::taken($keys, $usedLines)) {
+                        continue;
+                    }
+
                     $picked[] = ['discount_id' => $row->discount_id, 'deal_score' => $row->deal_score];
                     $pickedDiscountIds[] = $row->discount_id;
+                    foreach ($keys as $key) {
+                        $usedLines[$key] = true;
+                    }
                     $counts[$categoryId]++;
                     $addedThisRound = true;
                     break;
@@ -236,8 +263,6 @@ class DealPoolRefresher
                 break;
             }
         }
-
-        return $picked;
     }
 
     /**
