@@ -1,44 +1,29 @@
-import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo, fetchYumpuDocumentViaPage, monthRangeFromText } from './_shared.js';
 
-// apotheka.lt/leidinys is plain server-rendered HTML (no trailing slash —
-// the trailing-slash variant 301-redirects and comes back empty) embedding
-// a Yumpu flipbook iframe, same platform as camelia.js. Unlike Camelia,
-// there's no direct PDF download link anywhere on the page or in Yumpu's
-// document JSON, so the leaflet is rebuilt from Yumpu's own per-page images
-// (same technique as eurokos.js/techasas.js). Yumpu's document JSON also
-// carries a real `validity.from`/`validity.until` range for this leaflet —
-// no cover OCR needed at all.
+// apotheka.lt/leidinys (no trailing slash — the trailing-slash variant
+// 301-redirects and comes back empty) embeds a Yumpu flipbook iframe, same
+// platform as camelia.js. Unlike Camelia, there's no direct PDF download
+// link anywhere on the page or in Yumpu's document JSON, so the leaflet is
+// rebuilt from Yumpu's own per-page images. The document JSON is behind AWS
+// WAF since 2026-10, so it's read through the pharmacy's own page in stealth
+// Chrome (fetchYumpuDocumentViaPage). Dates: the JSON's validity range when
+// it has one, else the month in the title ("Apotheka vaistinės spalio akcijų
+// leidinys"), else the cover OCR.
 const LISTING_URL = 'https://www.apotheka.lt/leidinys';
 
 (async () => {
-    const html = await (await fetch(LISTING_URL)).text();
-
-    const embedMatch = html.match(/https:\/\/www\.yumpu\.com\/lt\/embed\/view\/([a-zA-Z0-9]+)/);
-    if (!embedMatch) {
-        console.log('No Yumpu embed found on', LISTING_URL);
+    const result = await fetchYumpuDocumentViaPage(LISTING_URL);
+    if (!result) {
+        console.log('Apotheka: Yumpu document JSON unavailable, leaflet not collected.');
         return;
     }
 
-    const embedHtml = await (await fetch(embedMatch[0])).text();
-    const docIdMatch = embedHtml.match(/\/document\/view\/(\d+)\//);
-    if (!docIdMatch) {
-        console.log('No Yumpu document id found in embed page for', embedMatch[0]);
-        return;
-    }
-
-    const docId = docIdMatch[1];
-    console.log(`Found Yumpu document ${docId}`);
-
-    const doc = await (await fetch(`https://www.yumpu.com/lt/document/json/${docId}`)).json();
-    const { title, base_path: basePath, pages, validity } = doc.document;
+    const { docId, doc } = result;
+    const { title, base_path: basePath, pages, validity } = doc;
+    console.log(`Found Yumpu document ${docId}: "${title}", ${pages.length} pages`);
 
     let validFrom = validity?.from ? validity.from.slice(0, 10) : null;
     let validTo = validity?.until ? validity.until.slice(0, 10) : null;
-
-    if (!pages?.length) {
-        console.log('No pages found for', title);
-        return;
-    }
 
     try {
         const buffers = [];
@@ -47,12 +32,13 @@ const LISTING_URL = 'https://www.apotheka.lt/leidinys';
         }
 
         if (!validFrom) {
-            const coverInfo = await extractCoverInfo({ store: 'Apotheka', imageBuffer: buffers[0], filename: 'apotheka-cover.jpg' });
-            if (coverInfo?.validFrom) {
-                validFrom = coverInfo.validFrom;
-                validTo = coverInfo.validTo;
+            const fromTitle = monthRangeFromText(title);
+            const dates = fromTitle ?? await extractCoverInfo({ store: 'Apotheka', imageBuffer: buffers[0], filename: 'apotheka-cover.jpg' });
+            if (dates?.validFrom) {
+                validFrom = dates.validFrom;
+                validTo = dates.validTo;
             } else {
-                console.log('No validity range in Yumpu document JSON or cover OCR — submitting without dates');
+                console.log('No validity range in Yumpu document JSON, title or cover OCR — submitting without dates');
             }
         }
 

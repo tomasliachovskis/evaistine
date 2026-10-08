@@ -1,4 +1,4 @@
-import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep, extractCoverInfo } from './_shared.js';
+import { launchBrowser, fetchBuffer, imagesToPdf, submitFlyer, sleep, extractCoverInfo, monthRangeFromText } from './_shared.js';
 
 // gintarine.lt/leidiniai lists a single current leaflet as a direct link to
 // an Issuu embed (`e.issuu.com/embed.html?d={docname}&u={username}`) — same
@@ -68,17 +68,20 @@ async function fetchLeafletPdf(browser, embedUrl) {
         try {
             const { buffers, pdfBuffer } = await fetchLeafletPdf(browser, leaflet.href);
 
+            // The cover prints no dates; the title names the month
+            // ("GINTARINĖS vaistinės spalio mėnesio leidinys").
             const coverInfo = await extractCoverInfo({ store: 'Gintarinė vaistinė', imageBuffer: buffers[0], filename: 'gintarine-vaistine-cover.jpg' });
-            if (!coverInfo?.validFrom) {
-                console.log('No dates found via cover OCR — submitting without dates');
+            const dates = coverInfo?.validFrom ? coverInfo : monthRangeFromText(leaflet.title);
+            if (!dates) {
+                console.log('No dates via cover OCR or the title — submitting without dates');
             }
 
             await submitFlyer({
                 store: 'Gintarinė vaistinė',
                 title: leaflet.title,
                 catalogName: 'Gintarinė vaistinė',
-                validFrom: coverInfo?.validFrom ?? null,
-                validTo: coverInfo?.validTo ?? null,
+                validFrom: dates?.validFrom ?? null,
+                validTo: dates?.validTo ?? null,
                 pdfBuffer,
                 filename: 'gintarine-vaistine-leidinys.pdf',
             });

@@ -1,44 +1,26 @@
-import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo } from './_shared.js';
+import { fetchBuffer, imagesToPdf, submitFlyer, extractCoverInfo, fetchYumpuDocumentViaPage, monthRangeFromText } from './_shared.js';
 
 // eurovaistine.lt/menesio-leidinys embeds a Yumpu document (same platform
 // as Camelia — see camelia.js) but, unlike Camelia's, this one has no plain
 // download link anywhere on the page, so the PDF is rebuilt from Yumpu's
 // public per-page JPEGs instead (base_path + each page's images.large,
-// signed by its own qss.large query string). No validity dates appear on
-// the page either — only on the leaflet's own cover — read via the
-// backend's Gemini cover-OCR endpoint.
+// signed by its own qss.large query string). Yumpu's document JSON is behind
+// AWS WAF since 2026-10, so it's read through the pharmacy's own page in
+// stealth Chrome (fetchYumpuDocumentViaPage). No validity dates appear on
+// the page; the title names the month ("Eurovaistinės leidinys SPALIS"),
+// and the cover OCR is the fallback when it doesn't.
 const LISTING_URL = 'https://www.eurovaistine.lt/menesio-leidinys';
 
 (async () => {
-    const html = await (await fetch(LISTING_URL)).text();
-
-    const embedMatch = html.match(/https:\/\/www\.yumpu\.com\/lt\/embed\/view\/[a-zA-Z0-9]+/);
-    if (!embedMatch) {
-        console.log('No Yumpu embed found on', LISTING_URL);
+    const result = await fetchYumpuDocumentViaPage(LISTING_URL);
+    if (!result) {
+        console.log('Eurovaistinė: Yumpu document JSON unavailable, leaflet not collected.');
         return;
     }
 
-    // The page only embeds Yumpu's short hash-id form
-    // ("embed/view/{hash}") — the numeric document id (needed for the
-    // public document-JSON API) only appears in that embed page's own
-    // canonical link.
-    const embedHtml = await (await fetch(embedMatch[0])).text();
-    const docIdMatch = embedHtml.match(/document\/view\/(\d+)\//);
-    if (!docIdMatch) {
-        console.log('Could not resolve numeric doc id from', embedMatch[0]);
-        return;
-    }
-
-    const docId = docIdMatch[1];
-    console.log(`Found Yumpu document ${docId}`);
-
-    const doc = await (await fetch(`https://www.yumpu.com/lt/document/json/${docId}`)).json();
-    const { title, base_path: basePath, pages } = doc.document;
-
-    if (!pages?.length) {
-        console.log('No pages found in Yumpu document JSON');
-        return;
-    }
+    const { docId, doc } = result;
+    const { title, base_path: basePath, pages } = doc;
+    console.log(`Found Yumpu document ${docId}: "${title}", ${pages.length} pages`);
 
     const imageUrls = pages.map(p => basePath + p.images.large + '?' + p.qss.large);
     const buffers = [];
@@ -46,9 +28,13 @@ const LISTING_URL = 'https://www.eurovaistine.lt/menesio-leidinys';
         buffers.push(await fetchBuffer(url));
     }
 
-    const coverInfo = await extractCoverInfo({ store: 'Eurovaistinė', imageBuffer: buffers[0], filename: 'eurovaistine-cover.jpg' });
-    if (!coverInfo?.validFrom) {
-        console.log('No reliable dates from cover OCR — submitting without dates');
+    let dates = monthRangeFromText(title);
+    if (!dates) {
+        const coverInfo = await extractCoverInfo({ store: 'Eurovaistinė', imageBuffer: buffers[0], filename: 'eurovaistine-cover.jpg' });
+        dates = coverInfo?.validFrom ? { validFrom: coverInfo.validFrom, validTo: coverInfo.validTo } : null;
+    }
+    if (!dates) {
+        console.log('No month in the title and no reliable dates from cover OCR — submitting without dates');
     }
 
     try {
@@ -56,10 +42,10 @@ const LISTING_URL = 'https://www.eurovaistine.lt/menesio-leidinys';
 
         await submitFlyer({
             store: 'Eurovaistinė',
-            title: coverInfo?.title || title,
+            title,
             catalogName: 'Eurovaistinė',
-            validFrom: coverInfo?.validFrom ?? null,
-            validTo: coverInfo?.validTo ?? null,
+            validFrom: dates?.validFrom ?? null,
+            validTo: dates?.validTo ?? null,
             pdfBuffer,
             filename: `eurovaistine-${docId}.pdf`,
             sourceId: docId,

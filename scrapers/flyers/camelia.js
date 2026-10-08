@@ -1,13 +1,14 @@
-import { fetchBuffer, submitFlyer, extractCoverInfo } from './_shared.js';
+import { fetchBuffer, submitFlyer, extractCoverInfo, fetchYumpuDocument, renderPdfBufferFirstPageToJpeg, monthRangeFromText } from './_shared.js';
 
 // camelia.lt/akciju-leidinys is plain server-rendered HTML (a Nuxt SSR page)
 // embedding a Yumpu-hosted document, with a real "Atsisiųsti akcijų
 // leidinį" download link straight to the source PDF — no flipbook scraping
-// needed at all, and no Puppeteer either since everything here is a plain
-// fetch. No validity dates appear on the page itself, only on the leaflet's
-// own cover — read via the backend's Gemini cover-OCR endpoint, using the
-// same page's first-page JPEG from Yumpu's public document-JSON API rather
-// than rasterizing the (download-only, un-renderable-in-browser) PDF.
+// and no Puppeteer needed for the PDF itself. No validity dates appear on
+// the page, only on the leaflet's own cover, read via the backend's Gemini
+// cover-OCR endpoint. The cover image is rendered from the PDF itself
+// with Ghostscript (Chrome only downloads a Yumpu download link): Yumpu's
+// document JSON (which also has the title) sits behind AWS WAF since
+// 2026-10 and is only used when it answers.
 const LISTING_URL = 'https://camelia.lt/akciju-leidinys';
 
 (async () => {
@@ -22,35 +23,30 @@ const LISTING_URL = 'https://camelia.lt/akciju-leidinys';
     const [downloadUrl, docId] = downloadMatch;
     console.log(`Found Yumpu document ${docId}, download URL: ${downloadUrl}`);
 
-    const doc = await (await fetch(`https://www.yumpu.com/lt/document/json/${docId}`)).json();
-    const { title, base_path: basePath, pages } = doc.document;
-
-    let coverInfo = null;
-    if (pages?.[0]) {
-        const coverUrl = basePath + pages[0].images.large + '?' + pages[0].qss.large;
-        const coverBuffer = await fetchBuffer(coverUrl);
-        coverInfo = await extractCoverInfo({ store: 'Camelia', imageBuffer: coverBuffer, filename: 'camelia-cover.jpg' });
-    }
-
-    if (!coverInfo?.validFrom) {
-        console.log('No reliable dates from cover OCR — submitting without dates');
-    }
-
     try {
         const pdfBuffer = await fetchBuffer(downloadUrl);
+        const doc = await fetchYumpuDocument(docId);
+
+        const coverImage = renderPdfBufferFirstPageToJpeg(pdfBuffer);
+        const coverInfo = await extractCoverInfo({ store: 'Camelia', imageBuffer: coverImage, filename: 'camelia-cover.jpg' });
+        const title = coverInfo?.title || doc?.title || 'Camelia akcijų leidinys';
+        const dates = coverInfo?.validFrom ? coverInfo : monthRangeFromText(title);
+        if (!dates) {
+            console.log('No dates via cover OCR or the title — submitting without dates');
+        }
 
         await submitFlyer({
             store: 'Camelia',
-            title: coverInfo?.title || title,
+            title,
             catalogName: 'Camelia',
-            validFrom: coverInfo?.validFrom ?? null,
-            validTo: coverInfo?.validTo ?? null,
+            validFrom: dates?.validFrom ?? null,
+            validTo: dates?.validTo ?? null,
             pdfBuffer,
             sourcePdfUrl: downloadUrl,
             filename: `camelia-${docId}.pdf`,
             sourceId: docId,
         });
     } catch (error) {
-        console.error(`Failed to process leaflet "${title}":`, error.message);
+        console.error(`Failed to process leaflet ${docId}:`, error.message);
     }
 })();

@@ -2,6 +2,9 @@ import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
 import { PDFDocument } from 'pdf-lib';
+import { execFileSync } from 'child_process';
+import os from 'os';
+import path from 'path';
 
 puppeteer.use(StealthPlugin());
 
@@ -122,6 +125,113 @@ export async function renderFirstPdfPageToJpeg(pdfUrl, { quality = 80, viewport 
     } finally {
         await browser.close();
     }
+}
+
+// Page 1 of a PDF already in memory, as a JPEG, rendered with Ghostscript
+// (installed in the Sail container). For PDFs that Chrome won't display:
+// a download link (Yumpu's) makes headless Chrome download the file instead
+// of opening its viewer (net::ERR_ABORTED), so renderFirstPdfPageToJpeg()
+// can't be used there.
+export function renderPdfBufferFirstPageToJpeg(pdfBuffer, { dpi = 110 } = {}) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'flyer-cover-'));
+    const pdfPath = path.join(dir, 'in.pdf');
+    const jpgPath = path.join(dir, 'cover.jpg');
+    try {
+        fs.writeFileSync(pdfPath, pdfBuffer);
+        execFileSync('gs', ['-q', '-dNOPAUSE', '-dBATCH', '-dSAFER', '-sDEVICE=jpeg', '-dJPEGQ=85', `-r${dpi}`, '-dFirstPage=1', '-dLastPage=1', `-sOutputFile=${jpgPath}`, pdfPath]);
+        return fs.readFileSync(jpgPath);
+    } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
+}
+
+// Lithuanian month names, nominative and genitive ("spalis", "spalio").
+const LT_MONTHS = [
+    ['sausis', 'sausio'], ['vasaris', 'vasario'], ['kovas', 'kovo'], ['balandis', 'balandžio'],
+    ['gegužė', 'gegužės'], ['birželis', 'birželio'], ['liepa', 'liepos'], ['rugpjūtis', 'rugpjūčio'],
+    ['rugsėjis', 'rugsėjo'], ['spalis', 'spalio'], ['lapkritis', 'lapkričio'], ['gruodis', 'gruodžio'],
+];
+
+// The whole calendar month a monthly leaflet's title or URL names
+// ("GINTARINĖS vaistinės spalio mėnesio leidinys" -> 2026-10-01..31), for
+// pharmacy leaflets whose cover prints no dates. Pharmacy chains publish one
+// leaflet per calendar month, so the month name is the validity range. The
+// year is the current one, or the next one for a January leaflet scraped in
+// December. Returns null when no month name is found.
+export function monthRangeFromText(text, now = new Date()) {
+    const lower = String(text ?? '').toLowerCase();
+    const index = LT_MONTHS.findIndex(names => names.some(name => new RegExp(`(^|[^a-ząčęėįšųūž])${name}([^a-ząčęėįšųūž]|$)`).test(lower)));
+    if (index < 0) {
+        return null;
+    }
+    const year = now.getMonth() === 11 && index === 0 ? now.getFullYear() + 1 : now.getFullYear();
+    const pad = (n) => String(n).padStart(2, '0');
+    const lastDay = new Date(Date.UTC(year, index + 1, 0)).getUTCDate();
+    return { validFrom: `${year}-${pad(index + 1)}-01`, validTo: `${year}-${pad(index + 1)}-${pad(lastDay)}` };
+}
+
+// Yumpu's public document JSON (title, page images, validity). Since
+// 2026-10 it sits behind AWS WAF: plain fetches get an empty 202 challenge
+// or 403, so this returns null instead of throwing, and the caller decides
+// whether it can do without it (fetchYumpuDocumentViaPage below works).
+export async function fetchYumpuDocument(docId) {
+    try {
+        const response = await fetch(`https://www.yumpu.com/lt/document/json/${docId}`);
+        const text = await response.text();
+        if (!response.ok || !text) {
+            console.log(`Yumpu document ${docId}: HTTP ${response.status}${response.headers.get('x-amzn-waf-action') ? ' (AWS WAF challenge)' : ''}, no document JSON`);
+            return null;
+        }
+        return JSON.parse(text).document ?? null;
+    } catch (error) {
+        console.log(`Yumpu document ${docId}: ${error.message}`);
+        return null;
+    }
+}
+
+// The same Yumpu document JSON, read the way a visitor gets it: open the
+// pharmacy's own leaflet page (which embeds the Yumpu viewer in an iframe)
+// in stealth Chrome and catch the viewer's own document/json response.
+// Checked 2026-10-08: this gets 200 for Eurovaistinė and Apotheka, while a
+// plain fetch, plain headless Chrome, and stealth Chrome opening the embed
+// URL directly all got 403 from the WAF. Returns { docId, doc } or null
+// after a few fresh-browser attempts.
+export async function fetchYumpuDocumentViaPage(listingUrl, { attempts = 3, waitMs = 12000 } = {}) {
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        const browser = await launchBrowser();
+        try {
+            const page = await browser.newPage();
+            await page.setViewport({ width: 1366, height: 900 });
+            let found = null;
+            page.on('response', async (response) => {
+                const match = response.url().match(/yumpu\.com\/[a-z]{2}\/document\/json\/(\d+)/);
+                if (!match || found || response.status() !== 200) {
+                    return;
+                }
+                try {
+                    const doc = JSON.parse(await response.text()).document;
+                    if (doc?.pages?.length) {
+                        found = { docId: match[1], doc };
+                    }
+                } catch (error) {
+                    // A truncated or non-JSON body: wait for the viewer's retry.
+                }
+            });
+            await page.goto(listingUrl, { waitUntil: 'networkidle2', timeout: 60000 });
+            for (let waited = 0; !found && waited < waitMs; waited += 500) {
+                await sleep(500);
+            }
+            if (found) {
+                return found;
+            }
+            console.log(`Yumpu via ${listingUrl}: no document JSON on attempt ${attempt}/${attempts}`);
+        } catch (error) {
+            console.log(`Yumpu via ${listingUrl}: ${error.message} (attempt ${attempt}/${attempts})`);
+        } finally {
+            await browser.close();
+        }
+    }
+    return null;
 }
 
 // Asks the backend's Gemini-backed cover-page OCR for a title/valid_from/
