@@ -4,6 +4,11 @@ import nvaistine from './sources/nvaistine.js';
 import manoVaistine from './sources/mano-vaistine.js';
 import ramuneles from './sources/ramuneles.js';
 import manual from './sources/manual.js';
+import eurovaistine from './sources/eurovaistine.js';
+import gintarine from './sources/gintarine.js';
+import camelia from './sources/camelia.js';
+import benu from './sources/benu.js';
+import apotheka from './sources/apotheka.js';
 
 // Pharmacy addresses and opening hours, one source per pharmacy. Store names
 // must match stores.name; the list mirrors config/hours_scrapers.php (kept in
@@ -11,8 +16,16 @@ import manual from './sources/manual.js';
 //   node scrapers/hours/scrape.js            every pharmacy
 //   node scrapers/hours/scrape.js camelia    one, by name or slug
 //   SCRAPER_DRY_RUN=1 ...                    print, don't POST
+// The big chains moved from nuolaidos.lt to their own sites on 2026-10-08
+// (nuolaidos.lt kept closed pharmacies, e.g. Camelia "V. Krėvės pr. 97H").
+// nuolaidos.js stays as a fallback source.
 const SOURCES = {
     nuolaidos: { run: nuolaidos, label: 'nuolaidos.lt' },
+    eurovaistine: { run: eurovaistine, label: 'eurovaistine.lt' },
+    gintarine: { run: gintarine, label: 'gintarine.lt' },
+    camelia: { run: camelia, label: 'api.camelia.lt' },
+    benu: { run: benu, label: 'benu.lt' },
+    apotheka: { run: apotheka, label: 'apotheka.lt' },
     nvaistine: { run: nvaistine, label: 'nvaistine.lt' },
     'mano-vaistine': { run: manoVaistine, label: 'manovaistine.lt' },
     ramuneles: { run: ramuneles, label: '100metu.lt' },
@@ -20,11 +33,11 @@ const SOURCES = {
 };
 
 const STORES = [
-    { store: 'Eurovaistinė', slug: 'eurovaistine', source: 'nuolaidos' },
-    { store: 'Gintarinė vaistinė', slug: 'gintarine-vaistine', source: 'nuolaidos' },
-    { store: 'Camelia', slug: 'camelia', source: 'nuolaidos' },
-    { store: 'Benu vaistinė', slug: 'benu-vaistine', source: 'nuolaidos' },
-    { store: 'Apotheka', slug: 'apotheka', source: 'nuolaidos' },
+    { store: 'Eurovaistinė', slug: 'eurovaistine', source: 'eurovaistine' },
+    { store: 'Gintarinė vaistinė', slug: 'gintarine-vaistine', source: 'gintarine' },
+    { store: 'Camelia', slug: 'camelia', source: 'camelia' },
+    { store: 'Benu vaistinė', slug: 'benu-vaistine', source: 'benu' },
+    { store: 'Apotheka', slug: 'apotheka', source: 'apotheka' },
     { store: 'N vaistinė', slug: 'nvaistine', source: 'nvaistine' },
     { store: 'Mano vaistinė', slug: 'mano-vaistine', source: 'mano-vaistine' },
     { store: 'Ramunėlės vaistinė', slug: 'ramuneles-vaistine', source: 'ramuneles' },

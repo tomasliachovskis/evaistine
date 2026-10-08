@@ -30,7 +30,12 @@ export function jsonAfter(text, marker) {
         return null;
     }
 
-    const start = at + marker.length;
+    return JSON.parse(literalAt(text, at + marker.length));
+}
+
+// The balanced [...] or {...} literal starting at `start`, as text. Strings
+// are skipped, so brackets inside them don't count.
+export function literalAt(text, start) {
     const open = text[start];
     const close = open === '[' ? ']' : '}';
     let depth = 0;
@@ -45,11 +50,11 @@ export function jsonAfter(text, marker) {
         if (inString) continue;
         if (ch === open) depth++;
         else if (ch === close && --depth === 0) {
-            return JSON.parse(text.slice(start, i + 1));
+            return text.slice(start, i + 1);
         }
     }
 
-    throw new Error(`Unterminated JSON after "${marker}"`);
+    throw new Error(`Unterminated literal at ${start}`);
 }
 
 export const slugify = (text) => String(text)
@@ -128,6 +133,48 @@ export function rowsFromLine(line) {
         text.slice(m.index + m[0].length, found[i + 1]?.index ?? text.length),
     ]);
 }
+
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+// Per-weekday hours (Monday first; each "08:00-20:00", "Nedirba", or null
+// for unknown) -> grouped workTimes: ["I-V 08:00-20:00", "VI-VII Nedirba"].
+export function workTimesFromWeek(days) {
+    const workTimes = [];
+    let start = 0;
+
+    for (let i = 1; i <= 7; i++) {
+        if (i < 7 && days[i] === days[start]) {
+            continue;
+        }
+        if (days[start]) {
+            const range = start === i - 1 ? ROMAN[start] : `${ROMAN[start]}-${ROMAN[i - 1]}`;
+            workTimes.push(`${range} ${days[start]}`);
+        }
+        start = i;
+    }
+
+    return workTimes;
+}
+
+// One day as "08:00-20:00" from an open and a close time ("8:00", "08:00:00");
+// "Nedirba" when both are missing, "-", or equal (00:00-00:00).
+export function dayHours(open, close) {
+    const clean = (t) => {
+        const match = String(t ?? '').trim().match(/^(\d{1,2})[:.](\d{2})/);
+        return match ? `${match[1].padStart(2, '0')}:${match[2]}` : null;
+    };
+    const from = clean(open);
+    const to = clean(close);
+
+    return from && to && from !== to ? `${from}-${to}` : 'Nedirba';
+}
+
+// "GINKŪNŲ K." -> "Ginkūnų k.", "NAUJOJI AKMENĖ" -> "Naujoji Akmenė".
+export const titleCaseTown = (text) => cleanText(text)
+    .toLocaleLowerCase('lt')
+    .split(' ')
+    .map(word => (/^(k|km|sen|m|vs|kaim|r|raj|sav)\.$/.test(word) ? word : word.charAt(0).toLocaleUpperCase('lt') + word.slice(1)))
+    .join(' ');
 
 // Municipality (genitive, as in "Šilalės r. sav.") -> its centre town, for
 // addresses that name only the municipality.
