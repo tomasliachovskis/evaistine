@@ -10,17 +10,50 @@ const STORE = 'Mano vaistinė';
 //
 // Medicines: /visi-vaistai lists prescription ones too; the shop's own
 // filter attrib[8]=2 keeps only non-prescription medicines.
+//
+// Categories (fixed 2026-10-08): each root's subcategories come from the
+// header menu (li.hassub for the root -> .nav--sub ul.links--two), because
+// most live under other URL prefixes (/dermatologine-kosmetika,
+// /kosmetika-ir-higiena/..., /matuokliai-ir-kiti-elektroniniai-prietaisai).
+// The old /{root}/ prefix rule found only one cosmetics subcategory, so ~600
+// products fell into "Kosmetika ir higiena" and were all filed as Higiena.
+// Mixed buckets ("Kelionėms", "Dovanos", and whatever only the root listing
+// of a mixed root shows) are sent with an empty category: discounts:process
+// then runs categories:bulk-map, which classifies each product by name.
+// Mixed subcategories are read after the specific ones, so a product listed
+// in both keeps its specific category.
 const ROOTS = [
     { key: 'visi-vaistai', name: 'Nereceptiniai vaistai', query: '?attrib[8]=2' },
     { key: 'vitaminai-maisto-papildai', name: 'Vitaminai ir maisto papildai' },
-    { key: 'kosmetika-higiena', name: 'Kosmetika ir higiena' },
+    { key: 'kosmetika-higiena', name: 'Kosmetika ir higiena', mixed: true },
     { key: 'medicinos-prekes', name: 'Medicinos prekės' },
     { key: 'arabatos-ir-vaistazoles', name: 'Arbatos ir vaistažolės' },
     { key: 'meiles-prekes', name: 'Meilės prekės' },
-    { key: 'kitos-prekes', name: 'Kitos prekės' },
+    { key: 'kitos-prekes', name: 'Kitos prekės', mixed: true },
 ];
 
-const subcategories = (page, root) => {
+// Subcategories that mix product types; their products get an empty category.
+const MIXED_SUBCATEGORIES = new Set(['kitos-prekes/kelionems', 'dovanos']);
+// Not a category: the shop's whole "new arrivals" list.
+const SKIP_SUBCATEGORIES = new Set(['prekes']);
+
+const menuSubcategories = (page, root) => {
+    const entry = page.querySelectorAll('li.hassub')
+        .find(li => li.querySelector('a')?.getAttribute('href') === `/${root}`);
+    const unique = new Map();
+    entry?.querySelectorAll('.nav--sub ul.links--two a').forEach((a) => {
+        const path = (a.getAttribute('href') ?? '').split('?')[0].replace(/^\//, '');
+        const name = a.text.replace(/\s+/g, ' ').trim();
+        if (path && name && !SKIP_SUBCATEGORIES.has(path) && !unique.has(path)) {
+            unique.set(path, name);
+        }
+    });
+    return [...unique].map(([path, name]) => ({ path, name }));
+};
+
+// Fallback for roots without a menu entry (Medicinos prekės, Arbatos):
+// links under /{root}/ on the root page itself.
+const prefixSubcategories = (page, root) => {
     const prefix = `/${root}/`;
     const links = page.querySelectorAll('a[href]')
         .map(a => ({ href: a.getAttribute('href').split('?')[0], name: a.text.replace(/\s+/g, ' ').trim() }))
@@ -114,11 +147,20 @@ const fetchEan = async (url) => {
         }
         await sleep();
 
-        for (const sub of subcategories(parse(html), root.key)) {
+        const page = parse(html);
+        const menu = menuSubcategories(page, root.key);
+        const subs = menu.length ? menu : prefixSubcategories(page, root.key);
+        const mixed = subs.filter(sub => MIXED_SUBCATEGORIES.has(sub.path));
+
+        for (const sub of subs.filter(sub => !MIXED_SUBCATEGORIES.has(sub.path))) {
             await scrapeListing(sub.path, query, `${root.name}/${sub.name}`);
             eans.save();
         }
-        await scrapeListing(root.key, query, root.name);
+        for (const sub of mixed) {
+            await scrapeListing(sub.path, query, '');
+            eans.save();
+        }
+        await scrapeListing(root.key, query, root.mixed ? '' : root.name);
         eans.save();
     }
 

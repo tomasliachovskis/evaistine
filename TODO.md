@@ -185,10 +185,33 @@ The phased roadmap with time estimates is in `docs/evaistine.md`
 - [x] **Pharmacy addresses and hours** (2026-10-08, `docs/evaistine.md`
       "Pharmacy addresses and hours"): 1 157 locations for all 15 pharmacies
       via `hours:scrape --all`.
-- [ ] **Addresses follow-ups**: read the five big chains from their own sites
-      instead of nuolaidos.lt (a spot check found stale entries); coordinates
-      for Mano vaistinė and the manual pharmacies (geocoding), so they get map
-      pins; hours for Piliulė and Rx (not published).
+- [x] **Big chains' addresses from their own sites** (2026-10-08):
+      Eurovaistinė, Gintarinė, Camelia, Benu, Apotheka; nuolaidos.lt kept closed
+      pharmacies. 1 151 active locations.
+- [ ] **Addresses follow-ups**: coordinates for Mano vaistinė and the manual
+      pharmacies (geocoding), so they get map pins; hours for Piliulė and Rx
+      (not published).
+- [ ] **Mixed categories, Mano vaistinė part** (in progress 2026-10-08,
+      `docs/evaistine.md` "Mixed categories"): Benu is done (368 products
+      re-filed). For Mano vaistinė, after the scraper run
+      (`SCRAPER_ONLY=kitos-prekes,kosmetika-higiena`, log
+      `storage/logs/mano-recat.log`):
+      1. create mapper rows for the new "Kosmetika ir higiena/…" and
+         "Kitos prekės/…" strings, `categories:map-mappers`, review;
+      2. delete the coarse mappers "Kosmetika ir higiena", "Kitos prekės",
+         "Kitos prekės/Kelionėms";
+      3. `discounts:process --only-store="Mano vaistinė" --map-categories`;
+      4. `products:recategorize --store="Mano vaistinė" --from="Kosmetika ir
+         higiena" --from="Kitos prekės" --from="Kitos prekės/Kelionėms"`
+         (dry run first);
+      5. `keywords:map-products`, `keywords:refresh-counts`,
+         `deal-pool:refresh`, `cache:clear-discounts`.
+
+- [ ] **Product meta title cut** (postponed by owner, 2026-10-08): long names
+      are cut at the last space to fit "{name} akcija – kaina nuo X €", so
+      ~2 950 titles end on a dangling word ("kaukė su akcija"). Cut at a comma
+      first, else drop a trailing su/ir/be/nuo/skirtas
+      (`Api\ProductController`, product meta title, ~line 1350).
 
 ## Ideas carried over from superakcijos
 

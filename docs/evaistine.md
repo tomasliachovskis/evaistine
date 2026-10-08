@@ -122,7 +122,7 @@ the DB:
 | 100 metų vaistinė | JSON `productsdata?cat=0`, paged with `Range: 0-199` | ~95 % | Ramunėlės' online shop |
 | Rx vaistinė | HTML (PrestaShop), `?resultsPerPage=500` | in the product URL | |
 | LSMU vaistinė | HTML + JSON-LD | ~35 % | only cosmetics, herbal teas, aromatherapy; mostly its own products |
-| Piliulė, Universiteto vaistinė | HTML (Verskis, `scrapers/lib/verskis.js`) | none | small shops; sold-out products skipped (almost all of Piliulė's) |
+| Piliulė, Universiteto vaistinė | HTML (Verskis, `scrapers/lib/verskis.js`) | none | small shops; sold-out products skipped (almost all of Piliulė's). Images: Piliulė's 384x384.g copies; Universiteto has none (404), so it sends the original file (`imageSize: null`, fixed 2026-10-08) |
 | Ąžuolyno vaistinė | WooCommerce Store API | none | ~170 products |
 
 The small shops (Piliulė, LSMU, Ąžuolyno) are shown like the big chains (owner's decision, 2026-10-08), even with few offers.
@@ -137,13 +137,31 @@ the first runs post some rows without an EAN and the cache fills over a few
 nights. Product categories are sent as `Root/Subcategory` from each shop's
 own tree, ready for `categories:map-mappers`.
 
+## Mixed categories (fixed 2026-10-08)
+
+About 1 700 products came from pharmacy categories that mix product types, so each landed in one approximate root:
+- Benu "Specialūs pasiūlymai ir akcijos/Sezono svarbiausi" (~660, all filed as vitamins, ~360 of them sun creams).
+- Mano vaistinė "Kosmetika ir higiena" (587, all Higiena), "Kitos prekės" (250) and "Kitos prekės/Kelionėms" (193), all filed as Medicinos prekės.
+
+What changed:
+- **Benu** (`scrapers/benu-vaistine.js`): the promo shelf sends `Sezono svarbiausi/{lvl3}/{productType}` from Luigi's Box (`main_category_lvl_3` + Benu's own `productType`), e.g. "Sezono svarbiausi/Apsauga nuo saulės/Kosmetika". The 12 strings were mapped by `categories:map-mappers`, and all 12 were reviewed. productType "Receptinis vaistas" is skipped like `drugType` RX. Luigi's Box returns ~10 % repeats across pages on this shelf (576 unique of 658), and the missed products keep their earlier offers.
+- **Mano vaistinė** (`scrapers/mano-vaistine.js`): subcategories come from the header menu (`li.hassub` → `.nav--sub ul.links--two`), whatever their URL prefix. The old `/{root}/` rule found only "Dekoratyvinė kosmetika". Mixed buckets ("Kelionėms", "Dovanos", and the root listings of "Kosmetika ir higiena" and "Kitos prekės") are sent with an empty category, so `discounts:process --map-categories` classifies them by name. "Naujos prekės" (`/prekes`) is skipped.
+- **Existing products**: `products:recategorize --store=… --from=… [--dry-run]` re-files products the store listed only under a mixed string. It uses, in order, the majority of other pharmacies' categories for the same product, the store's new category, or GPT by name. It prints a before→after table.
+- **Shadowing**: new "Kosmetika ir higiena/…" strings would be caught by the existing "Kosmetika ir higiena/Dekoratyvinė kosmetika" mapper through `resolveCategoryId()`'s first-part prefix fallback (`str_starts_with`). So the new strings get mapper rows and are mapped before `discounts:process` runs, and the coarse mappers were deleted.
+
+Benu result: 368 products changed (271 Vitaminai → Kūno priežiūra ir apsauga nuo saulės, 39 → Medicinos prekės, 36 → Nereceptiniai vaistai, …).
+
 ## Pharmacy addresses and hours (2026-10-08)
 
 `store_locations` feeds `/vaistines/{slug}` and `/vaistines/{slug}/{city}`. `scrapers/hours/scrape.js` collects it per pharmacy and POSTs to `/api/scrapers/store-locations`, which upserts by `external_id`, deactivates locations that disappeared, and stores the `source`. Run all with `sail artisan hours:scrape --all` (scheduled weekly in `Kernel.php`) or one with `sail artisan hours:scrape "N vaistinė"`. Use `SCRAPER_DRY_RUN=1 node scrapers/hours/scrape.js {slug}` inside the container to print without saving.
 
 | Pharmacy | Source (`scrapers/hours/sources/`) | Locations (2026-10-08) |
 |---|---|---|
-| Eurovaistinė, Gintarinė, Camelia, Benu, Apotheka | `nuolaidos.js`: www.nuolaidos.lt/{slug}-darbo-laikas, a third-party directory | 261 / 230 / 298 / 85 / 56 |
+| Eurovaistinė | `eurovaistine.js`: the pharmacy objects in eurovaistine.lt/vaistines' Next.js flight data (the HTML shows only a dozen); temporarily closed ones left out | 245 |
+| Gintarinė vaistinė | `gintarine.js`: the `Destinations`/`Cities` JS object on gintarine.lt/vaistines; only entries named "Gintarinė…" (the list also has N vaistinė's "Norfos vaistinė" pharmacies) | 241 |
+| Camelia | `camelia.js`: api.camelia.lt `/api/v2/shop/locations?itemsPerPage=5000` (3 600 pickup points); pharmacies = `mainTypeImage` set, `enabled`, with a street | 315 |
+| Benu vaistinė | `benu.js`: the `pharmacies = {...}` JSON on benu.lt/vaistiniu-paieska; "00:00 - 00:00" every day = open 24h (3 duty pharmacies); town from `region`, or the address part after the street when `region` is a municipality | 82 |
+| Apotheka | `apotheka.js`: the JSON-LD list on apotheka.lt/shops, then each pharmacy page's JSON-LD (hours, geo); 42 pages | 42 |
 | N vaistinė | `nvaistine.js`: the `_markers_data_main` JSON on nvaistine.lt/vaistines/ | 125 |
 | Mano vaistinė | `mano-vaistine.js`: the cards on manovaistine.lt/visos-vaistines, no coordinates | 48 |
 | Ramunėlės vaistinė, 100 metų vaistinė | `ramuneles.js`: the `deliveryStores` JSON on 100metu.lt/vaistines/57 (the same company and pharmacies) | 22 each |
@@ -153,8 +171,14 @@ Notes:
 - Every source returns nuolaidos' `workTimes` notation (`"I-V 08:00-20:00"`, `"VII Nedirba"`), which `WorkingHoursParser` reads. `_shared.js` converts each site's own notation (`normalizeHours()`, `workTimesFromRows()`, `rowsFromLine()`). A lunch break is kept as `"09:00-13:00, 14:00-16:00"`, shown as text. A day left out is unknown (no hours shown), and "Nedirba" shows it closed.
 - Towns: addresses that name only a municipality ("Šilalės r. sav.") get its centre town (`municipalityCentre()`). One N vaistinė address has no town at all and is mapped by id (`TOWN_BY_ID`, Palanga, checked against its coordinates).
 - Piliulė and Rx publish no hours, only an address. Mano vaistinė and the manual pharmacies have no coordinates, so they get no map pins.
-- nuolaidos.lt is not always current. A spot check against the chains' own lists found Camelia "V. Krėvės pr. 97H" (the site says 97A) and a Gintarinė "Vilniaus g. 174" missing from gintarine.lt. If that matters, the next step is reading the big chains from their own sites, the way N vaistinė's is read.
+- The five big chains came from nuolaidos.lt (`nuolaidos.js`, kept as a fallback) until 2026-10-08, when they moved to their own sites. nuolaidos.lt kept closed pharmacies: Camelia's API marks "V. Krėvės pr. 97H", Miško g. 30 and Kareivių g. 11A as disabled, and spot-checked "only on nuolaidos.lt" addresses (Eurovaistinė Didlaukio, Liepkalnio; Benu Bartuvos, Šeškinės; Gintarinė Juozapavičiaus g. 13; Apotheka Stoties g. 28) are on none of the chains' lists. The switch deactivated the old rows (different `external_id`s) and created new ones: before → after 261→245, 230→241, 298→315, 85→82, 56→42; 1 151 active locations in all.
 - The manual file needs a manual update when those pages change. Its `_comment` says when it was last checked.
+
+## Product photo caching (checked 2026-10-08)
+
+`products:cache-images` (production only, every 5 minutes) downloads each hotlinked `image_url` into `storage/app/public/products/` and rewrites it to `{APP_URL}/storage/products/...`. Nothing in it points at superakcijos. It keys off `APP_URL`, so run it only where `APP_URL` is the real site, never from a local checkout against the production DB.
+
+A test of 3 images per host with the command's own HTTP client: every pharmacy CDN serves us (Gintarinė's Azure blob, benu.lt, api.eurovaistine.lt, images.camelia.lt, apotheka.lt, manovaistine.lt, armila.com, rx-vaistine.lt, internetinevaistine.lt, lsmu.lt, piliule.lt). The exception was Universiteto vaistinė, where every image returned 404 because the scraper forced a 384px size that shop doesn't have. Fixed in the scraper, and 538 stored links were rewritten to the original files.
 
 ## Wording: "vaistinė", not "parduotuvė"
 

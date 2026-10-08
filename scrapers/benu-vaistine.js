@@ -31,18 +31,38 @@ const search = (extra) => {
 
 const first = (value) => (Array.isArray(value) ? value[0] : value) ?? null;
 
+// "Specialūs pasiūlymai ir akcijos/Sezono svarbiausi" is a seasonal promo
+// shelf with no real category (all ~660 items were filed as vitamins, 360 of
+// them sun creams). Its items still carry a third level ("Apsauga nuo
+// saulės", "Imunitetui ir gerai savijautai", "Alergijai slopinti") and
+// Benu's own productType (Kosmetika, Maisto papildas, Nereceptinis vaistas,
+// Medicinos prekė...), which together say what the product is.
+const PROMO_ROOT = 'Specialūs pasiūlymai ir akcijos';
+
+const categoryOf = (a) => {
+    const top = first(a.main_category_lvl_1);
+    const sub = first(a.main_category_lvl_2);
+
+    if (top === PROMO_ROOT) {
+        const topic = first(a.main_category_lvl_3);
+        const type = first(a.productType);
+        // Unknown shape: empty, so categories:bulk-map classifies it by name.
+        return topic && type ? `${sub ?? 'Sezono svarbiausi'}/${topic}/${type}` : '';
+    }
+
+    return sub ? `${top}/${sub}` : top;
+};
+
 // `price_amount` is the current price; `price_old_amount` is set only while
 // the product is discounted. `drugType` is basic, OTC or RX.
 const toRow = (hit, dates) => {
     const a = hit.attributes;
-    const top = first(a.main_category_lvl_1);
-    const sub = first(a.main_category_lvl_2);
 
     return buildRow({
         store: STORE,
         name: first(a.title),
         url: a.original_url || hit.url,
-        category: sub ? `${top}/${sub}` : top,
+        category: categoryOf(a),
         price: Number(a.price_amount) || null,
         regular: Number(a.price_old_amount) || null,
         condition: first(a.labels),
@@ -96,7 +116,9 @@ const toRow = (hit, dates) => {
                     continue;
                 }
                 seen.add(id);
-                if (first(hit.attributes?.drugType) === 'RX') {
+                // productType "Receptinis vaistas" also shows up on a few
+                // items whose drugType isn't RX.
+                if (first(hit.attributes?.drugType) === 'RX' || first(hit.attributes?.productType) === 'Receptinis vaistas') {
                     skippedPrescription++;
                     continue;
                 }
