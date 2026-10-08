@@ -369,6 +369,9 @@ class ScrapingController extends Controller
     {
         $validated = $request->validate([
             'store' => 'required|string',
+            // Where the addresses came from (nuolaidos.lt, the chain's own
+            // site, or the hand-checked manual file); see scrapers/hours/.
+            'source' => 'nullable|string|max:255',
             'locations' => 'required|array',
             'locations.*.externalId' => 'required|string',
             'locations.*.city' => 'required|string',
@@ -402,7 +405,7 @@ class ScrapingController extends Controller
                     'phone' => $location['phones'][0] ?? null,
                     'hours' => WorkingHoursParser::parse($location['workTimes'] ?? []),
                     'is_active' => true,
-                    'source' => 'nuolaidos.lt',
+                    'source' => $validated['source'] ?? 'nuolaidos.lt',
                 ]
             );
 

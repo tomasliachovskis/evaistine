@@ -1,50 +1,43 @@
-import { extractWorkingHours, submitLocations } from './_shared.js';
+import { submitLocations } from './_shared.js';
+import nuolaidos from './sources/nuolaidos.js';
+import nvaistine from './sources/nvaistine.js';
+import manoVaistine from './sources/mano-vaistine.js';
+import ramuneles from './sources/ramuneles.js';
+import manual from './sources/manual.js';
 
-// Mirrors config/hours_scrapers.php — kept in sync manually (no shared
-// PHP/JS config mechanism exists in this repo; scrapers/*.js already
-// duplicate their own store lists rather than reading Laravel config).
+// Pharmacy addresses and opening hours, one source per pharmacy. Store names
+// must match stores.name; the list mirrors config/hours_scrapers.php (kept in
+// sync by hand: scrapers don't read Laravel config).
+//   node scrapers/hours/scrape.js            every pharmacy
+//   node scrapers/hours/scrape.js camelia    one, by name or slug
+//   SCRAPER_DRY_RUN=1 ...                    print, don't POST
+const SOURCES = {
+    nuolaidos: { run: nuolaidos, label: 'nuolaidos.lt' },
+    nvaistine: { run: nvaistine, label: 'nvaistine.lt' },
+    'mano-vaistine': { run: manoVaistine, label: 'manovaistine.lt' },
+    ramuneles: { run: ramuneles, label: '100metu.lt' },
+    manual: { run: manual, label: 'manual' },
+};
+
 const STORES = [
-    { store: 'Maxima', slug: 'maxima' },
-    { store: 'Iki', slug: 'iki' },
-    { store: 'Lidl', slug: 'lidl' },
-    { store: 'Norfa', slug: 'norfa' },
-    { store: 'Rimi', slug: 'rimi' },
-    { store: 'Aibė', slug: 'aibe' },
-    { store: 'Šilas', slug: 'silas' },
-    { store: 'Čia', slug: 'cia' },
-    { store: 'Grustė', slug: 'gruste' },
-    { store: 'Express Market', slug: 'express-market' },
-    { store: 'Koops', slug: 'koops' },
-    { store: 'Gulbelė', slug: 'gulbele' },
-    { store: 'Kubas', slug: 'kubas' },
-    { store: 'Vynoteka', slug: 'vynoteka' },
-    { store: 'Thomas Philipps', slug: 'thomas-philipps' },
-    { store: 'ePromo', slug: 'epromo' },
-    { store: 'Apotheka', slug: 'apotheka' },
-    { store: 'Benu vaistinė', slug: 'benu-vaistine' },
-    { store: 'Bikuva', slug: 'bikuva' },
-    { store: 'Camelia', slug: 'camelia' },
-    { store: 'Elimart', slug: 'elimart' },
-    { store: 'Ermitažas', slug: 'ermitazas' },
-    { store: 'Eurokos', slug: 'eurokos' },
-    { store: 'Eurovaistinė', slug: 'eurovaistine' },
-    { store: 'Gintarinė vaistinė', slug: 'gintarine-vaistine' },
-    { store: 'Jupoja', slug: 'jupoja' },
-    { store: 'Jysk', slug: 'jysk' },
-    { store: 'Moki Veži', slug: 'moki-vezi' },
-    { store: 'Pepco', slug: 'pepco' },
-    { store: 'Promo Cash&Carry', slug: 'promo-cash-carry' },
-    { store: 'Ramunėlės vaistinė', slug: 'ramuneles-vaistine' },
-    { store: 'Senukai', slug: 'senukai' },
-    { store: 'TECHasas', slug: 'techasas' },
-    { store: 'Technorama', slug: 'technorama' },
-    { store: 'Douglas', slug: 'douglas' },
-    { store: 'Ikea', slug: 'ikea' },
-    { store: 'Lytagra', slug: 'lytagra' },
-    { store: 'Mary Kay', slug: 'mary-kay' },
-    { store: 'Švaros Prekės', slug: 'svaros-prekes' },
+    { store: 'Eurovaistinė', slug: 'eurovaistine', source: 'nuolaidos' },
+    { store: 'Gintarinė vaistinė', slug: 'gintarine-vaistine', source: 'nuolaidos' },
+    { store: 'Camelia', slug: 'camelia', source: 'nuolaidos' },
+    { store: 'Benu vaistinė', slug: 'benu-vaistine', source: 'nuolaidos' },
+    { store: 'Apotheka', slug: 'apotheka', source: 'nuolaidos' },
+    { store: 'N vaistinė', slug: 'nvaistine', source: 'nvaistine' },
+    { store: 'Mano vaistinė', slug: 'mano-vaistine', source: 'mano-vaistine' },
+    { store: 'Ramunėlės vaistinė', slug: 'ramuneles-vaistine', source: 'ramuneles' },
+    { store: '100 metų vaistinė', slug: '100-metu-vaistine', source: 'ramuneles' },
+    { store: 'Ąžuolyno vaistinė', slug: 'azuolyno-vaistine', source: 'manual' },
+    { store: 'LSMU vaistinė', slug: 'lsmu-vaistine', source: 'manual' },
+    { store: 'Universiteto vaistinė', slug: 'universiteto-vaistine', source: 'manual' },
+    { store: 'Piliulė', slug: 'piliule', source: 'manual' },
+    { store: 'Rx vaistinė', slug: 'rx-vaistine', source: 'manual' },
+    { store: 'InternetineVaistine.lt', slug: 'internetine-vaistine', source: 'manual' },
 ];
 
+const DRY_RUN = Boolean(process.env.SCRAPER_DRY_RUN);
 const arg = process.argv[2]?.toLowerCase();
 const storesToRun = arg
     ? STORES.filter(s => s.store.toLowerCase() === arg || s.slug === arg)
@@ -55,18 +48,38 @@ if (arg && storesToRun.length === 0) {
     process.exit(1);
 }
 
-for (const { store, slug } of storesToRun) {
-    try {
-        const locations = await extractWorkingHours(slug);
+let failed = false;
 
-        if (locations.length === 0) {
+for (const entry of storesToRun) {
+    const { store, source } = entry;
+
+    try {
+        const locations = await SOURCES[source].run(entry);
+        const incomplete = locations.filter(l => !l.city || !l.address);
+
+        if (incomplete.length > 0) {
+            console.warn(`[${store}] ${incomplete.length} without city/address, skipped:`, incomplete.map(l => l.externalId).join(', '));
+        }
+
+        const complete = locations.filter(l => l.city && l.address);
+
+        if (complete.length === 0) {
             console.log(`[${store}] 0 locations found, skipping`);
             continue;
         }
 
-        const result = await submitLocations(store, locations);
-        console.log(`[${store}] ${locations.length} scraped -> created=${result.created} updated=${result.updated} deactivated=${result.deactivated}`);
+        if (DRY_RUN) {
+            console.log(`[${store}] ${complete.length} locations (dry run)`);
+            console.log(JSON.stringify(complete.slice(0, 3), null, 2));
+            continue;
+        }
+
+        const result = await submitLocations(store, SOURCES[source].label, complete);
+        console.log(`[${store}] ${complete.length} scraped -> created=${result.created} updated=${result.updated} deactivated=${result.deactivated}`);
     } catch (error) {
+        failed = true;
         console.error(`[${store}] failed: ${error.message}`);
     }
 }
+
+process.exit(failed ? 1 : 0);

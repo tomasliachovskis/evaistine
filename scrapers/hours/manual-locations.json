@@ -1,0 +1,42 @@
+{
+    "_comment": "Hand-checked from each pharmacy's contact page on 2026-10-08 (no scrapable list there). Check the pages and update this file when they change. workTimes use nuolaidos.lt notation; a day left out is unknown, 'Nedirba' is closed. Piliulė and Rx publish no hours.",
+    "Ąžuolyno vaistinė": {
+        "sourceUrl": "https://azuolynovaistine.lt/kontaktai/",
+        "locations": [
+            { "externalId": "kaunas-k-petrausko-g-40", "city": "Kaunas", "address": "K. Petrausko g. 40", "phones": ["+370 37 204873"], "workTimes": ["I-V 08:00-20:00", "VI 09:00-16:00"] }
+        ]
+    },
+    "LSMU vaistinė": {
+        "sourceUrl": "https://eshop.lsmu.lt/vaistine/parduotuves-kontaktai",
+        "locations": [
+            { "externalId": "kaunas-sukileliu-pr-13", "city": "Kaunas", "address": "Sukilėlių pr. 13", "phones": ["+370 37 722733"], "workTimes": ["I-V 08:00-18:00", "VI-VII Nedirba"] }
+        ]
+    },
+    "Universiteto vaistinė": {
+        "sourceUrl": "https://www.universitetovaistine.eu/apie-mus/kontaktai",
+        "locations": [
+            { "externalId": "vilnius-universiteto-g-2", "city": "Vilnius", "address": "Universiteto g. 2", "phones": ["+370 5 2121384"], "workTimes": ["I-V 09:00-19:00", "VI 09:00-16:00"] },
+            { "externalId": "vilnius-gedimino-pr-27", "city": "Vilnius", "address": "Gedimino pr. 27", "phones": ["+370 5 2610135"], "workTimes": ["I-V 09:00-19:00", "VI 09:00-16:00"] },
+            { "externalId": "vilnius-j-kairiukscio-g-2", "city": "Vilnius", "address": "J. Kairiūkščio g. 2", "phones": ["+370 5 2720376"], "workTimes": ["I-IV 07:30-11:30, 12:00-15:30", "V 07:30-11:30, 12:00-15:00"] },
+            { "externalId": "vilnius-svitrigailos-g-29", "city": "Vilnius", "address": "Švitrigailos g. 29", "phones": ["+370 5 2332945"], "workTimes": ["I-V 09:00-17:00"] }
+        ]
+    },
+    "Piliulė": {
+        "sourceUrl": "https://www.piliule.lt/kontaktai",
+        "locations": [
+            { "externalId": "pabrade-keisunu-g-6", "city": "Pabradė", "address": "Keisūnų g. 6", "phones": ["+370 687 49640"], "workTimes": [] }
+        ]
+    },
+    "Rx vaistinė": {
+        "sourceUrl": "https://rx-vaistine.lt/apie-mus",
+        "locations": [
+            { "externalId": "kaunas-europos-pr-72", "city": "Kaunas", "address": "Europos pr. 72", "phones": ["+370 655 00088"], "workTimes": [] }
+        ]
+    },
+    "InternetineVaistine.lt": {
+        "sourceUrl": "https://internetinevaistine.lt/kontaktai",
+        "locations": [
+            { "externalId": "maisine-maisines-k-1c", "city": "Maišinė", "address": "Maišinės k. 1C", "phones": ["+370 699 96007"], "workTimes": ["I-V 09:00-12:00, 13:00-16:00", "VI-VII Nedirba"] }
+        ]
+    }
+}
