@@ -39,20 +39,24 @@ const readPrice = (strong) => {
 
 // Sold-out cards (class "soldout") are skipped: they can't be bought, so a
 // price comparison shouldn't offer them.
-const readCards = (page) => page.querySelectorAll('.product-item').map(card => {
+// Listing thumbnails are 164px. Verskis serves a size only if the shop has
+// it generated: Piliulė has 384x384.g for every product, Universiteto
+// vaistinė doesn't (404), so it takes the original file (imageSize null).
+const imageAt = (src, imageSize) => src.replace(/\/\d+x\d+\.g\//, imageSize ? `/${imageSize}/` : '/');
+
+const readCards = (page, imageSize) => page.querySelectorAll('.product-item').map(card => {
     const link = card.querySelector('a.item-title');
     return {
         id: card.getAttribute('data-pid'),
         soldOut: card.classList.contains('soldout'),
         name: link?.getAttribute('title') ?? link?.text,
         url: link?.getAttribute('href') ?? '',
-        // Listing thumbnails are 164px on some shops; the 384px size exists for all.
-        image: (card.querySelector('.item-image-wrapper img')?.getAttribute('src') ?? '').replace(/\/\d+x\d+\.g\//, '/384x384.g/'),
+        image: imageAt(card.querySelector('.item-image-wrapper img')?.getAttribute('src') ?? '', imageSize),
         price: parsePrice(card.querySelector('strong.price')?.childNodes.filter(n => n.nodeType === 3).map(n => n.text).join(' ').replace(/ /g, ' ').trim().replace(/\s+/, '.')),
     };
 });
 
-export const runVerskis = async ({ store, baseUrl, roots }) => {
+export const runVerskis = async ({ store, baseUrl, roots, imageSize = '384x384.g' }) => {
     const dates = currentWeek();
     console.log(`Price validity week: ${dates.start_at} - ${dates.end_at}`);
 
@@ -71,7 +75,7 @@ export const runVerskis = async ({ store, baseUrl, roots }) => {
                 return;
             }
             const page = parse(html);
-            const cards = readCards(page);
+            const cards = readCards(page, imageSize);
             if (offset === 0) {
                 last = lastOffset(page);
             }
