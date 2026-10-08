@@ -108,12 +108,7 @@ The phased roadmap with time estimates is in `docs/evaistine.md`
       `discounts:process` while a scraper is posting.**
 - [ ] **Scraping follow-ups**: Gintarinė has no EANs yet (its EAN pages
       triggered 429s; ran with `SCRAPER_EAN_LIMIT=0`) - fetch them slower,
-      e.g. a nightly `SCRAPER_EAN_LIMIT=300`. Mixed buckets mapped to one
-      root by hand and need per-product classification: Benu "Specialūs
-      pasiūlymai ir akcijos/Sezono svarbiausi" (657, use the hit's other
-      categories), Mano vaistinė "Kosmetika ir higiena" (587, its
-      subcategories live under /kosmetika-ir-higiena/) and "Kitos prekės"
-      (443). Only 8 518 of 51 411 products match across pharmacies: name
+      e.g. a nightly `SCRAPER_EAN_LIMIT=300`.  Only 8 518 of 51 411 products match across pharmacies: name
       matching for products without EAN (see "Cross-pharmacy matching").
       Category sizes: every root is over ~2000 except Ortopedija (484) and
       Akių priežiūra (346), so all big ones need the keyword/ailment level.
@@ -191,21 +186,10 @@ The phased roadmap with time estimates is in `docs/evaistine.md`
 - [ ] **Addresses follow-ups**: coordinates for Mano vaistinė and the manual
       pharmacies (geocoding), so they get map pins; hours for Piliulė and Rx
       (not published).
-- [ ] **Mixed categories, Mano vaistinė part** (in progress 2026-10-08,
-      `docs/evaistine.md` "Mixed categories"): Benu is done (368 products
-      re-filed). For Mano vaistinė, after the scraper run
-      (`SCRAPER_ONLY=kitos-prekes,kosmetika-higiena`, log
-      `storage/logs/mano-recat.log`):
-      1. create mapper rows for the new "Kosmetika ir higiena/…" and
-         "Kitos prekės/…" strings, `categories:map-mappers`, review;
-      2. delete the coarse mappers "Kosmetika ir higiena", "Kitos prekės",
-         "Kitos prekės/Kelionėms";
-      3. `discounts:process --only-store="Mano vaistinė" --map-categories`;
-      4. `products:recategorize --store="Mano vaistinė" --from="Kosmetika ir
-         higiena" --from="Kitos prekės" --from="Kitos prekės/Kelionėms"`
-         (dry run first);
-      5. `keywords:map-products`, `keywords:refresh-counts`,
-         `deal-pool:refresh`, `cache:clear-discounts`.
+- [x] **Mixed categories** (2026-10-08, `docs/evaistine.md` "Mixed
+      categories"): Benu promo shelf and Mano vaistinė cosmetics/other goods
+      now carry real categories; 368 + 762 existing products re-filed with
+      `products:recategorize`.
 
 - [ ] **Product meta title cut** (postponed by owner, 2026-10-08): long names
       are cut at the last space to fit "{name} akcija – kaina nuo X €", so

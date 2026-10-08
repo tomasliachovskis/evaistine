@@ -148,8 +148,11 @@ const fetchEan = async (url) => {
         await sleep();
 
         const page = parse(html);
-        const menu = menuSubcategories(page, root.key);
-        const subs = menu.length ? menu : prefixSubcategories(page, root.key);
+        // Both lists: the menu misses some (Dekoratyvinė kosmetika lives
+        // only under /kosmetika-higiena/), and roots without a menu entry
+        // have only the prefix ones.
+        const subs = [...new Map([...menuSubcategories(page, root.key), ...prefixSubcategories(page, root.key)]
+            .map(sub => [sub.path, sub])).values()];
         const mixed = subs.filter(sub => MIXED_SUBCATEGORIES.has(sub.path));
 
         for (const sub of subs.filter(sub => !MIXED_SUBCATEGORIES.has(sub.path))) {

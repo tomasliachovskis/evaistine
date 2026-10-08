@@ -145,11 +145,15 @@ About 1 700 products came from pharmacy categories that mix product types, so ea
 
 What changed:
 - **Benu** (`scrapers/benu-vaistine.js`): the promo shelf sends `Sezono svarbiausi/{lvl3}/{productType}` from Luigi's Box (`main_category_lvl_3` + Benu's own `productType`), e.g. "Sezono svarbiausi/Apsauga nuo saulės/Kosmetika". The 12 strings were mapped by `categories:map-mappers`, and all 12 were reviewed. productType "Receptinis vaistas" is skipped like `drugType` RX. Luigi's Box returns ~10 % repeats across pages on this shelf (576 unique of 658), and the missed products keep their earlier offers.
-- **Mano vaistinė** (`scrapers/mano-vaistine.js`): subcategories come from the header menu (`li.hassub` → `.nav--sub ul.links--two`), whatever their URL prefix. The old `/{root}/` rule found only "Dekoratyvinė kosmetika". Mixed buckets ("Kelionėms", "Dovanos", and the root listings of "Kosmetika ir higiena" and "Kitos prekės") are sent with an empty category, so `discounts:process --map-categories` classifies them by name. "Naujos prekės" (`/prekes`) is skipped.
+- **Mano vaistinė** (`scrapers/mano-vaistine.js`): subcategories come from the header menu (`li.hassub` → `.nav--sub ul.links--two`), whatever their URL prefix, plus the old `/{root}/` links (the menu leaves out "Dekoratyvinė kosmetika"). The old rule alone found only "Dekoratyvinė kosmetika". Mixed buckets ("Kelionėms", "Dovanos", and the root listings of "Kosmetika ir higiena" and "Kitos prekės") are sent with an empty category, so `discounts:process --map-categories` classifies them by name. "Naujos prekės" (`/prekes`) is skipped.
 - **Existing products**: `products:recategorize --store=… --from=… [--dry-run]` re-files products the store listed only under a mixed string. It uses, in order, the majority of other pharmacies' categories for the same product, the store's new category, or GPT by name. It prints a before→after table.
 - **Shadowing**: new "Kosmetika ir higiena/…" strings would be caught by the existing "Kosmetika ir higiena/Dekoratyvinė kosmetika" mapper through `resolveCategoryId()`'s first-part prefix fallback (`str_starts_with`). So the new strings get mapper rows and are mapped before `discounts:process` runs, and the coarse mappers were deleted.
 
-Benu result: 368 products changed (271 Vitaminai → Kūno priežiūra ir apsauga nuo saulės, 39 → Medicinos prekės, 36 → Nereceptiniai vaistai, …).
+Results:
+- **Benu**: 368 products changed (271 Vitaminai → Kūno priežiūra ir apsauga nuo saulės, 39 → Medicinos prekės, 36 → Nereceptiniai vaistai, …).
+- **Mano vaistinė**: re-scraped "Kosmetika ir higiena" and "Kitos prekės" (2 720 rows, 15 new category strings mapped by `categories:map-mappers`, 91 root leftovers classified by GPT, 1 left unclassified). 762 products changed (333 → Veido priežiūra, 98 → spec. maistas, 56+48 → Higiena, 49+14 → Plaukų priežiūra, …).
+- Caveat: "Kosmetika ir higiena/Dermatologinė kosmetika" maps to Veido priežiūra. It is mostly face care (~270 of ~420), but its body and hair products only get the right root when another pharmacy sells them (recategorize prefers their vote). Its own subcategories (veidui, kūnui, plaukams) would fix that if it matters.
+- Afterwards ran `products:index-meilisearch`, `discounts:index-meilisearch`, `keywords:map-products`, `keywords:refresh-counts`, `deal-pool:refresh` and `cache:clear-discounts`.
 
 ## Pharmacy addresses and hours (2026-10-08)
 
