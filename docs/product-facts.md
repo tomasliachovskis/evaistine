@@ -152,7 +152,32 @@ the cost is output tokens, which no cache covers, so it would save under
 - `config/product_facts.php`, migration `2026_10_14_120000_create_product_facts_table`
 - `tests/Feature/ProductFactsTest.php`
 
-## Next
+## Status 2026-10-14 (evening) and next step
+
+- Live: commits `f8719a0` (product facts) and `f3e67b5` (night window),
+  deployed to production, **not pushed to GitHub yet**. 72 sample products
+  already have facts in production (pushed from local), e.g.
+  https://evaistine.lt/p/raw-powders-vitaminas-c-prolong-1000-mg-180-tableciu
+- Local `.env`: `PRODUCT_FACTS_MODEL=gemini-3.5-flash-lite`,
+  `SCRAPER_API_URL=https://evaistine.lt/api/scrapers`, quiet hours default
+  `08:00-18:00`.
+- First real night: product pages 18:30-23:30, main scrape 00:00, flyers
+  05:00, extract + push every 10 min outside 08:00-18:00. Check next morning:
+  the "in production: N active offers, X/Y products with facts" lines in
+  the local scheduler output / `storage/logs`, `product-facts:extract` cost
+  lines in the local laravel log, `product_facts` counts in production.
+- **Next task (owner): Gemini Batch API** for `product-facts:extract`,
+  -50 % on input and output, results within 24 h. Shape to build: a nightly
+  submit (all rows without facts, JSONL of the same requests
+  `ProductFactExtractor` sends today) and a collect step that polls the batch
+  job, writes `facts`/`extracted_with`/`extracted_at`, then
+  `product-facts:push` sends them as now. Keep the synchronous path for
+  small runs and tests; record the batch id per row or in a small
+  `product_fact_batches` table so a collect can resume after a restart.
+  The quiet hours apply to submit/collect only as far as they are heavy
+  (they are just API calls).
+
+## Next (later)
 
 - Eurovaistinė (its page has PIM attributes: `pim_consist`, `pim_diabetic`,
   `pim_alergic`, ...) and Camelia: extractors + the same nightly run.
