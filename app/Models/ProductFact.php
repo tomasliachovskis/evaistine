@@ -26,6 +26,7 @@ class ProductFact extends Model
         'source_hash',
         'facts',
         'extracted_with',
+        'batch_id',
         'fetched_at',
         'extracted_at',
         'pushed_at',
@@ -47,5 +48,10 @@ class ProductFact extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function batch()
+    {
+        return $this->belongsTo(ProductFactBatch::class, 'batch_id');
     }
 }

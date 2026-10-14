@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Discount;
 use App\Models\Product;
 use App\Models\ProductFact;
+use App\Models\ProductFactBatch;
 use App\Models\Store;
 use App\Services\ProductFactExtractor;
 use App\Support\ProductFacts;
@@ -244,5 +245,134 @@ class ProductFactsTest extends TestCase
         $this->assertSame(['Ibuprofen Lannacher 400 mg N10'], array_column($facts['same_substance']['products'], 'name'));
         // No dosing for medicines, even when the model filled it in.
         $this->assertEmpty(array_filter($facts['highlights'], fn ($line) => str_contains($line, 'užtenka')));
+    }
+
+    private function pageRow(string $url, string $hash = 'x'): ProductFact
+    {
+        return ProductFact::create([
+            'store_id' => $this->store->id, 'product_url' => $url, 'url_hash' => sha1($url),
+            'page_name' => "Page {$url}", 'page_category' => 'Prekės / Sveikata',
+            'source_text' => 'Vienoje kapsulėje: vitaminas D3 100 µg', 'source_hash' => $hash,
+        ]);
+    }
+
+    private string $batchState = 'JOB_STATE_PENDING';
+
+    private string $batchResults = '';
+
+    // The job's state and results are read when a request is made, so a test
+    // can move the job on without a second Http::fake (stubs only append).
+    private function fakeGeminiBatch(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/upload/*' => Http::response([], 200, ['x-goog-upload-url' => 'https://upload.test/session']),
+            'upload.test/*' => Http::response(['file' => ['name' => 'files/in1']]),
+            'generativelanguage.googleapis.com/v1beta/models/*' => Http::response(['name' => 'batches/b1', 'metadata' => ['state' => 'JOB_STATE_PENDING']]),
+            'generativelanguage.googleapis.com/v1beta/batches/*' => fn () => Http::response(['name' => 'batches/b1', 'metadata' => ['state' => $this->batchState], 'response' => ['responsesFile' => 'files/out1']]),
+            'generativelanguage.googleapis.com/download/*' => fn () => Http::response($this->batchResults),
+            'generativelanguage.googleapis.com/v1beta/files/*' => Http::response([]),
+        ]);
+    }
+
+    private function batchAnswer(ProductFact $row, ?array $facts, ?string $hash = null): string
+    {
+        $line = ['key' => $row->id . ':' . ($hash ?? $row->source_hash)];
+        if ($facts === null) {
+            $line['error'] = ['code' => 13, 'message' => 'internal'];
+        } else {
+            $line['response'] = [
+                'candidates' => [['content' => ['parts' => [['text' => json_encode($facts)]]]]],
+                'usageMetadata' => ['promptTokenCount' => 1000, 'candidatesTokenCount' => 100],
+            ];
+        }
+
+        return json_encode($line);
+    }
+
+    public function test_batch_submit_claims_rows_and_collect_writes_facts(): void
+    {
+        $done = $this->pageRow('https://www.apotheka.lt/a');
+        $changed = $this->pageRow('https://www.apotheka.lt/b');
+        $failed = $this->pageRow('https://www.apotheka.lt/c');
+        $missing = $this->pageRow('https://www.apotheka.lt/d');
+        $this->fakeGeminiBatch();
+
+        $this->artisan('product-facts:batch-submit', ['--model' => 'gemini-3.5-flash-lite'])->assertSuccessful();
+
+        $batch = ProductFactBatch::sole();
+        $this->assertSame('batches/b1', $batch->name);
+        $this->assertSame(4, $batch->row_count);
+        $this->assertSame(4, ProductFact::where('batch_id', $batch->id)->count());
+        Http::assertSent(function ($request) use ($done) {
+            if (!str_contains($request->url(), 'upload.test')) {
+                return false;
+            }
+            $line = json_decode(explode("\n", $request->body())[0], true);
+
+            return $line['key'] === "{$done->id}:x"
+                && str_contains($line['request']['systemInstruction']['parts'][0]['text'], 'Lithuanian pharmacy')
+                && str_contains($line['request']['contents'][0]['parts'][0]['text'], 'Category: Prekės / Sveikata');
+        });
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'gemini-3.5-flash-lite:batchGenerateContent')
+            && $request['batch']['input_config']['file_name'] === 'files/in1');
+
+        // Claimed rows are left to the batch: no second job, no sync call.
+        $this->artisan('product-facts:extract', ['--model' => 'gemini-3.5-flash-lite'])->assertSuccessful();
+        $this->artisan('product-facts:batch-submit', ['--model' => 'gemini-3.5-flash-lite'])->assertSuccessful();
+        $this->assertSame(1, ProductFactBatch::count());
+
+        // Still running: nothing written.
+        $this->artisan('product-facts:batch-collect')->assertSuccessful();
+        $this->assertNull($batch->fresh()->finished_at);
+
+        // The page of "b" changed while the job ran.
+        $changed->update(['source_hash' => 'new']);
+        $this->batchState = 'JOB_STATE_SUCCEEDED';
+        $this->batchResults = implode("\n", [
+            $this->batchAnswer($done, ['kind' => 'maisto_papildas', 'pack_units' => 60]),
+            $this->batchAnswer($changed, ['kind' => 'kosmetika'], 'x'),
+            $this->batchAnswer($failed, null),
+        ]) . "\n";
+
+        $this->artisan('product-facts:batch-collect')->assertSuccessful();
+
+        $done->refresh();
+        $this->assertSame(60, $done->facts['pack_units']);
+        $this->assertSame(ProductFactExtractor::SCHEMA_VERSION, $done->facts['schema']);
+        $this->assertSame('gemini-3.5-flash-lite', $done->extracted_with);
+        $this->assertNull($done->batch_id);
+        foreach ([$changed, $failed, $missing] as $row) {
+            $row->refresh();
+            $this->assertNull($row->batch_id);
+            $this->assertNull($row->extracted_at);
+        }
+        $batch->refresh();
+        $this->assertSame('JOB_STATE_SUCCEEDED', $batch->state);
+        $this->assertNotNull($batch->finished_at);
+        $this->assertSame(1000, $batch->input_tokens);
+        $this->assertSame(100, $batch->output_tokens);
+    }
+
+    public function test_expired_batch_gives_its_rows_back(): void
+    {
+        $row = $this->pageRow('https://www.apotheka.lt/a');
+        $this->batchState = 'JOB_STATE_EXPIRED';
+        $this->fakeGeminiBatch();
+        $this->artisan('product-facts:batch-submit', ['--model' => 'gemini-3.5-flash-lite'])->assertSuccessful();
+        $this->assertNotNull($row->fresh()->batch_id);
+
+        $this->artisan('product-facts:batch-collect')->assertSuccessful();
+
+        $this->assertNull($row->fresh()->batch_id);
+        $this->assertSame('JOB_STATE_EXPIRED', ProductFactBatch::sole()->state);
+    }
+
+    public function test_batch_submit_refuses_non_gemini_models(): void
+    {
+        $this->pageRow('https://www.apotheka.lt/a');
+        Http::fake();
+
+        $this->artisan('product-facts:batch-submit', ['--model' => 'gpt-5-mini'])->assertFailed();
+        Http::assertNothingSent();
     }
 }

@@ -9,6 +9,11 @@ return [
     // links pages to products), until the owner picks a model on cost.
     'model' => env('PRODUCT_FACTS_MODEL'),
 
+    // Gemini Batch API (product-facts:batch-submit): pages per nightly job,
+    // and its price as a share of the list price (Google: 50 %).
+    'batch_limit' => (int) env('PRODUCT_FACTS_BATCH_LIMIT', 5000),
+    'batch_discount' => 0.5,
+
     // USD per 1M tokens [input, output], list prices checked 2026-10-14
     // (OpenAI model pages; Gemini 3.5 from price trackers, not Google's own
     // page). Only for the cost estimate in product-facts:benchmark/extract.

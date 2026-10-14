@@ -191,13 +191,20 @@ class Kernel extends ConsoleKernel
             ->dailyAt('05:00')
             ->withoutOverlapping(60);
 
-        // Product facts (docs/product-facts.md). Extraction (a language
-        // model, cost logged per run) and the push to production run on the
-        // local machine, after the nightly product pages (00:30-02:50);
-        // production only links the rows it receives to its products.
-        $schedule->command('product-facts:extract --limit=300')
-            ->everyTenMinutes()
-            ->unlessBetween('8:00', '18:00')
+        // Product facts (docs/product-facts.md). Extraction and the push to
+        // production run on the local machine; production only links the
+        // rows it receives to its products. Extraction is one Gemini Batch
+        // API job a night (half the price of product-facts:extract, which
+        // stays for manual runs), submitted after the product pages
+        // (18:30-23:30); collect writes the facts once the job is done
+        // (usually well within the night, at most 24 h), cost logged per job.
+        $schedule->command('product-facts:batch-submit')
+            ->dailyAt('23:40')
+            ->withoutOverlapping(60)
+            ->environments(['dev']);
+
+        $schedule->command('product-facts:batch-collect')
+            ->everyFifteenMinutes()
             ->withoutOverlapping(30)
             ->runInBackground()
             ->environments(['dev']);

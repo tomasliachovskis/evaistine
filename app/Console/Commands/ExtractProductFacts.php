@@ -9,9 +9,11 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-// Turns new or changed product page texts into facts (docs/product-facts.md).
-// Runs on the local machine, where the pages are scraped; product-facts:push
-// then sends the facts to production. The page's own name and breadcrumb are
+// Turns new or changed product page texts into facts (docs/product-facts.md),
+// one model call per page. The nightly run uses the Gemini Batch API instead
+// (product-facts:batch-submit/-collect, half the price); this one is for
+// manual and small runs. Runs on the local machine, where the pages are
+// scraped; product-facts:push then sends the facts to production. The page's own name and breadcrumb are
 // the context, so rows need no product in the local DB.
 class ExtractProductFacts extends Command
 {
@@ -33,15 +35,12 @@ class ExtractProductFacts extends Command
             return 0;
         }
 
-        // A page that gave no text is tried once and then done: empty facts,
-        // no model call, pushed like the rest so production won't list it again.
-        $empty = ProductFact::whereNull('extracted_at')
-            ->whereNull('source_text')
-            ->where(fn ($q) => $q->whereNull('attributes')->orWhereRaw('JSON_LENGTH(attributes) = 0'))
-            ->update(['facts' => json_encode(['schema' => ProductFactExtractor::SCHEMA_VERSION]), 'extracted_with' => 'none', 'extracted_at' => now()]);
+        $empty = ProductFactExtractor::closeEmptyPages();
 
+        // Rows waiting in a Gemini batch (product-facts:batch-submit) are left to it.
         $rows = ProductFact::with('product:id,name,category_id', 'product.category:id,name')
             ->whereNull('extracted_at')
+            ->whereNull('batch_id')
             ->where(fn ($q) => $q->whereNotNull('source_text')->orWhereNotNull('attributes'))
             ->orderBy('id')
             ->limit((int) $this->option('limit'))

@@ -57,22 +57,58 @@ PROMPT;
             ? $this->gemini($model, $user)
             : $this->openai($model, $user);
 
-        $facts = json_decode($result['text'], true);
+        return ['facts' => self::parseFacts($result['text'], $model), 'input_tokens' => $result['input'], 'output_tokens' => $result['output'], 'model' => $model];
+    }
+
+    /**
+     * One line of a Gemini Batch API input file (product-facts:batch-submit):
+     * the same request extract() sends. The key carries the source_hash, so
+     * product-facts:batch-collect can tell a page that changed meanwhile.
+     */
+    public function geminiBatchLine(ProductFact $fact, string $model): array
+    {
+        return [
+            'key' => "{$fact->id}:{$fact->source_hash}",
+            'request' => $this->geminiRequest($model, $this->userMessage($fact)),
+        ];
+    }
+
+    /** The model's answer as facts; throws when it isn't a JSON object. */
+    public static function parseFacts(string $text, string $model): array
+    {
+        $facts = json_decode($text, true);
         if (!is_array($facts)) {
-            throw new RuntimeException("{$model}: not JSON: " . mb_substr($result['text'], 0, 200));
+            throw new RuntimeException("{$model}: not JSON: " . mb_substr($text, 0, 200));
         }
         $facts['schema'] = self::SCHEMA_VERSION;
 
-        return ['facts' => $facts, 'input_tokens' => $result['input'], 'output_tokens' => $result['output'], 'model' => $model];
+        return $facts;
     }
 
-    public static function cost(string $model, int $inputTokens, int $outputTokens): ?float
+    /**
+     * A page that gave no text is tried once and then done: empty facts, no
+     * model call, pushed like the rest so production won't list it again.
+     */
+    public static function closeEmptyPages(): int
+    {
+        return ProductFact::whereNull('extracted_at')
+            ->whereNull('batch_id')
+            ->whereNull('source_text')
+            ->where(fn ($q) => $q->whereNull('attributes')->orWhereRaw('JSON_LENGTH(attributes) = 0'))
+            ->update(['facts' => json_encode(['schema' => self::SCHEMA_VERSION]), 'extracted_with' => 'none', 'extracted_at' => now()]);
+    }
+
+    public static function cost(string $model, int $inputTokens, int $outputTokens, bool $batch = false): ?float
     {
         // Not config("product_facts.prices.{$model}"): the dots in
         // "gemini-3.5-flash-lite" would be read as nesting.
         $price = config('product_facts.prices')[$model] ?? null;
+        if (!$price) {
+            return null;
+        }
+        $cost = ($inputTokens * $price[0] + $outputTokens * $price[1]) / 1_000_000;
 
-        return $price ? ($inputTokens * $price[0] + $outputTokens * $price[1]) / 1_000_000 : null;
+        return $batch ? $cost * (float) config('product_facts.batch_discount', 0.5) : $cost;
     }
 
     private function userMessage(ProductFact $fact): string
@@ -127,28 +163,45 @@ PROMPT;
     {
         $response = Http::timeout(120)->retry(2, 2000, throw: false)
             ->withHeaders(['x-goog-api-key' => config('services.gemini.api_key')])
-            ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent", [
-                'systemInstruction' => ['parts' => [['text' => self::SYSTEM_PROMPT]]],
-                'contents' => [['role' => 'user', 'parts' => [['text' => $user]]]],
-                'generationConfig' => [
-                    'responseMimeType' => 'application/json',
-                    'temperature' => 0,
-                    // Hidden thinking is billed as output; 2.5 turns it off with a
-                    // zero budget, 3.x only takes a level.
-                    'thinkingConfig' => str_starts_with($model, 'gemini-2')
-                        ? ['thinkingBudget' => 0]
-                        : ['thinkingLevel' => 'minimal'],
-                ],
-            ]);
+            ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent", $this->geminiRequest($model, $user));
 
         if (!$response->successful()) {
             throw new RuntimeException("{$model}: HTTP {$response->status()}: " . mb_substr($response->body(), 0, 300));
         }
 
+        return self::geminiResult($response->json() ?? []);
+    }
+
+    /** The generateContent body, the same for a single call and a batch line. */
+    private function geminiRequest(string $model, string $user): array
+    {
         return [
-            'text' => (string) $response->json('candidates.0.content.parts.0.text'),
-            'input' => (int) $response->json('usageMetadata.promptTokenCount'),
-            'output' => (int) $response->json('usageMetadata.candidatesTokenCount') + (int) $response->json('usageMetadata.thoughtsTokenCount'),
+            'systemInstruction' => ['parts' => [['text' => self::SYSTEM_PROMPT]]],
+            'contents' => [['role' => 'user', 'parts' => [['text' => $user]]]],
+            'generationConfig' => [
+                'responseMimeType' => 'application/json',
+                'temperature' => 0,
+                // Hidden thinking is billed as output; 2.5 turns it off with a
+                // zero budget, 3.x only takes a level.
+                'thinkingConfig' => str_starts_with($model, 'gemini-2')
+                    ? ['thinkingBudget' => 0]
+                    : ['thinkingLevel' => 'minimal'],
+            ],
+        ];
+    }
+
+    /**
+     * Gemini's answer text and tokens, from generateContent or one line of a
+     * batch's results (same response shape).
+     *
+     * @return array{text: string, input: int, output: int}
+     */
+    public static function geminiResult(array $response): array
+    {
+        return [
+            'text' => (string) data_get($response, 'candidates.0.content.parts.0.text'),
+            'input' => (int) data_get($response, 'usageMetadata.promptTokenCount'),
+            'output' => (int) data_get($response, 'usageMetadata.candidatesTokenCount') + (int) data_get($response, 'usageMetadata.thoughtsTokenCount'),
         ];
     }
 }

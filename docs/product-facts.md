@@ -68,17 +68,45 @@ production).
    changed page clears `facts`. `products.description` is not touched: the
    "Apie prekę" block is built from `product_facts.facts` when the page
    renders.
-3. **Extract (local)** – `product-facts:extract` (dev, every 10 min outside
-   08:00–18:00, 300 pages a run) sends rows without facts to a language model
-   (`App\Services\ProductFactExtractor`; model in `config/product_facts.php` /
-   `PRODUCT_FACTS_MODEL`, empty = off; `gemini-*` goes to Gemini, anything
-   else to OpenAI). The page's own name and breadcrumb are the context, so no
-   product needs to exist in the local DB. The prompt only lets it restate
-   the page: form, pack units, daily units, minimum age, amounts per dose
-   with the page's own % RMV, active substances and strength (medicines),
-   ingredients verbatim, key cosmetic ingredients, SPF, explicit "be ..." and
-   "tinka ..." statements, allergens, origin, manufacturer. Tokens and the
-   estimated cost are logged per run.
+3. **Extract (local)** – a language model turns each row without facts
+   into facts (`App\Services\ProductFactExtractor`; model in
+   `config/product_facts.php` / `PRODUCT_FACTS_MODEL`, empty = off).
+   - **Nightly: Gemini Batch API, half the price** (2026-10-15).
+     `product-facts:batch-submit` (dev, 23:40, after the product pages)
+     closes empty pages, writes every row without facts (up to
+     `PRODUCT_FACTS_BATCH_LIMIT`, default 5 000) as one JSONL file of the
+     same requests the single call sends (key `{id}:{source_hash}`),
+     uploads it and creates one job (`App\Services\GeminiBatchClient`).
+     The job is recorded in `product_fact_batches` and its rows get
+     `product_facts.batch_id`, so nothing else takes them meanwhile.
+     `product-facts:batch-collect` (dev, every 15 min, no quiet hours: only
+     API calls) polls open jobs; when one succeeds it downloads the results,
+     writes `facts`/`extracted_with`/`extracted_at` and clears `batch_id`.
+     A row whose page changed while the job ran (hash in the key differs),
+     a line with an error or non-JSON, and rows missing from the results go
+     back (`batch_id` = null) for the next submit; a failed, cancelled or
+     expired job (Google expires jobs after 48 h) gives all its rows back.
+     Tokens and the cost at the batch price are logged per job and stored
+     on the batch row. The uploaded input file is deleted after collecting.
+   - **Manual / small runs**: `product-facts:extract --limit=N` (one call
+     per page, list price, also OpenAI models), off the schedule since the
+     batch came in. It skips rows waiting in a batch.
+   - The page's own name and breadcrumb are the context, so no product
+     needs to exist in the local DB. The prompt only lets it restate
+     the page: form, pack units, daily units, minimum age, amounts per dose
+     with the page's own % RMV, active substances and strength (medicines),
+     ingredients verbatim, key cosmetic ingredients, SPF, explicit "be ..." and
+     "tinka ..." statements, allergens, origin, manufacturer.
+   - The real API (checked 2026-10-14 with a 5-page job): states come as
+     `BATCH_STATE_*` in `metadata.state` (the docs say `JOB_STATE_*`; the
+     client maps both), the results file name in `response.responsesFile`
+     (also `metadata.output.responsesFile`), each result line
+     `{"key", "response": {candidates, usageMetadata}}`. The 5-page job
+     finished in 78 s, 9 175/2 068 tokens, $0.0040 (sync price $0.0079).
+     Answers matched the single calls' within run-to-run variation (same
+     model and request): "geriamasis tirpalas" vs "tirpalas", skin types
+     split into separate items, and one better ("180 mln" as on the page,
+     where the single call had written "mlrd. KSV").
 4. **Push (local -> production)** – `product-facts:push` (dev, every 10 min)
    posts extracted rows (with `facts`) to `SCRAPER_API_URL/product-facts`,
    100 a request, and stamps `pushed_at`; a row goes again after it is
@@ -129,8 +157,8 @@ Sample: 72 pages (24 per pharmacy, 2 per category from the 12 roots),
 
 gemini-3-flash-preview: 2 of 72 failed and ~$0.0021/page, dropped.
 gemini-2.5-flash-lite: no longer offered to new API users. Prices are list
-prices (Gemini 3.5 from price trackers); the Batch APIs of both would halve
-them (not built). Recommendation: gemini-3.5-flash-lite (fewest invented
+prices (Gemini 3.5 from price trackers); the Gemini Batch API halves them
+(built 2026-10-15: ~$0.00068/page, ~$20 for the first ~30 000 pages). Recommendation: gemini-3.5-flash-lite (fewest invented
 values, fastest); after the first pass only new and changed pages cost
 anything. Allergens are shown for food and supplements only (the models
 listed food allergens for cosmetics).
@@ -147,38 +175,35 @@ the cost is output tokens, which no cache covers, so it would save under
 
 - `scrapers/product-pages.js`, `scrapers/lib/product-page.js`
 - `app/Console/Commands/FetchProductPages.php`, `ExtractProductFacts.php`,
+  `SubmitProductFactsBatch.php`, `CollectProductFactsBatches.php`,
   `PushProductFacts.php`, `LinkProductFacts.php`, `BenchmarkProductFacts.php`
-- `app/Services/ProductFactExtractor.php`, `ProductFactLinker.php`,
-  `app/Support/ProductFacts.php`, `app/Models/ProductFact.php`
+- `app/Services/ProductFactExtractor.php`, `GeminiBatchClient.php`,
+  `ProductFactLinker.php`, `app/Support/ProductFacts.php`,
+  `app/Models/ProductFact.php`, `ProductFactBatch.php`
 - `resources/views/components/product-facts.blade.php`,
   `resources/views/akcijos/product.blade.php` ("Apie prekę" section)
-- `config/product_facts.php`, migration `2026_10_14_120000_create_product_facts_table`
+- `config/product_facts.php`, migrations `2026_10_14_120000_create_product_facts_table`,
+  `2026_10_15_120000_create_product_fact_batches_table`
 - `tests/Feature/ProductFactsTest.php`
 
-## Status 2026-10-14 (evening) and next step
+## Status 2026-10-15 and next step
 
-- Live: commits `f8719a0` (product facts) and `f3e67b5` (night window),
-  deployed to production and pushed to GitHub (with 89f72ce, 6ae820e). 72 sample products
-  already have facts in production (pushed from local), e.g.
+- Live since 2026-10-14 (commits `f8719a0`, `f3e67b5`, `89f72ce`,
+  `6ae820e`); 72 sample products have facts in production, e.g.
   https://evaistine.lt/p/raw-powders-vitaminas-c-prolong-1000-mg-180-tableciu
 - Local `.env`: `PRODUCT_FACTS_MODEL=gemini-3.5-flash-lite`,
   `SCRAPER_API_URL=https://evaistine.lt/api/scrapers`, quiet hours default
   `08:00-18:00`.
-- First real night: product pages 18:30-23:30, main scrape 00:00, flyers
-  05:00, extract + push every 10 min outside 08:00-18:00. Check next morning:
-  the "in production: N active offers, X/Y products with facts" lines in
-  the local scheduler output / `storage/logs`, `product-facts:extract` cost
-  lines in the local laravel log, `product_facts` counts in production.
-- **Next task (owner): Gemini Batch API** for `product-facts:extract`,
-  -50 % on input and output, results within 24 h. Shape to build: a nightly
-  submit (all rows without facts, JSONL of the same requests
-  `ProductFactExtractor` sends today) and a collect step that polls the batch
-  job, writes `facts`/`extracted_with`/`extracted_at`, then
-  `product-facts:push` sends them as now. Keep the synchronous path for
-  small runs and tests; record the batch id per row or in a small
-  `product_fact_batches` table so a collect can resume after a restart.
-  The quiet hours apply to submit/collect only as far as they are heavy
-  (they are just API calls).
+- Gemini Batch API built (migration `2026_10_15_120000_create_product_fact_batches_table`,
+  needed in production too, for the same schema). Night: product pages 18:30-23:30,
+  batch submit 23:40, collect every 15 min, push every 10 min.
+- Check after the first batch night: `product_fact_batches` (state, tokens),
+  the `product-facts:batch-submit` / `batch-collect` lines in the local
+  laravel log, `product_facts` counts in production.
+- The first ~30 000-page backlog: the nightly 5 000 takes about a week;
+  for faster, run `product-facts:batch-submit --limit=...` by hand (several
+  jobs may be open at once).
+- **Next:** Eurovaistinė and Camelia extractors (below).
 
 ## Next (later)
 
