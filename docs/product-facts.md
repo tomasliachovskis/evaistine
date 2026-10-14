@@ -158,7 +158,7 @@ the cost is output tokens, which no cache covers, so it would save under
 ## Status 2026-10-14 (evening) and next step
 
 - Live: commits `f8719a0` (product facts) and `f3e67b5` (night window),
-  deployed to production, **not pushed to GitHub yet**. 72 sample products
+  deployed to production and pushed to GitHub (with 89f72ce, 6ae820e). 72 sample products
   already have facts in production (pushed from local), e.g.
   https://evaistine.lt/p/raw-powders-vitaminas-c-prolong-1000-mg-180-tableciu
 - Local `.env`: `PRODUCT_FACTS_MODEL=gemini-3.5-flash-lite`,

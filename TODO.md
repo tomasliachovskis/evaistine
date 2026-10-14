@@ -50,7 +50,6 @@ scrape. In order of importance:
       Apotheka, Mano vaistinė live 2026-10-14 (gemini-3.5-flash-lite, local
       extraction, push to production). **Next: Gemini Batch API (-50 %)**,
       then Eurovaistinė, Camelia, VVKT leaflets, superakcijos (Rimi, LastMile).
-- [ ] Push commits f8719a0 and f3e67b5 to GitHub (deployed, not pushed).
 - [ ] Multiple EANs per product + merging duplicates; name matching without
       EAN; €/vnt unit price; product meta title cut; ailment pages; keyword
       pages, second wave.
