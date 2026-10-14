@@ -437,8 +437,9 @@ class ScrapingController extends Controller
     // what the live site actually lists). Each page is tried once (owner,
     // 2026-10-14): not listed are pages already tried for this store (any
     // product_facts row, even one that gave nothing) and offers whose product
-    // already has facts from any pharmacy. Products with the most price
-    // history (discount_histories rows, any pharmacy) come first (owner,
+    // already has facts from any pharmacy, and products with fewer than
+    // MIN_HISTORY discount_histories rows (any pharmacy; they wait until they
+    // have them). Products with the most price history come first (owner,
     // 2026-10-14): those are the ones people look at. Read-only. See
     // docs/product-facts.md.
     public function pendingProductFacts(Request $request, string $storeName)
@@ -472,6 +473,7 @@ class ScrapingController extends Controller
             ->groupBy('product_id')
             ->pluck(DB::raw('COUNT(*)'), 'product_id');
         $pending = $pendingOffers
+            ->filter(fn ($o) => (int) ($history[$o->product_id] ?? 0) >= ProductFact::MIN_HISTORY)
             ->sortByDesc(fn ($o) => (int) ($history[$o->product_id] ?? 0))
             ->pluck('product_url')
             ->unique()

@@ -30,12 +30,15 @@ production).
    before the 00:00 main scrape hits the same sites). **The work list
    comes from production**: `GET /api/scrapers/product-facts/pending/{store}`
    returns the URLs of that store's active offers that were never tried for
-   that store and whose product has no facts from any pharmacy, products with
-   the most `discount_histories` rows first (owner: those first), plus counts
+   that store and whose product has no facts from any pharmacy and at least
+   2 `discount_histories` rows (`ProductFact::MIN_HISTORY`; owner: one-off
+   products wait until they have them), the most history first, plus counts
    (active offers, products with facts), which the run logs every night as
-   the coverage check. If production can't be reached, the run falls back to
-   the URLs the main scrape saved (`storage/app/scrapers/urls-{slug}.json`;
-   Apotheka and Mano vaistinė now save theirs too).
+   the coverage check. The rest of the budget is an EAN-only pass over the
+   URLs the main scrape saved (`storage/app/scrapers/urls-{slug}.json`;
+   Apotheka and Mano vaistinė now save theirs too) that have no cached EAN,
+   posting no text (Gintarinė's EANs come only from this run). If production
+   can't be reached, only the EAN pass runs.
    - **Each page is tried once** (owner, 2026-10-14): once a product has
      facts, or its page was tried and gave nothing (no text, 404), it is not
      fetched again. Empty pages are posted too, so production records the

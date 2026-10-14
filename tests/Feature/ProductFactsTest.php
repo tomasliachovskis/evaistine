@@ -94,7 +94,15 @@ class ProductFactsTest extends TestCase
         $withFacts = $this->product('Turi faktus', 'https://www.apotheka.lt/turi');
         $otherStoreOnly = $this->product('Faktai tik iš kitos vaistinės', 'https://www.apotheka.lt/kita');
         $this->product('Bandyta, tuščia', 'https://www.apotheka.lt/tuscia');
-        $this->product('Be faktų', 'https://www.apotheka.lt/be');
+        $this->product('Be faktų, be istorijos', 'https://www.apotheka.lt/be');
+        $once = $this->product('Be faktų, viena akcija', 'https://www.apotheka.lt/viena');
+        \App\Models\DiscountHistory::create(['product_id' => $once->id, 'store_id' => $this->store->id,
+            'product_url' => 'https://www.apotheka.lt/viena', 'discounted_price' => 5, 'start_at' => now()->subWeek(), 'end_at' => now()->subWeek()->addDays(6)]);
+        $twice = $this->product('Be faktų, dvi akcijos', 'https://www.apotheka.lt/dvi');
+        foreach (range(1, 2) as $week) {
+            \App\Models\DiscountHistory::create(['product_id' => $twice->id, 'store_id' => $this->store->id,
+                'product_url' => 'https://www.apotheka.lt/dvi', 'discounted_price' => 5, 'start_at' => now()->subWeeks($week), 'end_at' => now()->subWeeks($week)->addDays(6)]);
+        }
         $popular = $this->product('Be faktų, dažnai akcijoje', 'https://www.apotheka.lt/populiari');
         foreach (range(1, 3) as $week) {
             \App\Models\DiscountHistory::create(['product_id' => $popular->id, 'store_id' => $this->store->id,
@@ -113,12 +121,12 @@ class ProductFactsTest extends TestCase
         $this->getJson('/api/scrapers/product-facts/pending/Apotheka')
             ->assertOk()
             ->assertJson([
-                'active_offers' => 5,
-                'products' => 5,
+                'active_offers' => 7,
+                'products' => 7,
                 'products_with_facts' => 2,
+                // Fewer than 2 history rows: not yet. More history first.
                 'pending' => 2,
-                // The one with more price history first.
-                'urls' => ['https://www.apotheka.lt/populiari', 'https://www.apotheka.lt/be'],
+                'urls' => ['https://www.apotheka.lt/populiari', 'https://www.apotheka.lt/dvi'],
             ]);
     }
 

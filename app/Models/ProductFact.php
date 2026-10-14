@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductFact extends Model
 {
+    /**
+     * A product's pages are only fetched for facts once it has at least this
+     * many discount_histories rows (owner, 2026-10-14): one-off products
+     * aren't worth the model call yet.
+     */
+    public const MIN_HISTORY = 2;
+
 
     protected $fillable = [
         'store_id',

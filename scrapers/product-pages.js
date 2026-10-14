@@ -15,8 +15,11 @@ import { PRODUCT_PAGE_EXTRACTORS } from './lib/product-page.js';
 //
 // Which pages: production says which of its active offers still need facts
 // ({SCRAPER_PROD_API_URL}/product-facts/pending/{store}), so the work follows
-// what the live site lists. Without a production URL, or when it can't be
-// reached, the URLs the main scrape saw (urls-{slug}.json).
+// what the live site lists, and only products with at least 2 price history
+// rows (production decides). The rest of the time budget goes to barcodes
+// only: pages from the main scrape's list (urls-{slug}.json) without a
+// cached EAN, no text posted (Gintarinė's EANs come only from this run).
+// When production can't be reached, only that EAN pass runs.
 //
 // Every page is tried once (owner, 2026-10-14): a page fetched here is never
 // fetched again, also when it had no text or was gone (404). Those are
@@ -125,11 +128,12 @@ const postPages = async (pages) => {
             console.log(`Could not ask production which pages are pending (${error.response?.status ?? ''} ${error.message}); using the saved URL list.`);
         }
     }
-    if (urls === null) {
-        const all = loadUrlList(SLUG);
-        urls = all.filter(url => !fetchedOn[url]);
-        console.log(`${config.store}: ${all.length} known product pages, ${urls.length} not tried yet.`);
-    }
+    // [url, wantsFacts]: production's list first, then EAN-only pages.
+    const queue = (urls ?? []).map(url => [url, true]);
+    const queued = new Set(urls ?? []);
+    const eanOnly = loadUrlList(SLUG).filter(url => !queued.has(url) && !eans.has(url));
+    eanOnly.forEach(url => queue.push([url, false]));
+    console.log(`${config.store}: ${queue.length - eanOnly.length} pages for facts, then ${eanOnly.length} for EANs only.`);
 
     let fetched = 0;
     let withText = 0;
@@ -148,13 +152,13 @@ const postPages = async (pages) => {
         batch = [];
     };
 
-    for (let i = 0; i < urls.length && fetched < LIMIT; i++) {
+    for (let i = 0; i < queue.length && fetched < LIMIT; i++) {
         if (Date.now() - started > BUDGET_MS) {
             console.log('Time budget used up, stopping for tonight.');
             break;
         }
 
-        const url = urls[i];
+        const [url, wantsFacts] = queue[i];
         const result = await fetchPage(url);
 
         if (result.status === 429) {
@@ -178,7 +182,11 @@ const postPages = async (pages) => {
         if (result.failed) {
             failed++;
         } else if (result.gone) {
-            batch.push({ product_url: url, text: '', attributes: {} });
+            if (wantsFacts) {
+                batch.push({ product_url: url, text: '', attributes: {} });
+            } else {
+                eans.set(url, null);
+            }
         } else {
             const page = config.extract(result.html);
             if (page.ean || !eans.has(url)) {
@@ -187,10 +195,12 @@ const postPages = async (pages) => {
             if (page.ean) {
                 withEan++;
             }
-            if (page.text || Object.keys(page.attributes).length) {
-                withText++;
+            if (wantsFacts) {
+                if (page.text || Object.keys(page.attributes).length) {
+                    withText++;
+                }
+                batch.push({ product_url: url, text: page.text, attributes: page.attributes, name: page.name, category: page.category });
             }
-            batch.push({ product_url: url, text: page.text, attributes: page.attributes, name: page.name, category: page.category });
             if (DRY_RUN) {
                 console.log(`${url}\n  EAN ${page.ean}, ${page.text.length} chars, ${JSON.stringify(page.attributes)}`);
             }
@@ -216,6 +226,6 @@ const postPages = async (pages) => {
     await flush();
     eans.save();
     saveFetched(fetchedOn);
-    const left = urls.length - fetched + failed;
+    const left = queue.length - fetched + failed;
     console.log(`${config.store} product pages: ${fetched} fetched, ${withText} with text, ${withEan} EANs, ${failed} failed, ${left} left.`);
 })();
