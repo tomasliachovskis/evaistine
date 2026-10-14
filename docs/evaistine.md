@@ -202,6 +202,12 @@ through an SSH tunnel from the local DB. Both files are in the nuolaidos repo
 (uncommitted there), nothing else in it changed.
 
 First night (2026-10-14), checked in the morning:
+- **php-fpm could not write `storage`**: the server setup left
+  `storage`/`bootstrap/cache` as `deploy:deploy`, php-fpm runs as www-data,
+  so a request needing a log line or an uncompiled view was a fatal 500 (7 in
+  the access log). Fixed with `chgrp -R www-data` (deploy is in that group, no
+  sudo); `deploy.sh` now does it on every deploy. The supervisor queue logs stay
+  root-owned, which is fine.
 - All 13 e-shop scrapers ran 03:00–06:55 and posted to production (72 693
   rows); production processed them all (unprocessed 0, failed jobs 0).
   `scrapers:fetch-eans` grew Gintarinė's EAN cache to 1 567 (1 543 with EAN).

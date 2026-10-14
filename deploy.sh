@@ -188,6 +188,12 @@ ssh $SSH_OPTS $SERVER "REMOTE_DIR='$REMOTE_DIR' bash -s" << 'EOF'
     # 0755 storage/ permissions over the server's fixed ones every deploy)
     # — that's fixed too (see --no-perms above), this stays as a second
     # line of defense against any other future permission drift.
+    # The group must be www-data, though: the server setup created
+    # /var/www/evaistine/storage as deploy:deploy, so php-fpm could neither
+    # write its log nor compile a view, and a request that needed either
+    # was a fatal 500 (found 2026-10-14). deploy owns the files and is in
+    # www-data, so chgrp needs no sudo; setgid keeps new files in the group.
+    chgrp -R www-data storage bootstrap/cache 2>/dev/null || true
     find storage bootstrap/cache -type d -exec chmod g+ws {} + 2>/dev/null || true
     find storage bootstrap/cache -type f -exec chmod g+w {} + 2>/dev/null || true
 
