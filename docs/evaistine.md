@@ -161,7 +161,12 @@ Production gets its data from the owner's Mac (owner's decision; no token on
   `dev`-only jobs: `scrapers:fetch-eans` 00:30, `scrapers:run --all` 03:00
   (about 5 hours, one pharmacy after another), `scrapers:retry-failed`
   every 15 min, `flyers:scrape --all` 05:00, `hours:scrape --all` Mondays
-  06:00. The Mac must be on and Docker running at those times. The other
+  06:00. The Mac must be on and Docker running at those times. Nothing for
+  this runs outside the repo (no crontab, no launchd job): the app, MySQL,
+  Redis and Meilisearch containers have `restart: unless-stopped` in
+  `docker-compose.yml` (2026-10-14), so they and the scheduler come back by
+  themselves after a Mac or Docker restart (Docker Desktop must start at
+  login). The other
   scheduled jobs also run locally against the local DB; harmless.
 - Production processes the rows itself: `discounts:dispatch-store-processing`
   (every 5 min) queues `FinalizeScrapedStoresJob` on the `discounts` queue
@@ -186,6 +191,15 @@ Production gets its data from the owner's Mac (owner's decision; no token on
 - A stale `failed` row in `scraper_runs` makes `scrapers:retry-failed` rerun
   that pharmacy (the 2026-10-13 morning Gintarinė run was marked as
   superseded for this reason).
+
+superakcijos scrapes from the same Mac at 01:00 (owner, 2026-10-14): launchd
+(`~/Library/LaunchAgents/lt.superakcijos.nightly-scrape.plist`, copied from the
+nuolaidos repo `scripts/launchd/`) runs nuolaidos `scripts/nightly-scrape.sh` (`scrapers:run --all`, then
+`flyers:scrape --all` in the nuolaidos Sail stack, about 1.5 h, done before our
+03:00; log `~/Library/Logs/superakcijos-nightly-scrape.log`). Not the nuolaidos
+scheduler: its dev 04:00 `archive-expired` reindexes production Meilisearch
+through an SSH tunnel from the local DB. Both files are in the nuolaidos repo
+(uncommitted there), nothing else in it changed.
 
 First night (2026-10-14), checked in the morning:
 - All 13 e-shop scrapers ran 03:00–06:55 and posted to production (72 693

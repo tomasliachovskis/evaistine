@@ -8,6 +8,7 @@ services:
             args:
                 WWWGROUP: '${WWWGROUP}'
         image: sail-8.2/app
+        restart: unless-stopped
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
@@ -50,6 +51,7 @@ services:
             - meilisearch
     mysql:
         image: 'mysql/mysql-server:8.0'
+        restart: unless-stopped
         ports:
             - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
@@ -71,6 +73,7 @@ services:
             timeout: 5s
     redis:
         image: 'redis:alpine'
+        restart: unless-stopped
         ports:
             - '${FORWARD_REDIS_PORT:-6379}:6379'
         volumes:
@@ -93,6 +96,7 @@ services:
     # Same major version as meilisearch/meilisearch-php in composer.lock.
     meilisearch:
         image: 'getmeili/meilisearch:v1.16'
+        restart: unless-stopped
         ports:
             - '${FORWARD_MEILISEARCH_PORT:-7700}:7700'
         environment:
