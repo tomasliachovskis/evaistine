@@ -8,7 +8,7 @@
     <div class="base-container">
         <div class="flex max-w-3xl flex-col gap-4 pb-[56px]">
             <h1>Privatumo politika</h1>
-            <p class="mb-6 text-sm text-gray-600">Paskutinį kartą atnaujinta: 2026-10-08</p>
+            <p class="mb-6 text-sm text-gray-600">Paskutinį kartą atnaujinta: 2026-10-13</p>
 
             <h2 class="mb-4 text-xl font-semibold">1. Duomenų valdytojas</h2>
             <p class="mb-6 text-base">
@@ -42,21 +42,34 @@
             <h2 class="mb-4 text-xl font-semibold">4. Kam perduodame duomenis</h2>
             <p class="mb-6 text-base">
                 Duomenų neparduodame ir reklamos tikslais neperduodame. Juos gali tvarkyti tik mūsų paslaugų
-                teikėjai: serverių nuomos ir el. laiškų siuntimo paslaugų teikėjai, o jungiantis per Google ar
+                teikėjai: serverių nuomos ir el. laiškų siuntimo paslaugų teikėjai, Google (Google Analytics, jei sutikote
+                su analitikos slapukais), o jungiantis per Google ar
                 Facebook &ndash; atitinkamai Google ir Meta. Vaistinėms jūsų duomenų neperduodame: paspaudę
                 nuorodą į vaistinę, pereinate į jos svetainę, kur galioja jos privatumo politika.
             </p>
 
             <h2 class="mb-4 text-xl font-semibold">5. Slapukai</h2>
             <p class="mb-4 text-base">
-                Naudojame tik būtinus slapukus, be kurių svetainė neveiktų. Analitikos ir reklamos slapukų nenaudojame,
-                todėl jūsų sutikimo jiems nereikia:
+                Būtinieji slapukai reikalingi, kad svetainė veiktų, jiems sutikimo nereikia:
             </p>
             <ul class="mb-6 list-disc pl-6">
                 <li class="mb-2"><code>evaistinelt_session</code> &ndash; prisijungimo sesija (2 valandos);</li>
                 <li class="mb-2"><code>XSRF-TOKEN</code> &ndash; apsauga nuo suklastotų užklausų (2 valandos);</li>
-                <li class="mb-2"><code>evaistine_parduotuves_v1</code>, <code>evaistine_visos_parduotuves</code> &ndash; jūsų pasirinktos vaistinės, kad sąrašai būtų rodomi pagal jas.</li>
+                <li class="mb-2"><code>evaistine_parduotuves_v1</code>, <code>evaistine_visos_parduotuves</code> &ndash; jūsų pasirinktos vaistinės, kad sąrašai būtų rodomi pagal jas;</li>
+                <li class="mb-2"><code>cookie_consent</code> &ndash; jūsų pasirinkimas dėl slapukų (1 metai).</li>
             </ul>
+            <p class="mb-4 text-base">
+                Analitikos slapukai dedami tik jums sutikus (mygtukas &bdquo;Leisti visus slapukus&ldquo;). Jais
+                per Google Analytics (Google Ireland Limited) matuojame, kiek lankytojų apsilanko ir kuriuos puslapius
+                skaito, kad galėtume tobulinti svetainę. Jums nesutikus, Google Analytics slapukų nededa ir gauna tik
+                anoniminius, slapukų nenaudojančius signalus. Reklamos slapukų nenaudojame.
+            </p>
+            <ul class="mb-6 list-disc pl-6">
+                <li class="mb-2"><code>_ga</code>, <code>_ga_*</code> &ndash; Google Analytics lankytojo ir sesijos identifikatoriai (iki 2 metų).</li>
+            </ul>
+            <p class="mb-6 text-base">
+                Sutikimą bet kada galite pakeisti ar atšaukti puslapio apačioje, nuoroda &bdquo;Slapukų nustatymai&ldquo;.
+            </p>
             <p class="mb-6 text-base">
                 Naršyklės atmintyje (localStorage) taip pat saugome jūsų pasirinktas vaistines ir filtrų nustatymus.
                 Šiuos duomenis bet kada galite ištrinti naršyklės nustatymuose.

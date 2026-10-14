@@ -34,7 +34,7 @@ class HoursScraperRunner
 
         Log::info("HoursScraperRunner[{$store}]: starting node scrapers/hours/scrape.js \"{$store}\"");
 
-        $process = new Process(['node', 'scrapers/hours/scrape.js', $store], base_path());
+        $process = new Process(['node', 'scrapers/hours/scrape.js', $store], base_path(), array_filter(['SCRAPER_API_URL' => config('services.scrapers.api_url')]));
         $process->setTimeout(1800);
 
         $stderr = '';

@@ -55,6 +55,9 @@
                             <li><a href="/naujienos" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Naujienos</a></li>
                             <li><a href="/naudojimosi-taisykles" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Naudojimosi taisyklės</a></li>
                             <li><a href="/privatumo-politika" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Privatumo politika</a></li>
+                            @if (app()->environment('production') && config('services.google_analytics.id'))
+                                <li><button type="button" x-data @click="$dispatch('open-cookie-consent')" class="text-left text-base text-white/80 transition-colors hover:text-white hover:underline">Slapukų nustatymai</button></li>
+                            @endif
                             <li><a href="/vaistines" class="text-base text-white/80 transition-colors hover:text-white hover:underline">Vaistinės</a></li>
                         </ul>
                     </div>

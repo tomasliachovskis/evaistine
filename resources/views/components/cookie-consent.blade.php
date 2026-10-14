@@ -1,5 +1,6 @@
-{{-- Ported near-verbatim from discount/src/components/common/cookie-consent.tsx
-     (className strings, copy, and the js-cookie 365-day cookie behavior). --}}
+{{-- Ported from discount/src/components/common/cookie-consent.tsx (365-day
+     cookie_consent cookie). Shown only when GA is on (layout); updates Google
+     Consent Mode on a choice. --}}
 <div
     x-data="{
         open: false,
@@ -7,9 +8,21 @@
         setConsent(value) {
             const expires = new Date(Date.now() + 365 * 86400000).toUTCString();
             document.cookie = `cookie_consent=${value}; expires=${expires}; path=/`;
+            if (window.gtag) {
+                gtag('consent', 'update', { analytics_storage: value === 'accepted' ? 'granted' : 'denied' });
+            }
+            // Withdrawn consent: drop the GA cookies already set.
+            if (value !== 'accepted') {
+                document.cookie.split('; ').map(c => c.split('=')[0]).filter(name => name.startsWith('_ga')).forEach(name => {
+                    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=.${location.hostname.replace(/^www\./, '')}`;
+                    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+                });
+            }
             this.open = false;
         },
     }"
+    {{-- The footer's "Slapukų nustatymai" reopens it. --}}
+    x-on:open-cookie-consent.window="open = true"
     x-show="open"
     x-cloak
     class="fixed isolate z-[100] bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] left-0 right-0 w-full max-w-[577px] rounded-lg border bg-white p-4 shadow-lg sm:bottom-4 sm:left-4 sm:p-6"
@@ -20,11 +33,12 @@
              viewport (was ~41% of a 375x812 screen) — full explanation
              still shown from sm: up. --}}
         <p class="text-xs text-gray-600 sm:text-base sm:text-gray-950">
-            <span class="sm:hidden">Naudojame slapukus patirčiai pagerinti. <a href="/privatumo-politika" class="underline">Skaityti daugiau.</a></span>
+            <span class="sm:hidden">Jums sutikus, lankomumą matuojame su Google Analytics. <a href="/privatumo-politika" class="underline">Skaityti daugiau.</a></span>
             <span class="hidden sm:inline">
-                Šioje svetainėje naudojami slapukai, siekiant pagerinti
-                vartotojo patirtį. Naudodamiesi mūsų svetaine, jūs sutinkate
-                su visais slapukais pagal mūsų slapukų politiką.
+                Būtini slapukai reikalingi, kad svetainė veiktų. Jums sutikus,
+                naudosime ir Google Analytics slapukus lankomumui matuoti.
+                Sutikimą bet kada galite pakeisti puslapio apačioje, nuoroda
+                „Slapukų nustatymai“.
                 <a href="/privatumo-politika" class="underline">Skaityti išsamiau.</a>
             </span>
         </p>

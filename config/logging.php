@@ -64,14 +64,16 @@ return [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
+            // 30 days: the privacy policy promises server logs are kept that long.
+            'days' => env('LOG_DAILY_DAYS', 30),
         ],
 
         'flyer' => [
             'driver' => 'daily',
             'path' => storage_path('logs/flyer.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
+            // 30 days: the privacy policy promises server logs are kept that long.
+            'days' => env('LOG_DAILY_DAYS', 30),
         ],
 
         'slack' => [

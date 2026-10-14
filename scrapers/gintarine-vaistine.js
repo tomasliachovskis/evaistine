@@ -1,5 +1,5 @@
 import { parse } from 'node-html-parser';
-import { buildRow, createPoster, currentWeek, fetchText, loadEanCache, MAX_PAGES, onlySelected, parsePrice, sleep, validEan } from './lib/pharmacy.js';
+import { buildRow, createPoster, currentWeek, fetchText, loadEanCache, MAX_PAGES, onlySelected, parsePrice, saveUrlList, sleep } from './lib/pharmacy.js';
 
 const BASE_URL = 'https://www.gintarine.lt';
 const STORE = 'Gintarinė vaistinė';
@@ -81,17 +81,6 @@ const readCard = (form) => {
     };
 };
 
-// The barcode is only on the product page (`<meta itemprop="gtin">`).
-// undefined = the page didn't load (see loadEanCache).
-const fetchEan = async (url) => {
-    const html = await fetchText(url);
-    if (html === null) {
-        return undefined;
-    }
-    const match = html.match(/itemprop="gtin" content="(\d+)"/);
-    return match ? validEan(match[1]) : null;
-};
-
 (async () => {
     const dates = currentWeek();
     console.log(`Price validity week: ${dates.start_at} - ${dates.end_at}`);
@@ -109,8 +98,13 @@ const fetchEan = async (url) => {
     console.log(`Categories: ${roots.map(r => `${r.name} (${r.children.length})`).join(', ')}`);
 
     const poster = createPoster(STORE);
-    const eans = loadEanCache('gintarine-vaistine');
+    // The barcode is only on the product page, and fetching those pages here
+    // got 429s that also cost listing pages (64 lost on 2026-10-13). They are
+    // fetched by scrapers/gintarine-eans.js on its own slow nightly run
+    // (scrapers:fetch-eans, 00:30); this run only reads that cache.
+    const eans = loadEanCache('gintarine-vaistine', { limit: 0 });
     const seen = new Set();
+    const productUrls = new Set();
 
     for (const rootCategory of onlySelected(roots, r => r.slug)) {
         // A root without children (e.g. a single-page one) is listed itself.
@@ -134,9 +128,8 @@ const fetchEan = async (url) => {
                 const cards = page.querySelectorAll('.category-products__cards form[data-productid]')
                     .map(readCard)
                     .filter(card => card.id && card.url && !seen.has(card.id));
-                cards.forEach(card => seen.add(card.id));
+                cards.forEach(card => { seen.add(card.id); productUrls.add(card.url); });
 
-                await eans.fill(cards.map(card => card.url), fetchEan);
 
                 const rows = cards.map(card => buildRow({ store: STORE, ...card, category: label, ean: eans.get(card.url), dates }));
                 await poster.post(rows, `${category.slug} page ${currentPage}/${pageCount}`);
@@ -150,5 +143,6 @@ const fetchEan = async (url) => {
     }
 
     eans.save();
-    poster.summary(`${eans.fetched()} product pages fetched for EANs, ${eans.size()} in the cache.`);
+    saveUrlList('gintarine-vaistine', productUrls);
+    poster.summary(`${eans.size()} EANs in the cache (filled by gintarine-eans.js).`);
 })();

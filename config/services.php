@@ -71,4 +71,19 @@ return [
     'indexnow' => [
         'key' => env('INDEXNOW_KEY'),
     ],
+
+    // Where the Node scrapers POST (scrapers/lib/pharmacy.js,
+    // scrapers/flyers/_shared.js, scrapers/hours/_shared.js). Empty = this
+    // app's local API. On the owner's machine set it to production's
+    // https://evaistine.lt/api/scrapers; the runners pass it to node.
+    'scrapers' => [
+        'api_url' => env('SCRAPER_API_URL'),
+    ],
+
+    // GA4 measurement ID. The tag is printed only in production, with
+    // Google Consent Mode: analytics cookies only after "Leisti visus"
+    // in <x-cookie-consent>.
+    'google_analytics' => [
+        'id' => env('GA_MEASUREMENT_ID'),
+    ],
 ];

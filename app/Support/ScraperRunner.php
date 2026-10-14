@@ -45,7 +45,7 @@ class ScraperRunner
 
         Log::info("ScraperRunner[{$store}]: starting node scrapers/{$file}");
 
-        $process = new Process(['node', "scrapers/{$file}"], base_path());
+        $process = new Process(['node', "scrapers/{$file}"], base_path(), array_filter(['SCRAPER_API_URL' => config('services.scrapers.api_url')]));
         $process->setTimeout(10800);
 
         $stderr = '';
@@ -67,9 +67,15 @@ class ScraperRunner
         });
 
         if ($process->isSuccessful()) {
-            $itemsCount = DiscountTemp::whereRaw('LOWER(store) = ?', [mb_strtolower($store)])
-                ->where('created_at', '>=', $startedAt)
-                ->count();
+            // Rows posted to another app (production, SCRAPER_API_URL) never
+            // land in this DB, so take the count from the scraper's own
+            // summary line ("{store}: 168 rows, ...") instead.
+            $itemsCount = config('services.scrapers.api_url')
+                && preg_match('/: (\d+) rows,/', $process->getOutput(), $matches)
+                ? (int) $matches[1]
+                : DiscountTemp::whereRaw('LOWER(store) = ?', [mb_strtolower($store)])
+                    ->where('created_at', '>=', $startedAt)
+                    ->count();
 
             Log::info("ScraperRunner[{$store}]: success, {$itemsCount} row(s)");
 

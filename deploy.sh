@@ -1,5 +1,4 @@
 #!/bin/bash
-echo "deploy.sh still targets the evaistine.lt server; set up the vaistines server first." >&2; exit 1
 set -euo pipefail
 
 # Define server and project details
@@ -104,6 +103,24 @@ ssh $SSH_OPTS $SERVER "REMOTE_DIR='$REMOTE_DIR' bash -s" << 'EOF'
 
     if [ ! -f .env ]; then
         echo "Missing .env on server"
+        exit 1
+    fi
+
+    # The server is shared with superakcijos.lt, which uses Redis DBs 0/1 and
+    # bare Meilisearch index names. optimize:clear below FLUSHDBs the cache
+    # DB and a reindex overwrites same-named indexes, so refuse to go on
+    # unless .env keeps this app apart (docs/evaistine.md, "Sharing the
+    # server with superakcijos").
+    env_value() { grep -E "^$1=" .env | tail -n1 | cut -d= -f2- | tr -d '"' ; }
+    for key in REDIS_DB REDIS_CACHE_DB; do
+        value="$(env_value "$key")"
+        if [ -z "$value" ] || [ "$value" = "0" ] || [ "$value" = "1" ]; then
+            echo "ERROR: $key in .env is '${value}'; superakcijos uses Redis DBs 0/1. Set REDIS_DB=2 and REDIS_CACHE_DB=3." >&2
+            exit 1
+        fi
+    done
+    if [ -z "$(env_value MEILISEARCH_INDEX_PREFIX)" ]; then
+        echo "ERROR: MEILISEARCH_INDEX_PREFIX is empty; set MEILISEARCH_INDEX_PREFIX=evaistine_ so superakcijos' indexes stay untouched." >&2
         exit 1
     fi
 

@@ -4,6 +4,54 @@ Running list for eVaistine.lt. Not a sprint board — check items off or
 delete them once done, and add context inline rather than a bare title.
 Project decisions are in `docs/evaistine.md`.
 
+## Open after launch (2026-10-13)
+
+The site went live on 2026-10-13 with the data of that day's local full
+scrape. In order of importance:
+
+**Urgent: before Sunday 2026-10-18, when the current offers expire**
+- [x] **Keep the prices updated in production** (2026-10-13): local `.env`
+      posts to production, the Sail container runs the scheduler
+      (`docs/evaistine.md` "Scraping into production"). The Mac must be on at
+      night. First real nightly run: 2026-10-14 03:00; check prod afterwards.
+- [x] **Test scraping into production** (2026-10-13): Ąžuolyno rows and a
+      leaflet POST went through Cloudflare; leaflets over 2 MB needed
+      `public/.user.ini`.
+- [ ] **Commit** the 2026-10-13 work (launch prep, Mano vaistinė URLs,
+      unit_price overflow, `flyers:expire-undated`, GA + consent). It is
+      deployed but not in git.
+
+**Features that don't work in production yet**
+- [ ] **Email** (`MAIL_*` empty in the server `.env`): price-watch alerts,
+      weekly digest, new-leaflet emails and the email login code/link don't
+      go out. Needs a `noreply@evaistine.lt` mailbox with SPF/DKIM
+      (superakcijos sends through `laika.serveriai.lt`).
+- [ ] **Google/Facebook login**: OAuth apps with
+      `https://evaistine.lt/auth/{google,facebook}/callback`, keys into the
+      server `.env`, then `deploy.sh` (or `config:cache`).
+
+**SEO launch**
+- [ ] **Google Search Console** (owner): add the property, submit
+      `https://evaistine.lt/sitemap.xml`. `INDEXNOW_KEY` is already in the
+      server `.env`; run `seo:indexnow` once GSC is set up.
+- [ ] **`/naujienos`** is in the sitemap but has no posts: leave it out of the
+      sitemap until there are some.
+
+**Legal**
+- [ ] **Lawyer review** of the terms, the privacy policy (now with GA) and the
+      disclaimers.
+- [ ] **Recheck the VVKT list** of pharmacies allowed to sell remotely.
+
+**Quality, after launch** (details further down in this file)
+- [ ] Gintarinė EANs: nightly `scrapers:fetch-eans` since 2026-10-13, about
+      12 nights to cover the catalog; check `ean-gintarine-vaistine.json` grows.
+- [ ] Multiple EANs per product + merging duplicates; name matching without
+      EAN; €/vnt unit price; product meta title cut; ailment pages; keyword
+      pages, second wave.
+- [ ] nginx keeps logs 14 days (shared `/etc/nginx` logrotate), the privacy
+      policy says 30: fine as it is shorter; Laravel logs keep 30.
+- [ ] No error monitoring or alerts for 500s in production.
+
 ## Where we left off (2026-10-07, end of the third session)
 
 **Nothing from this session is committed** (owner wasn't asked yet): the
@@ -106,10 +154,13 @@ The phased roadmap with time estimates is in `docs/evaistine.md`
       `discount_temp.product_url` index, `discounts:process` locked the table
       for 10+ min and scrapers' inserts failed. **Never run
       `discounts:process` while a scraper is posting.**
-- [ ] **Scraping follow-ups**: Gintarinė has no EANs yet (its EAN pages
-      triggered 429s; ran with `SCRAPER_EAN_LIMIT=0`) - fetch them slower,
-      e.g. a nightly `SCRAPER_EAN_LIMIT=300`.  Only 8 518 of 51 411 products match across pharmacies: name
-      matching for products without EAN (see "Cross-pharmacy matching").
+- [x] **Second full scrape (2026-10-13)**: 72 622 offers, 9 759 products at
+      2+ pharmacies; Mano vaistinė root URLs fixed, unit_price overflow fixed
+      (`docs/evaistine.md` "Second full scrape").
+- [ ] **Scraping follow-ups**: Gintarinė's EANs now come from the slow
+      nightly `scrapers:fetch-eans` (2026-10-13, about 12 nights for the
+      catalog). Products without EAN still need name matching (see
+      "Cross-pharmacy matching"); 9 759 of 54 407 match across pharmacies.
       Category sizes: every root is over ~2000 except Ortopedija (484) and
       Akių priežiūra (346), so all big ones need the keyword/ailment level.
 - [x] **Small pharmacies** (owner, 2026-10-08: show them): Piliulė (17
@@ -161,21 +212,19 @@ The phased roadmap with time estimates is in `docs/evaistine.md`
       privacy policy, superakcijos GA4/Clarity and the cookie banner removed.
 - [ ] **Legal leftovers**: lawyer review of the texts; server log retention
       30 days (Laravel `daily` channel + nginx logrotate), as the privacy policy
-      says; analytics with our own IDs + consent banner, if wanted. Footer
+      says. GA4 + consent banner done 2026-10-13. Footer
       social links removed 2026-10-08 (were superakcijos'); add ours later.
 - [x] **Cache namespace bug** (2026-10-08): web and CLI used different cache
       prefixes; pinned `REDIS_PREFIX`/`CACHE_PREFIX` (see `docs/evaistine.md`).
       Production `.env` needs both lines.
-- [ ] **Production** (same server as superakcijos: follow `docs/evaistine.md`
-      "Sharing the server with superakcijos"): nginx vhost
-      `sites-available/evaistine`, `deploy.sh` (`DEPLOY_SERVER=user@host`,
-      remove the guard line), production `.env` with Redis DBs 2/3 and
-      `MEILISEARCH_INDEX_PREFIX=evaistine_`, own MySQL user, supervisor configs
-      `deploy/supervisor-evaistine-*.conf`, Meilisearch index, GSC property,
-      sitemap, IndexNow key. GitHub repo: `tomasliachovskis/evaistine`.
-- [ ] **Own API keys**: OpenAI, Gemini and Meilisearch keys are still
-      superakcijos' (same values in `.env`); create eVaistine's own and drop
-      `NEXTAUTH_SECRET` from `.env`.
+- [x] **Production** (2026-10-13): live on https://evaistine.lt, same server
+      as superakcijos; what was done is in `docs/evaistine.md` "Launch
+      checklist". Open launch items are at the top of this file.
+- [ ] **Own API keys**: production has its own Meilisearch key (limited to
+      `evaistine_*`), but OpenAI and Gemini are superakcijos' keys, copied on
+      the owner's word (2026-10-13). Create eVaistine's own when billing should
+      be split. Local `.env` still has superakcijos' keys and a leftover
+      `NEXTAUTH_SECRET`.
 
 - [x] **Pharmacy addresses and hours** (2026-10-08, `docs/evaistine.md`
       "Pharmacy addresses and hours"): 1 157 locations for all 15 pharmacies

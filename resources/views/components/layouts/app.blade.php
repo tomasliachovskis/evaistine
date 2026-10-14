@@ -32,7 +32,7 @@
         if ($ogImageUrl && str_starts_with($ogImageUrl, '/')) {
             $ogImageUrl = \App\Support\CanonicalUrl::origin() . $ogImageUrl;
         }
-        $ogImageUrl = $ogImageUrl ?: \App\Support\CanonicalUrl::origin() . '/assets/logo.svg';
+        $ogImageUrl = $ogImageUrl ?: \App\Support\CanonicalUrl::origin() . '/assets/og-default.png';
     @endphp
     <title>{{ $pageTitle }}</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="32x32">
@@ -91,10 +91,29 @@
 
     @stack('head')
 
-    {{-- No analytics (owner, 2026-10-08): the GA4/Clarity tags inherited from
-         superakcijos sent this site's visits to superakcijos' accounts. Only
-         strictly necessary cookies are set, so there is no consent banner
-         either; add both back together (<x-cookie-consent>) with our own IDs. --}}
+    {{-- GA4 with our own ID (2026-10-13; the superakcijos tags were removed
+         2026-10-08). Production only. Google Consent Mode: analytics_storage
+         stays denied (no _ga cookies, cookieless pings only) until the
+         visitor picks "Leisti visus" in <x-cookie-consent>; the choice is read
+         in the browser, so cached page HTML stays the same for everyone. --}}
+    @php
+        $gaId = app()->environment('production') ? config('services.google_analytics.id') : null;
+    @endphp
+    @if ($gaId)
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('consent', 'default', {
+                ad_storage: 'denied',
+                ad_user_data: 'denied',
+                ad_personalization: 'denied',
+                analytics_storage: document.cookie.split('; ').includes('cookie_consent=accepted') ? 'granted' : 'denied',
+            });
+            gtag('js', new Date());
+            gtag('config', @js($gaId));
+        </script>
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ $gaId }}"></script>
+    @endif
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -125,6 +144,9 @@
     <x-auth-modal />
     <x-price-watch-modal />
     <x-my-stores-sheet />
+    @if ($gaId)
+        <x-cookie-consent />
+    @endif
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.store('authModal', {

@@ -27,6 +27,15 @@ class Kernel extends ConsoleKernel
         // that never releases the lock can't wedge this command for the
         // default 24h — these are exactly the flaky, network-dependent
         // processes prone to hanging, per this repo's own scraper notes).
+        // Gintarinė's barcodes, slowly, from its product pages (429s during
+        // the main scrape). 140 min budget, so it is done before 03:00 and the
+        // two never hit gintarine.lt at the same time.
+        $schedule->command('scrapers:fetch-eans --minutes=140')
+            ->dailyAt('00:30')
+            ->withoutOverlapping(180)
+            ->runInBackground()
+            ->environments(['dev']);
+
         $schedule->command('scrapers:run --all')
             ->dailyAt('03:00')
             ->withoutOverlapping(180)
@@ -93,6 +102,14 @@ class Kernel extends ConsoleKernel
         // (the "expiring soon"/"added today" bonuses), so a discount's ideal
         // rank can drift over time with no new scrape data to trigger a
         // refresh.
+        // Undated flyers count as valid forever; close the ones older than
+        // 21 days. Before archive-expired/cache:clear-discounts/cache:warm,
+        // so the nightly warm already renders without them.
+        $schedule->command('flyers:expire-undated')
+            ->dailyAt('03:50')
+            ->withoutOverlapping(10)
+            ->environments(['production']);
+
         // Previously only ran as a side effect of whichever store's own
         // FinalizeScrapedStoresJob had just touched it — not a standalone
         // sweep, so a discount could sit expired in the live `discounts`

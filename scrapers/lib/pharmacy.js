@@ -182,6 +182,26 @@ export const createPoster = (store) => {
     return { post, stats, summary };
 };
 
+const SCRAPER_STORAGE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../storage/app/scrapers');
+
+// The product URLs a scraper saw on its last full run, in
+// storage/app/scrapers/urls-{slug}.json, for a separate EAN run
+// (scrapers/gintarine-eans.js) to work through.
+export const saveUrlList = (slug, urls) => {
+    if (DRY_RUN || MAX_PAGES !== Infinity || ONLY.length) {
+        return; // a partial run would shrink the list
+    }
+    fs.mkdirSync(SCRAPER_STORAGE, { recursive: true });
+    fs.writeFileSync(path.join(SCRAPER_STORAGE, `urls-${slug}.json`), JSON.stringify([...urls]));
+};
+export const loadUrlList = (slug) => {
+    try {
+        return JSON.parse(fs.readFileSync(path.join(SCRAPER_STORAGE, `urls-${slug}.json`), 'utf8'));
+    } catch (error) {
+        return [];
+    }
+};
+
 // product URL -> EAN, kept between runs in storage/app/scrapers/, for stores
 // whose listing pages carry no barcode: each product page is fetched once,
 // not on every run. A null value means "page fetched, no barcode on it"; a
@@ -190,10 +210,12 @@ export const createPoster = (store) => {
 // Product pages are fetched one at a time with a pause (pharmacies rate-limit
 // parallel requests with 429s), at most SCRAPER_EAN_LIMIT new ones per run
 // (default 1500): a large catalog fills its cache over a few nightly runs, and
-// rows posted before then go out without an EAN and match by name.
+// rows posted before then go out without an EAN and match by name. A scraper
+// can pass its own `limit` (Gintarinė: 0, its pages are fetched by
+// scrapers/gintarine-eans.js on a slow nightly run instead).
 export const EAN_LIMIT = Number(process.env.SCRAPER_EAN_LIMIT ?? 1500);
-export const loadEanCache = (slug) => {
-    const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../storage/app/scrapers');
+export const loadEanCache = (slug, { limit = EAN_LIMIT } = {}) => {
+    const dir = SCRAPER_STORAGE;
     const file = path.join(dir, `ean-${slug}.json`);
     let map = {};
     try {
@@ -211,7 +233,7 @@ export const loadEanCache = (slug) => {
         // (fetch failed, try again next run).
         fill: async (urls, fetchEan) => {
             for (const url of urls) {
-                if (has(url) || fetched >= EAN_LIMIT) {
+                if (has(url) || fetched >= limit) {
                     continue;
                 }
                 fetched++;
@@ -223,6 +245,9 @@ export const loadEanCache = (slug) => {
             }
         },
         get: (url) => map[url] ?? null,
+        set: (url, ean) => {
+            map[url] = ean;
+        },
         save: () => {
             if (DRY_RUN) {
                 return;

@@ -34,6 +34,9 @@ class ProcessDiscounts extends Command
                             {--only-store= : Only process this single store}';
     protected $description = 'Process new discounts from discount_temp table';
 
+    /** Largest value discounts.unit_price (decimal(8,2)) can hold. */
+    private const MAX_UNIT_PRICE = 999999.99;
+
     /** @var array<string, Store> */
     private array $storesByName = [];
 
@@ -443,6 +446,42 @@ class ProcessDiscounts extends Command
             }
         }
 
+        // Same e-shop URL and week, but this run matched a different product:
+        // the row now carries an EAN (the EAN caches fill a few pages a night)
+        // or the pharmacy changed the product behind the URL. Move the offer
+        // to the new product instead of adding a second one for the same URL;
+        // the first night after launch (2026-10-14) left 2 320 such pairs.
+        // One scrape never sends two products under one URL (checked).
+        if ($tempDiscount->store_flyer_id === null && !empty($tempDiscount->product_url)) {
+            $moved = Discount::query()
+                ->where('store_id', $store->id)
+                ->where('product_url', $tempDiscount->product_url)
+                ->where('start_at', $startAt)
+                ->where('end_at', $endAt)
+                ->whereNull('store_flyer_id')
+                ->where('product_id', '!=', $product->id)
+                ->update([
+                    'product_id' => $product->id,
+                    'original_price' => $normalizedOriginalPrice,
+                    'discounted_price' => $normalizedDiscountedPrice,
+                    'discount_percent' => $discountPercent,
+                    'condition' => $normalizedCondition,
+                    'info' => $normalizedInfo,
+                    'unit_price' => $normalizedUnitPrice,
+                    'unit_price_basis' => $normalizedUnitPriceBasis,
+                    'unit_price_estimated' => $unitPriceEstimated,
+                    'card' => $tempDiscount->card,
+                    'updated_at' => now(),
+                ]);
+
+            if ($moved > 0) {
+                $this->markDiscountExists($product->id, $store->id, $startAt, $endAt);
+                $this->touchedStoreIds[$store->id] = true;
+
+                return true;
+            }
+        }
+
         Discount::withoutEvents(function () use (
             $product,
             $store,
@@ -503,12 +542,16 @@ class ProcessDiscounts extends Command
     ): array {
         $normalizedBasis = $this->normalizeUnitBasis($scrapedBasis);
 
-        if ($scrapedUnitPrice !== null && $scrapedUnitPrice > 0 && $normalizedBasis !== null) {
+        if ($scrapedUnitPrice !== null && $scrapedUnitPrice > 0 && $normalizedBasis !== null
+            && round($scrapedUnitPrice, 2) <= self::MAX_UNIT_PRICE) {
             return [round($scrapedUnitPrice, 2), $normalizedBasis, $scrapedEstimatedFlag];
         }
 
+        // A dose read as the pack size ("Oscillococcinum 0,01 ml/g N30" ->
+        // 0.01 ml) gives a per-litre price that overflows discounts.unit_price
+        // and made the whole insert fail (2026-10-13); no unit price then.
         $computed = $this->computeUnitPriceFromPackSize($packSize, $price);
-        if ($computed !== null) {
+        if ($computed !== null && $computed['price'] <= self::MAX_UNIT_PRICE) {
             return [$computed['price'], $computed['basis'], true];
         }
 

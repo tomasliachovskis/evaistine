@@ -98,6 +98,14 @@ entry in `config('stores.stores')` with the website, case forms in
 `config('stores.name_forms')` if the name contains "vaistinė" (a unit test
 fails otherwise), and its real logo at `public/assets/stores/{slug}.svg`.
 
+Undated leaflets: a flyer without `valid_to` counts as valid forever
+(`StoreFlyer::scopeCurrentlyValid`). `flyers:expire-undated` (ported
+2026-10-13 from superakcijos commit `e9f4981`) sets `valid_to` = yesterday on
+undated flyers created more than `--days` (21) days ago, bumps the `flyers`
+cache, and runs daily at 03:50 in production, before `discounts:archive-expired`.
+`--dry-run` lists them only. All 7 current leaflets have dates, so it found
+nothing on 2026-10-13.
+
 ## E-shop scrapers (written 2026-10-06)
 
 13 scrapers in `scrapers/`, registered in `config/scrapers.php`. They take
@@ -113,7 +121,7 @@ the DB:
 | Pharmacy | Source | EAN | Note |
 |---|---|---|---|
 | Eurovaistinė | JSON `api.eurovaistine.lt/eshop-api/luigi/search/api/taxon/render` | ~30 %, from `sku` | 12-digit `sku` is the EAN-13 without its check digit; 6–7 digits are internal codes |
-| Gintarinė | HTML, first-level categories, 20 a page | product page (`itemprop="gtin"`), cached | rate-limits by User-Agent (429 for ~1 h after parallel requests) |
+| Gintarinė | HTML, first-level categories, 20 a page | product page (`itemprop="gtin"`), fetched by its own slow nightly run (`scrapers:fetch-eans`, see below) | rate-limits by User-Agent (429 for ~1 h after parallel requests) |
 | Camelia | JSON `api.camelia.lt/api/v2/shop/search/products` | ~97 % | `prescriptionMedicine` flag, loyalty price = `card` |
 | Benu | Luigi's Box `live.luigisbox.com/search`, tracker `232949-269214` | ~90 % | one main category per query (10 000-hit cap), `drugType` RX skipped |
 | Apotheka | HTML (Magento, GraphQL off), 34 a page, `?cat=` subcategories | product page JSON-LD, cached | |
@@ -136,6 +144,134 @@ most `SCRAPER_EAN_LIMIT` (default 1500) new pages per run, one at a time, so
 the first runs post some rows without an EAN and the cache fills over a few
 nights. Product categories are sent as `Root/Subcategory` from each shop's
 own tree, ready for `categories:map-mappers`.
+
+## Scraping into production (2026-10-13)
+
+Production gets its data from the owner's Mac (owner's decision; no token on
+`/api/scrapers*`):
+- Local `.env`: `SCRAPER_API_URL=https://evaistine.lt/api/scrapers`. The
+  runners (`ScraperRunner`, `FlyerScraperRunner`, `HoursScraperRunner`) pass
+  it to node, so `scrapers:run`, `flyers:scrape`, `hours:scrape` post to
+  production, also when started by hand with `sail artisan`. A plain
+  `node scrapers/x.js` inside the container doesn't see `.env` and still posts
+  to localhost (use that, or `SCRAPER_DRY_RUN=1`, for tests).
+- The Sail container now runs the scheduler: `[program:scheduler]`
+  (`artisan schedule:work`) in `docker/8.2/supervisord.conf`, mounted by
+  `docker-compose.yml` so it applies on `sail up -d` without a rebuild. The
+  `dev`-only jobs: `scrapers:fetch-eans` 00:30, `scrapers:run --all` 03:00
+  (about 5 hours, one pharmacy after another), `scrapers:retry-failed`
+  every 15 min, `flyers:scrape --all` 05:00, `hours:scrape --all` Mondays
+  06:00. The Mac must be on and Docker running at those times. The other
+  scheduled jobs also run locally against the local DB; harmless.
+- Production processes the rows itself: `discounts:dispatch-store-processing`
+  (every 5 min) queues `FinalizeScrapedStoresJob` on the `discounts` queue
+  once a pharmacy has sent nothing for 10 minutes. Checked with Ąžuolyno
+  (168 rows) on 2026-10-13.
+- `ScraperRunner` takes `items_count` from the scraper's summary line when
+  rows go to another app (they never reach the local `discount_temp`).
+- **Leaflet uploads over 2 MB failed in production**: the shared PHP-FPM has
+  `upload_max_filesize=2M`, Laravel saw no file, validation answered 302 and
+  the scraper got the home page back (`{}`). `public/.user.ini` (70M, in git
+  now, the same as superakcijos' server-only copy) fixes it for this site only.
+- **Time zone bug, fixed the same day**: the date columns are MySQL
+  `TIMESTAMP`s (stored in UTC, converted with the session time zone). Local
+  Sail MySQL runs in UTC, the production server in CEST, so the imported
+  local offers read back as `2026-10-12 02:00` in production, the first
+  production run did not recognise them as the same week and created all 166
+  Ąžuolyno offers a second time. `config/database.php` now pins the MySQL
+  session to `+00:00` (`DB_TIMEZONE`), and the 166 duplicates (start
+  `2026-10-11 22:00` after the fix) were deleted, then
+  `discounts:index-meilisearch`, `keywords:refresh-counts`,
+  `deal-pool:refresh`, `cache:clear-discounts`.
+- A stale `failed` row in `scraper_runs` makes `scrapers:retry-failed` rerun
+  that pharmacy (the 2026-10-13 morning Gintarinė run was marked as
+  superseded for this reason).
+
+First night (2026-10-14), checked in the morning:
+- All 13 e-shop scrapers ran 03:00–06:55 and posted to production (72 693
+  rows); production processed them all (unprocessed 0, failed jobs 0).
+  `scrapers:fetch-eans` grew Gintarinė's EAN cache to 1 567 (1 543 with EAN).
+- **Puppeteer leaflet scrapers failed under the scheduler** (Eurovaistinė,
+  Gintarinė, Apotheka, N vaistinė): supervisord runs as root and kept
+  `HOME=/root` for `user=sail`, so Chrome could not start. `[program:scheduler]`
+  now sets `HOME="/home/sail"`; rerun by hand, all leaflets `duplicate` (none
+  new). The e-shop scrapers were fine.
+- **2 320 duplicate offers**: same pharmacy, URL and week, but a second
+  product. The row now carried an EAN (Apotheka, Mano vaistinė, Gintarinė
+  caches fill a bit every night) or the pharmacy changed the product behind
+  the URL (Eurovaistinė), so it matched another product, and `discountExists`
+  only looks at product + week. `ProcessDiscounts` now moves this week's
+  e-shop offer for that URL to the new product instead of creating a second
+  one (`tests/Feature/ProcessDiscountsMovesOfferTest.php`). The existing
+  pairs were deleted in production the same morning (2 320 rows, kept the
+  newest id per store/URL/week, `store_flyer_id` null; 0 left), then reindexed both Meilisearch indexes,
+  `cache:clear-discounts`, `keywords:map-products`, `keywords:refresh-counts`,
+  `deal-pool:refresh`.
+
+Gintarinė EANs: the barcode is only on each product page (listing pages,
+sitemap and feeds have none), and fetching ~18 000 pages during the main
+scrape got 429s that also cost listing pages. Now:
+- `scrapers/gintarine-vaistine.js` reads the EAN cache only
+  (`loadEanCache(slug, { limit: 0 })`) and saves the product URLs it saw to
+  `storage/app/scrapers/urls-gintarine-vaistine.json` (full runs only).
+- `scrapers/gintarine-eans.js` (`sail artisan scrapers:fetch-eans
+  --minutes=140`, nightly 00:30, done before 03:00) works through the URLs
+  without a cached EAN: one page every 4–7 s, a 429 waits (Retry-After, else
+  2/4/8 min), five in a row end the night. About 660 pages an hour, so the
+  catalog (17 680 left on 2026-10-13) takes about 12 nights; then only new
+  products. The first URL list was taken from that day's `discount_temp`.
+- The EANs reach the site on the next main scrape: `ProcessDiscounts` matches
+  the EAN product of another pharmacy first. The old Gintarinė-only product
+  keeps its offer until the week ends, then has none; merging those leftovers
+  is part of the "Multiple EANs per product" TODO.
+
+## Second full scrape (2026-10-13)
+
+Run before the production launch, into the local DB. Result: 72 622 current
+offers (week 2026-10-12 – 10-18), 54 407 products, 52 128 with an offer,
+9 759 priced at 2+ pharmacies (was 8 518), 0 offered products without a
+category. Per pharmacy: Gintarinė 17 863, Benu 12 600, Eurovaistinė 10 922,
+Camelia 10 550, Mano vaistinė 7 411, Apotheka 4 558, 100 metų 2 993, Rx 2 510,
+InternetineVaistine.lt 2 365, Universiteto 573, Ąžuolyno 163, LSMU 97,
+Piliulė 17. Leaflets: all 7 October leaflets were already in, nothing new.
+Logs: `storage/app/scrapers/logs/*-2026-10-13*.log`.
+
+What came up and how it was handled:
+- **`scrapers:run --all` runs the stores one after another** (Oct 7 ran them
+  in parallel), about 5 hours in total. Killing one store's `node` process
+  aborts the whole `--all` loop (`ProcessSignaledException`) and leaves its
+  `scraper_runs` row `running`, which blocks every later run
+  (`isAnotherRunInProgress()`); mark it failed by hand.
+- **Gintarinė 429s** again when fetching product pages for EANs; the 429s
+  also made it skip listing pages ("Giving up on dekoratyvine-kosmetika-4
+  page 11", 64 pages lost). Re-run with
+  `sail bash -c 'SCRAPER_EAN_LIMIT=0 node scrapers/gintarine-vaistine.js'`:
+  17 879 rows, no 429s, but only 198 with EAN. Gintarinė's EANs still need a
+  slow nightly run (TODO).
+- **Mano vaistinė moved two roots**: `/medicinos-prekes` ->
+  `/medicinos-prekes-iranga`, `/arabatos-ir-vaistazoles` (typo in our key) ->
+  `/arbatos-vaistazoles`; the old URLs 404, so these products had never been
+  scraped. Both now have menu entries. +2 040 rows. 29 new category strings
+  mapped by `categories:map-mappers` (teas -> "Sportas, svorio kontrolė,
+  arbatos ir spec. maistas", supplements -> "Vitaminai ir maisto papildai").
+  "Medicinos prekės/Akims" was shadowed by the coarse "Medicinos prekės ir
+  prietaisai" mapper (prefix fallback), so it got its own mapper (-> "Akių
+  priežiūra ir optika") and `products:recategorize --from="Medicinos
+  prekės/Akims"` moved 47 products. Blank-category rows (mixed buckets) went
+  through `categories:bulk-map "Mano vaistinė"`.
+- **`unit_price` overflow**: "Oscillococcinum 0,01 ml/g N30" was read as a
+  0.01 ml pack, the per-litre price overflowed `discounts.unit_price`
+  (decimal(8,2)) and the insert failed. `ProcessDiscounts::resolveUnitPrice()`
+  now leaves the unit price empty above 999 999.99.
+- **Rows processed without an offer**: after the first `discounts:process`,
+  2 374 of today's rows had no `Discount` (unmapped categories, the overflow).
+  Reset to `processed = false` and processed again. ~255 rows stay without
+  an offer on purpose: the same product under a second URL at the same
+  pharmacy (variants/shades with one name, Benu's promo shelf).
+- Afterwards: `discounts:archive-expired` (69 547 offers of the old week),
+  `products:index-meilisearch`, `discounts:index-meilisearch`,
+  `keywords:map-products`, `keywords:refresh-counts`, `deal-pool:refresh`,
+  `cache:clear-discounts`.
 
 ## Mixed categories (fixed 2026-10-08)
 
@@ -320,9 +456,12 @@ the rest of the superakcijos leftovers.
 
 ## Safety: nothing reaches superakcijos.lt
 
-- Scrapers POST to `http://localhost/api/scrapers`.
-- `deploy.sh` exits immediately until an eVaistine server exists. Its server
-  is `DEPLOY_SERVER` (user@host) from the environment, with no default.
+- Scrapers POST to `http://localhost/api/scrapers` unless `SCRAPER_API_URL`
+  is set (for production it will be `https://evaistine.lt/api/scrapers`).
+- `deploy.sh` takes its server only from `DEPLOY_SERVER` (user@host), with no
+  default, and stops if the server's `.env` would put this app on
+  superakcijos' Redis DBs 0/1 or bare Meilisearch indexes. (Until 2026-10-13
+  it also exited on its first line; removed for the launch.)
 - Meilisearch is this Sail stack's own container. The SSH tunnel to the
   superakcijos server was removed.
 - Local Sail uses its own project name (`COMPOSE_PROJECT_NAME=vaistines`),
@@ -332,7 +471,8 @@ the rest of the superakcijos leftovers.
   line first in any new copy.
 - No analytics: the GA4 (`G-WD8DH3ZRD3`) and Clarity (`v3dr99seco`) tags in the
   layout were superakcijos' accounts and were removed 2026-10-08 (owner: "kol
-  kas be analitikos").
+  kas be analitikos"). eVaistine's own GA4 (`G-B62M2HNEWJ`) added 2026-10-13,
+  see "Analytics" under "Legal".
 
 ### Ties removed 2026-10-08 (audit for superakcijos links)
 
@@ -435,6 +575,118 @@ What the site shows:
   descriptions. The 44 hits were all about price comparison or real product
   names. Product descriptions are empty for now; check them the same way once
   generated.
+
+## Launch checklist (2026-10-13)
+
+Owner's decisions: launch an MVP with only the blocking work; product quality
+(ailments, multi-EAN merge, Gintarinė EANs, name matching, €/vnt, meta title
+cut) comes after. Scrapers keep running on the owner's machine (home IP, the
+`dev` environment's schedule) and POST to production; **no token on
+`/api/scrapers*`** (owner: "nereikia tokenų scraperiams"), same as superakcijos.
+
+Done in code:
+- `SCRAPER_API_URL` (`services.scrapers.api_url`) is passed by
+  `ScraperRunner`, `FlyerScraperRunner` and `HoursScraperRunner` to node, so
+  `scrapers:run`, `flyers:scrape` and `hours:scrape` post wherever `.env`
+  says. `scrapers/flyers/_shared.js` used to hardcode
+  `http://localhost/api/scrapers/...`; it now reads the same variable as
+  `scrapers/lib/pharmacy.js` and `scrapers/hours/_shared.js`. With
+  `config:cache` on, the value comes from the cached config, not `.env`.
+- `deploy.sh`: first-line `exit 1` removed; new check in the remote script
+  (Redis DBs not 0/1, `MEILISEARCH_INDEX_PREFIX` set) before `optimize:clear`.
+- `deploy/env.production.example`: the production `.env` template.
+- Logs: the `daily` and `flyer` channels keep `LOG_DAILY_DAYS` (default 30)
+  days, as the privacy policy says; production uses `LOG_CHANNEL=daily`.
+- Default `og:image` is `public/assets/og-default.png` (1200x630, built by
+  `scripts/brand/render-og.cjs`); the SVG logo it used before isn't shown by
+  Facebook or Messenger.
+- Checked locally: 308 tests pass; `robots.txt` and `sitemap.xml` for host
+  `evaistine.lt` list `https://evaistine.lt/...`; unknown URL gives 404.
+
+Server (one time, on the superakcijos server):
+1. DNS `evaistine.lt` + `www`, SSL certificate.
+2. `/var/www/evaistine` owned by `deploy` (group `www-data`, setgid on
+   `storage`, `bootstrap/cache`), nginx `sites-available/evaistine` from
+   `deploy/nginx-public-domain.conf`, `nginx -t`, reload.
+3. MySQL database `vaistines` with its own user.
+4. `.env` from `deploy/env.production.example` (new `APP_KEY`).
+5. Meilisearch key limited to `evaistine_*`.
+6. Supervisor `deploy/supervisor-evaistine-*.conf`; cron
+   `* * * * * cd /var/www/evaistine && php artisan schedule:run`.
+7. Imagick + Ghostscript for leaflet pages (`flyers:process-pages` runs there).
+8. nginx logrotate 30 days for `evaistine-*.log`.
+9. Room for both apps (RAM, disk, two sets of queue workers).
+10. `DEPLOY_SERVER=deploy@host ./deploy.sh`, then the first full scrape from
+    the owner's machine with `SCRAPER_API_URL=https://evaistine.lt/api/scrapers`
+    in its `.env`, then on the server `discounts:process`,
+    `products:index-meilisearch`, `discounts:index-meilisearch`,
+    `keywords:map-products`, `keywords:refresh-counts`, `cache:clear-discounts`.
+11. Check superakcijos.lt still works and its Redis DBs 0/1 and indexes
+    `discounts`/`products` are untouched.
+
+Server setup done 2026-10-13 (server `deploy@84.247.186.143`, the superakcijos
+box; Cloudflare SSL "Flexible", so nginx listens on :80 only):
+- `deploy` needs a password for sudo. The one-time root part ran as a script
+  the owner started (`sudo bash /tmp/evaistine-setup/evaistine-root-setup.sh`):
+  `/var/www/evaistine` -> `deploy:www-data` 2775 (a 2025 placeholder
+  `index.html` vhost `evaistine.lt` was there; its file is kept in
+  `/root/evaistine-old/`), `/var/www/backups/evaistine`, MySQL database
+  `vaistines` + user `evaistine@localhost` (ALL on `vaistines.*`, PROCESS for
+  `mysqldump`), a Meilisearch key limited to `evaistine_*` (checked: 403 on
+  superakcijos' `products`), nginx `sites-available/evaistine` from
+  `deploy/nginx-public-domain.conf`, supervisor `evaistine-discounts`,
+  `evaistine-flyers` (2), `evaistine-flyers-gemini`. The owner added
+  `/etc/sudoers.d/evaistine-deploy` (`NOPASSWD: systemctl reload php8.4-fpm`)
+  for `deploy.sh`.
+- Production `.env` written from `deploy/env.production.example` with a new
+  `APP_KEY`, DB password and `INDEXNOW_KEY`; `OPENAI_API_KEY` and
+  `GEMINI_API_KEY` copied from superakcijos' `.env` (owner's choice, shared
+  billing). Still empty: `MAIL_*`, Google/Facebook OAuth.
+- Cron line `* * * * * cd /var/www/evaistine && php artisan schedule:run` added
+  to `deploy`'s crontab (backup of the old one: `~/crontab-backup-2026-10-13.txt`).
+- First `DEPLOY_SERVER=deploy@84.247.186.143 ./deploy.sh` (with
+  `deploy_key` copied from the superakcijos repo into the repo root for the
+  run, gitignored, removed afterwards): all migrations ran, site 200 on
+  https://evaistine.lt. Checked after: superakcijos.lt 200, its Redis DBs 0/1
+  not flushed (eVaistine in 2/3), its Meilisearch index untouched.
+
+- First data (owner's choice, instead of a 5-hour re-scrape into prod): the
+  local DB after the 2026-10-13 full scrape, `mysqldump` without the data of
+  `discount_temp`, `search_results`, `scraper_runs`, `failed_jobs`, `cache*`
+  (schema only; local `users` was empty anyway), imported as `evaistine`;
+  `storage/app/public/` (leaflet pages, 172 MB) rsynced. Then on the server
+  `products:index-meilisearch`, `discounts:index-meilisearch` (indexes
+  `evaistine_products`, `evaistine_discounts`), `keywords:map-products`,
+  `keywords:refresh-counts`, `deal-pool:refresh`, `cache:clear-discounts`,
+  `CacheVersion::bump('flyers')`, `cache:warm --type=page-html`. Live:
+  54 407 products, 72 622 offers, 7 leaflets, 2 072 locations, 50 keyword pages.
+- From now on new data comes from the owner's machine: its `.env` needs
+  `SCRAPER_API_URL=https://evaistine.lt/api/scrapers`, and the `dev`
+  schedule (`scrapers:run --all` 03:00, `flyers:scrape --all` 05:00) must run
+  there. The current offers end 2026-10-18.
+
+Owner (no code): own OpenAI/Gemini/Meilisearch keys; Google and Facebook
+OAuth apps for `https://evaistine.lt`; SMTP for `noreply@evaistine.lt`
+(SPF/DKIM); lawyer review of the legal texts; recheck the VVKT list; after
+launch GSC property, sitemap and `INDEXNOW_KEY`.
+
+Noticed, not changed: `/naujienos` is in the sitemap but has no posts since
+the grocery posts were deleted.
+
+### Analytics (2026-10-13)
+
+GA4 `G-B62M2HNEWJ` (owner's property) from `GA_MEASUREMENT_ID`
+(`services.google_analytics.id`), printed by the layout only when
+`APP_ENV=production`. Google Consent Mode: `analytics_storage` defaults to
+denied, so GA sets no cookies and sends only cookieless pings (checked on the
+live site: no `_ga*` cookies and `gcs=G100` before consent, `_ga` and
+`_ga_B62M2HNEWJ` after "Leisti visus"). `<x-cookie-consent>` is back, shown only
+when GA is on: "Leisti visus" grants, "Tik būtini" denies and deletes `_ga*`
+cookies; the choice is the `cookie_consent` cookie (1 year), read in the
+browser so cached page HTML is the same for everyone. Footer link "Slapukų
+nustatymai" reopens it. The banner text no longer says that using the site
+means consent. Privacy policy section 5 lists `cookie_consent` and the GA
+cookies, section 4 names Google Analytics; dated 2026-10-13. No Clarity.
 
 ## Roadmap (estimate from 2026-10-06, days of work with Claude)
 

@@ -26,8 +26,8 @@ const ROOTS = [
     { key: 'visi-vaistai', name: 'Nereceptiniai vaistai', query: '?attrib[8]=2' },
     { key: 'vitaminai-maisto-papildai', name: 'Vitaminai ir maisto papildai' },
     { key: 'kosmetika-higiena', name: 'Kosmetika ir higiena', mixed: true },
-    { key: 'medicinos-prekes', name: 'Medicinos prekės' },
-    { key: 'arabatos-ir-vaistazoles', name: 'Arbatos ir vaistažolės' },
+    { key: 'medicinos-prekes-iranga', name: 'Medicinos prekės' },
+    { key: 'arbatos-vaistazoles', name: 'Arbatos ir vaistažolės' },
     { key: 'meiles-prekes', name: 'Meilės prekės' },
     { key: 'kitos-prekes', name: 'Kitos prekės', mixed: true },
 ];
@@ -51,8 +51,10 @@ const menuSubcategories = (page, root) => {
     return [...unique].map(([path, name]) => ({ path, name }));
 };
 
-// Fallback for roots without a menu entry (Medicinos prekės, Arbatos):
-// links under /{root}/ on the root page itself.
+// Fallback for roots without a menu entry: links under /{root}/ on the root
+// page itself. (Medicinos prekės and Arbatos used it until the shop moved
+// them to /medicinos-prekes-iranga and /arbatos-vaistazoles with menu
+// entries, 2026-10-13; the old URLs 404.)
 const prefixSubcategories = (page, root) => {
     const prefix = `/${root}/`;
     const links = page.querySelectorAll('a[href]')

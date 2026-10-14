@@ -8,6 +8,11 @@ import path from 'path';
 
 puppeteer.use(StealthPlugin());
 
+// Where flyers are POSTed: this app's local API by default; set
+// SCRAPER_API_URL (same variable as scrapers/lib/pharmacy.js) to send them
+// to production instead.
+const API_URL = process.env.SCRAPER_API_URL || 'http://localhost/api/scrapers';
+
 export const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 export async function launchBrowser() {
@@ -246,7 +251,7 @@ export async function extractCoverInfo({ store, imageBuffer, filename = 'cover.j
     form.append('image', new Blob([imageBuffer]), filename);
 
     try {
-        const response = await fetch('http://localhost/api/scrapers/extract-flyer-info', {
+        const response = await fetch(`${API_URL}/extract-flyer-info`, {
             method: 'POST',
             body: form,
         });
@@ -317,7 +322,7 @@ export async function submitFlyer({
         return { skipped: true, reason: 'pdf_too_large' };
     }
 
-    const response = await fetch('http://localhost/api/scrapers/store-flyer', {
+    const response = await fetch(`${API_URL}/store-flyer`, {
         method: 'POST',
         body: form,
     });

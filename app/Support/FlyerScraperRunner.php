@@ -40,7 +40,7 @@ class FlyerScraperRunner
 
         Log::channel('flyer')->info("FlyerScraperRunner[{$store}]: starting node scrapers/flyers/{$file}");
 
-        $process = new Process(['node', "scrapers/flyers/{$file}"], base_path());
+        $process = new Process(['node', "scrapers/flyers/{$file}"], base_path(), array_filter(['SCRAPER_API_URL' => config('services.scrapers.api_url')]));
         $process->setTimeout(10800);
 
         $stderr = '';

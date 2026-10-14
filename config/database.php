@@ -58,6 +58,13 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // The date columns are TIMESTAMPs, which MySQL stores in UTC and
+            // converts with the session time zone. Local Sail MySQL runs in UTC,
+            // the production server in CEST, so the same "2026-10-12 00:00"
+            // meant two different instants: the imported local data read back
+            // as 02:00 in production and every week's offer was created twice
+            // (2026-10-13). Pin the session to UTC everywhere.
+            'timezone' => env('DB_TIMEZONE', '+00:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
