@@ -27,14 +27,18 @@ class Kernel extends ConsoleKernel
         // that never releases the lock can't wedge this command for the
         // default 24h — these are exactly the flaky, network-dependent
         // processes prone to hanging, per this repo's own scraper notes).
-        // Gintarinė's barcodes, slowly, from its product pages (429s during
-        // the main scrape). 140 min budget, so it is done before 03:00 and the
-        // two never hit gintarine.lt at the same time.
-        $schedule->command('scrapers:fetch-eans --minutes=140')
-            ->dailyAt('00:30')
-            ->withoutOverlapping(180)
-            ->runInBackground()
-            ->environments(['dev']);
+        // Product pages, slowly, one pharmacy per process (different hosts,
+        // so they run side by side): barcodes for the EAN caches (Gintarinė's
+        // main scrape fetches none, 429s) and the text for the product facts
+        // (docs/product-facts.md). 140 min budget, done before the 03:00 main
+        // scrape so the two never hit the same site together.
+        foreach (['gintarine-vaistine', 'apotheka', 'mano-vaistine'] as $pharmacy) {
+            $schedule->command("scrapers:fetch-product-pages {$pharmacy} --minutes=140")
+                ->dailyAt('00:30')
+                ->withoutOverlapping(180)
+                ->runInBackground()
+                ->environments(['dev']);
+        }
 
         $schedule->command('scrapers:run --all')
             ->dailyAt('03:00')
@@ -179,6 +183,27 @@ class Kernel extends ConsoleKernel
         $schedule->command('cache:warm')
             ->dailyAt('05:00')
             ->withoutOverlapping(60);
+
+        // Product facts (docs/product-facts.md). Extraction (a language
+        // model, cost logged per run) and the push to production run on the
+        // local machine, after the nightly product pages (00:30-02:50);
+        // production only links the rows it receives to its products.
+        $schedule->command('product-facts:extract --limit=300')
+            ->everyTenMinutes()
+            ->withoutOverlapping(30)
+            ->runInBackground()
+            ->environments(['dev']);
+
+        $schedule->command('product-facts:push')
+            ->everyTenMinutes()
+            ->withoutOverlapping(30)
+            ->runInBackground()
+            ->environments(['dev']);
+
+        $schedule->command('product-facts:link')
+            ->everyThirtyMinutes()
+            ->withoutOverlapping(30)
+            ->environments(['production']);
 
         // Store working hours change rarely (unlike flyers/discounts), so
         // weekly is plenty. No file-transfer complexity here (unlike

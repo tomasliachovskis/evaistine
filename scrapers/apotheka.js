@@ -1,5 +1,5 @@
 import { parse } from 'node-html-parser';
-import { buildRow, createPoster, currentWeek, fetchText, loadEanCache, MAX_PAGES, onlySelected, parsePrice, sleep, validEan } from './lib/pharmacy.js';
+import { buildRow, createPoster, currentWeek, fetchText, loadEanCache, MAX_PAGES, onlySelected, parsePrice, saveUrlList, sleep, validEan } from './lib/pharmacy.js';
 
 const BASE_URL = 'https://www.apotheka.lt';
 const STORE = 'Apotheka';
@@ -156,5 +156,6 @@ const fetchEan = async (url) => {
     }
 
     eans.save();
+    saveUrlList('apotheka', seen);
     poster.summary(`Site reports ${expectedTotal} across the roots; ${eans.fetched()} product pages fetched for EANs, ${eans.size()} in the cache.`);
 })();

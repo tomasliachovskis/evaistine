@@ -1,5 +1,5 @@
 import { parse } from 'node-html-parser';
-import { buildRow, createPoster, currentWeek, fetchText, loadEanCache, MAX_PAGES, onlySelected, parsePrice, sleep, validEan } from './lib/pharmacy.js';
+import { buildRow, createPoster, currentWeek, fetchText, loadEanCache, MAX_PAGES, onlySelected, parsePrice, saveUrlList, sleep, validEan } from './lib/pharmacy.js';
 
 const BASE_URL = 'https://www.manovaistine.lt';
 const STORE = 'Mano vaistinė';
@@ -170,5 +170,6 @@ const fetchEan = async (url) => {
     }
 
     eans.save();
+    saveUrlList('mano-vaistine', seen);
     poster.summary(`${eans.fetched()} product pages fetched for EANs, ${eans.size()} in the cache.`);
 })();

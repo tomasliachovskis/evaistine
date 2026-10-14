@@ -14,5 +14,7 @@ Route::post('/scrapers/check-discount', [ScrapingController::class, 'checkValidD
 Route::post('/scrapers/store-flyer', [ScrapingController::class, 'storeFlyer']);
 Route::post('/scrapers/extract-flyer-info', [ScrapingController::class, 'extractFlyerInfo']);
 Route::post('/scrapers/store-locations', [ScrapingController::class, 'storeLocations']);
+Route::post('/scrapers/product-facts', [ScrapingController::class, 'storeProductFacts']);
+Route::get('/scrapers/product-facts/pending/{storeName}', [ScrapingController::class, 'pendingProductFacts']);
 
 Route::get('/store-locations/{slug}', [ProductController::class, 'getStoreLocations']);

@@ -100,8 +100,8 @@ const readCard = (form) => {
     const poster = createPoster(STORE);
     // The barcode is only on the product page, and fetching those pages here
     // got 429s that also cost listing pages (64 lost on 2026-10-13). They are
-    // fetched by scrapers/gintarine-eans.js on its own slow nightly run
-    // (scrapers:fetch-eans, 00:30); this run only reads that cache.
+    // fetched by scrapers/product-pages.js on its own slow nightly run
+    // (scrapers:fetch-product-pages, 00:30); this run only reads that cache.
     const eans = loadEanCache('gintarine-vaistine', { limit: 0 });
     const seen = new Set();
     const productUrls = new Set();
@@ -144,5 +144,5 @@ const readCard = (form) => {
 
     eans.save();
     saveUrlList('gintarine-vaistine', productUrls);
-    poster.summary(`${eans.size()} EANs in the cache (filled by gintarine-eans.js).`);
+    poster.summary(`${eans.size()} EANs in the cache (filled by product-pages.js).`);
 })();

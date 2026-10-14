@@ -25,7 +25,8 @@ use App\Support\ProductPageMeta;
     }
 
     $hasOffers = ! $isNoActivePromotion && count($offers) > 0;
-    $hasAbout = $product && !empty(trim((string) ($product['description'] ?? '')));
+    $hasDescription = $product && !empty(trim((string) ($product['description'] ?? '')));
+    $hasAbout = $hasDescription || !empty($productFacts);
     $hasSimilar = !empty($similar);
     $hasFaq = count($faqItems ?? []) > 0;
 
@@ -403,7 +404,12 @@ use App\Support\ProductPageMeta;
             <section id="about" class="border-t border-gray-200 bg-white py-6 sm:py-8">
                 <div class="base-container max-w-3xl">
                     <h2 class="mb-3 text-lg font-bold text-gray-900">Apie prekę</h2>
-                    <p class="whitespace-pre-line text-sm leading-relaxed text-gray-600">{{ $product['description'] }}</p>
+                    @if ($hasDescription)
+                        <p class="whitespace-pre-line text-sm leading-relaxed text-gray-600">{{ $product['description'] }}</p>
+                    @endif
+                    @if (!empty($productFacts))
+                        <x-product-facts :facts="$productFacts" :class="$hasDescription ? 'mt-4' : ''" />
+                    @endif
                 </div>
             </section>
         @endif

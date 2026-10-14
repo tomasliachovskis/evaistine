@@ -121,7 +121,7 @@ the DB:
 | Pharmacy | Source | EAN | Note |
 |---|---|---|---|
 | Eurovaistinė | JSON `api.eurovaistine.lt/eshop-api/luigi/search/api/taxon/render` | ~30 %, from `sku` | 12-digit `sku` is the EAN-13 without its check digit; 6–7 digits are internal codes |
-| Gintarinė | HTML, first-level categories, 20 a page | product page (`itemprop="gtin"`), fetched by its own slow nightly run (`scrapers:fetch-eans`, see below) | rate-limits by User-Agent (429 for ~1 h after parallel requests) |
+| Gintarinė | HTML, first-level categories, 20 a page | product page (`itemprop="gtin"`), fetched by its own slow nightly run (`scrapers:fetch-product-pages`, see below) | rate-limits by User-Agent (429 for ~1 h after parallel requests) |
 | Camelia | JSON `api.camelia.lt/api/v2/shop/search/products` | ~97 % | `prescriptionMedicine` flag, loyalty price = `card` |
 | Benu | Luigi's Box `live.luigisbox.com/search`, tracker `232949-269214` | ~90 % | one main category per query (10 000-hit cap), `drugType` RX skipped |
 | Apotheka | HTML (Magento, GraphQL off), 34 a page, `?cat=` subcategories | product page JSON-LD, cached | |
@@ -158,7 +158,7 @@ Production gets its data from the owner's Mac (owner's decision; no token on
 - The Sail container now runs the scheduler: `[program:scheduler]`
   (`artisan schedule:work`) in `docker/8.2/supervisord.conf`, mounted by
   `docker-compose.yml` so it applies on `sail up -d` without a rebuild. The
-  `dev`-only jobs: `scrapers:fetch-eans` 00:30, `scrapers:run --all` 03:00
+  `dev`-only jobs: `scrapers:fetch-product-pages` 00:30 (Gintarinė, Apotheka, Mano vaistinė), `scrapers:run --all` 03:00
   (about 5 hours, one pharmacy after another), `scrapers:retry-failed`
   every 15 min, `flyers:scrape --all` 05:00, `hours:scrape --all` Mondays
   06:00. The Mac must be on and Docker running at those times. Nothing for
@@ -235,8 +235,10 @@ scrape got 429s that also cost listing pages. Now:
   (`loadEanCache(slug, { limit: 0 })`) and saves the product URLs it saw to
   `storage/app/scrapers/urls-gintarine-vaistine.json` (full runs only).
 - `scrapers/gintarine-eans.js` (`sail artisan scrapers:fetch-eans
-  --minutes=140`, nightly 00:30, done before 03:00) works through the URLs
-  without a cached EAN: one page every 4–7 s, a 429 waits (Retry-After, else
+  --minutes=140`, nightly 00:30, done before 03:00; since 2026-10-14
+  `scrapers/product-pages.js` / `scrapers:fetch-product-pages`, which also
+  takes the page text for the product facts, docs/product-facts.md) works
+  through the URLs without a cached EAN: one page every 4–7 s, a 429 waits (Retry-After, else
   2/4/8 min), five in a row end the night. About 660 pages an hour, so the
   catalog (17 680 left on 2026-10-13) takes about 12 nights; then only new
   products. The first URL list was taken from that day's `discount_temp`.

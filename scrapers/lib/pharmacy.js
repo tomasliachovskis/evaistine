@@ -186,7 +186,7 @@ const SCRAPER_STORAGE = path.resolve(path.dirname(fileURLToPath(import.meta.url)
 
 // The product URLs a scraper saw on its last full run, in
 // storage/app/scrapers/urls-{slug}.json, for a separate EAN run
-// (scrapers/gintarine-eans.js) to work through.
+// (scrapers/product-pages.js) to work through.
 export const saveUrlList = (slug, urls) => {
     if (DRY_RUN || MAX_PAGES !== Infinity || ONLY.length) {
         return; // a partial run would shrink the list
@@ -212,7 +212,7 @@ export const loadUrlList = (slug) => {
 // (default 1500): a large catalog fills its cache over a few nightly runs, and
 // rows posted before then go out without an EAN and match by name. A scraper
 // can pass its own `limit` (Gintarinė: 0, its pages are fetched by
-// scrapers/gintarine-eans.js on a slow nightly run instead).
+// scrapers/product-pages.js on a slow nightly run instead).
 export const EAN_LIMIT = Number(process.env.SCRAPER_EAN_LIMIT ?? 1500);
 export const loadEanCache = (slug, { limit = EAN_LIMIT } = {}) => {
     const dir = SCRAPER_STORAGE;

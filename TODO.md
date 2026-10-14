@@ -43,8 +43,12 @@ scrape. In order of importance:
 - [ ] **Recheck the VVKT list** of pharmacies allowed to sell remotely.
 
 **Quality, after launch** (details further down in this file)
-- [ ] Gintarinė EANs: nightly `scrapers:fetch-eans` since 2026-10-13, about
-      12 nights to cover the catalog; check `ean-gintarine-vaistine.json` grows.
+- [ ] Gintarinė EANs: nightly `scrapers:fetch-product-pages` (was
+      `scrapers:fetch-eans`, 2026-10-13), about 12 nights to cover the
+      catalog; check `ean-gintarine-vaistine.json` grows.
+- [ ] Product facts ("Apie prekę", docs/product-facts.md): Gintarinė,
+      Apotheka, Mano vaistinė live 2026-10-14; next Eurovaistinė, Camelia,
+      VVKT leaflets, then superakcijos (Rimi, LastMile).
 - [ ] Multiple EANs per product + merging duplicates; name matching without
       EAN; €/vnt unit price; product meta title cut; ailment pages; keyword
       pages, second wave.
@@ -158,7 +162,7 @@ The phased roadmap with time estimates is in `docs/evaistine.md`
       2+ pharmacies; Mano vaistinė root URLs fixed, unit_price overflow fixed
       (`docs/evaistine.md` "Second full scrape").
 - [ ] **Scraping follow-ups**: Gintarinė's EANs now come from the slow
-      nightly `scrapers:fetch-eans` (2026-10-13, about 12 nights for the
+      nightly `scrapers:fetch-product-pages` (2026-10-13, about 12 nights for the
       catalog). Products without EAN still need name matching (see
       "Cross-pharmacy matching"); 9 759 of 54 407 match across pharmacies.
       Category sizes: every root is over ~2000 except Ortopedija (484) and

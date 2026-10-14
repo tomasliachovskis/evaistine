@@ -446,8 +446,13 @@ class AkcijosController extends Controller
             ? app(\App\Services\KeywordPageService::class)->relatedPagesForProduct($primaryDeal['product']['id'] ?? null)
             : [];
 
+        $productFacts = isset($primaryDeal['product']['id'])
+            ? \App\Support\ProductFacts::forProduct((int) $primaryDeal['product']['id'])
+            : null;
+
         return view('akcijos.product', [
             'deals' => $deals,
+            'productFacts' => $productFacts,
             'primaryDeal' => $primaryDeal,
             'offers' => $offers,
             'bestOffer' => $bestOffer,

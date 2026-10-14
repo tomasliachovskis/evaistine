@@ -7,14 +7,17 @@ use App\Models\DiscountTemp;
 use App\Models\Discount;
 use App\Models\Store;
 use App\Models\StoreFlyer;
+use App\Models\ProductFact;
 use App\Models\StoreLocation;
 use App\Services\FlyerCoverInfoExtractor;
+use App\Services\ProductFactLinker;
 use App\Services\StoreFlyerSlugBuilder;
 use App\Services\StoreFlyerTitleBuilder;
 use App\Support\FlyerStorage;
 use App\Support\WorkingHoursParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -363,6 +366,125 @@ class ScrapingController extends Controller
         }
 
         return response()->json($result);
+    }
+
+    // What a product page says about the product (docs/product-facts.md).
+    // Locally scrapers/product-pages.js posts the page (text, attributes,
+    // name, breadcrumb); a changed page clears the extracted facts so
+    // product-facts:extract reads it again. Production gets the same rows
+    // with `facts` from product-facts:push and only stores and links them.
+    public function storeProductFacts(Request $request, ProductFactLinker $linker)
+    {
+        $validated = $request->validate([
+            'store' => 'required|string',
+            'pages' => 'required|array|max:200',
+            'pages.*.product_url' => 'required|string|max:2048',
+            'pages.*.text' => 'nullable|string|max:20000',
+            'pages.*.attributes' => 'nullable|array',
+            'pages.*.name' => 'nullable|string|max:500',
+            'pages.*.category' => 'nullable|string|max:500',
+            'pages.*.facts' => 'nullable|array',
+            'pages.*.extracted_with' => 'nullable|string|max:64',
+        ]);
+
+        $store = Store::whereRaw('LOWER(name) = ?', [mb_strtolower($validated['store'])])->first();
+        if (!$store) {
+            return response()->json(['error' => 'Store not found'], 404);
+        }
+
+        $pages = collect($validated['pages']);
+        $productIds = $linker->productIdsFor($store->id, $pages->pluck('product_url')->all());
+        $created = 0;
+        $changed = 0;
+
+        foreach ($pages as $page) {
+            $text = trim((string) ($page['text'] ?? ''));
+            $attributes = array_filter(
+                array_map(fn ($v) => is_scalar($v) ? mb_substr(trim((string) $v), 0, 500) : null, $page['attributes'] ?? []),
+                fn ($v) => $v !== null && $v !== ''
+            );
+            $hash = sha1($text . "\n" . json_encode($attributes, JSON_UNESCAPED_UNICODE));
+            $fact = ProductFact::firstOrNew(['store_id' => $store->id, 'url_hash' => sha1($page['product_url'])]);
+
+            if (!$fact->exists) {
+                $created++;
+            } elseif ($fact->source_hash !== $hash) {
+                $changed++;
+            }
+            if (!empty($page['facts'])) {
+                $fact->fill(['facts' => $page['facts'], 'extracted_with' => $page['extracted_with'] ?? null, 'extracted_at' => now()]);
+            } elseif ($fact->source_hash !== $hash) {
+                $fact->fill(['facts' => null, 'extracted_at' => null, 'extracted_with' => null]);
+            }
+
+            $fact->fill([
+                'product_url' => $page['product_url'],
+                'product_id' => $productIds[$page['product_url']] ?? $fact->product_id,
+                'page_name' => $page['name'] ?? $fact->page_name,
+                'page_category' => $page['category'] ?? $fact->page_category,
+                'source_text' => $text !== '' ? $text : null,
+                'attributes' => $attributes ?: null,
+                'source_hash' => $hash,
+                'fetched_at' => now(),
+            ])->save();
+        }
+
+        return response()->json(['store' => $store->name, 'received' => $pages->count(), 'created' => $created, 'changed' => $changed]);
+    }
+
+    // Which of this store's product pages production still needs facts for
+    // (scrapers/product-pages.js asks every night, so the local run works on
+    // what the live site actually lists). Each page is tried once (owner,
+    // 2026-10-14): not listed are pages already tried for this store (any
+    // product_facts row, even one that gave nothing) and offers whose product
+    // already has facts from any pharmacy. Products with the most price
+    // history (discount_histories rows, any pharmacy) come first (owner,
+    // 2026-10-14): those are the ones people look at. Read-only. See
+    // docs/product-facts.md.
+    public function pendingProductFacts(Request $request, string $storeName)
+    {
+        $store = Store::whereRaw('LOWER(name) = ?', [mb_strtolower($storeName)])->first();
+        if (!$store) {
+            return response()->json(['error' => 'Store not found'], 404);
+        }
+
+        $offers = Discount::query()
+            ->where('store_id', $store->id)
+            ->where(fn ($q) => $q->whereNull('end_at')->orWhere('end_at', '>=', now()->startOfDay()))
+            ->whereNotNull('product_url')
+            ->select(['product_url', 'product_id'])
+            ->distinct()
+            ->get();
+
+        $tried = ProductFact::where('store_id', $store->id)->pluck('url_hash')->flip();
+        $products = $offers->pluck('product_id')->filter()->unique();
+        $productsWithFacts = ProductFact::query()
+            ->whereIn('product_id', $products)
+            ->whereNotNull('facts')
+            ->whereRaw('JSON_LENGTH(facts) > 1')
+            ->pluck('product_id')
+            ->flip();
+
+        $pendingOffers = $offers
+            ->reject(fn ($o) => isset($tried[sha1($o->product_url)]) || isset($productsWithFacts[$o->product_id]));
+        $history = $pendingOffers->isEmpty() ? collect() : DB::table('discount_histories')
+            ->whereIn('product_id', $pendingOffers->pluck('product_id')->filter()->unique())
+            ->groupBy('product_id')
+            ->pluck(DB::raw('COUNT(*)'), 'product_id');
+        $pending = $pendingOffers
+            ->sortByDesc(fn ($o) => (int) ($history[$o->product_id] ?? 0))
+            ->pluck('product_url')
+            ->unique()
+            ->values();
+
+        return response()->json([
+            'store' => $store->name,
+            'active_offers' => $offers->count(),
+            'products' => $products->count(),
+            'products_with_facts' => $products->filter(fn ($id) => isset($productsWithFacts[$id]))->count(),
+            'pending' => $pending->count(),
+            'urls' => $pending,
+        ]);
     }
 
     public function storeLocations(Request $request)
