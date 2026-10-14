@@ -197,6 +197,15 @@ the cost is output tokens, which no cache covers, so it would save under
 - Gemini Batch API built (migration `2026_10_15_120000_create_product_fact_batches_table`,
   needed in production too, for the same schema). Night: product pages 18:30-23:30,
   batch submit 23:40, collect every 15 min, push every 10 min.
+- Deployed 2026-10-14 (commit `6dec5ff`, production migration ran) and
+  checked end to end the same day: 5 local rows reset ->
+  `batch-submit --model=gemini-3.5-flash-lite --limit=5` -> job done in
+  ~1.5 min -> `batch-collect` "5 extracted, 0 failed", 11 123/1 166 tokens,
+  $0.0031 -> `product-facts:push` "5 pushed" -> production rows updated and
+  linked, product page shows "Apie prekę" / "Verta žinoti" / "Sudėtis".
+  Facts matched the earlier single-call answers (2 fields worded slightly
+  differently). Not tested yet: a full 5 000-page file (~25 MB upload) and
+  the scheduled 23:40 run.
 - Check after the first batch night: `product_fact_batches` (state, tokens),
   the `product-facts:batch-submit` / `batch-collect` lines in the local
   laravel log, `product_facts` counts in production.
