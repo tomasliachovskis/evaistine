@@ -78,6 +78,9 @@ return [
     // https://evaistine.lt/api/scrapers; the runners pass it to node.
     'scrapers' => [
         'api_url' => env('SCRAPER_API_URL'),
+        // No heavy local jobs start in these hours (App\Support\QuietHours,
+        // dev only). Empty = no limit.
+        'quiet_hours' => env('SCRAPER_QUIET_HOURS', '08:00-18:00'),
     ],
 
     // GA4 measurement ID. The tag is printed only in production, with

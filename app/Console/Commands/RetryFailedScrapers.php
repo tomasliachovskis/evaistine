@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ScraperRun;
 use App\Support\ScraperRunner;
+use App\Support\QuietHours;
 use Illuminate\Console\Command;
 
 class RetryFailedScrapers extends Command
@@ -14,6 +15,10 @@ class RetryFailedScrapers extends Command
 
     public function handle(ScraperRunner $runner): int
     {
+        if (QuietHours::active()) {
+            return 0;
+        }
+
         if ($runner->isAnotherRunInProgress()) {
             $this->info('A scraper run is already in progress, skipping this check.');
 

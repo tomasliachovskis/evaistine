@@ -158,9 +158,11 @@ Production gets its data from the owner's Mac (owner's decision; no token on
 - The Sail container now runs the scheduler: `[program:scheduler]`
   (`artisan schedule:work`) in `docker/8.2/supervisord.conf`, mounted by
   `docker-compose.yml` so it applies on `sail up -d` without a rebuild. The
-  `dev`-only jobs: `scrapers:fetch-product-pages` 00:30 (Gintarinė, Apotheka, Mano vaistinė), `scrapers:run --all` 03:00
-  (about 5 hours, one pharmacy after another), `scrapers:retry-failed`
-  every 15 min, `flyers:scrape --all` 05:00, `hours:scrape --all` Mondays
+  `dev`-only jobs (since 2026-10-14 only 18:00–08:00, the owner works on the
+  Mac 08:00–18:00: `App\Support\QuietHours`, `SCRAPER_QUIET_HOURS`, long runs
+  stop themselves at 08:00): `scrapers:fetch-product-pages` 18:30 (Gintarinė, Apotheka, Mano vaistinė, 300 min), `scrapers:run --all` 00:00 (was 03:00)
+  (about 4 hours, one pharmacy after another), `scrapers:retry-failed`
+  every 15 min outside 08:00–18:00, `flyers:scrape --all` 05:00, `hours:scrape --all` Mondays
   06:00. The Mac must be on and Docker running at those times. Nothing for
   this runs outside the repo (no crontab, no launchd job): the app, MySQL,
   Redis and Meilisearch containers have `restart: unless-stopped` in

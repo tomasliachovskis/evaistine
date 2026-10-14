@@ -27,27 +27,34 @@ class Kernel extends ConsoleKernel
         // that never releases the lock can't wedge this command for the
         // default 24h — these are exactly the flaky, network-dependent
         // processes prone to hanging, per this repo's own scraper notes).
+        // Night window: the owner works on the Mac 08:00-18:00
+        // (App\Support\QuietHours), so everything heavy runs 18:30-08:00.
         // Product pages, slowly, one pharmacy per process (different hosts,
         // so they run side by side): barcodes for the EAN caches (Gintarinė's
         // main scrape fetches none, 429s) and the text for the product facts
-        // (docs/product-facts.md). 140 min budget, done before the 03:00 main
-        // scrape so the two never hit the same site together.
+        // (docs/product-facts.md). 300 min budget, done by 23:30, before the
+        // main scrape hits the same sites.
         foreach (['gintarine-vaistine', 'apotheka', 'mano-vaistine'] as $pharmacy) {
-            $schedule->command("scrapers:fetch-product-pages {$pharmacy} --minutes=140")
-                ->dailyAt('00:30')
-                ->withoutOverlapping(180)
+            $schedule->command("scrapers:fetch-product-pages {$pharmacy} --minutes=300")
+                ->dailyAt('18:30')
+                ->withoutOverlapping(330)
                 ->runInBackground()
                 ->environments(['dev']);
         }
 
+        // About 4 hours for all 13 pharmacies (2026-10-14: 03:00-06:55);
+        // from midnight it ends well before 08:00, and stops itself there.
         $schedule->command('scrapers:run --all')
-            ->dailyAt('03:00')
+            ->dailyAt('00:00')
             ->withoutOverlapping(180)
             ->runInBackground()
             ->environments(['dev']);
 
+        // Not in the owner's working hours (App\Support\QuietHours,
+        // 08:00-18:00): the long runs also stop themselves at 08:00.
         $schedule->command('scrapers:retry-failed')
             ->everyFifteenMinutes()
+            ->unlessBetween('8:00', '18:00')
             ->withoutOverlapping(10)
             ->runInBackground()
             ->environments(['dev']);
@@ -190,6 +197,7 @@ class Kernel extends ConsoleKernel
         // production only links the rows it receives to its products.
         $schedule->command('product-facts:extract --limit=300')
             ->everyTenMinutes()
+            ->unlessBetween('8:00', '18:00')
             ->withoutOverlapping(30)
             ->runInBackground()
             ->environments(['dev']);

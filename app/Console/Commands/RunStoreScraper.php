@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ScraperRun;
 use App\Support\ScraperRunner;
+use App\Support\QuietHours;
 use Illuminate\Console\Command;
 
 class RunStoreScraper extends Command
@@ -18,6 +19,12 @@ class RunStoreScraper extends Command
 
         if ($this->option('all')) {
             foreach ($stores as $store) {
+                // A night run that overruns stops at the owner's working hours.
+                if (QuietHours::active()) {
+                    $this->warn("Quiet hours (".config('services.scrapers.quiet_hours')."), stopping before {$store}.");
+                    \Illuminate\Support\Facades\Log::warning('scrapers:run --all stopped for quiet hours', ['next' => $store]);
+                    break;
+                }
                 $this->runOne($runner, $store);
             }
 

@@ -25,8 +25,9 @@ receives finished facts (owner, 2026-10-14: no collecting or model calls in
 production).
 
 1. **Pages (local)** – `scrapers/product-pages.js` (`sail artisan
-   scrapers:fetch-product-pages {store}`), nightly 00:30 for Gintarinė,
-   Apotheka and Mano vaistinė side by side, 140 min each. **The work list
+   scrapers:fetch-product-pages {store}`), nightly 18:30 for Gintarinė,
+   Apotheka and Mano vaistinė side by side, 300 min each (done by 23:30,
+   before the 00:00 main scrape hits the same sites). **The work list
    comes from production**: `GET /api/scrapers/product-facts/pending/{store}`
    returns the URLs of that store's active offers that were never tried for
    that store and whose product has no facts from any pharmacy, products with
@@ -64,8 +65,8 @@ production).
    changed page clears `facts`. `products.description` is not touched: the
    "Apie prekę" block is built from `product_facts.facts` when the page
    renders.
-3. **Extract (local)** – `product-facts:extract` (dev, every 10 min, 300 pages
-   a run) sends rows without facts to a language model
+3. **Extract (local)** – `product-facts:extract` (dev, every 10 min outside
+   08:00–18:00, 300 pages a run) sends rows without facts to a language model
    (`App\Services\ProductFactExtractor`; model in `config/product_facts.php` /
    `PRODUCT_FACTS_MODEL`, empty = off; `gemini-*` goes to Gemini, anything
    else to OpenAI). The page's own name and breadcrumb are the context, so no

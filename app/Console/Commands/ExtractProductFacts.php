@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ProductFact;
 use App\Services\ProductFactExtractor;
+use App\Support\QuietHours;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -23,6 +24,9 @@ class ExtractProductFacts extends Command
     public function handle(ProductFactExtractor $extractor): int
     {
         $model = $this->option('model') ?: config('product_facts.model');
+        if (QuietHours::active() && !$this->option('model')) {
+            return 0;
+        }
         if (!$model) {
             $this->info('No PRODUCT_FACTS_MODEL set, nothing extracted.');
 
@@ -45,6 +49,10 @@ class ExtractProductFacts extends Command
 
         $in = $out = $ok = $failed = 0;
         foreach ($rows as $row) {
+            if (QuietHours::active() && !$this->option('model')) {
+                $this->warn('Quiet hours, stopping.');
+                break;
+            }
             try {
                 $result = $extractor->extract($row, $model);
                 $row->update([
