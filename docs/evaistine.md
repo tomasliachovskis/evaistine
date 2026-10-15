@@ -174,6 +174,10 @@ Production gets its data from the owner's Mac (owner's decision; no token on
   (stderr tail kept on successful runs too, shown amber). A scraper is killed
   after 30 min without output or at its total timeout (or when its node process
   is killed); that store is marked failed and `--all` goes on with the next one.
+  `scrapers:fetch-product-pages` (still on the scheduler, 18:30) writes its
+  own `storage/logs/nightly/YYYY-MM-DD-product-pages-{pharmacy}.log` and adds
+  a WARN/FAILED block to `problems.log` when something went wrong (failed
+  pages, failed POSTs, 429 stop).
 - The Sail container still runs the scheduler for everything else:
   `[program:scheduler]` (`artisan schedule:work`) in
   `docker/8.2/supervisord.conf`, mounted by `docker-compose.yml` so it applies

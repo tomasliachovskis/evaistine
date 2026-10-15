@@ -92,7 +92,7 @@ const fetchPage = async (url) => {
         if (status === 429) {
             return { status, retryAfter: Number(error.response.headers['retry-after']) || null };
         }
-        console.log(`${url}: ${error.message}`);
+        console.warn(`${url}: ${error.message}`);
         return { failed: true };
     }
 };
@@ -107,7 +107,7 @@ const postPages = async (pages) => {
         await axios.post(`${LOCAL_API}/product-facts`, { store: config.store, pages }, { timeout: 60000 });
         return true;
     } catch (error) {
-        console.log(`POST product-facts failed: ${error.response?.status ?? ''} ${error.message}`);
+        console.warn(`POST product-facts failed: ${error.response?.status ?? ''} ${error.message}`);
         return false;
     }
 };
@@ -125,7 +125,7 @@ const postPages = async (pages) => {
             urls = data.urls.filter(url => !fetchedOn[url]);
             console.log(`${config.store} in production: ${data.active_offers} active offers, ${data.products_with_facts}/${data.products} products with facts, ${data.pending} pages pending, ${urls.length} not tried here yet.`);
         } catch (error) {
-            console.log(`Could not ask production which pages are pending (${error.response?.status ?? ''} ${error.message}); using the saved URL list.`);
+            console.warn(`Could not ask production which pages are pending (${error.response?.status ?? ''} ${error.message}); using the saved URL list.`);
         }
     }
     // [url, wantsFacts]: production's list first, then EAN-only pages.
@@ -164,7 +164,7 @@ const postPages = async (pages) => {
         if (result.status === 429) {
             in429Row++;
             if (in429Row >= MAX_429_IN_A_ROW) {
-                console.log(`${MAX_429_IN_A_ROW} 429s in a row, stopping for tonight.`);
+                console.warn(`${MAX_429_IN_A_ROW} 429s in a row, stopping for tonight.`);
                 break;
             }
             const waitSeconds = result.retryAfter ?? backoffMinutes * 60;
@@ -216,7 +216,8 @@ const postPages = async (pages) => {
         }
 
         if (postFailures >= 3) {
-            console.log('Three failed posts, stopping (is the local app running?).');
+            console.error('Three failed posts, stopping (is the local app running?).');
+            process.exitCode = 1;
             break;
         }
 
