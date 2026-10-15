@@ -38,7 +38,7 @@ const readSubcategories = (html) => {
             .filter(item => !SKIPPED_SUBCATEGORIES.includes(item.name))
             .sort((a, b) => THEME_SUBCATEGORIES.includes(a.name) - THEME_SUBCATEGORIES.includes(b.name));
     } catch (error) {
-        console.log(`Could not read the subcategory filter: ${error.message}`);
+        console.warn(`Could not read the subcategory filter: ${error.message}`);
         return [];
     }
 };
@@ -113,7 +113,7 @@ const fetchEan = async (url) => {
         const rootUrl = `${BASE_URL}/prekes/${root.key}`;
         const rootHtml = await fetchText(rootUrl);
         if (!rootHtml) {
-            console.log(`Giving up on ${root.key}.`);
+            console.warn(`Giving up on ${root.key}.`);
             continue;
         }
         expectedTotal += totalFound(parse(rootHtml));
@@ -131,7 +131,7 @@ const fetchEan = async (url) => {
             do {
                 const html = await fetchText(`${listing.url}${currentPage > 1 ? `${listing.url.includes('?') ? '&' : '?'}p=${currentPage}` : ''}`);
                 if (!html) {
-                    console.log(`Giving up on ${listing.url} page ${currentPage}.`);
+                    console.warn(`Giving up on ${listing.url} page ${currentPage}.`);
                     break;
                 }
                 const page = parse(html);

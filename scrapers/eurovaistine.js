@@ -89,7 +89,7 @@ const fetchListing = async (slug, page) => {
     for (const root of onlySelected(ROOTS)) {
         const first = await fetchListing(root, 1);
         if (!first) {
-            console.log(`Giving up on root ${root}.`);
+            console.warn(`Giving up on root ${root}.`);
             continue;
         }
         await sleep();
@@ -111,7 +111,7 @@ const fetchListing = async (slug, page) => {
             do {
                 const listing = await fetchListing(taxon.slug, currentPage);
                 if (!listing) {
-                    console.log(`Giving up on ${taxon.slug} page ${currentPage}.`);
+                    console.warn(`Giving up on ${taxon.slug} page ${currentPage}.`);
                     break;
                 }
                 pageCount = Math.min(listing.pagination.total_pages || 1, MAX_PAGES);

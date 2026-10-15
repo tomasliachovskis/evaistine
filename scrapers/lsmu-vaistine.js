@@ -75,7 +75,7 @@ const toRow = (item, category, dates) => {
         do {
             const html = await fetchText(currentPage > 1 ? `${url}?page=${currentPage}` : url);
             if (!html) {
-                console.log(`Giving up on ${url} page ${currentPage}.`);
+                console.warn(`Giving up on ${url} page ${currentPage}.`);
                 return;
             }
             if (currentPage === 1) {
@@ -106,7 +106,7 @@ const toRow = (item, category, dates) => {
         const rootUrl = `${BASE_URL}/${root}`;
         const html = await fetchText(rootUrl);
         if (!html) {
-            console.log(`Giving up on ${root}.`);
+            console.warn(`Giving up on ${root}.`);
             continue;
         }
         const page = parse(html);

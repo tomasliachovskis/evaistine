@@ -118,7 +118,7 @@ const readCard = (form) => {
             do {
                 const html = await fetchText(`${BASE_URL}/${category.slug}${currentPage > 1 ? `?pagenumber=${currentPage}` : ''}`);
                 if (!html) {
-                    console.log(`Giving up on ${category.slug} page ${currentPage}.`);
+                    console.warn(`Giving up on ${category.slug} page ${currentPage}.`);
                     break;
                 }
                 const page = parse(html);

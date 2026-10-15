@@ -184,12 +184,12 @@ export async function fetchYumpuDocument(docId) {
         const response = await fetch(`https://www.yumpu.com/lt/document/json/${docId}`);
         const text = await response.text();
         if (!response.ok || !text) {
-            console.log(`Yumpu document ${docId}: HTTP ${response.status}${response.headers.get('x-amzn-waf-action') ? ' (AWS WAF challenge)' : ''}, no document JSON`);
+            console.warn(`Yumpu document ${docId}: HTTP ${response.status}${response.headers.get('x-amzn-waf-action') ? ' (AWS WAF challenge)' : ''}, no document JSON`);
             return null;
         }
         return JSON.parse(text).document ?? null;
     } catch (error) {
-        console.log(`Yumpu document ${docId}: ${error.message}`);
+        console.warn(`Yumpu document ${docId}: ${error.message}`);
         return null;
     }
 }
@@ -229,9 +229,9 @@ export async function fetchYumpuDocumentViaPage(listingUrl, { attempts = 3, wait
             if (found) {
                 return found;
             }
-            console.log(`Yumpu via ${listingUrl}: no document JSON on attempt ${attempt}/${attempts}`);
+            console.warn(`Yumpu via ${listingUrl}: no document JSON on attempt ${attempt}/${attempts}`);
         } catch (error) {
-            console.log(`Yumpu via ${listingUrl}: ${error.message} (attempt ${attempt}/${attempts})`);
+            console.warn(`Yumpu via ${listingUrl}: ${error.message} (attempt ${attempt}/${attempts})`);
         } finally {
             await browser.close();
         }
@@ -328,7 +328,17 @@ export async function submitFlyer({
     });
 
     const data = await response.json().catch(() => ({}));
-    console.log(`[${store}] ${title || ''} (${validFrom} - ${validTo}): HTTP ${response.status}`, data);
+    // One short line, not the whole response: it carries the store with its
+    // full SEO description and FAQ.
+    const outcome = data.skipped
+        ? `skipped (${data.reason})`
+        : data.id ? `created #${data.id} ${data.slug ?? ''}` : (data.message ?? data.error ?? '');
+    const line = `[${store}] ${title || ''} (${validFrom} - ${validTo}): HTTP ${response.status} ${outcome}`;
+    if (response.ok) {
+        console.log(line);
+    } else {
+        console.error(line);
+    }
 
     return data;
 }

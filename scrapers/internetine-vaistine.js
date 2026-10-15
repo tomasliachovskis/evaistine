@@ -74,7 +74,7 @@ const readCard = (card) => ({
         do {
             const html = await fetchText(currentPage > 1 ? `${url}?page=${currentPage}` : url);
             if (!html) {
-                console.log(`Giving up on ${url} page ${currentPage}.`);
+                console.warn(`Giving up on ${url} page ${currentPage}.`);
                 return;
             }
             const page = parse(html);
@@ -106,7 +106,7 @@ const readCard = (card) => ({
         const rootUrl = `${BASE_URL}/${root}`;
         const html = await fetchText(rootUrl);
         if (!html) {
-            console.log(`Giving up on ${root}.`);
+            console.warn(`Giving up on ${root}.`);
             continue;
         }
         const page = parse(html);

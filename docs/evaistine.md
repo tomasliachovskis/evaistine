@@ -155,53 +155,46 @@ Production gets its data from the owner's Mac (owner's decision; no token on
   production, also when started by hand with `sail artisan`. A plain
   `node scrapers/x.js` inside the container doesn't see `.env` and still posts
   to localhost (use that, or `SCRAPER_DRY_RUN=1`, for tests).
-- The Sail container now runs the scheduler: `[program:scheduler]`
-  (`artisan schedule:work`) in `docker/8.2/supervisord.conf`, mounted by
-  `docker-compose.yml` so it applies on `sail up -d` without a rebuild. The
-  `dev`-only jobs (since 2026-10-14 only 18:00–08:00, the owner works on the
-  Mac 08:00–18:00: `App\Support\QuietHours`, `SCRAPER_QUIET_HOURS`, long runs
-  stop themselves at 08:00): `scrapers:fetch-product-pages` 18:30 (Gintarinė, Apotheka, Mano vaistinė, 300 min), `scrapers:run --all` 00:00 (was 03:00)
-  (about 4 hours, one pharmacy after another), `scrapers:retry-failed`
-  every 15 min outside 08:00–18:00, `flyers:scrape --all` 05:00, `hours:scrape --all` Mondays
-  06:00. The Mac must be on and Docker running at those times. Nothing for
-  this runs outside the repo (no crontab, no launchd job): the app, MySQL,
+- **The nightly scrape runs from launchd, not the scheduler** (2026-10-15,
+  the same setup as superakcijos): `~/Library/LaunchAgents/lt.evaistine.nightly-scrape.plist`
+  (copy of `scripts/launchd/`) runs `scripts/nightly-scrape.sh` at 00:00 under
+  `caffeinate -s -i`: `scrapers:run --all` (about 4 hours, one pharmacy after
+  another), then `flyers:scrape --all`, and on Mondays `hours:scrape --all`.
+  Why: the scheduler only runs while the Mac is awake; on 2026-10-15 the
+  closed-lid Mac slept through 00:00 and the whole night was skipped. The Mac
+  is woken by `pmset repeat wakeorpoweron MTWRFSU 00:55:00` (one repeat wake
+  for both sites, set once with sudo); if it sleeps at 00:00, launchd starts
+  the job at the next wake and caffeinate then keeps it awake. Mac on AC
+  power, Docker Desktop started at login.
+- **Logs**: `storage/logs/nightly/YYYY-MM-DD.log` (the night's full output,
+  30 days, ends with an OK/WARN/FAILED/SKIPPED summary per command),
+  `storage/logs/nightly/problems.log` (one block per night with only the
+  problem lines, or "all OK"), `storage/logs/scraper-*.log` / `flyer-*.log`
+  (runner start/success/warnings/failure), and `scraper_runs` in Filament
+  (stderr tail kept on successful runs too, shown amber). A scraper is killed
+  after 30 min without output or at its total timeout (or when its node process
+  is killed); that store is marked failed and `--all` goes on with the next one.
+- The Sail container still runs the scheduler for everything else:
+  `[program:scheduler]` (`artisan schedule:work`) in
+  `docker/8.2/supervisord.conf`, mounted by `docker-compose.yml` so it applies
+  on `sail up -d` without a rebuild. Its `dev`-only jobs (only 18:00–08:00,
+  the owner works on the Mac 08:00–18:00: `App\Support\QuietHours`,
+  `SCRAPER_QUIET_HOURS`, long runs stop themselves at 08:00):
+  `scrapers:fetch-product-pages` 18:30 (Gintarinė, Apotheka, Mano vaistinė,
+  300 min), `scrapers:retry-failed` every 15 min outside 08:00–18:00, and the
+  product-facts jobs. These only run while the Mac is awake. The app, MySQL,
   Redis and Meilisearch containers have `restart: unless-stopped` in
   `docker-compose.yml` (2026-10-14), so they and the scheduler come back by
-  themselves after a Mac or Docker restart (Docker Desktop must start at
-  login). The other
-  scheduled jobs also run locally against the local DB; harmless.
-- Production processes the rows itself: `discounts:dispatch-store-processing`
-  (every 5 min) queues `FinalizeScrapedStoresJob` on the `discounts` queue
-  once a pharmacy has sent nothing for 10 minutes. Checked with Ąžuolyno
-  (168 rows) on 2026-10-13.
-- `ScraperRunner` takes `items_count` from the scraper's summary line when
-  rows go to another app (they never reach the local `discount_temp`).
-- **Leaflet uploads over 2 MB failed in production**: the shared PHP-FPM has
-  `upload_max_filesize=2M`, Laravel saw no file, validation answered 302 and
-  the scraper got the home page back (`{}`). `public/.user.ini` (70M, in git
-  now, the same as superakcijos' server-only copy) fixes it for this site only.
-- **Time zone bug, fixed the same day**: the date columns are MySQL
-  `TIMESTAMP`s (stored in UTC, converted with the session time zone). Local
-  Sail MySQL runs in UTC, the production server in CEST, so the imported
-  local offers read back as `2026-10-12 02:00` in production, the first
-  production run did not recognise them as the same week and created all 166
-  Ąžuolyno offers a second time. `config/database.php` now pins the MySQL
-  session to `+00:00` (`DB_TIMEZONE`), and the 166 duplicates (start
-  `2026-10-11 22:00` after the fix) were deleted, then
-  `discounts:index-meilisearch`, `keywords:refresh-counts`,
-  `deal-pool:refresh`, `cache:clear-discounts`.
-- A stale `failed` row in `scraper_runs` makes `scrapers:retry-failed` rerun
-  that pharmacy (the 2026-10-13 morning Gintarinė run was marked as
-  superseded for this reason).
+  themselves after a Mac or Docker restart. The other scheduled jobs also run
+  locally against the local DB; harmless.
 
 superakcijos scrapes from the same Mac at 01:00 (owner, 2026-10-14): launchd
 (`~/Library/LaunchAgents/lt.superakcijos.nightly-scrape.plist`, copied from the
 nuolaidos repo `scripts/launchd/`) runs nuolaidos `scripts/nightly-scrape.sh` (`scrapers:run --all`, then
-`flyers:scrape --all` in the nuolaidos Sail stack, about 1.5 h, done before our
-03:00; log `~/Library/Logs/superakcijos-nightly-scrape.log`). Not the nuolaidos
-scheduler: its dev 04:00 `archive-expired` reindexes production Meilisearch
-through an SSH tunnel from the local DB. Both files are in the nuolaidos repo
-(uncommitted there), nothing else in it changed.
+`flyers:scrape --all` in the nuolaidos Sail stack, about 1.5 h; it overlaps
+our run, which is fine; logs in that repo's `storage/logs/nightly/`). Not the
+nuolaidos scheduler: its dev 04:00 `archive-expired` reindexes production
+Meilisearch through an SSH tunnel from the local DB.
 
 First night (2026-10-14), checked in the morning:
 - **php-fpm could not write `storage`**: the server setup left

@@ -42,13 +42,12 @@ class Kernel extends ConsoleKernel
                 ->environments(['dev']);
         }
 
-        // About 4 hours for all 13 pharmacies (2026-10-14: 03:00-06:55);
-        // from midnight it ends well before 08:00, and stops itself there.
-        $schedule->command('scrapers:run --all')
-            ->dailyAt('00:00')
-            ->withoutOverlapping(180)
-            ->runInBackground()
-            ->environments(['dev']);
+        // scrapers:run --all, flyers:scrape --all and the Monday
+        // hours:scrape --all are not scheduled here: launchd on the Mac runs
+        // scripts/nightly-scrape.sh at 00:00 under caffeinate, the same way
+        // as superakcijos. This scheduler only runs while the Mac is awake,
+        // so a sleeping Mac skipped the whole night (2026-10-15). About 4
+        // hours for all 13 pharmacies; the runs stop themselves at 08:00.
 
         // Not in the owner's working hours (App\Support\QuietHours,
         // 08:00-18:00): the long runs also stop themselves at 08:00.
@@ -56,12 +55,6 @@ class Kernel extends ConsoleKernel
             ->everyFifteenMinutes()
             ->unlessBetween('8:00', '18:00')
             ->withoutOverlapping(10)
-            ->runInBackground()
-            ->environments(['dev']);
-
-        $schedule->command('flyers:scrape --all')
-            ->dailyAt('05:00')
-            ->withoutOverlapping(120)
             ->runInBackground()
             ->environments(['dev']);
 
@@ -219,16 +212,6 @@ class Kernel extends ConsoleKernel
             ->everyThirtyMinutes()
             ->withoutOverlapping(30)
             ->environments(['production']);
-
-        // Store working hours change rarely (unlike flyers/discounts), so
-        // weekly is plenty. No file-transfer complexity here (unlike
-        // flyers) — it's plain JSON straight into the shared DB — so this
-        // just needs the ['dev'] restriction all scrapers share.
-        $schedule->command('hours:scrape --all')
-            ->weeklyOn(1, '06:00')
-            ->withoutOverlapping(60)
-            ->runInBackground()
-            ->environments(['dev']);
 
         $schedule->command('db:backup')
             ->dailyAt('02:00')

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\PrintsScraperRunSummary;
 use App\Models\ScraperRun;
 use App\Support\FlyerScraperRunner;
 use App\Support\QuietHours;
@@ -9,6 +10,8 @@ use Illuminate\Console\Command;
 
 class RunFlyerScraper extends Command
 {
+    use PrintsScraperRunSummary;
+
     protected $signature = 'flyers:scrape {store?} {--all}';
 
     protected $description = 'Scrape current leaflet PDFs for one store, or every configured store in sequence, one at a time';
@@ -18,17 +21,22 @@ class RunFlyerScraper extends Command
         $stores = array_keys(config('flyer_scrapers'));
 
         if ($this->option('all')) {
-            foreach ($stores as $store) {
+            foreach ($stores as $i => $store) {
                 // A night run that overruns stops at the owner's working hours.
                 if (QuietHours::active()) {
+                    foreach (array_slice($stores, $i) as $notRun) {
+                        $this->recordForSummary($notRun, null, 'quiet hours, not run');
+                    }
                     $this->warn("Quiet hours (".config('services.scrapers.quiet_hours')."), stopping before {$store}.");
                     \Illuminate\Support\Facades\Log::warning('flyers:scrape --all stopped for quiet hours', ['next' => $store]);
                     break;
                 }
-                $this->runOne($runner, $store);
+                $this->recordForSummary($store, $this->runOne($runner, $store));
             }
 
-            return 0;
+            $this->printSummary();
+
+            return $this->hasFailedRun() ? 1 : 0;
         }
 
         $store = $this->argument('store');
@@ -47,17 +55,18 @@ class RunFlyerScraper extends Command
             return 1;
         }
 
-        $this->runOne($runner, $matched);
+        $run = $this->runOne($runner, $matched);
 
-        return 0;
+        return $run?->status === ScraperRun::STATUS_FAILED ? 1 : 0;
     }
 
-    private function runOne(FlyerScraperRunner $runner, string $store): void
+    /** Null when skipped because another run is in progress. */
+    private function runOne(FlyerScraperRunner $runner, string $store): ?ScraperRun
     {
         if ($runner->isAnotherRunInProgress()) {
             $this->warn("A flyer scraper run is already in progress, skipping {$store} this time.");
 
-            return;
+            return null;
         }
 
         $this->info("Scraping flyers for {$store}...");
@@ -67,9 +76,12 @@ class RunFlyerScraper extends Command
         });
 
         if ($run->status === ScraperRun::STATUS_SUCCESS) {
-            $this->info("✓ {$store}: {$run->items_count} new flyer(s)");
+            $this->info("OK {$store}: {$run->items_count} new flyer(s)");
         } else {
-            $this->error("✗ {$store} failed: {$run->error}");
+            // The scraper's stderr was already echoed above; one line is enough.
+            $this->error("FAILED {$store}: " . $this->mainProblemLine($run));
         }
+
+        return $run;
     }
 }

@@ -71,7 +71,7 @@ export const runVerskis = async ({ store, baseUrl, roots, imageSize = '384x384.g
         do {
             const html = await fetchText(offset ? `${url}/page/${offset}` : url);
             if (!html) {
-                console.log(`Giving up on ${url} offset ${offset}.`);
+                console.warn(`Giving up on ${url} offset ${offset}.`);
                 return;
             }
             const page = parse(html);
@@ -104,7 +104,7 @@ export const runVerskis = async ({ store, baseUrl, roots, imageSize = '384x384.g
         const rootUrl = `${baseUrl}/${root}`;
         const html = await fetchText(rootUrl);
         if (!html) {
-            console.log(`Giving up on ${root}.`);
+            console.warn(`Giving up on ${root}.`);
             continue;
         }
         const page = parse(html);

@@ -85,7 +85,7 @@ const toRow = (product, category, dates) => {
         do {
             const response = await fetchJson(SEARCH_URL, { 'productTaxons.id': root.id, page: currentPage, itemsPerPage: 100 });
             if (!Array.isArray(response?.data)) {
-                console.log(`Giving up on ${root.key} page ${currentPage}.`);
+                console.warn(`Giving up on ${root.key} page ${currentPage}.`);
                 break;
             }
             if (currentPage === 1) {

@@ -101,7 +101,7 @@ const toRow = (hit, dates) => {
             ]);
             const results = response?.results;
             if (!Array.isArray(results?.hits)) {
-                console.log(`Giving up on ${category} page ${currentPage}.`);
+                console.warn(`Giving up on ${category} page ${currentPage}.`);
                 break;
             }
             if (currentPage === 1) {

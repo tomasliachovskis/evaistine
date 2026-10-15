@@ -67,7 +67,7 @@ const readCard = (item) => {
         do {
             const html = await fetchText(`${BASE_URL}/${slug}?resultsPerPage=${PAGE_SIZE}${currentPage > 1 ? `&page=${currentPage}` : ''}`);
             if (!html) {
-                console.log(`Giving up on ${slug} page ${currentPage}.`);
+                console.warn(`Giving up on ${slug} page ${currentPage}.`);
                 return;
             }
             const page = parse(html);

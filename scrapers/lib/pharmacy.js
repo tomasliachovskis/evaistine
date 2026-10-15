@@ -105,7 +105,7 @@ const withRetry = async (label, fn) => {
             return await fn();
         } catch (error) {
             const status = error.response?.status;
-            console.log(`Attempt ${attempt} failed for ${label}: ${error.message}`);
+            console.warn(`Attempt ${attempt} failed for ${label}: ${error.message}`);
             if (status === 404) {
                 return null;
             }
@@ -176,8 +176,15 @@ export const createPoster = (store) => {
         }
     };
 
-    const summary = (extra = '') =>
+    const summary = (extra = '') => {
         console.log(`${store}: ${stats.posted} rows${DRY_RUN ? ' (dry run)' : ''}, ${stats.discounted} discounted, ${stats.withEan} with EAN, ${stats.failed} failed to post. ${extra}`.trim());
+        // Nothing saved at all (site down, selectors broken, every POST
+        // failed): exit non-zero so the run counts as failed, not success.
+        if (!DRY_RUN && stats.posted === 0) {
+            console.error(`${store}: no rows posted.`);
+            process.exitCode = 1;
+        }
+    };
 
     return { post, stats, summary };
 };

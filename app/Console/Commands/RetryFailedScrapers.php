@@ -56,9 +56,9 @@ class RetryFailedScrapers extends Command
         $run = $runner->run($store);
 
         if ($run->status === ScraperRun::STATUS_SUCCESS) {
-            $this->info("✓ {$store}: scraped {$run->items_count} row(s)");
+            $this->info("OK {$store}: scraped {$run->items_count} row(s)");
         } else {
-            $this->error("✗ {$store} failed again: {$run->error}");
+            $this->error("FAILED again {$store}: {$run->error}");
         }
 
         return 0;

@@ -43,7 +43,7 @@ const toRow = (product, dates) => buildRow({
             Range: `${from}-${from + PAGE_SIZE - 1}`,
         });
         if (!Array.isArray(response?.products)) {
-            console.log(`Giving up on page ${currentPage + 1}.`);
+            console.warn(`Giving up on page ${currentPage + 1}.`);
             break;
         }
         total = Number(response.total) || 0;

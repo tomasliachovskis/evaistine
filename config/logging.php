@@ -76,6 +76,14 @@ return [
             'days' => env('LOG_DAILY_DAYS', 30),
         ],
 
+        // ScraperRunner / HoursScraperRunner: start, success, warnings, failure.
+        'scraper' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/scraper.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 30),
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

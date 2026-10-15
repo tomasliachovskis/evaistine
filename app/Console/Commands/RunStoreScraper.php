@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\PrintsScraperRunSummary;
 use App\Models\ScraperRun;
 use App\Support\ScraperRunner;
 use App\Support\QuietHours;
@@ -9,6 +10,8 @@ use Illuminate\Console\Command;
 
 class RunStoreScraper extends Command
 {
+    use PrintsScraperRunSummary;
+
     protected $signature = 'scrapers:run {store?} {--all}';
 
     protected $description = 'Run a scraper for one store, or every configured store in sequence, one at a time';
@@ -18,17 +21,22 @@ class RunStoreScraper extends Command
         $stores = array_keys(config('scrapers'));
 
         if ($this->option('all')) {
-            foreach ($stores as $store) {
+            foreach ($stores as $i => $store) {
                 // A night run that overruns stops at the owner's working hours.
                 if (QuietHours::active()) {
+                    foreach (array_slice($stores, $i) as $notRun) {
+                        $this->recordForSummary($notRun, null, 'quiet hours, not run');
+                    }
                     $this->warn("Quiet hours (".config('services.scrapers.quiet_hours')."), stopping before {$store}.");
                     \Illuminate\Support\Facades\Log::warning('scrapers:run --all stopped for quiet hours', ['next' => $store]);
                     break;
                 }
-                $this->runOne($runner, $store);
+                $this->recordForSummary($store, $this->runOne($runner, $store));
             }
 
-            return 0;
+            $this->printSummary();
+
+            return $this->hasFailedRun() ? 1 : 0;
         }
 
         $store = $this->argument('store');
@@ -47,17 +55,18 @@ class RunStoreScraper extends Command
             return 1;
         }
 
-        $this->runOne($runner, $matched);
+        $run = $this->runOne($runner, $matched);
 
-        return 0;
+        return $run?->status === ScraperRun::STATUS_FAILED ? 1 : 0;
     }
 
-    private function runOne(ScraperRunner $runner, string $store): void
+    /** Null when skipped because another run is in progress. */
+    private function runOne(ScraperRunner $runner, string $store): ?ScraperRun
     {
         if ($runner->isAnotherRunInProgress()) {
             $this->warn("A scraper run is already in progress, skipping {$store} this time.");
 
-            return;
+            return null;
         }
 
         $this->info("Running scraper for {$store}...");
@@ -67,9 +76,12 @@ class RunStoreScraper extends Command
         });
 
         if ($run->status === ScraperRun::STATUS_SUCCESS) {
-            $this->info("✓ {$store}: scraped {$run->items_count} row(s)");
+            $this->info("OK {$store}: scraped {$run->items_count} row(s)");
         } else {
-            $this->error("✗ {$store} failed: {$run->error}");
+            // The scraper's stderr was already echoed above; one line is enough.
+            $this->error("FAILED {$store}: " . $this->mainProblemLine($run));
         }
+
+        return $run;
     }
 }

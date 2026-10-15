@@ -70,12 +70,13 @@ class ScraperRunsTable
                     ->numeric()
                     ->sortable()
                     ->placeholder('—'),
+                // A successful run can carry warnings (stderr) here too.
                 TextColumn::make('error')
                     ->label('Klaida')
                     ->limit(80)
                     ->wrap()
                     ->placeholder('—')
-                    ->color('danger'),
+                    ->color(fn (ScraperRun $record): string => $record->status === ScraperRun::STATUS_FAILED ? 'danger' : 'warning'),
             ])
             ->filters([
                 SelectFilter::make('store')

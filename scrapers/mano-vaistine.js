@@ -119,7 +119,7 @@ const fetchEan = async (url) => {
         do {
             const html = await fetchText(`${BASE_URL}/${path}${currentPage > 1 ? `/${currentPage}-psl` : ''}${query}`);
             if (!html) {
-                console.log(`Giving up on ${path} page ${currentPage}.`);
+                console.warn(`Giving up on ${path} page ${currentPage}.`);
                 return;
             }
             const page = parse(html);
@@ -144,7 +144,7 @@ const fetchEan = async (url) => {
         const query = root.query ?? '';
         const html = await fetchText(`${BASE_URL}/${root.key}${query}`);
         if (!html) {
-            console.log(`Giving up on ${root.key}.`);
+            console.warn(`Giving up on ${root.key}.`);
             continue;
         }
         await sleep();
