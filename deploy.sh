@@ -266,20 +266,24 @@ ssh $SSH_OPTS $SERVER "REMOTE_DIR='$REMOTE_DIR' bash -s" << 'EOF'
     # again, same day: a request compiled a view in the split second between
     # the chmod pass and view:cache itself). view:cache aborts entirely on
     # the first unwritable file — a single unlucky file otherwise leaves
-    # every OTHER view uncompiled too, not just that one. One retry after a
-    # fresh chmod pass resolves it; the odds of the exact same race
-    # happening twice in a row are negligible.
-    php artisan view:cache || {
-        echo "view:cache failed (permission race with a live request) — fixing perms and retrying once..."
-        # chmod can't fix a view php-fpm compiled meanwhile: it belongs to
-        # www-data (mode 644), and only the owner may chmod it. deploy owns
-        # the folder, so it can delete it; view:cache writes it again (seen
-        # 2026-10-15 on eVaistine: 16 such files, the retry failed too).
+    # every OTHER view uncompiled too, not just that one. Busy traffic can
+    # keep compiling views in that gap (2026-10-15 on eVaistine: one retry
+    # failed the same way, twice). A view php-fpm compiled meanwhile
+    # belongs to www-data (mode 644): chmod can't fix it (only the owner
+    # may), but deploy owns the folder and can delete it. It was compiled
+    # from the new templates already on disk, so if view:cache still loses
+    # the race after a few tries, carry on: the views it didn't cache compile
+    # on their first request, as without view:cache.
+    for attempt in 1 2 3; do
+        php artisan view:cache && break
+        echo "view:cache failed (permission race with a live request, attempt $attempt/3) — removing views php-fpm compiled meanwhile and retrying..."
         find storage/framework/views -maxdepth 1 -type f ! -user "$(id -un)" -delete 2>/dev/null || true
         find storage bootstrap/cache -type d -exec chmod g+ws {} + 2>/dev/null || true
         find storage bootstrap/cache -type f -exec chmod g+w {} + 2>/dev/null || true
-        php artisan view:cache
-    }
+        if [ "$attempt" = 3 ]; then
+            echo "WARNING: view:cache gave up; uncached views compile on first request."
+        fi
+    done
 
     php artisan queue:restart
 
