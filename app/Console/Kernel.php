@@ -73,6 +73,14 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping(5)
             ->environments(['production']);
 
+        // Last 24 h of scraped rows vs added discounts + collection health
+        // issues to the admins, every day (the nightly scrape runs
+        // 00:00-08:00). docs/collection-health.md.
+        $schedule->command('collection-health:digest')
+            ->dailyAt('08:30')
+            ->withoutOverlapping(30)
+            ->environments(['production']);
+
         // Extracts discounts (Gemini) directly from a StoreFlyer's own
         // pdf_url — no separate storage/app/flyers-incoming/ upload needed.
         // (That older path — ProcessPdfFlyerJob/PdfFlyerIncomingProcessor —
