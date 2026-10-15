@@ -16,6 +16,11 @@ class ProcessStoreFlyerPagesJob implements ShouldQueue, ShouldBeUnique
 
     public int $timeout = 0;
 
+    // Same lost-job case as ProcessStoreFlyerDiscountsJob::$uniqueFor. Long
+    // enough to outlast the slowest catalog (Oriflame, ~4.7 h), so the
+    // second worker never picks up a duplicate of a flyer still running.
+    public int $uniqueFor = 12 * 3600;
+
     public function __construct(public int $storeFlyerId)
     {
         // 2 parallel workers on this queue (deploy/supervisor-evaistine-

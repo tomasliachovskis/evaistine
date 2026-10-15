@@ -16,6 +16,14 @@ class ProcessStoreFlyerDiscountsJob implements ShouldQueue, ShouldBeUnique
 
     public int $timeout = 0;
 
+    // A queued job can vanish without running: prod Redis is shared with the
+    // cache under allkeys-lru, and on 2026-10-15 Aibė's job was evicted
+    // while waiting behind a 2 h Maxima run. Without an expiry its unique
+    // lock stayed forever and every 5-minute --pending dispatch was dropped
+    // silently. A second copy can't run twice: the worker is single, and
+    // the service skips a flyer that already has discounts_processed_at.
+    public int $uniqueFor = 3 * 3600;
+
     public function __construct(public int $storeFlyerId)
     {
         // Own queue, not 'flyers' — that one now runs 2 parallel workers
