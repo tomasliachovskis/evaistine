@@ -271,6 +271,11 @@ ssh $SSH_OPTS $SERVER "REMOTE_DIR='$REMOTE_DIR' bash -s" << 'EOF'
     # happening twice in a row are negligible.
     php artisan view:cache || {
         echo "view:cache failed (permission race with a live request) — fixing perms and retrying once..."
+        # chmod can't fix a view php-fpm compiled meanwhile: it belongs to
+        # www-data (mode 644), and only the owner may chmod it. deploy owns
+        # the folder, so it can delete it; view:cache writes it again (seen
+        # 2026-10-15 on eVaistine: 16 such files, the retry failed too).
+        find storage/framework/views -maxdepth 1 -type f ! -user "$(id -un)" -delete 2>/dev/null || true
         find storage bootstrap/cache -type d -exec chmod g+ws {} + 2>/dev/null || true
         find storage bootstrap/cache -type f -exec chmod g+w {} + 2>/dev/null || true
         php artisan view:cache
