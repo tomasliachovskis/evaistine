@@ -50,7 +50,10 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            // Daily files (laravel-YYYY-MM-DD.log, cleaned up after 'days'),
+            // not one endless laravel.log; the error digest and the Log
+            // Viewer (docs/production-logs.md in superakcijos) read them.
+            'channels' => explode(',', env('LOG_STACK', 'daily')),
             'ignore_exceptions' => false,
         ],
 
