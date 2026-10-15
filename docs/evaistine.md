@@ -76,6 +76,14 @@ returns 200. `fetchYumpuDocumentViaPage()` in `scrapers/flyers/_shared.js`
 catches that response; the page images themselves download with a plain
 fetch.
 
+Camelia doesn't need the JSON: its page links Yumpu's direct PDF download,
+which isn't behind the WAF, and the title and dates come from cover OCR.
+Until 2026-10-15 it still made a plain JSON fetch for a fallback title; that
+fetch always got 403 and turned Camelia into WARN in every `flyers:scrape
+--all` summary, so it (and `fetchYumpuDocument()`) was removed. The summary
+counts *new* leaflets per pharmacy (`0 new flyer(s)`): the backend skips one
+it already has, so 0 is normal for the rest of the month after the first run.
+
 Without a leaflet: Mano vaistinė publishes a monthly leaflet, but only
 aggregators (raskakcija.lt) show it, not manovaistine.lt, so we don't take it.
 The online-only pharmacies (Rx, 100 metų, Piliulė, InternetineVaistine.lt,

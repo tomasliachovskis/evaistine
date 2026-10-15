@@ -34,7 +34,7 @@ class RunFlyerScraper extends Command
                 $this->recordForSummary($store, $this->runOne($runner, $store));
             }
 
-            $this->printSummary();
+            $this->printSummary('new flyer(s)');
 
             return $this->hasFailedRun() ? 1 : 0;
         }

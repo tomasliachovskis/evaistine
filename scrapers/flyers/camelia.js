@@ -1,4 +1,4 @@
-import { fetchBuffer, submitFlyer, extractCoverInfo, fetchYumpuDocument, renderPdfBufferFirstPageToJpeg, monthRangeFromText } from './_shared.js';
+import { fetchBuffer, submitFlyer, extractCoverInfo, renderPdfBufferFirstPageToJpeg, monthRangeFromText } from './_shared.js';
 
 // camelia.lt/akciju-leidinys is plain server-rendered HTML (a Nuxt SSR page)
 // embedding a Yumpu-hosted document, with a real "Atsisiųsti akcijų
@@ -6,9 +6,9 @@ import { fetchBuffer, submitFlyer, extractCoverInfo, fetchYumpuDocument, renderP
 // and no Puppeteer needed for the PDF itself. No validity dates appear on
 // the page, only on the leaflet's own cover, read via the backend's Gemini
 // cover-OCR endpoint. The cover image is rendered from the PDF itself
-// with Ghostscript (Chrome only downloads a Yumpu download link): Yumpu's
-// document JSON (which also has the title) sits behind AWS WAF since
-// 2026-10 and is only used when it answers.
+// with Ghostscript (Chrome only downloads a Yumpu download link). Yumpu's
+// document JSON isn't needed: the download link isn't behind its AWS WAF,
+// while a plain fetch of the JSON always gets 403 since 2026-10.
 const LISTING_URL = 'https://camelia.lt/akciju-leidinys';
 
 (async () => {
@@ -25,11 +25,10 @@ const LISTING_URL = 'https://camelia.lt/akciju-leidinys';
 
     try {
         const pdfBuffer = await fetchBuffer(downloadUrl);
-        const doc = await fetchYumpuDocument(docId);
 
         const coverImage = renderPdfBufferFirstPageToJpeg(pdfBuffer);
         const coverInfo = await extractCoverInfo({ store: 'Camelia', imageBuffer: coverImage, filename: 'camelia-cover.jpg' });
-        const title = coverInfo?.title || doc?.title || 'Camelia akcijų leidinys';
+        const title = coverInfo?.title || 'Camelia akcijų leidinys';
         const dates = coverInfo?.validFrom ? coverInfo : monthRangeFromText(title);
         if (!dates) {
             console.log('No dates via cover OCR or the title — submitting without dates');

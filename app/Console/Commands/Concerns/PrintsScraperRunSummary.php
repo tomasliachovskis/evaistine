@@ -27,7 +27,8 @@ trait PrintsScraperRunSummary
             ->contains(fn ($row) => $row['run']?->status === ScraperRun::STATUS_FAILED);
     }
 
-    private function printSummary(): void
+    /** $itemLabel names what items_count counts ("new flyer(s)" for leaflets). */
+    private function printSummary(string $itemLabel = 'item(s)'): void
     {
         $this->line('');
         $this->line('=== Summary');
@@ -52,7 +53,7 @@ trait PrintsScraperRunSummary
                 default => 'OK',
             };
 
-            $note = $run->items_count !== null ? "  {$run->items_count} item(s)" : '';
+            $note = $run->items_count !== null ? "  {$run->items_count} {$itemLabel}" : '';
             if ($status === 'WARN') {
                 $note .= "  {$lines->count()} problem line(s)";
             }

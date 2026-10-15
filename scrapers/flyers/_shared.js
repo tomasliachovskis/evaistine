@@ -175,26 +175,8 @@ export function monthRangeFromText(text, now = new Date()) {
     return { validFrom: `${year}-${pad(index + 1)}-01`, validTo: `${year}-${pad(index + 1)}-${pad(lastDay)}` };
 }
 
-// Yumpu's public document JSON (title, page images, validity). Since
-// 2026-10 it sits behind AWS WAF: plain fetches get an empty 202 challenge
-// or 403, so this returns null instead of throwing, and the caller decides
-// whether it can do without it (fetchYumpuDocumentViaPage below works).
-export async function fetchYumpuDocument(docId) {
-    try {
-        const response = await fetch(`https://www.yumpu.com/lt/document/json/${docId}`);
-        const text = await response.text();
-        if (!response.ok || !text) {
-            console.warn(`Yumpu document ${docId}: HTTP ${response.status}${response.headers.get('x-amzn-waf-action') ? ' (AWS WAF challenge)' : ''}, no document JSON`);
-            return null;
-        }
-        return JSON.parse(text).document ?? null;
-    } catch (error) {
-        console.warn(`Yumpu document ${docId}: ${error.message}`);
-        return null;
-    }
-}
-
-// The same Yumpu document JSON, read the way a visitor gets it: open the
+// Yumpu's document JSON (title, page images, validity), read the way a
+// visitor gets it: since 2026-10 it sits behind AWS WAF, so open the
 // pharmacy's own leaflet page (which embeds the Yumpu viewer in an iframe)
 // in stealth Chrome and catch the viewer's own document/json response.
 // Checked 2026-10-08: this gets 200 for Eurovaistinė and Apotheka, while a
