@@ -65,6 +65,9 @@ return [
 
         'daily' => [
             'driver' => 'daily',
+            // php-fpm (www-data) and cron/queue (deploy) write the same day's
+            // file; with the default 0644 only its creator could (2026-10-15).
+            'permission' => 0664,
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             // 30 days: the privacy policy promises server logs are kept that long.
@@ -73,6 +76,9 @@ return [
 
         'flyer' => [
             'driver' => 'daily',
+            // php-fpm (www-data) and cron/queue (deploy) write the same day's
+            // file; with the default 0644 only its creator could (2026-10-15).
+            'permission' => 0664,
             'path' => storage_path('logs/flyer.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             // 30 days: the privacy policy promises server logs are kept that long.
@@ -82,6 +88,9 @@ return [
         // ScraperRunner / HoursScraperRunner: start, success, warnings, failure.
         'scraper' => [
             'driver' => 'daily',
+            // php-fpm (www-data) and cron/queue (deploy) write the same day's
+            // file; with the default 0644 only its creator could (2026-10-15).
+            'permission' => 0664,
             'path' => storage_path('logs/scraper.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 30),
