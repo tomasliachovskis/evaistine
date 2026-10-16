@@ -66,7 +66,8 @@
         </div>
     @endif
 
-    <p class="text-xs text-gray-500">
-        Šaltinis – prekės aprašymas el. vaistinėse: {{ implode(', ', $facts['sources']) }}. Prieš vartodami perskaitykite informaciją ant pakuotės.
-    </p>
+    <div class="space-y-1 text-xs text-gray-500">
+        <p>Šaltinis – prekės aprašymas el. vaistinėse: {{ implode(', ', $facts['sources']) }}.</p>
+        <p>Prieš vartodami perskaitykite informaciją ant pakuotės.</p>
+    </div>
 </div>

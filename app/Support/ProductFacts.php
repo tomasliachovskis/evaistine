@@ -71,12 +71,12 @@ class ProductFacts
         if ($facts['allergens'] !== []) {
             $highlights[] = 'Sudėtyje yra alergenų: ' . implode(', ', $facts['allergens']) . '.';
         }
-        $made = array_filter([
-            !empty($facts['origin_country']) ? 'kilmės šalis ' . $facts['origin_country'] : null,
-            !empty($facts['manufacturer']) ? 'gamintojas ' . $facts['manufacturer'] : null,
-        ]);
-        if ($made !== []) {
-            $highlights[] = self::ucfirst(implode(', ', $made)) . '.';
+        // One fact per line, "Label: value" like the others (owner, 2026-10-16).
+        if (!empty($facts['origin_country'])) {
+            $highlights[] = self::sentence('Kilmės šalis: ' . $facts['origin_country']);
+        }
+        if (!empty($facts['manufacturer'])) {
+            $highlights[] = self::sentence('Gamintojas: ' . $facts['manufacturer']);
         }
 
         $amounts = null;

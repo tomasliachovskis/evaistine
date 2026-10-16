@@ -402,14 +402,19 @@ use App\Support\ProductPageMeta;
 
         @if ($hasAbout)
             <section id="about" class="border-t border-gray-200 bg-white py-6 sm:py-8">
-                <div class="base-container max-w-3xl">
-                    <h2 class="mb-3 text-lg font-bold text-gray-900">Apie prekę</h2>
-                    @if ($hasDescription)
-                        <p class="whitespace-pre-line text-sm leading-relaxed text-gray-600">{{ $product['description'] }}</p>
-                    @endif
-                    @if (!empty($productFacts))
-                        <x-product-facts :facts="$productFacts" :class="$hasDescription ? 'mt-4' : ''" />
-                    @endif
+                {{-- Left edge in line with the sections above (full
+                     base-container, like the FAQ); max-w-3xl only on the
+                     inner block, to keep the text lines readable. --}}
+                <div class="base-container">
+                    <div class="max-w-3xl">
+                        <h2 class="mb-3 text-lg font-bold text-gray-900">Apie prekę</h2>
+                        @if ($hasDescription)
+                            <p class="whitespace-pre-line text-sm leading-relaxed text-gray-600">{{ $product['description'] }}</p>
+                        @endif
+                        @if (!empty($productFacts))
+                            <x-product-facts :facts="$productFacts" :class="$hasDescription ? 'mt-4' : ''" />
+                        @endif
+                    </div>
                 </div>
             </section>
         @endif

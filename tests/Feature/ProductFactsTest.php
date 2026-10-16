@@ -216,7 +216,8 @@ class ProductFactsTest extends TestCase
         $this->assertContains('Forma: kapsulės, pakuotėje 90 vnt.', $facts['highlights']);
         $this->assertContains('Pakuotės užtenka 90 dienų, vartojant pagal nurodytą paros dozę (1 per dieną).', $facts['highlights']);
         $this->assertContains('Skirta nuo 12 metų.', $facts['highlights']);
-        $this->assertContains('Kilmės šalis Lietuva, gamintojas Pierre Fabre.', $facts['highlights']);
+        $this->assertContains('Kilmės šalis: Lietuva.', $facts['highlights']);
+        $this->assertContains('Gamintojas: Pierre Fabre.', $facts['highlights']);
         $this->assertContains('Tinka jautriai odai.', $facts['highlights']);
         $this->assertContains('Be parabenų.', $facts['highlights']);
         $this->assertSame(['name' => 'Vitaminas D3', 'amount' => '100 µg (4000 TV)', 'rmv' => '2000 %'], $facts['amounts']['rows'][0]);
