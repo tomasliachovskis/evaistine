@@ -1,15 +1,17 @@
 #!/bin/bash
 # Nightly eVaistine.lt scrape from the owner's Mac (launchd:
-# scripts/launchd/lt.evaistine.nightly-scrape.plist, 00:00; install it with
+# scripts/launchd/lt.evaistine.nightly-scrape.plist, 00:01; install it with
 # cp scripts/launchd/lt.evaistine.nightly-scrape.plist ~/Library/LaunchAgents/
 # && launchctl load -w ~/Library/LaunchAgents/lt.evaistine.nightly-scrape.plist).
 # The same setup as superakcijos (nuolaidos repo, scripts/nightly-scrape.sh,
-# 01:00); the two runs overlap, which is fine (different sites).
+# 01:00); the two runs overlap, which is fine (different sites). The Mac is
+# woken at 00:00 (pmset repeat), this starts a minute later.
 # The scrapers post to production through SCRAPER_API_URL in .env.
 # Not the Laravel scheduler in the container: it only runs while the Mac is
 # awake, so a sleeping Mac skipped the whole night (2026-10-15).
-# Steps: scrapers:run --all, flyers:scrape --all, and on Mondays
-# hours:scrape --all. The long runs stop themselves at 08:00
+# Steps: scrapers:run --all, flyers:scrape --all, scrapers:run --failed, on
+# Mondays hours:scrape --all, then the product pages until 07:30 and
+# product-facts:batch-submit. The long runs stop themselves at 08:00
 # (App\Support\QuietHours).
 # Logs: each night's full output goes to storage/logs/nightly/YYYY-MM-DD.log
 # (kept 30 days), ending with a per-store OK/WARN/FAILED summary; the
@@ -24,8 +26,7 @@ cd /Users/tomas/www/vaistines || exit 1
 # Keep the Mac awake for the whole run. Without it a closed-lid Mac sleeps
 # through the night and only runs in ~45s maintenance wakes every ~17 min.
 # -s holds the system awake on AC power, also with the lid closed. Waking the
-# Mac is `pmset repeat wakeorpoweron` (00:55, set once for both sites); when
-# it sleeps at 00:00, launchd starts this job at the next wake.
+# Mac is `pmset repeat wakeorpoweron` (00:00, set once for both sites).
 if [ -z "$NIGHTLY_CAFFEINATED" ]; then
     export NIGHTLY_CAFFEINATED=1
     exec /usr/bin/caffeinate -s -i /bin/bash "$0" "$@"
@@ -75,6 +76,24 @@ if [ "$(date '+%u')" = "1" ]; then
     ./vendor/bin/sail artisan hours:scrape --all
     rc=$?
     echo "--- $(date '+%F %T') hours:scrape exit $rc"
+fi
+# Product pages (EANs and the "Apie prekę" text for the product facts,
+# docs/product-facts.md), the three pharmacies side by side (different hosts),
+# with whatever is left of the night until 07:30. Slow on purpose (one page at
+# a time, 429s), so not part of the main scrape. Was a separate 18:30 job on
+# the in-container scheduler until 2026-10-16: the closed-lid Mac slept and it
+# crawled along in maintenance wakes. Then the night's Gemini batch.
+minutes=$(( ($(date -j -f '%H:%M:%S' '07:30:00' +%s) - $(date +%s)) / 60 ))
+if [ "$minutes" -ge 30 ]; then
+    for pharmacy in gintarine-vaistine apotheka mano-vaistine; do
+        ./vendor/bin/sail artisan scrapers:fetch-product-pages "$pharmacy" --minutes="$minutes" &
+    done
+    wait
+    echo "--- $(date '+%F %T') product pages done ($minutes min budget)"
+    ./vendor/bin/sail artisan product-facts:batch-submit
+    echo "--- $(date '+%F %T') product-facts:batch-submit exit $?"
+else
+    echo "Only $minutes min left before 07:30, no product pages tonight."
 fi
 echo "=== $(date '+%F %T') done"
 

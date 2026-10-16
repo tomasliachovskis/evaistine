@@ -28,17 +28,16 @@ class Kernel extends ConsoleKernel
         // default 24h — these are exactly the flaky, network-dependent
         // processes prone to hanging, per this repo's own scraper notes).
         // Night window: the owner works on the Mac 08:00-18:00
-        // (App\Support\QuietHours), so everything heavy runs 18:30-08:00.
-        // scrapers:run --all, flyers:scrape --all, the Monday hours:scrape
-        // --all, the failed-store retry (scrapers:run --failed), the 18:30
-        // product pages (scrapers:fetch-product-pages) and
-        // product-facts:batch-submit are not scheduled here: launchd on the
-        // Mac runs scripts/nightly-scrape.sh (00:00) and
-        // scripts/evening-scrape.sh (18:30) under caffeinate, the same way
-        // as superakcijos. This scheduler only runs while the Mac is awake:
-        // a sleeping Mac skipped the whole night (2026-10-15), and the
-        // product pages started here at 18:30 crawled along in maintenance
-        // wakes and were killed at 00:05 (2026-10-16).
+        // (App\Support\QuietHours). scrapers:run --all, flyers:scrape --all,
+        // the Monday hours:scrape --all, the failed-store retry
+        // (scrapers:run --failed), the product pages
+        // (scrapers:fetch-product-pages) and product-facts:batch-submit are
+        // not scheduled here: launchd on the Mac runs scripts/nightly-scrape.sh
+        // at 00:01 under caffeinate, the same way as superakcijos. This
+        // scheduler only runs while the Mac is awake: a sleeping Mac skipped
+        // the whole night (2026-10-15), and the product pages started here at
+        // 18:30 crawled along in maintenance wakes and were killed at 00:05
+        // (2026-10-16).
 
         // flyers:store-flyer creates StoreFlyer rows (shared prod DB, hit
         // from local scrapers) with pdf_url left null and no job dispatched
@@ -178,8 +177,8 @@ class Kernel extends ConsoleKernel
         // production run on the local machine; production only links the
         // rows it receives to its products. Extraction is one Gemini Batch
         // API job a night (half the price of product-facts:extract, which
-        // stays for manual runs), submitted by scripts/evening-scrape.sh after
-        // the product pages (18:30-23:30); collect writes the facts once the
+        // stays for manual runs), submitted by scripts/nightly-scrape.sh after
+        // the product pages (until 07:30); collect writes the facts once the
         // job is done (usually well within the night, at most 24 h), cost
         // logged per job. Collect and push are quick API calls, so here is
         // fine: a sleeping Mac just catches up at the next wake.

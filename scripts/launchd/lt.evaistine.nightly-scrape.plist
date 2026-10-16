@@ -14,7 +14,7 @@
         <key>Hour</key>
         <integer>0</integer>
         <key>Minute</key>
-        <integer>0</integer>
+        <integer>1</integer>
     </dict>
     <key>StandardOutPath</key>
     <string>/Users/tomas/Library/Logs/evaistine-nightly-scrape.log</string>

@@ -165,23 +165,23 @@ Production gets its data from the owner's Mac (owner's decision; no token on
   to localhost (use that, or `SCRAPER_DRY_RUN=1`, for tests).
 - **The nightly scrape runs from launchd, not the scheduler** (2026-10-15,
   the same setup as superakcijos): `~/Library/LaunchAgents/lt.evaistine.nightly-scrape.plist`
-  (copy of `scripts/launchd/`) runs `scripts/nightly-scrape.sh` at 00:00 under
-  `caffeinate -s -i`: `scrapers:run --all` (about 4 hours, one pharmacy after
-  another), then `flyers:scrape --all`, then `scrapers:run --failed` (one more
-  try for each store whose latest scrape failed), and on Mondays
-  `hours:scrape --all`. `lt.evaistine.evening-scrape` runs
-  `scripts/evening-scrape.sh` at 18:30, also under caffeinate: the three
-  `scrapers:fetch-product-pages` runs side by side (300 min), then
-  `product-facts:batch-submit`; started after 23:00 (Mac asleep at 18:30) it
-  skips the night. Both scripts first wait for the container clock
+  (copy of `scripts/launchd/`) runs `scripts/nightly-scrape.sh` at 00:01 under
+  `caffeinate -s -i`: `scrapers:run --all` (about 2.5-4 hours, one pharmacy
+  after another), `flyers:scrape --all`, `scrapers:run --failed` (one more try
+  for each store whose latest scrape failed), on Mondays `hours:scrape --all`,
+  then the three `scrapers:fetch-product-pages` runs side by side with the
+  time left until 07:30, then `product-facts:batch-submit`. The product pages
+  stay out of the main scrape on purpose: one page at a time with pauses
+  (429s). Why launchd: the scheduler only runs while the Mac is awake; on
+  2026-10-15 the closed-lid Mac slept through 00:00 and the whole night was
+  skipped, and on 2026-10-16 the 18:30 product pages crawled along in
+  maintenance wakes. The Mac is woken by `pmset repeat wakeorpoweron MTWRFSU
+  00:00:00` (one repeat wake for both sites, set once with sudo), caffeinate
+  then keeps it awake, also for superakcijos at 01:00. Before the first artisan
+  command the script waits for the container clock
   (`scripts/wait-for-docker-clock.sh`): the Docker VM clock stops while the Mac
   sleeps, and a run started right after a wake saw the catch-up jump as
-  elapsed time and timed out (2026-10-16, Eurovaistinė and the product pages).
-  Why: the scheduler only runs while the Mac is awake; on 2026-10-15 the
-  closed-lid Mac slept through 00:00 and the whole night was skipped. The Mac
-  is woken by `pmset repeat wakeorpoweron MTWRFSU 00:55:00` (one repeat wake
-  for both sites, set once with sudo); if it sleeps at 00:00, launchd starts
-  the job at the next wake and caffeinate then keeps it awake. Mac on AC
+  elapsed time and timed out (2026-10-16, Eurovaistinė "1h47m"). Mac on AC
   power, Docker Desktop started at login.
 - **Logs**: `storage/logs/nightly/YYYY-MM-DD.log` (the night's full output,
   30 days, ends with an OK/WARN/FAILED/SKIPPED summary per command),
@@ -191,7 +191,7 @@ Production gets its data from the owner's Mac (owner's decision; no token on
   (stderr tail kept on successful runs too, shown amber). A scraper is killed
   after 30 min without output or at its total timeout (or when its node process
   is killed); that store is marked failed and `--all` goes on with the next one.
-  `scrapers:fetch-product-pages` (evening launchd job, 18:30) writes its
+  `scrapers:fetch-product-pages` (in the nightly script) writes its
   own `storage/logs/nightly/YYYY-MM-DD-product-pages-{pharmacy}.log` and adds
   a WARN/FAILED block to `problems.log` when something went wrong (failed
   pages, failed POSTs, 429 stop).
