@@ -29,34 +29,16 @@ class Kernel extends ConsoleKernel
         // processes prone to hanging, per this repo's own scraper notes).
         // Night window: the owner works on the Mac 08:00-18:00
         // (App\Support\QuietHours), so everything heavy runs 18:30-08:00.
-        // Product pages, slowly, one pharmacy per process (different hosts,
-        // so they run side by side): barcodes for the EAN caches (Gintarinė's
-        // main scrape fetches none, 429s) and the text for the product facts
-        // (docs/product-facts.md). 300 min budget, done by 23:30, before the
-        // main scrape hits the same sites.
-        foreach (['gintarine-vaistine', 'apotheka', 'mano-vaistine'] as $pharmacy) {
-            $schedule->command("scrapers:fetch-product-pages {$pharmacy} --minutes=300")
-                ->dailyAt('18:30')
-                ->withoutOverlapping(330)
-                ->runInBackground()
-                ->environments(['dev']);
-        }
-
-        // scrapers:run --all, flyers:scrape --all and the Monday
-        // hours:scrape --all are not scheduled here: launchd on the Mac runs
-        // scripts/nightly-scrape.sh at 00:00 under caffeinate, the same way
-        // as superakcijos. This scheduler only runs while the Mac is awake,
-        // so a sleeping Mac skipped the whole night (2026-10-15). About 4
-        // hours for all 13 pharmacies; the runs stop themselves at 08:00.
-
-        // Not in the owner's working hours (App\Support\QuietHours,
-        // 08:00-18:00): the long runs also stop themselves at 08:00.
-        $schedule->command('scrapers:retry-failed')
-            ->everyFifteenMinutes()
-            ->unlessBetween('8:00', '18:00')
-            ->withoutOverlapping(10)
-            ->runInBackground()
-            ->environments(['dev']);
+        // scrapers:run --all, flyers:scrape --all, the Monday hours:scrape
+        // --all, the failed-store retry (scrapers:run --failed), the 18:30
+        // product pages (scrapers:fetch-product-pages) and
+        // product-facts:batch-submit are not scheduled here: launchd on the
+        // Mac runs scripts/nightly-scrape.sh (00:00) and
+        // scripts/evening-scrape.sh (18:30) under caffeinate, the same way
+        // as superakcijos. This scheduler only runs while the Mac is awake:
+        // a sleeping Mac skipped the whole night (2026-10-15), and the
+        // product pages started here at 18:30 crawled along in maintenance
+        // wakes and were killed at 00:05 (2026-10-16).
 
         // flyers:store-flyer creates StoreFlyer rows (shared prod DB, hit
         // from local scrapers) with pdf_url left null and no job dispatched
@@ -196,14 +178,11 @@ class Kernel extends ConsoleKernel
         // production run on the local machine; production only links the
         // rows it receives to its products. Extraction is one Gemini Batch
         // API job a night (half the price of product-facts:extract, which
-        // stays for manual runs), submitted after the product pages
-        // (18:30-23:30); collect writes the facts once the job is done
-        // (usually well within the night, at most 24 h), cost logged per job.
-        $schedule->command('product-facts:batch-submit')
-            ->dailyAt('23:40')
-            ->withoutOverlapping(60)
-            ->environments(['dev']);
-
+        // stays for manual runs), submitted by scripts/evening-scrape.sh after
+        // the product pages (18:30-23:30); collect writes the facts once the
+        // job is done (usually well within the night, at most 24 h), cost
+        // logged per job. Collect and push are quick API calls, so here is
+        // fine: a sleeping Mac just catches up at the next wake.
         $schedule->command('product-facts:batch-collect')
             ->everyFifteenMinutes()
             ->withoutOverlapping(30)

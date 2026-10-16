@@ -167,7 +167,16 @@ Production gets its data from the owner's Mac (owner's decision; no token on
   the same setup as superakcijos): `~/Library/LaunchAgents/lt.evaistine.nightly-scrape.plist`
   (copy of `scripts/launchd/`) runs `scripts/nightly-scrape.sh` at 00:00 under
   `caffeinate -s -i`: `scrapers:run --all` (about 4 hours, one pharmacy after
-  another), then `flyers:scrape --all`, and on Mondays `hours:scrape --all`.
+  another), then `flyers:scrape --all`, then `scrapers:run --failed` (one more
+  try for each store whose latest scrape failed), and on Mondays
+  `hours:scrape --all`. `lt.evaistine.evening-scrape` runs
+  `scripts/evening-scrape.sh` at 18:30, also under caffeinate: the three
+  `scrapers:fetch-product-pages` runs side by side (300 min), then
+  `product-facts:batch-submit`; started after 23:00 (Mac asleep at 18:30) it
+  skips the night. Both scripts first wait for the container clock
+  (`scripts/wait-for-docker-clock.sh`): the Docker VM clock stops while the Mac
+  sleeps, and a run started right after a wake saw the catch-up jump as
+  elapsed time and timed out (2026-10-16, Eurovaistinė and the product pages).
   Why: the scheduler only runs while the Mac is awake; on 2026-10-15 the
   closed-lid Mac slept through 00:00 and the whole night was skipped. The Mac
   is woken by `pmset repeat wakeorpoweron MTWRFSU 00:55:00` (one repeat wake
@@ -182,7 +191,7 @@ Production gets its data from the owner's Mac (owner's decision; no token on
   (stderr tail kept on successful runs too, shown amber). A scraper is killed
   after 30 min without output or at its total timeout (or when its node process
   is killed); that store is marked failed and `--all` goes on with the next one.
-  `scrapers:fetch-product-pages` (still on the scheduler, 18:30) writes its
+  `scrapers:fetch-product-pages` (evening launchd job, 18:30) writes its
   own `storage/logs/nightly/YYYY-MM-DD-product-pages-{pharmacy}.log` and adds
   a WARN/FAILED block to `problems.log` when something went wrong (failed
   pages, failed POSTs, 429 stop).
@@ -192,9 +201,10 @@ Production gets its data from the owner's Mac (owner's decision; no token on
   on `sail up -d` without a rebuild. Its `dev`-only jobs (only 18:00–08:00,
   the owner works on the Mac 08:00–18:00: `App\Support\QuietHours`,
   `SCRAPER_QUIET_HOURS`, long runs stop themselves at 08:00):
-  `scrapers:fetch-product-pages` 18:30 (Gintarinė, Apotheka, Mano vaistinė,
-  300 min), `scrapers:retry-failed` every 15 min outside 08:00–18:00, and the
-  product-facts jobs. These only run while the Mac is awake. The app, MySQL,
+  only `product-facts:batch-collect` and `product-facts:push` (quick API
+  calls; a sleeping Mac catches up at the next wake). The product pages,
+  batch-submit and `scrapers:retry-failed` moved to launchd on 2026-10-16:
+  started here they ran while the closed-lid Mac slept. The app, MySQL,
   Redis and Meilisearch containers have `restart: unless-stopped` in
   `docker-compose.yml` (2026-10-14), so they and the scheduler come back by
   themselves after a Mac or Docker restart. The other scheduled jobs also run

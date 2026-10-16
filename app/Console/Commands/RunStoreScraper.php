@@ -12,7 +12,8 @@ class RunStoreScraper extends Command
 {
     use PrintsScraperRunSummary;
 
-    protected $signature = 'scrapers:run {store?} {--all}';
+    protected $signature = 'scrapers:run {store?} {--all}
+                            {--failed : Re-run each store whose latest scrape failed (the nightly script, after flyers)}';
 
     protected $description = 'Run a scraper for one store, or every configured store in sequence, one at a time';
 
@@ -20,7 +21,20 @@ class RunStoreScraper extends Command
     {
         $stores = array_keys(config('scrapers'));
 
-        if ($this->option('all')) {
+        if ($this->option('failed')) {
+            $stores = array_values(array_filter($stores, fn (string $store) => ScraperRun::where('type', ScraperRun::TYPE_SCRAPE)
+                ->where('store', $store)
+                ->latest('started_at')
+                ->value('status') === ScraperRun::STATUS_FAILED));
+
+            if (!$stores) {
+                $this->info('No failed scrapers to re-run.');
+
+                return 0;
+            }
+        }
+
+        if ($this->option('all') || $this->option('failed')) {
             foreach ($stores as $i => $store) {
                 // A night run that overruns stops at the owner's working hours.
                 if (QuietHours::active()) {

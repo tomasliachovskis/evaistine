@@ -57,6 +57,8 @@ if [ "$NIGHTLY_DRY" = "1" ]; then
     exit 0
 fi
 
+scripts/wait-for-docker-clock.sh
+
 # Each step runs even if a store in the previous one failed.
 ./vendor/bin/sail artisan scrapers:run --all
 rc=$?
@@ -64,6 +66,11 @@ echo "--- $(date '+%F %T') scrapers:run exit $rc"
 ./vendor/bin/sail artisan flyers:scrape --all
 rc=$?
 echo "--- $(date '+%F %T') flyers:scrape exit $rc"
+# One more try for every store that failed above (a timeout on the store's
+# site, e.g. Maxima 2026-10-16), now that the flyers gave it some time.
+./vendor/bin/sail artisan scrapers:run --failed
+rc=$?
+echo "--- $(date '+%F %T') scrapers:run --failed exit $rc"
 if [ "$(date '+%u')" = "1" ]; then
     ./vendor/bin/sail artisan hours:scrape --all
     rc=$?
