@@ -42,10 +42,12 @@ class SubmitProductFactsBatch extends Command
 
         $empty = ProductFactExtractor::closeEmptyPages();
 
-        $rows = ProductFact::with('product:id,name,category_id', 'product.category:id,name')
+        // By product, so a limit splits at most one product's pharmacies.
+        $rows = ProductFact::with('product:id,name,category_id', 'product.category:id,name', 'store:id,name')
             ->whereNull('extracted_at')
             ->whereNull('batch_id')
             ->where(fn ($q) => $q->whereNotNull('source_text')->orWhereNotNull('attributes'))
+            ->orderBy('product_id')
             ->orderBy('id')
             ->limit((int) ($this->option('limit') ?: config('product_facts.batch_limit')))
             ->get();
@@ -63,8 +65,9 @@ class SubmitProductFactsBatch extends Command
         }
         $path = "{$dir}/{$displayName}.jsonl";
         $file = fopen($path, 'w');
-        foreach ($rows as $row) {
-            fwrite($file, json_encode($extractor->geminiBatchLine($row, $model), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+        $groups = ProductFactExtractor::groupByProduct($rows);
+        foreach ($groups as $group) {
+            fwrite($file, json_encode($extractor->geminiBatchLine($group, $model), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
         }
         fclose($file);
 
@@ -88,7 +91,7 @@ class SubmitProductFactsBatch extends Command
             return $batch;
         });
 
-        $summary = "{$empty} empty pages closed, {$batch->row_count} pages submitted as {$batch->name} ({$model})";
+        $summary = "{$empty} empty pages closed, {$batch->row_count} pages of {$groups->count()} products submitted as {$batch->name} ({$model})";
         $this->info($summary);
         Log::info("product-facts:batch-submit: {$summary}");
 

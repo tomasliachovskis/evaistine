@@ -354,6 +354,58 @@ class ProductFactsTest extends TestCase
         $this->assertSame(100, $batch->output_tokens);
     }
 
+    public function test_one_request_per_product_with_every_pharmacys_page(): void
+    {
+        $product = Product::create(['name' => 'Vitaminas D3 N90', 'slug' => 'vitaminas-d3-n90', 'category_id' => $this->category->id]);
+        $gintarine = Store::firstOrCreate(['name' => 'Gintarinė vaistinė'], ['slug' => 'gintarine-vaistine']);
+        $apotheka = $this->pageRow('https://www.apotheka.lt/d3');
+        $apotheka->update(['product_id' => $product->id]);
+        $gintarinesRow = ProductFact::create([
+            'store_id' => $gintarine->id, 'product_id' => $product->id,
+            'product_url' => 'https://www.gintarine.lt/d3', 'url_hash' => sha1('https://www.gintarine.lt/d3'),
+            'page_name' => 'Vitaminas D3', 'source_text' => 'Kilmės šalis: Lietuva', 'source_hash' => 'g',
+        ]);
+        $other = $this->pageRow('https://www.apotheka.lt/other');
+        $this->fakeGeminiBatch();
+
+        $this->artisan('product-facts:batch-submit', ['--model' => 'gemini-3.5-flash-lite'])->assertSuccessful();
+
+        $lines = [];
+        Http::assertSent(function ($request) use (&$lines) {
+            if (str_contains($request->url(), 'upload.test')) {
+                $lines = array_map(fn ($l) => json_decode($l, true), array_filter(explode("\n", $request->body())));
+            }
+
+            return true;
+        });
+        $this->assertCount(2, $lines);
+        $grouped = collect($lines)->firstWhere('key', "{$apotheka->id}:x,{$gintarinesRow->id}:g");
+        $this->assertNotNull($grouped);
+        $text = $grouped['request']['contents'][0]['parts'][0]['text'];
+        $this->assertStringContainsString('Page 1 (Apotheka)', $text);
+        $this->assertStringContainsString('Page 2 (Gintarinė vaistinė): Vitaminas D3', $text);
+        $this->assertStringContainsString('Kilmės šalis: Lietuva', $text);
+        $this->assertSame(3, ProductFactBatch::sole()->row_count);
+
+        $this->batchState = 'JOB_STATE_SUCCEEDED';
+        $this->batchResults = json_encode([
+            'key' => $grouped['key'],
+            'response' => [
+                'candidates' => [['content' => ['parts' => [['text' => json_encode(['kind' => 'maisto_papildas', 'origin_country' => 'Lietuva'])]]]]],
+                'usageMetadata' => ['promptTokenCount' => 1500, 'candidatesTokenCount' => 100],
+            ],
+        ]) . "\n";
+
+        $this->artisan('product-facts:batch-collect')->assertSuccessful();
+
+        // Both pharmacies' rows get the one answer; the product without an answer goes back.
+        foreach ([$apotheka, $gintarinesRow] as $row) {
+            $this->assertSame('Lietuva', $row->fresh()->facts['origin_country']);
+        }
+        $this->assertNull($other->fresh()->extracted_at);
+        $this->assertNull($other->fresh()->batch_id);
+    }
+
     public function test_expired_batch_gives_its_rows_back(): void
     {
         $row = $this->pageRow('https://www.apotheka.lt/a');

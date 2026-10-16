@@ -76,16 +76,19 @@ class CollectProductFactsBatches extends Command
                 continue;
             }
             $result = json_decode($line, true);
-            [$id, $hash] = array_pad(explode(':', (string) ($result['key'] ?? ''), 2), 2, null);
-            $row = $id ? ProductFact::where('id', $id)->where('batch_id', $batch->id)->first() : null;
-            if (!$row) {
+            // One line per product: every row of it gets the same facts.
+            $keys = ProductFactExtractor::parseBatchKey((string) ($result['key'] ?? ''));
+            $rows = ProductFact::whereIn('id', array_column($keys, 0))->where('batch_id', $batch->id)->get();
+            if ($rows->isEmpty()) {
                 continue;
             }
 
-            if ($row->source_hash !== $hash) {
-                // The page changed while the job ran: its facts would be stale.
-                $row->update(['batch_id' => null]);
-                $changed++;
+            $hashes = array_column($keys, 1, 0);
+            if ($rows->contains(fn (ProductFact $row) => $row->source_hash !== ($hashes[$row->id] ?? null))) {
+                // A page changed while the job ran: the facts would be stale.
+                // The whole product goes back, to be sent together again.
+                ProductFact::whereIn('id', $rows->pluck('id'))->update(['batch_id' => null]);
+                $changed += $rows->count();
                 continue;
             }
 
@@ -96,17 +99,20 @@ class CollectProductFactsBatches extends Command
                 if (!empty($result['error'])) {
                     throw new RuntimeException(json_encode($result['error']));
                 }
-                $row->update([
-                    'facts' => ProductFactExtractor::parseFacts($answer['text'], $batch->model),
-                    'extracted_with' => $batch->model,
-                    'extracted_at' => now(),
-                    'batch_id' => null,
-                ]);
-                $ok++;
+                $facts = ProductFactExtractor::parseFacts($answer['text'], $batch->model);
+                foreach ($rows as $row) {
+                    $row->update([
+                        'facts' => $facts,
+                        'extracted_with' => $batch->model,
+                        'extracted_at' => now(),
+                        'batch_id' => null,
+                    ]);
+                }
+                $ok += $rows->count();
             } catch (Throwable $e) {
-                $row->update(['batch_id' => null]);
-                $bad++;
-                Log::warning('product-facts:batch-collect: no facts', ['id' => $row->id, 'error' => mb_substr($e->getMessage(), 0, 300)]);
+                ProductFact::whereIn('id', $rows->pluck('id'))->update(['batch_id' => null]);
+                $bad += $rows->count();
+                Log::warning('product-facts:batch-collect: no facts', ['ids' => $rows->pluck('id')->all(), 'error' => mb_substr($e->getMessage(), 0, 300)]);
             }
         }
 

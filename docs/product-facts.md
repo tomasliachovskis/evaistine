@@ -72,6 +72,17 @@ production).
 3. **Extract (local)** – a language model turns each row without facts
    into facts (`App\Services\ProductFactExtractor`; model in
    `config/product_facts.php` / `PRODUCT_FACTS_MODEL`, empty = off).
+   - **One request per product, not per page** (owner, 2026-10-16). The
+     three pharmacies' runs go side by side, so the same product's pages
+     arrive the same night from 2-3 of them (2026-10-15: 1 393 rows, 680
+     products, 520 of them from more than one pharmacy). Rows are grouped
+     by `product_id` (`ProductFactExtractor::groupByProduct()`; a row without
+     a product is its own group), the message holds every page as
+     "Page N (pharmacy)", the prompt asks for one combined answer, and that
+     answer is written to every row of the product. The batch line's key
+     lists each row as `id:source_hash`, comma-separated; when one page
+     changed while the job ran, the whole product goes back. About half the
+     requests (1 464 local rows -> 751 requests).
    - **Nightly: Gemini Batch API, half the price** (2026-10-15).
      `product-facts:batch-submit` (nightly script, right after the product pages)
      closes empty pages, writes every row without facts (up to

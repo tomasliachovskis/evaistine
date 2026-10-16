@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ProductFact;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -10,7 +11,10 @@ use RuntimeException;
 // structured facts with a language model: composition, amounts per dose,
 // active substance, pack size. The model only restates what the page says;
 // everything shown to visitors is built from these facts by
-// App\Support\ProductFacts. See docs/product-facts.md.
+// App\Support\ProductFacts. A product sold by several pharmacies is one
+// request with all their pages (2026-10-16: half of a night's rows were the
+// same product from a second or third pharmacy), and the answer goes to every
+// one of those rows. See docs/product-facts.md.
 class ProductFactExtractor
 {
     public const SCHEMA_VERSION = 1;
@@ -19,6 +23,7 @@ class ProductFactExtractor
 You extract facts about one product from a Lithuanian pharmacy's product page. Answer with one JSON object, nothing else.
 
 Rules:
+- The message may hold the same product's pages from several pharmacies ("Page 1 (Gintarinė vaistinė)", "Page 2 (...)"). Give one answer for the product: combine what the pages say, and when they disagree take the most complete and specific statement.
 - Use only what the page text and attributes say. Never add knowledge of your own, never guess. Unknown or not stated -> null (or [] for lists).
 - Keep Lithuanian wording from the page for names and values. Do not translate.
 - No health claims, no advice, no descriptions of what the product does for the body.
@@ -48,10 +53,10 @@ PROMPT;
     /**
      * @return array{facts: array, input_tokens: int, output_tokens: int, model: string}
      */
-    public function extract(ProductFact $fact, ?string $model = null): array
+    public function extract(ProductFact|Collection $rows, ?string $model = null): array
     {
         $model ??= config('product_facts.model') ?: throw new RuntimeException('No PRODUCT_FACTS_MODEL set.');
-        $user = $this->userMessage($fact);
+        $user = $this->userMessage(Collection::wrap($rows));
 
         $result = str_starts_with($model, 'gemini-')
             ? $this->gemini($model, $user)
@@ -61,16 +66,34 @@ PROMPT;
     }
 
     /**
-     * One line of a Gemini Batch API input file (product-facts:batch-submit):
-     * the same request extract() sends. The key carries the source_hash, so
-     * product-facts:batch-collect can tell a page that changed meanwhile.
+     * One line of a Gemini Batch API input file (product-facts:batch-submit)
+     * for one product's rows: the same request extract() sends. The key lists
+     * each row as id:source_hash, so product-facts:batch-collect can tell a
+     * page that changed meanwhile.
      */
-    public function geminiBatchLine(ProductFact $fact, string $model): array
+    public function geminiBatchLine(Collection $rows, string $model): array
     {
         return [
-            'key' => "{$fact->id}:{$fact->source_hash}",
-            'request' => $this->geminiRequest($model, $this->userMessage($fact)),
+            'key' => $rows->map(fn (ProductFact $row) => "{$row->id}:{$row->source_hash}")->implode(','),
+            'request' => $this->geminiRequest($model, $this->userMessage($rows)),
         ];
+    }
+
+    /** @return list<array{0: string, 1: ?string}> [id, source_hash] per row of a batch line's key */
+    public static function parseBatchKey(string $key): array
+    {
+        return array_map(fn ($part) => array_pad(explode(':', $part, 2), 2, null), array_filter(explode(',', $key)));
+    }
+
+    /**
+     * Rows of the same product, one request each. A row without a product
+     * (not linked locally) is its own group.
+     *
+     * @return Collection<int, Collection<int, ProductFact>>
+     */
+    public static function groupByProduct(Collection $rows): Collection
+    {
+        return $rows->groupBy(fn (ProductFact $row) => $row->product_id ? "p{$row->product_id}" : "r{$row->id}")->values();
     }
 
     /** The model's answer as facts; throws when it isn't a JSON object. */
@@ -111,22 +134,28 @@ PROMPT;
         return $batch ? $cost * (float) config('product_facts.batch_discount', 0.5) : $cost;
     }
 
-    private function userMessage(ProductFact $fact): string
+    private function userMessage(Collection $rows): string
     {
+        $first = $rows->first();
         $lines = [
-            'Product name: ' . ($fact->page_name ?? $fact->product?->name ?? '(unknown)'),
+            'Product name: ' . ($first->page_name ?? $first->product?->name ?? '(unknown)'),
             // The category keeps "kind" from drifting (gpt-5-nano filed
             // nappies and mascara as supplements without one). The page's own
             // breadcrumb: extraction runs locally, where new products aren't
             // in the DB.
-            'Category: ' . ($fact->page_category ?? $fact->product?->category?->name ?? '(unknown)'),
+            'Category: ' . ($first->page_category ?? $first->product?->category?->name ?? '(unknown)'),
         ];
-        foreach ($fact->attributes ?? [] as $label => $value) {
-            $lines[] = "Attribute {$label}: {$value}";
+        foreach ($rows->values() as $i => $row) {
+            $lines[] = '';
+            if ($rows->count() > 1) {
+                $lines[] = 'Page ' . ($i + 1) . ' (' . ($row->store?->name ?? 'pharmacy') . ')' . ($row->page_name && $row->page_name !== $first->page_name ? ": {$row->page_name}" : '');
+            }
+            foreach ($row->attributes ?? [] as $label => $value) {
+                $lines[] = "Attribute {$label}: {$value}";
+            }
+            $lines[] = 'Page text:';
+            $lines[] = mb_substr((string) $row->source_text, 0, 12000);
         }
-        $lines[] = '';
-        $lines[] = 'Page text:';
-        $lines[] = mb_substr((string) $fact->source_text, 0, 12000);
 
         return implode("\n", $lines);
     }

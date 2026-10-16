@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 // Turns new or changed product page texts into facts (docs/product-facts.md),
-// one model call per page. The nightly run uses the Gemini Batch API instead
+// one model call per product (all its pharmacies' pages together). The nightly run uses the Gemini Batch API instead
 // (product-facts:batch-submit/-collect, half the price); this one is for
 // manual and small runs. Runs on the local machine, where the pages are
 // scraped; product-facts:push then sends the facts to production. The page's own name and breadcrumb are
@@ -38,33 +38,36 @@ class ExtractProductFacts extends Command
         $empty = ProductFactExtractor::closeEmptyPages();
 
         // Rows waiting in a Gemini batch (product-facts:batch-submit) are left to it.
-        $rows = ProductFact::with('product:id,name,category_id', 'product.category:id,name')
+        $rows = ProductFact::with('product:id,name,category_id', 'product.category:id,name', 'store:id,name')
             ->whereNull('extracted_at')
             ->whereNull('batch_id')
             ->where(fn ($q) => $q->whereNotNull('source_text')->orWhereNotNull('attributes'))
+            ->orderBy('product_id')
             ->orderBy('id')
             ->limit((int) $this->option('limit'))
             ->get();
 
         $in = $out = $ok = $failed = 0;
-        foreach ($rows as $row) {
+        foreach (ProductFactExtractor::groupByProduct($rows) as $group) {
             if (QuietHours::active() && !$this->option('model')) {
                 $this->warn('Quiet hours, stopping.');
                 break;
             }
             try {
-                $result = $extractor->extract($row, $model);
-                $row->update([
-                    'facts' => $result['facts'],
-                    'extracted_with' => $result['model'],
-                    'extracted_at' => now(),
-                ]);
+                $result = $extractor->extract($group, $model);
+                foreach ($group as $row) {
+                    $row->update([
+                        'facts' => $result['facts'],
+                        'extracted_with' => $result['model'],
+                        'extracted_at' => now(),
+                    ]);
+                }
                 $in += $result['input_tokens'];
                 $out += $result['output_tokens'];
-                $ok++;
+                $ok += $group->count();
             } catch (Throwable $e) {
-                $failed++;
-                Log::warning('product-facts:extract failed', ['id' => $row->id, 'error' => mb_substr($e->getMessage(), 0, 300)]);
+                $failed += $group->count();
+                Log::warning('product-facts:extract failed', ['ids' => $group->pluck('id')->all(), 'error' => mb_substr($e->getMessage(), 0, 300)]);
                 if ($failed >= 5 && $ok === 0) {
                     $this->error('Five failures in a row, stopping: ' . $e->getMessage());
                     break;
