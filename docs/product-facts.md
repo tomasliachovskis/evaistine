@@ -25,9 +25,10 @@ receives finished facts (owner, 2026-10-14: no collecting or model calls in
 production).
 
 1. **Pages (local)** – `scrapers/product-pages.js` (`sail artisan
-   scrapers:fetch-product-pages {store}`), nightly 18:30 for Gintarinė,
-   Apotheka and Mano vaistinė side by side, 300 min each (done by 23:30,
-   before the 00:00 main scrape hits the same sites). **The work list
+   scrapers:fetch-product-pages {store}`), in `scripts/nightly-scrape.sh`
+   after the main scrape, for Gintarinė, Apotheka and Mano vaistinė side by
+   side with the time left until 07:30 (an 18:30 scheduler job until
+   2026-10-16, when the sleeping Mac stalled it). **The work list
    comes from production**: `GET /api/scrapers/product-facts/pending/{store}`
    returns the URLs of that store's active offers that were never tried for
    that store and whose product has no facts from any pharmacy and at least
@@ -72,7 +73,7 @@ production).
    into facts (`App\Services\ProductFactExtractor`; model in
    `config/product_facts.php` / `PRODUCT_FACTS_MODEL`, empty = off).
    - **Nightly: Gemini Batch API, half the price** (2026-10-15).
-     `product-facts:batch-submit` (dev, 23:40, after the product pages)
+     `product-facts:batch-submit` (nightly script, right after the product pages)
      closes empty pages, writes every row without facts (up to
      `PRODUCT_FACTS_BATCH_LIMIT`, default 5 000) as one JSONL file of the
      same requests the single call sends (key `{id}:{source_hash}`),
@@ -195,8 +196,9 @@ the cost is output tokens, which no cache covers, so it would save under
   `SCRAPER_API_URL=https://evaistine.lt/api/scrapers`, quiet hours default
   `08:00-18:00`.
 - Gemini Batch API built (migration `2026_10_15_120000_create_product_fact_batches_table`,
-  needed in production too, for the same schema). Night: product pages 18:30-23:30,
-  batch submit 23:40, collect every 15 min, push every 10 min.
+  needed in production too, for the same schema). Night: product pages after the
+  main scrape until 07:30, then batch submit (nightly script); collect every
+  15 min, push every 10 min (container scheduler).
 - Deployed 2026-10-14 (commit `6dec5ff`, production migration ran) and
   checked end to end the same day: 5 local rows reset ->
   `batch-submit --model=gemini-3.5-flash-lite --limit=5` -> job done in
@@ -206,6 +208,12 @@ the cost is output tokens, which no cache covers, so it would save under
   Facts matched the earlier single-call answers (2 fields worded slightly
   differently). Not tested yet: a full 5 000-page file (~25 MB upload) and
   the scheduled 23:40 run.
+- 2026-10-15 night: 1 375 pages fetched, but the 23:40 batch-submit never
+  ran (Mac asleep, the container clock frozen at 22:17 jumped to 00:05 and
+  the scheduler skipped the minute), so 0 facts. Batch-submit moved into the
+  nightly script; the 1 393 waiting rows were submitted by hand on
+  2026-10-16 (`--model=gemini-3.5-flash-lite`, which also bypasses the quiet
+  hours check).
 - Check after the first batch night: `product_fact_batches` (state, tokens),
   the `product-facts:batch-submit` / `batch-collect` lines in the local
   laravel log, `product_facts` counts in production.
