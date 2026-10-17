@@ -74,6 +74,10 @@ services:
     redis:
         image: 'redis:alpine'
         restart: unless-stopped
+        # The cache (db1, all keys with a TTL) grew to ~1 GB with no limit and
+        # helped run the Docker VM out of memory (2026-10-17). volatile-lru
+        # only evicts keys with a TTL, so the queue (db0) is never touched.
+        command: redis-server --maxmemory 512mb --maxmemory-policy volatile-lru
         ports:
             - '${FORWARD_REDIS_PORT:-6379}:6379'
         volumes:

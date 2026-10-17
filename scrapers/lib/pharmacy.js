@@ -60,7 +60,12 @@ export const validEan = (value) => {
     if (gtinCheckDigit(code.slice(0, -1)) !== code.slice(-1)) {
         return null;
     }
-    const ean = code.length === 12 ? `0${code}` : code;
+    // A fresh string, not a slice of the input: the code usually comes out of
+    // a regex match on a whole product page, and V8 keeps that page's HTML
+    // alive for as long as the slice lives. Kept in the EAN cache all night,
+    // three product-page runs grew to ~800 MB each and ran the Docker VM out of
+    // memory (2026-10-17 04:02, dockerd panicked at 04:09).
+    const ean = code.length === 12 ? `0${code}` : Buffer.from(code).toString();
     return ean.length === 13 && ean.startsWith('2') ? null : ean;
 };
 
