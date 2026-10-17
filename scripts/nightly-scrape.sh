@@ -40,17 +40,34 @@ find "$LOG_DIR" -name '20*.log' -mtime +30 -delete
 LOG_START=$(( $(cat "$LOG" 2>/dev/null | wc -l) + 1 ))
 exec >>"$LOG" 2>&1
 
-echo "=== $(date '+%F %T') start"
-if ! docker info >/dev/null 2>&1; then
-    echo "Docker is not running, nothing done."
-    echo "== $(date '+%F') FAILED   Docker is not running" >>"$LOG_DIR/problems.log"
+# One line per WARN/FAILED/SKIPPED store from the summaries (the "- ..."
+# detail lines stay in the night's own log).
+report_problems() {
+    problems=$(tail -n +"$LOG_START" "$LOG" | grep -E '^(WARN|FAILED|SKIPPED) ')
+    if [ -n "$problems" ]; then
+        { echo "== $(date '+%F') (details in $(basename "$LOG"))"; echo "$problems"; } >>"$LOG_DIR/problems.log"
+    else
+        echo "== $(date '+%F') all OK" >>"$LOG_DIR/problems.log"
+    fi
+}
+
+# Before every step: a dead daemon (dockerd panic 2026-10-17 04:09) gets
+# Docker restarted (scripts/ensure-docker.sh); the FAILED line lands in
+# problems.log either way. Gives up on the night if Docker stays down.
+ensure_docker() {
+    scripts/ensure-docker.sh
+    case $? in
+        0) return 0 ;;
+        2) echo "FAILED   Docker  daemon was down, restarted at $(date '+%T')"; return 0 ;;
+    esac
+    echo "FAILED   Docker  daemon down at $(date '+%T'), could not restart it, rest of the night skipped"
+    echo "=== $(date '+%F %T') done"
+    report_problems
     exit 1
-fi
-if [ -z "$(docker ps -q -f name=vaistines-laravel.test-1)" ]; then
-    echo "Starting the vaistines Sail stack..."
-    ./vendor/bin/sail up -d
-    sleep 20
-fi
+}
+
+echo "=== $(date '+%F %T') start"
+ensure_docker
 
 if [ "$NIGHTLY_DRY" = "1" ]; then
     ./vendor/bin/sail artisan --version
@@ -61,18 +78,22 @@ fi
 scripts/wait-for-docker-clock.sh
 
 # Each step runs even if a store in the previous one failed.
+ensure_docker
 ./vendor/bin/sail artisan scrapers:run --all
 rc=$?
 echo "--- $(date '+%F %T') scrapers:run exit $rc"
+ensure_docker
 ./vendor/bin/sail artisan flyers:scrape --all
 rc=$?
 echo "--- $(date '+%F %T') flyers:scrape exit $rc"
 # One more try for every store that failed above (a timeout on the store's
 # site, e.g. Maxima 2026-10-16), now that the flyers gave it some time.
+ensure_docker
 ./vendor/bin/sail artisan scrapers:run --failed
 rc=$?
 echo "--- $(date '+%F %T') scrapers:run --failed exit $rc"
 if [ "$(date '+%u')" = "1" ]; then
+    ensure_docker
     ./vendor/bin/sail artisan hours:scrape --all
     rc=$?
     echo "--- $(date '+%F %T') hours:scrape exit $rc"
@@ -83,25 +104,28 @@ fi
 # a time, 429s), so not part of the main scrape. Was a separate 18:30 job on
 # the in-container scheduler until 2026-10-16: the closed-lid Mac slept and it
 # crawled along in maintenance wakes. Then the night's Gemini batch.
-minutes=$(( ($(date -j -f '%H:%M:%S' '07:30:00' +%s) - $(date +%s)) / 60 ))
-if [ "$minutes" -ge 30 ]; then
+# If Docker dies under the pages (2026-10-17 04:09, 3h of the budget unused),
+# it is restarted and the pages get one more go with what's left.
+pages_ran=0
+for attempt in 1 2; do
+    minutes=$(( ($(date -j -f '%H:%M:%S' '07:30:00' +%s) - $(date +%s)) / 60 ))
+    if [ "$minutes" -lt 30 ]; then
+        echo "Only $minutes min left before 07:30, no more product pages tonight."
+        break
+    fi
+    ensure_docker
     for pharmacy in gintarine-vaistine apotheka mano-vaistine; do
         ./vendor/bin/sail artisan scrapers:fetch-product-pages "$pharmacy" --minutes="$minutes" &
     done
     wait
+    pages_ran=1
     echo "--- $(date '+%F %T') product pages done ($minutes min budget)"
+    docker info >/dev/null 2>&1 && break
+done
+if [ "$pages_ran" = 1 ]; then
+    ensure_docker
     ./vendor/bin/sail artisan product-facts:batch-submit
     echo "--- $(date '+%F %T') product-facts:batch-submit exit $?"
-else
-    echo "Only $minutes min left before 07:30, no product pages tonight."
 fi
 echo "=== $(date '+%F %T') done"
-
-# One line per WARN/FAILED/SKIPPED store from the summaries (the "- ..."
-# detail lines stay in the night's own log).
-problems=$(tail -n +"$LOG_START" "$LOG" | grep -E '^(WARN|FAILED|SKIPPED) ')
-if [ -n "$problems" ]; then
-    { echo "== $(date '+%F') (details in $(basename "$LOG"))"; echo "$problems"; } >>"$LOG_DIR/problems.log"
-else
-    echo "== $(date '+%F') all OK" >>"$LOG_DIR/problems.log"
-fi
+report_problems
